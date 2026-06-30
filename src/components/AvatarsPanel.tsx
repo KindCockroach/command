@@ -277,7 +277,7 @@ Stay 100% in character as ${av.name}. Match their voice exactly. Keep the whole 
           </div>
 
           {/* Scripts output */}
-          {scripts.filter(s => s.avatarId === selected || tab === 'queue').map((s, i) => {
+          {scripts.filter(s => s.avatarId === selected).map((s, i) => {
             const av = AVATARS[s.avatarId]
             const key = `${s.avatarId}-${s.topic}`
             const isCopied = copied === key
