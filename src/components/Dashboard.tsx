@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ContentPiece } from '@/lib/db'
 import KanbanBoard from './board/KanbanBoard'
 import IntakeBar from './board/IntakeBar'
@@ -13,7 +13,7 @@ import TasksPanel from './TasksPanel'
 import NotesPanel from './NotesPanel'
 import WorkflowsPanel from './WorkflowsPanel'
 import AssistantsPanel from './AssistantsPanel'
-import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban } from 'lucide-react'
+import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
@@ -24,6 +24,19 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
   const [content, setContent] = useState(initialContent)
   const [stats, setStats] = useState(initialStats)
   const [view, setView] = useState<View>('command')
+  const [dark, setDark] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('cc-theme')
+    if (saved === 'dark') { setDark(true); document.documentElement.setAttribute('data-theme', 'dark') }
+  }, [])
+
+  const toggleTheme = () => {
+    const next = !dark
+    setDark(next)
+    if (next) { document.documentElement.setAttribute('data-theme', 'dark'); localStorage.setItem('cc-theme', 'dark') }
+    else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('cc-theme', 'light') }
+  }
 
   const recalc = (c: ContentPiece[]) => ({
     ideas: c.filter(x => x.status === 'idea').length,
@@ -82,6 +95,10 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
             <Link href="/repurpose" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(232,68,138,0.4)', color: 'rgba(232,68,138,0.7)', textDecoration: 'none' }}>
               <Zap size={12} /> 1→30
             </Link>
+            <button onClick={toggleTheme} title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', transition: 'all 0.15s', marginLeft: '4px' }}>
+              {dark ? <Sun size={14} /> : <Moon size={14} />}
+            </button>
           </nav>
         </div>
       </header>
