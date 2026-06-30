@@ -9,7 +9,7 @@ type DailyData = {
   notes: string
 }
 
-type OnFireItem = { title: string; status: string; label: string }
+type OnFireItem = { title: string; status: string; label: string; checked?: boolean }
 
 const today = new Date().toISOString().split('T')[0]
 const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
@@ -91,11 +91,22 @@ export default function DailyCommand() {
           </div>
           {onFire.length === 0 && <p style={{ fontSize: '13px', color: 'var(--text-muted)', opacity: 0.6 }}>Nothing urgent right now. 🙌</p>}
           {onFire.map((item, i) => (
-            <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '8px 0', borderBottom: i < onFire.length - 1 ? '1px solid var(--border)' : 'none' }}>
-              <AlertCircle size={13} color="#e05" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div
+              key={i}
+              onClick={() => setOnFire(prev => prev.map((it, idx) => idx === i ? { ...it, checked: !it.checked } : it))}
+              style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '8px 0', borderBottom: i < onFire.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}
+            >
+              <div style={{
+                width: '16px', height: '16px', borderRadius: '4px', flexShrink: 0, marginTop: '1px',
+                border: item.checked ? 'none' : '2px solid #e05',
+                background: item.checked ? '#3daa7c' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {item.checked && <CheckCheck size={11} color="#fff" />}
+              </div>
               <div>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{item.title}</p>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{item.status} — {item.label}</p>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: item.checked ? 'var(--text-muted)' : 'var(--text)', textDecoration: item.checked ? 'line-through' : 'none', opacity: item.checked ? 0.5 : 1 }}>{item.title}</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', opacity: item.checked ? 0.4 : 1 }}>{item.status} — {item.label}</p>
               </div>
             </div>
           ))}
