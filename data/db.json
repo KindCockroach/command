@@ -1,0 +1,163 @@
+{
+  "next_id": 8,
+  "intake_log": [
+    {
+      "id": 1782790893508,
+      "raw_input": "Her Reset Button: 60 Minutes to Yourself a workshop for the mom who's hitting the decision fatigue wall and just needs a break. I'll hold your brain and you leave with (at least) one less decision to make.",
+      "created_at": "2026-06-30T03:41:33.508Z"
+    },
+    {
+      "id": 1782791096839,
+      "raw_input": "Her Reset Button: Income After AI working in tech is like riding a roller coaster through the wild west today. Jobs come as fast as they go and as long as you rely on someone else to pay the bills, it's the same old rollercoaster. Take a 60 minute break from the ups and downs and leave with a straight path to what people mean when they say, \"I got rich with AI.\"",
+      "created_at": "2026-06-30T03:44:56.839Z"
+    }
+  ],
+  "content": [
+    {
+      "id": 7,
+      "title": "Her Reset Button: Income After AI working in tech is like riding a roller coaster through the wild west today. Jobs come as fast as they go and as long as you rely on someone else to pay the bills, it's the same old rollercoaster. Take a 60 minute break from the ups and downs and leave with a straight path to what people mean when they say, \"I got rich with AI.\"",
+      "description": "",
+      "status": "idea",
+      "type": "other",
+      "platforms": [],
+      "tags": [],
+      "transcript": "",
+      "notes": "Captured 6/29/2026, 10:44:56 PM",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T03:44:56.840Z",
+      "updated_at": "2026-06-30T03:44:56.840Z",
+      "published_at": null
+    },
+    {
+      "id": 6,
+      "title": "Her Reset Button: 60 Minutes to Yourself a workshop for the mom who's hitting the decision fatigue wall and just needs a break. I'll hold your brain and you leave with (at least) one less decision to make.",
+      "description": "",
+      "status": "idea",
+      "type": "other",
+      "platforms": [],
+      "tags": [],
+      "transcript": "",
+      "notes": "Captured 6/29/2026, 10:41:33 PM",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T03:41:33.510Z",
+      "updated_at": "2026-06-30T03:41:33.510Z",
+      "published_at": null
+    },
+    {
+      "id": 1,
+      "title": "Her Reset Button Workshop",
+      "description": "Live workshop concept with Luma event page",
+      "status": "idea",
+      "type": "workshop",
+      "platforms": [
+        "instagram",
+        "email"
+      ],
+      "tags": [
+        "workshop",
+        "wellness"
+      ],
+      "transcript": "",
+      "notes": "Scheduled 8/1 Her Reset Button: 60 Minutes to Yourself \n8/5 Her Reset Button: Income After AI",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T03:32:22.498Z",
+      "updated_at": "2026-06-30T03:39:14.206Z",
+      "published_at": null
+    },
+    {
+      "id": 2,
+      "title": "AI Mom Podcast – Episode TBD",
+      "description": "Recorded, waiting for editing",
+      "status": "in_progress",
+      "type": "podcast",
+      "platforms": [
+        "beehiiv",
+        "youtube"
+      ],
+      "tags": [
+        "podcast",
+        "ai"
+      ],
+      "transcript": "",
+      "notes": "",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T03:32:22.498Z",
+      "updated_at": "2026-06-30T03:32:22.498Z",
+      "published_at": null
+    },
+    {
+      "id": 3,
+      "title": "YouTube Video – AI for Moms",
+      "description": "Shot and exported from CapCut",
+      "status": "in_progress",
+      "type": "video",
+      "platforms": [
+        "youtube"
+      ],
+      "tags": [
+        "video",
+        "ai"
+      ],
+      "transcript": "",
+      "notes": "",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 1,
+      "created_at": "2026-06-30T03:32:22.498Z",
+      "updated_at": "2026-06-30T03:32:22.498Z",
+      "published_at": null
+    },
+    {
+      "id": 4,
+      "title": "AI Mom Podcast – Ep 1",
+      "description": "Edited and waiting for publish approval",
+      "status": "ready",
+      "type": "podcast",
+      "platforms": [
+        "beehiiv",
+        "youtube"
+      ],
+      "tags": [
+        "podcast"
+      ],
+      "transcript": "",
+      "notes": "",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T03:32:22.498Z",
+      "updated_at": "2026-06-30T03:32:22.498Z",
+      "published_at": null
+    },
+    {
+      "id": 5,
+      "title": "AI Mom Podcast – Ep 2",
+      "description": "Edited and waiting for publish approval",
+      "status": "ready",
+      "type": "podcast",
+      "platforms": [
+        "beehiiv",
+        "youtube"
+      ],
+      "tags": [
+        "podcast"
+      ],
+      "transcript": "",
+      "notes": "",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 1,
+      "created_at": "2026-06-30T03:32:22.498Z",
+      "updated_at": "2026-06-30T03:32:22.498Z",
+      "published_at": null
+    }
+  ]
+}
