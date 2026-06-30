@@ -16,6 +16,7 @@ import AssistantsPanel from './AssistantsPanel'
 import AvatarsPanel from './AvatarsPanel'
 import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
+import StationChat from './StationChat'
 import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon } from 'lucide-react'
 import Link from 'next/link'
 
@@ -78,7 +79,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
             <img src="/logo.png" alt="AI Mom" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25 }}>
               <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontWeight: 700, color: '#fff', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>AI MOM</span>
-              <span style={{ fontSize: '10px', fontWeight: 500, color: 'rgba(201,149,106,0.9)', letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Command Center</span>
+              <span style={{ fontSize: '10px', fontWeight: 500, color: 'rgba(201,149,106,0.9)', letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>RISE Station</span>
             </div>
           </div>
 
@@ -166,9 +167,10 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
 
       <footer style={{ background: 'var(--navy)', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '12px 20px', textAlign: 'center' }}>
         <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-          Command Center 5.0 · <span style={{ color: 'var(--hot-pink)', fontWeight: 700 }}>she said she would and so she did</span>
+          RISE Station · <span style={{ color: 'rgba(201,149,106,0.8)', fontWeight: 700 }}>she said she would and so she did</span>
         </p>
       </footer>
+      <StationChat />
     </div>
   )
 }
