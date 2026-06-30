@@ -106,3 +106,5 @@ body {
   50%       { box-shadow: 0 0 0 6px rgba(232,68,138,0); }
 }
 .pulse-pink { animation: pulse-pink 2s infinite; }
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }

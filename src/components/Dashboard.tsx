@@ -66,40 +66,45 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
 
       <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'var(--navy)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '22px', lineHeight: 1 }}>🎈</span>
-            <div>
-              <span style={{ fontSize: '15px', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>AI Mom</span>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hot-pink)', marginLeft: '8px' }}>Command Center</span>
+        <div style={{ padding: '0 16px', height: '56px', display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+
+          {/* Brand — fixed left, never scrolls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <span style={{ fontSize: '26px', lineHeight: 1 }}>🎈</span>
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>AI Mom</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--hot-pink)', whiteSpace: 'nowrap' }}>Command Center</span>
             </div>
           </div>
 
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          {/* Nav — scrollable on small windows */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '2px', overflowX: 'auto', flex: 1, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="hide-scrollbar">
             {NAV_ITEMS.map(item => (
               <button key={item.id} onClick={() => setView(item.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '8px', border: item.accent && view !== item.id ? '1px solid var(--hot-pink)' : 'none', cursor: 'pointer', transition: 'all 0.15s',
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', border: item.accent && view !== item.id ? '1px solid var(--hot-pink)' : 'none', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
                   background: view === item.id ? 'var(--hot-pink)' : 'transparent',
-                  color: view === item.id ? '#fff' : item.accent ? 'var(--hot-pink)' : 'rgba(255,255,255,0.5)',
+                  color: view === item.id ? '#fff' : item.accent ? 'var(--hot-pink)' : 'rgba(255,255,255,0.6)',
                 }}>
                 {item.icon} {item.label}
               </button>
             ))}
-            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.12)', margin: '0 4px' }} />
-            <Link href="/archive" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
-              <Archive size={12} /> Archive
+            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.12)', margin: '0 4px', flexShrink: 0 }} />
+            <Link href="/archive" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', flexShrink: 0 }}>
+              <Archive size={13} /> Archive
             </Link>
-            <Link href="/brain" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
-              <Brain size={12} /> Brain
+            <Link href="/brain" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', flexShrink: 0 }}>
+              <Brain size={13} /> Brain
             </Link>
-            <Link href="/repurpose" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(232,68,138,0.4)', color: 'rgba(232,68,138,0.7)', textDecoration: 'none' }}>
-              <Zap size={12} /> 1→30
+            <Link href="/repurpose" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 700, padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(232,68,138,0.4)', color: 'rgba(232,68,138,0.8)', textDecoration: 'none', flexShrink: 0 }}>
+              <Zap size={13} /> 1→30
             </Link>
-            <button onClick={toggleTheme} title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', transition: 'all 0.15s', marginLeft: '4px' }}>
-              {dark ? <Sun size={14} /> : <Moon size={14} />}
-            </button>
           </nav>
+
+          {/* Theme toggle — fixed right, never scrolls */}
+          <button onClick={toggleTheme} title={dark ? 'Switch to light mode' : 'Switch to dark mode'} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', transition: 'all 0.15s' }}>
+            {dark ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
         </div>
       </header>
 
