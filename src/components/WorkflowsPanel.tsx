@@ -94,6 +94,102 @@ const WORKFLOWS: Workflow[] = [
     agent: 'future_her',
     prompt: 'Walk me through a monthly reset. Speak from a place of calm and perspective. Ask me about the month that just ended, what I\'m most proud of, what I\'m ready to leave behind, and what I want the next month to feel like. Go slow. One question at a time.',
   },
+  {
+    id: 'viral_autopsy',
+    emoji: '🔬',
+    title: 'Viral Autopsy → Rebuild',
+    description: 'Paste any viral post — get the strategy stripped and rebuilt in your voice',
+    color: '#6B2D6E',
+    agent: 'content_director',
+    prompt: `You are a social media strategist performing a viral content autopsy. When I paste a viral post or describe one, you will:
+1. STRIP THE FORMAT: Identify the hook type, emotional trigger, visual structure, and CTA mechanic — separate from the topic
+2. NAME THE FORMULA: Give it a short name (e.g. "The Pain Mirror" or "The Dollar Proof")
+3. REBUILD IT: Rewrite it 3 times — once as AI Mom (Mandi, warm mom energy), once as Gator (bold swamp creature AI advisor), once as Sage (minimalist productivity) — all pointing to aiworksforyou.co
+4. GIVE THE SAVE TRIGGER: What should the CTA be to maximize saves and comments?
+
+Ask me to paste or describe the viral post I want to autopsy.`,
+  },
+  {
+    id: 'manychat_script',
+    emoji: '💬',
+    title: 'ManyChat Funnel Script',
+    description: 'Generate a comment trigger + auto-DM sequence for any piece of content',
+    color: '#0ea5e9',
+    agent: 'content_director',
+    prompt: `Generate a complete ManyChat comment-to-DM funnel for a piece of Instagram content. I need:
+
+1. TRIGGER WORD: One specific keyword to use (not generic — tied to this content)
+2. POST CAPTION ENDING: The exact sentence that invites the comment (e.g. "Comment TOOLKIT and I'll send it to your DMs")
+3. AUTO-DM MESSAGE: The first DM they receive (warm, in Mandi's voice, with the link placeholder, under 150 words)
+4. PUBLIC REPLY: What Mandi should comment publicly when someone triggers it (1 sentence, creates social proof loop)
+5. FOLLOW-UP DM (optional): If they don't click within 24hrs, what's the follow-up message?
+
+The offer destination is aiworksforyou.co. Ask me what the content piece is about and what I'm offering.`,
+  },
+  {
+    id: 'carousel_save_machine',
+    emoji: '📲',
+    title: 'Save-Magnet Carousel',
+    description: 'Generate a 10-slide carousel designed to get maximum saves — for any avatar',
+    color: '#C9956A',
+    agent: 'content_director',
+    prompt: `Create a 10-slide Instagram carousel designed to get maximum SAVES. Structure:
+- Slide 1: Hook (bold claim or list promise — e.g. "10 AI tools that replace a full-time assistant")
+- Slides 2-9: One value point per slide. Short. Scannable. One idea only. Include the tool name, what it does, and where to find it.
+- Slide 10: CTA — "SAVE this list. You'll want it later." + "Comment [KEYWORD] for the full breakdown in your DMs."
+
+Rules:
+- Every slide must be worth saving on its own
+- Write in the voice I tell you (I'll choose: Mandi / Gator / Luna / Max / Sage)
+- Keep each slide under 30 words
+- The last slide must explicitly say SAVE THIS
+
+Ask me: what's the topic, and which avatar voice should I use?`,
+  },
+  {
+    id: 'week_of_content',
+    emoji: '📅',
+    title: '5 Posts This Week',
+    description: 'Generate a full week of ready-to-post content for any avatar — hooks, body, CTA',
+    color: '#3DAA7C',
+    agent: 'content_director',
+    prompt: `Generate 5 ready-to-post Instagram Reels scripts for this week. Each script needs:
+- FORMAT: State the content format (screen record / B-roll + voiceover / talking head / carousel)
+- HOOK: The exact opening 1-2 sentences (first 3 seconds — must stop the scroll)
+- BODY: 3-4 sentences of value. Teach or prove the hook.
+- CTA: Comment trigger word + what they'll receive in DMs
+- SAVE PROMPT: One line that tells them to save this
+
+Use the proven hook formulas:
+1. "I did [specific thing] in [specific time] using AI"
+2. "You shouldn't have to choose between [A] and [B]"
+3. "Stop [doing X]. Do this instead."
+4. "[Dollar amount / specific result] — here's exactly how"
+5. "The [avatar audience] are using this AI tool. Here's what they know."
+
+Ask me: which avatar, and what's the content theme or offer for this week?`,
+  },
+  {
+    id: 'gator_character',
+    emoji: '🐊',
+    title: 'Gator Content',
+    description: 'Generate bold, no-nonsense AI business content as the Gator character',
+    color: '#2D6E3E',
+    agent: 'content_director',
+    prompt: `You are writing content for GATOR — an AI influencer character with a gator head, Southern energy, and zero tolerance for excuses.
+
+GATOR'S RULES:
+- Always opens with a challenge, a dare, or a business truth that stings a little
+- Short sentences. Never more than 12 words in a row.
+- Uses "swamp" references exactly once per piece of content (max)
+- Calls out the specific mistake before showing the fix
+- Never says "amazing" "incredible" or any hype words — just facts and results
+- Always ends with a power move CTA: "Comment GATOR. I'll handle the rest."
+- Personality contradiction: terrifying appearance, genuinely helpful content
+- Speaks to business owners and entrepreneurs who know they're behind on AI
+
+Generate Gator content about the topic I give you. Ask me for the topic.`,
+  },
 ]
 
 function CopyBtn({ text }: { text: string }) {
