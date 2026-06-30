@@ -1,19 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* AI Mom at Work — exact brand palette */
-  --hot-pink:       #E8448A;
-  --hot-pink-dark:  #C4306F;
-  --hot-pink-light: #FDE8F2;
-  --navy:           #1C1F3B;
-  --navy-mid:       #2D3058;
+  /* AI Mom — refined purple palette */
+  --purple:         #6B2D6E;
+  --purple-dark:    #4A1F4C;
+  --purple-mid:     #8B4A8E;
+  --purple-light:   #F3E8F4;
+  --purple-glow:    rgba(107,45,110,0.15);
+  --pink:           #E8448A;
+  --pink-light:     #FDE8F2;
+  --gold:           #C9956A;
   --cream:          #FBF8F4;
   --cream-deep:     #F4EFE8;
-  --sticky-yellow:  #F7E98E;
-  --sticky-pink:    #FFD4E5;
-  --sticky-blue:    #C8E6FA;
   --ink:            #1A1A2E;
   --ink-muted:      #4A4A6A;
   --ink-subtle:     #9494B0;
@@ -26,42 +28,48 @@
   --text:           var(--ink);
   --text-muted:     var(--ink-muted);
   --text-subtle:    var(--ink-subtle);
-  --accent:         var(--hot-pink);
-  --accent-hover:   var(--hot-pink-dark);
-  --accent-light:   var(--hot-pink-light);
+  --accent:         var(--purple);
+  --accent-hover:   var(--purple-dark);
+  --accent-light:   var(--purple-light);
+  --hot-pink:       var(--pink);
+  --hot-pink-dark:  #C4306F;
+  --hot-pink-light: var(--pink-light);
+  --navy:           #2A1A2E;
+  --navy-mid:       #3D2442;
   --header-bg:      var(--navy);
 
   /* Status colors */
-  --idea-color:     #F2A65A;
+  --idea-color:     #C9956A;
   --idea-bg:        #FEF5EA;
-  --progress-color: #5A4FCF;
-  --progress-bg:    #EDEAFC;
+  --progress-color: #6B2D6E;
+  --progress-bg:    #F3E8F4;
   --ready-color:    #3DAA7C;
   --ready-bg:       #E8F7F1;
 
-  --shadow-sm: 0 1px 3px rgba(28,31,59,0.07), 0 1px 2px rgba(28,31,59,0.04);
-  --shadow-md: 0 4px 16px rgba(28,31,59,0.10), 0 2px 6px rgba(28,31,59,0.05);
-  --shadow-lg: 0 16px 48px rgba(28,31,59,0.14), 0 4px 12px rgba(28,31,59,0.06);
+  --shadow-sm: 0 1px 3px rgba(42,26,46,0.07), 0 1px 2px rgba(42,26,46,0.04);
+  --shadow-md: 0 4px 16px rgba(42,26,46,0.10), 0 2px 6px rgba(42,26,46,0.05);
+  --shadow-lg: 0 16px 48px rgba(42,26,46,0.14), 0 4px 12px rgba(42,26,46,0.06);
 }
 
 /* ── Dark theme (data-theme="dark") ─────────────────────────────────────────
    Swaps only the functional role variables — accent colors stay the same.
    Used when sharing with a collaborator or preferring dark mode.          */
 [data-theme="dark"] {
-  --bg:             #0F1117;
-  --surface:        #1A1D27;
-  --surface-raised: #22263A;
-  --border:         #2E3247;
-  --text:           #E8EAF0;
-  --text-muted:     #8B90A8;
-  --text-subtle:    #555A72;
-  --navy:           #0A0C14;
-  --navy-mid:       #13162A;
+  --bg:             #0F0A10;
+  --surface:        #1A1020;
+  --surface-raised: #22182A;
+  --border:         #3A2840;
+  --text:           #EDE8F0;
+  --text-muted:     #9A8EA8;
+  --text-subtle:    #5A4F6A;
+  --navy:           #0D0610;
+  --navy-mid:       #180F1E;
+  --purple-light:   rgba(107,45,110,0.18);
+  --hot-pink-light: rgba(232,68,138,0.12);
 
-  --idea-bg:        rgba(242,166,90,0.12);
-  --progress-bg:    rgba(90,79,207,0.15);
+  --idea-bg:        rgba(201,149,106,0.12);
+  --progress-bg:    rgba(107,45,110,0.18);
   --ready-bg:       rgba(61,170,124,0.12);
-  --hot-pink-light: rgba(232,68,138,0.15);
 
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
@@ -73,9 +81,13 @@ html { -webkit-font-smoothing: antialiased; }
 body {
   background: var(--bg);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   min-height: 100vh;
   line-height: 1.5;
+}
+
+.font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }

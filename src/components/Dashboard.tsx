@@ -13,12 +13,13 @@ import TasksPanel from './TasksPanel'
 import NotesPanel from './NotesPanel'
 import WorkflowsPanel from './WorkflowsPanel'
 import AssistantsPanel from './AssistantsPanel'
+import AvatarsPanel from './AvatarsPanel'
 import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts'
+type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars'
 
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
@@ -60,6 +61,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'vision',     label: 'Vision',        icon: <Star size={12} /> },
     { id: 'notes',      label: 'Notes',         icon: <BookOpen size={12} /> },
     { id: 'accounts',   label: 'Accounts',      icon: <Users size={12} /> },
+    { id: 'avatars',    label: 'Avatars',       icon: <span style={{fontSize:'12px'}}>🎭</span> },
   ]
 
   return (
@@ -69,11 +71,11 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         <div style={{ padding: '0 16px', height: '56px', display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
 
           {/* Brand — fixed left, never scrolls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <span style={{ fontSize: '26px', lineHeight: 1 }}>🎈</span>
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>AI Mom</span>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--hot-pink)', whiteSpace: 'nowrap' }}>Command Center</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            <img src="/logo.png" alt="AI Mom" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25 }}>
+              <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontWeight: 700, color: '#fff', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>AI MOM</span>
+              <span style={{ fontSize: '10px', fontWeight: 500, color: 'rgba(201,149,106,0.9)', letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Command Center</span>
             </div>
           </div>
 
@@ -82,9 +84,9 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
             className="hide-scrollbar">
             {NAV_ITEMS.map(item => (
               <button key={item.id} onClick={() => setView(item.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', border: item.accent && view !== item.id ? '1px solid var(--hot-pink)' : 'none', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
-                  background: view === item.id ? 'var(--hot-pink)' : 'transparent',
-                  color: view === item.id ? '#fff' : item.accent ? 'var(--hot-pink)' : 'rgba(255,255,255,0.6)',
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', border: item.accent && view !== item.id ? '1px solid rgba(107,45,110,0.6)' : 'none', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+                  background: view === item.id ? 'var(--purple)' : 'transparent',
+                  color: view === item.id ? '#fff' : item.accent ? 'rgba(180,130,183,1)' : 'rgba(255,255,255,0.55)',
                 }}>
                 {item.icon} {item.label}
               </button>
@@ -96,7 +98,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
             <Link href="/brain" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', flexShrink: 0 }}>
               <Brain size={13} /> Brain
             </Link>
-            <Link href="/repurpose" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 700, padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(232,68,138,0.4)', color: 'rgba(232,68,138,0.8)', textDecoration: 'none', flexShrink: 0 }}>
+            <Link href="/repurpose" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 700, padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(107,45,110,0.5)', color: 'rgba(180,130,183,0.9)', textDecoration: 'none', flexShrink: 0 }}>
               <Zap size={13} /> 1→30
             </Link>
           </nav>
@@ -150,6 +152,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'vision'     && <VisionPanel />}
         {view === 'notes'      && <NotesPanel />}
         {view === 'accounts'   && <AccountsPanel />}
+        {view === 'avatars'    && <AvatarsPanel />}
       </main>
 
       <footer style={{ background: 'var(--navy)', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '12px 20px', textAlign: 'center' }}>
