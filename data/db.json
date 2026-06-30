@@ -1,5 +1,5 @@
 {
-  "next_id": 8,
+  "next_id": 22,
   "intake_log": [
     {
       "id": 1782790893508,
@@ -46,6 +46,149 @@
       "created_at": "2026-06-30T03:41:33.510Z",
       "updated_at": "2026-06-30T07:36:56.005Z",
       "published_at": null
+    },
+    {
+      "id": 8,
+      "title": "Carousel: 7 AI questions every mom can ask this week (without becoming 'an AI person')",
+      "description": "Save-magnet carousel. 7 slides, one question per slide, each one practical and non-intimidating. Ends with comment trigger.",
+      "status": "idea",
+      "type": "carousel",
+      "platforms": ["instagram"],
+      "tags": ["carousel", "ai-tools", "mandi", "save-magnet"],
+      "transcript": "", "notes": "From Notion idea inbox — high save potential", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 9,
+      "title": "Why I failed before (passwords, crashes, error codes) — and how AI/agents reduce that fragility",
+      "description": "Podcast episode. Personal story about tech failure and overwhelm, pivot to how AI removes single points of failure in your life and business.",
+      "status": "idea",
+      "type": "podcast",
+      "platforms": ["podcast", "youtube"],
+      "tags": ["podcast", "mandi", "personal-story", "ai-tools"],
+      "transcript": "", "notes": "From Notion idea inbox — strong anchor story material", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 10,
+      "title": "Analogy reel: ChatGPT is Google Maps for your brain",
+      "description": "15-second reel. The analogy does all the work. Nobody feared Google Maps — they should feel the same about ChatGPT.",
+      "status": "idea",
+      "type": "reel",
+      "platforms": ["instagram", "tiktok"],
+      "tags": ["reel", "mandi", "analogy", "viral-format"],
+      "transcript": "", "notes": "From Notion idea inbox — viral potential, very shareable", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 11,
+      "title": "Homeschooling without formal education — using AI to sanity-check lessons",
+      "description": "Podcast episode. How Mandi uses AI to verify homeschool content, fill gaps, and feel confident teaching without a teaching degree.",
+      "status": "idea",
+      "type": "podcast",
+      "platforms": ["podcast", "youtube"],
+      "tags": ["podcast", "mandi", "homeschool", "parenting"],
+      "transcript": "", "notes": "From Notion idea inbox — strong niche crossover (AI moms + homeschool)", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 12,
+      "title": "Giving as strategy: what if we gave our house away?",
+      "description": "Podcast episode. Vision and values content. Explores generosity as a business and life strategy, not just charity.",
+      "status": "idea",
+      "type": "podcast",
+      "platforms": ["podcast"],
+      "tags": ["podcast", "mandi", "vision", "values", "generosity"],
+      "transcript": "", "notes": "From Notion idea inbox — deeply personal, vision-level content", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 13,
+      "title": "AI and humanity (for AI haters): what's left of being human?",
+      "description": "Podcast episode. Direct address to the skeptics. Warm, non-defensive, genuinely curious exploration of what AI can't replace.",
+      "status": "idea",
+      "type": "podcast",
+      "platforms": ["podcast", "youtube"],
+      "tags": ["podcast", "mandi", "ai-skeptics", "humanity"],
+      "transcript": "", "notes": "From Notion idea inbox — great for reaching non-believers", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 14,
+      "title": "Parenting fears vs the world messing up your kids — where AI helps vs hurts",
+      "description": "Podcast episode. Honest two-sided conversation. Where Mandi trusts AI with parenting and where she draws the line.",
+      "status": "idea",
+      "type": "podcast",
+      "platforms": ["podcast", "youtube"],
+      "tags": ["podcast", "mandi", "parenting", "ai-limits"],
+      "transcript": "", "notes": "From Notion idea inbox — emotionally resonant, shareable", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 15,
+      "title": "Who tried to make a birthday: [finish this story]",
+      "description": "Incomplete idea — a personal story about someone attempting to make a birthday happen. Needs more context from Mandi to develop.",
+      "status": "idea",
+      "type": "other",
+      "platforms": [],
+      "tags": ["mandi", "personal-story", "needs-context"],
+      "transcript": "", "notes": "From Notion idea inbox — story got cut off, needs finishing", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 16,
+      "title": "Wash or not to wash — the question every mom asks before stepping into the shower",
+      "description": "Comedy reel. The universal mom dilemma. Relatable hook, no explanation needed. Could be voiceover over B-roll or talking head.",
+      "status": "idea",
+      "type": "reel",
+      "platforms": ["instagram", "tiktok"],
+      "tags": ["reel", "mandi", "comedy", "relatable", "viral"],
+      "transcript": "", "notes": "From Notion idea inbox — comedy gold, high share potential", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 17,
+      "title": "'Write me a plan to never run out of diapers' → reality: the plan fails immediately",
+      "description": "Comedy reel showing AI giving a perfect diaper plan followed by real mom chaos. Proves AI is useful AND funny when it meets real life.",
+      "status": "idea",
+      "type": "reel",
+      "platforms": ["instagram", "tiktok"],
+      "tags": ["reel", "mandi", "comedy", "ai-fails", "relatable"],
+      "transcript": "", "notes": "From Notion idea inbox — perfect AI Mom brand moment", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 18,
+      "title": "The amount of coffee + ibuprofen I subsist on (and why moms are running on patches, not fuel)",
+      "description": "Relatable reel or carousel. Opens with confession, pivots to how AI reduces the mental load that's draining moms in the first place.",
+      "status": "idea",
+      "type": "reel",
+      "platforms": ["instagram", "tiktok"],
+      "tags": ["reel", "mandi", "comedy", "mental-load", "relatable"],
+      "transcript": "", "notes": "From Notion idea inbox — high saves, 'send this to every mom' content", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 19,
+      "title": "If an AI ran my diaper bag: alerts at 3 diapers. If I run it: alerts at 0 diapers, in public.",
+      "description": "PRIORITY. Comedy reel. The contrast IS the hook. Zero setup needed. Under 15 seconds. Most viral idea in the batch.",
+      "status": "idea",
+      "type": "reel",
+      "platforms": ["instagram", "tiktok", "youtube_shorts"],
+      "tags": ["reel", "mandi", "comedy", "viral", "PRIORITY"],
+      "transcript": "", "notes": "From Notion idea inbox — POST THIS FIRST. Highest viral potential in the batch.", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+    },
+    {
+      "id": 20,
+      "title": "Do I get up and make coffee or masturbate?",
+      "description": "PRIORITY. Comedy reel. The most scroll-stopping idea in the batch. Bold, honest, funny, 100% Mandi voice. Goes viral or gets banned — either way people talk.",
+      "status": "idea",
+      "type": "reel",
+      "platforms": ["instagram", "tiktok"],
+      "tags": ["reel", "mandi", "comedy", "viral", "PRIORITY", "bold"],
+      "transcript": "", "notes": "From Notion idea inbox — POST THIS SECOND. Most disruptive hook in the batch.", "file_path": "", "thumbnail_url": "", "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
     },
     {
       "id": 2,
