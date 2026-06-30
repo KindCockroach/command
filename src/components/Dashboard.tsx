@@ -6,17 +6,24 @@ import IntakeBar from './board/IntakeBar'
 import AccountsPanel from './AccountsPanel'
 import DailyBriefingPanel from './DailyBriefing'
 import PipelineEngine from './PipelineEngine'
-import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain } from 'lucide-react'
+import DailyCommand from './DailyCommand'
+import ProjectsPanel from './ProjectsPanel'
+import VisionPanel from './VisionPanel'
+import TasksPanel from './TasksPanel'
+import NotesPanel from './NotesPanel'
+import WorkflowsPanel from './WorkflowsPanel'
+import AssistantsPanel from './AssistantsPanel'
+import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'board' | 'accounts'
+type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts'
 
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
   const [stats, setStats] = useState(initialStats)
-  const [view, setView] = useState<View>('board')
+  const [view, setView] = useState<View>('command')
 
   const recalc = (c: ContentPiece[]) => ({
     ideas: c.filter(x => x.status === 'idea').length,
@@ -30,15 +37,23 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     setContent(next); setStats(recalc(next))
   }
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+  const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode; accent?: boolean }[] = [
+    { id: 'command',    label: 'Daily Command', icon: <Zap size={12} />, accent: true },
+    { id: 'pipeline',   label: 'Content',       icon: <LayoutGrid size={12} /> },
+    { id: 'projects',   label: 'Projects',      icon: <FolderKanban size={12} /> },
+    { id: 'tasks',      label: 'Tasks',         icon: <CheckSquare size={12} /> },
+    { id: 'assistants', label: 'Assistants',    icon: <Bot size={12} /> },
+    { id: 'workflows',  label: 'Workflows',     icon: <Workflow size={12} /> },
+    { id: 'vision',     label: 'Vision',        icon: <Star size={12} /> },
+    { id: 'notes',      label: 'Notes',         icon: <BookOpen size={12} /> },
+    { id: 'accounts',   label: 'Accounts',      icon: <Users size={12} /> },
+  ]
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
 
-      {/* ── NAV ── dark navy with hot-pink accents, exactly like the workshop bottom banner */}
       <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'var(--navy)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 20px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '22px', lineHeight: 1 }}>🎈</span>
             <div>
@@ -47,72 +62,51 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
             </div>
           </div>
 
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            {([
-              { id: 'board' as View,    label: 'Pipeline',  icon: <LayoutGrid size={12} /> },
-              { id: 'accounts' as View, label: 'Accounts',  icon: <Users size={12} /> },
-            ]).map(item => (
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+            {NAV_ITEMS.map(item => (
               <button key={item.id} onClick={() => setView(item.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '8px', border: item.accent && view !== item.id ? '1px solid var(--hot-pink)' : 'none', cursor: 'pointer', transition: 'all 0.15s',
                   background: view === item.id ? 'var(--hot-pink)' : 'transparent',
-                  color: view === item.id ? '#fff' : 'rgba(255,255,255,0.5)',
+                  color: view === item.id ? '#fff' : item.accent ? 'var(--hot-pink)' : 'rgba(255,255,255,0.5)',
                 }}>
                 {item.icon} {item.label}
               </button>
             ))}
-            <Link href="/archive"
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '6px 14px', borderRadius: '8px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.15s' }}>
+            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.12)', margin: '0 4px' }} />
+            <Link href="/archive" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
               <Archive size={12} /> Archive
             </Link>
-            <Link href="/brain"
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '6px 14px', borderRadius: '8px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>
+            <Link href="/brain" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
               <Brain size={12} /> Brain
             </Link>
-            <Link href="/repurpose"
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, padding: '6px 14px', borderRadius: '8px', border: '1px solid var(--hot-pink)', color: 'var(--hot-pink)', textDecoration: 'none' }}>
-              <Zap size={12} /> 1→30 Studio
-            </Link>
-            <Link href="/studio"
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, padding: '6px 14px', borderRadius: '8px', color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>
-              Studio
+            <Link href="/repurpose" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700, padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(232,68,138,0.4)', color: 'rgba(232,68,138,0.7)', textDecoration: 'none' }}>
+              <Zap size={12} /> 1→30
             </Link>
           </nav>
         </div>
       </header>
 
-      <main style={{ flex: 1, maxWidth: '1280px', margin: '0 auto', width: '100%', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-        {view === 'board' && (
+        {view === 'command' && <DailyCommand />}
+
+        {view === 'pipeline' && (
           <>
-            {/* Date + badges */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-              <div>
-                <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--hot-pink)', marginBottom: '2px' }}>{today}</p>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--navy)', letterSpacing: '-0.02em' }}>
-                  Morning, Mandi. <span style={{ fontWeight: 400 }}>What are we building?</span>
-                </h1>
-              </div>
+              <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em' }}>Content Pipeline</h2>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px', background: 'var(--hot-pink-light)', color: 'var(--hot-pink)' }}>
-                  🎙 3 podcasts queued
-                </span>
-                <span style={{ fontSize: '11px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px', background: 'var(--ready-bg)', color: 'var(--ready-color)' }}>
-                  ✨ {stats.ready} ready to publish
-                </span>
+                <span style={{ fontSize: '11px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px', background: 'var(--hot-pink-light)', color: 'var(--hot-pink)' }}>🎙 3 podcasts queued</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px', background: 'var(--ready-bg)', color: 'var(--ready-color)' }}>✨ {stats.ready} ready to publish</span>
               </div>
             </div>
-
-            {/* Stat cards — sticky note aesthetic */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               {[
-                { key: 'ideas' as const,      label: 'Ideas',            sub: 'Seeds',          color: 'var(--idea-color)',     bg: 'var(--idea-bg)',     icon: <Lightbulb size={16} />, tape: 'var(--sticky-yellow)' },
-                { key: 'inProgress' as const, label: 'In Progress',      sub: 'Being built',    color: 'var(--progress-color)', bg: 'var(--progress-bg)', icon: <Loader2 size={16} />,   tape: 'var(--sticky-pink)' },
-                { key: 'ready' as const,       label: 'Ready to Publish', sub: 'Needs your ✓',  color: 'var(--ready-color)',    bg: 'var(--ready-bg)',    icon: <CheckCircle2 size={16} />, tape: 'var(--sticky-blue)' },
+                { key: 'ideas' as const,      label: 'Ideas',            sub: 'Seeds',          color: 'var(--idea-color)',     bg: 'var(--idea-bg)',     icon: <Lightbulb size={16} /> },
+                { key: 'inProgress' as const, label: 'In Progress',      sub: 'Being built',    color: 'var(--progress-color)', bg: 'var(--progress-bg)', icon: <Loader2 size={16} /> },
+                { key: 'ready' as const,       label: 'Ready to Publish', sub: 'Needs your ✓',  color: 'var(--ready-color)',    bg: 'var(--ready-bg)',    icon: <CheckCircle2 size={16} /> },
               ].map(s => (
-                <div key={s.key} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: 'var(--shadow-sm)', borderTop: `4px solid ${s.color}` }}>
-                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: s.bg, color: s.color, flexShrink: 0 }}>
-                    {s.icon}
-                  </div>
+                <div key={s.key} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', borderTop: `4px solid ${s.color}` }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: s.bg, color: s.color, flexShrink: 0 }}>{s.icon}</div>
                   <div>
                     <p style={{ fontSize: '26px', fontWeight: 800, color: 'var(--navy)', lineHeight: 1 }}>{stats[s.key]}</p>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.sub}</p>
@@ -120,33 +114,25 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
                 </div>
               ))}
             </div>
-
-            {/* Daily Briefing */}
             <DailyBriefingPanel content={content} />
-
-            {/* Pipeline Engine */}
             <PipelineEngine />
-
-            {/* Intake */}
             <IntakeBar onIntake={handleIntake} />
-
-            {/* Pipeline label */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '4px' }}>
-              <div style={{ height: '2px', width: '24px', background: 'var(--hot-pink)', borderRadius: '1px' }} />
-              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)' }}>Content Pipeline</span>
-            </div>
-
             <KanbanBoard initialContent={content} />
           </>
         )}
 
-        {view === 'accounts' && <AccountsPanel />}
+        {view === 'projects'   && <ProjectsPanel />}
+        {view === 'tasks'      && <TasksPanel />}
+        {view === 'assistants' && <AssistantsPanel />}
+        {view === 'workflows'  && <WorkflowsPanel />}
+        {view === 'vision'     && <VisionPanel />}
+        {view === 'notes'      && <NotesPanel />}
+        {view === 'accounts'   && <AccountsPanel />}
       </main>
 
-      {/* Footer — navy banner like the workshop promo */}
       <footer style={{ background: 'var(--navy)', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '12px 20px', textAlign: 'center' }}>
         <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-          Command Center 5.0 · <span style={{ color: 'var(--hot-pink)', fontWeight: 700 }}>she said she would and so she did</span> · aiworksforyou.com
+          Command Center 5.0 · <span style={{ color: 'var(--hot-pink)', fontWeight: 700 }}>she said she would and so she did</span>
         </p>
       </footer>
     </div>
