@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 
-const DB_DIR = path.join(process.cwd(), 'data')
-const DB_PATH = path.join(DB_DIR, 'db.json')
+// DB_PATH env var lets Railway Volume override the default local path
+const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'db.json')
+const DB_DIR = path.dirname(DB_PATH)
 
 export type ContentStatus = 'idea' | 'in_progress' | 'ready' | 'published' | 'archived'
 export type ContentType = 'video' | 'podcast' | 'post' | 'image' | 'workshop' | 'other'

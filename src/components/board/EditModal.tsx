@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { ContentPiece } from '@/lib/db'
-import { X, Trash2, CheckCircle, Send, Repeat2, Sparkles, Loader2, Copy, Volume2 } from 'lucide-react'
+import { X, Trash2, CheckCircle, Send, Repeat2, Sparkles, Loader2, Copy, Volume2, Film } from 'lucide-react'
+import FileUpload from '../FileUpload'
 
 const PLATFORMS = ['youtube', 'instagram', 'tiktok', 'facebook', 'linkedin', 'pinterest', 'beehiiv', 'substack', 'email']
 const TYPES = ['video', 'podcast', 'post', 'image', 'workshop', 'other'] as const
@@ -24,7 +25,7 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
   const [form, setForm] = useState<Partial<ContentPiece>>({})
   const [saving, setSaving] = useState(false)
   const [tagInput, setTagInput] = useState('')
-  const [tab, setTab] = useState<'edit' | 'expand' | 'voice'>('edit')
+  const [tab, setTab] = useState<'edit' | 'expand' | 'voice' | 'media'>('edit')
   const [expanding, setExpanding] = useState(false)
   const [expanded, setExpanded] = useState('')
   const [synthesizing, setSynthesizing] = useState(false)
@@ -134,6 +135,9 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
             <button style={TAB_STYLE(tab === 'voice')} onClick={() => setTab('voice')}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Volume2 size={11} /> Voice</span>
             </button>
+            <button style={TAB_STYLE(tab === 'media')} onClick={() => setTab('media')}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Film size={11} /> Media</span>
+            </button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <button onClick={handleDelete} style={{ fontSize: '11px', color: '#E05252', padding: '6px 10px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -234,6 +238,58 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
                 <a href={audioUrl} download="ai-mom-audio.mp3" style={{ display: 'block', marginTop: '10px', fontSize: '11px', color: 'var(--progress-color)', textDecoration: 'none', fontWeight: 600 }}>⬇ Download MP3</a>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── MEDIA TAB ── */}
+        {tab === 'media' && (
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'rgba(232,68,138,0.06)', border: '1px solid rgba(232,68,138,0.2)' }}>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--hot-pink)', marginBottom: '4px' }}>☁️ Cloudflare R2 Storage</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>Files upload directly to R2 — bypassing this server entirely. Videos, images, and audio are stored in your Cloudflare account and served via CDN.</p>
+            </div>
+
+            {form.file_path && (
+              <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(61,170,124,0.08)', border: '1px solid rgba(61,170,124,0.25)' }}>
+                <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#3daa7c', marginBottom: '6px' }}>Current Media File</p>
+                {(form.file_path.match(/\.(mp4|mov|webm)$/i)) ? (
+                  <video src={form.file_path} controls style={{ width: '100%', borderRadius: '8px', maxHeight: '220px' }} />
+                ) : (form.file_path.match(/\.(jpg|jpeg|png|gif|webp)$/i)) ? (
+                  <img src={form.file_path} alt="media" style={{ width: '100%', borderRadius: '8px', maxHeight: '220px', objectFit: 'cover' }} />
+                ) : (form.file_path.match(/\.(mp3|wav|m4a)$/i)) ? (
+                  <audio src={form.file_path} controls style={{ width: '100%' }} />
+                ) : (
+                  <a href={form.file_path} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#3daa7c' }}>View file ↗</a>
+                )}
+              </div>
+            )}
+
+            {form.thumbnail_url && (
+              <div>
+                <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '6px' }}>Thumbnail</p>
+                <img src={form.thumbnail_url} alt="thumbnail" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '10px' }} />
+              </div>
+            )}
+
+            <div>
+              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '8px' }}>Upload Main File (video / audio / image)</p>
+              <FileUpload
+                folder="content"
+                label="Drop your video, audio, or image here"
+                onUploaded={f => { set('file_path', f.publicUrl); set('type', f.type === 'audio' ? 'podcast' : f.type === 'video' ? 'video' : f.type === 'image' ? 'image' : form.type) }}
+              />
+            </div>
+
+            <div>
+              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '8px' }}>Upload Thumbnail</p>
+              <FileUpload
+                folder="thumbnails"
+                accept="image/*"
+                label="Drop a thumbnail image"
+                compact
+                onUploaded={f => set('thumbnail_url', f.publicUrl)}
+              />
+            </div>
           </div>
         )}
 
