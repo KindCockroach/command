@@ -17,12 +17,13 @@ import AvatarsPanel from './AvatarsPanel'
 import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
 import StationChat from './StationChat'
-import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon } from 'lucide-react'
+import PodcastEngine from './PodcastEngine'
+import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars' | 'media'
+type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars' | 'media' | 'podcast'
 
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
@@ -66,6 +67,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'accounts',   label: 'Accounts',      icon: <Users size={12} /> },
     { id: 'avatars',    label: 'Avatars',       icon: <span style={{fontSize:'12px'}}>🎭</span> },
     { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
+    { id: 'podcast',    label: 'Podcast',       icon: <Mic size={12} /> },
   ]
 
   return (
@@ -157,6 +159,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'notes'      && <NotesPanel />}
         {view === 'accounts'   && <AccountsPanel />}
         {view === 'avatars'    && <AvatarsPanel />}
+        {view === 'podcast'    && <PodcastEngine />}
         {view === 'media'      && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <UniversalCapture />
