@@ -14,12 +14,14 @@ import NotesPanel from './NotesPanel'
 import WorkflowsPanel from './WorkflowsPanel'
 import AssistantsPanel from './AssistantsPanel'
 import AvatarsPanel from './AvatarsPanel'
+import MediaLibrary from './MediaLibrary'
+import UniversalCapture from './UniversalCapture'
 import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars'
+type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars' | 'media'
 
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
@@ -62,6 +64,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'notes',      label: 'Notes',         icon: <BookOpen size={12} /> },
     { id: 'accounts',   label: 'Accounts',      icon: <Users size={12} /> },
     { id: 'avatars',    label: 'Avatars',       icon: <span style={{fontSize:'12px'}}>🎭</span> },
+    { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
   ]
 
   return (
@@ -153,6 +156,12 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'notes'      && <NotesPanel />}
         {view === 'accounts'   && <AccountsPanel />}
         {view === 'avatars'    && <AvatarsPanel />}
+        {view === 'media'      && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <UniversalCapture />
+            <MediaLibrary />
+          </div>
+        )}
       </main>
 
       <footer style={{ background: 'var(--navy)', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '12px 20px', textAlign: 'center' }}>
