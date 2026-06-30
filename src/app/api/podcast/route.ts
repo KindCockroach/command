@@ -23,6 +23,7 @@ ${transcript.slice(0, 8000)}
     model: 'gpt-4o',
     instructions: `You are the podcast production engine for RISE Station — Mandi Beck's AI content operating system.
 Given a podcast transcript, you produce EVERY deliverable needed to publish and promote the episode.
+You also provide honest, constructive producer feedback to help Mandi improve.
 Return ONLY valid JSON. No markdown. No explanation.`,
     input: `${context}
 
@@ -30,6 +31,13 @@ Generate ALL podcast deliverables. Return this exact JSON structure:
 {
   "title": "punchy episode title in Mandi's voice (under 60 chars)",
   "subtitle": "one sentence that makes someone click play",
+  "headlines": [
+    "SCROLL-STOPPING headline option 1 — pattern interrupt, bold claim or contrast",
+    "SCROLL-STOPPING headline option 2 — curiosity gap or unexpected angle",
+    "SCROLL-STOPPING headline option 3 — listicle or direct benefit",
+    "SCROLL-STOPPING headline option 4 — emotional hook or personal story angle",
+    "SCROLL-STOPPING headline option 5 — controversy or counter-narrative"
+  ],
   "description": "3-paragraph show notes in Mandi's voice — scene-setting, key insights, why it matters. Under 300 words.",
   "seo_description": "150-character meta description optimized for search",
   "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
@@ -60,6 +68,11 @@ Generate ALL podcast deliverables. Return this exact JSON structure:
   ],
   "newsletter_angle": "specific angle for Substack email — one observation, one insight, one takeaway",
   "newsletter_subject": "email subject line that gets opened",
+  "medium_article": {
+    "title": "Medium-optimized article title with keywords (SEO-friendly, curiosity-driven)",
+    "subtitle": "one-sentence deck under the title",
+    "body": "Full 600-900 word Medium article in Mandi's voice. Structure: opening hook paragraph, 3-4 substantive sections with bold subheadings, closing call to action pointing to aiworksforyou.co. Use conversational tone, short paragraphs, real examples from the episode. No fluff."
+  },
   "youtube_title": "YouTube-optimized title with keywords",
   "youtube_description": "YouTube description with timestamps, links placeholder, and hashtags",
   "youtube_tags": ["tag1", "tag2", "tag3"],
@@ -75,12 +88,21 @@ Generate ALL podcast deliverables. Return this exact JSON structure:
     "post_roll": "10-second outro ad for aiworksforyou.co"
   },
   "guest_share_kit": {
-    "dm_message": "message to send guest asking them to share (if applicable)",
+    "dm_message": "message to send guest asking them to share (if applicable, else empty string)",
     "suggested_caption": "caption guest can copy-paste to share the episode",
     "quote_graphic_text": "text for a quote graphic the guest can share"
   },
   "manychat_trigger": "keyword for comment-to-DM automation for this episode",
-  "manychat_dm": "auto-DM message sent when someone comments the trigger word"
+  "manychat_dm": "auto-DM message sent when someone comments the trigger word",
+  "producer_feedback": {
+    "overall_grade": "A/B/C/D with one sentence verdict",
+    "strengths": ["strength 1", "strength 2", "strength 3"],
+    "topic_drift": "honest assessment of whether Mandi stayed on topic or wandered — specific timestamps or moments if possible",
+    "depth_gaps": "topics that were mentioned but not covered thoroughly enough — what listeners probably wanted more of",
+    "too_many_directions": "if the episode tried to cover too much, call it out clearly and suggest which thread should have been the main one",
+    "biggest_win": "the single best moment or insight from this episode",
+    "next_episode_suggestion": "based on what was discussed, what topic would be the perfect follow-up episode"
+  }
 }`,
   })
 

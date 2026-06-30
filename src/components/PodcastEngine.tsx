@@ -5,6 +5,7 @@ import { Loader2, Copy, CheckCircle2, ChevronDown, ChevronUp, Mic, Zap } from 'l
 interface Deliverables {
   title: string
   subtitle: string
+  headlines: string[]
   description: string
   seo_description: string
   keywords: string[]
@@ -13,6 +14,7 @@ interface Deliverables {
   reels_scripts: { hook: string; body: string; cta: string; platform: string }[]
   newsletter_angle: string
   newsletter_subject: string
+  medium_article: { title: string; subtitle: string; body: string }
   youtube_title: string
   youtube_description: string
   youtube_tags: string[]
@@ -23,6 +25,15 @@ interface Deliverables {
   guest_share_kit: { dm_message: string; suggested_caption: string; quote_graphic_text: string }
   manychat_trigger: string
   manychat_dm: string
+  producer_feedback: {
+    overall_grade: string
+    strengths: string[]
+    topic_drift: string
+    depth_gaps: string
+    too_many_directions: string
+    biggest_win: string
+    next_episode_suggestion: string
+  }
 }
 
 function CopyBtn({ text, label }: { text: string; label?: string }) {
@@ -144,6 +155,17 @@ export default function PodcastEngine() {
             </div>
           </Section>
 
+          {/* Headlines */}
+          <Section title="🔥 Scroll-Stopping Headlines" defaultOpen>
+            <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginBottom: '6px' }}>5 options — pick one or mix and match for different platforms</p>
+            {result.headlines?.map((h, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', background: 'var(--surface-raised)', borderRadius: '8px', borderLeft: '3px solid var(--purple)' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4 }}>{h}</p>
+                <CopyBtn text={h} />
+              </div>
+            ))}
+          </Section>
+
           {/* Show Notes */}
           <Section title="📝 Show Notes">
             <Field label="Full Show Notes" value={result.description} />
@@ -187,6 +209,23 @@ export default function PodcastEngine() {
                 </div>
               </div>
             ))}
+          </Section>
+
+          {/* Medium Article */}
+          <Section title="✍️ Medium Article">
+            {result.medium_article && (
+              <>
+                <Field label="Article Title" value={result.medium_article.title} />
+                <Field label="Subtitle / Deck" value={result.medium_article.subtitle} />
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Full Article Body</p>
+                    <CopyBtn text={`# ${result.medium_article.title}\n\n*${result.medium_article.subtitle}*\n\n${result.medium_article.body}`} label="Copy full article" />
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, background: 'var(--surface-raised)', padding: '14px', borderRadius: '8px', whiteSpace: 'pre-wrap' }}>{result.medium_article.body}</p>
+                </div>
+              </>
+            )}
           </Section>
 
           {/* Newsletter */}
@@ -248,6 +287,50 @@ export default function PodcastEngine() {
               <Field label="DM to Guest" value={result.guest_share_kit.dm_message} />
               <Field label="Guest Caption (copy-paste)" value={result.guest_share_kit.suggested_caption} />
               <Field label="Quote Graphic Text" value={result.guest_share_kit.quote_graphic_text} />
+            </Section>
+          )}
+
+          {/* Producer Feedback */}
+          {result.producer_feedback && (
+            <Section title="🎙 Producer Feedback">
+              <div style={{ padding: '12px 14px', background: 'var(--surface-raised)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '32px', fontWeight: 900, color: 'var(--purple)' }}>{result.producer_feedback.overall_grade?.split('/')[0]}</span>
+                <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.4 }}>{result.producer_feedback.overall_grade}</p>
+              </div>
+
+              <div>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>What worked</p>
+                {result.producer_feedback.strengths?.map((s, i) => (
+                  <div key={i} style={{ padding: '7px 12px', marginBottom: '4px', background: '#F0FAF5', borderRadius: '8px', borderLeft: '3px solid #3DAA7C', fontSize: '13px', color: '#2D6B4F' }}>✓ {s}</div>
+                ))}
+              </div>
+
+              <div style={{ padding: '12px 14px', background: '#FFF8EE', borderRadius: '10px', borderLeft: '3px solid #F2A65A' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#C47A1A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Topic Drift</p>
+                <p style={{ fontSize: '13px', color: '#7A4A00', lineHeight: 1.5 }}>{result.producer_feedback.topic_drift}</p>
+              </div>
+
+              <div style={{ padding: '12px 14px', background: '#FFF3F3', borderRadius: '10px', borderLeft: '3px solid #E57373' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#C62828', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Depth Gaps — listeners wanted more</p>
+                <p style={{ fontSize: '13px', color: '#7A0000', lineHeight: 1.5 }}>{result.producer_feedback.depth_gaps}</p>
+              </div>
+
+              {result.producer_feedback.too_many_directions && (
+                <div style={{ padding: '12px 14px', background: '#F5F0FF', borderRadius: '10px', borderLeft: '3px solid var(--purple)' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--purple)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Too many directions</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{result.producer_feedback.too_many_directions}</p>
+                </div>
+              )}
+
+              <div style={{ padding: '12px 14px', background: 'var(--purple-light)', borderRadius: '10px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--purple)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Biggest Win</p>
+                <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600, lineHeight: 1.5 }}>⭐ {result.producer_feedback.biggest_win}</p>
+              </div>
+
+              <div style={{ padding: '12px 14px', background: 'var(--surface-raised)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Next Episode Idea</p>
+                <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.5 }}>🎙 {result.producer_feedback.next_episode_suggestion}</p>
+              </div>
             </Section>
           )}
         </div>
