@@ -111,6 +111,34 @@ export type DailyCommand = {
   updated_at: string
 }
 
+export type BrandAccount = {
+  id: string
+  handle: string
+  platform: string
+  status: 'active' | 'restricted' | 'planned' | 'paused'
+  priority: 'high' | 'medium' | 'low'
+  color: string
+  emoji: string
+  // Brand DNA from Excel
+  brand_name: string
+  topic: string
+  bio: string
+  mission: string
+  content_format: string
+  underlying_message: string
+  problem_message: string
+  solution_message: string
+  transformation: string   // "from X to Y"
+  the_how: string
+  tone: string
+  beliefs: string[]
+  hooks: string[]          // pre-written hooks from Hook Workbook
+  offer?: string           // low-ticket offer tied to this account
+  offer_price?: string
+  url?: string
+  notes?: string
+}
+
 type Db = {
   content: ContentPiece[]
   intake_log: { id: number; raw_input: string; created_at: string }[]
@@ -120,6 +148,7 @@ type Db = {
   notes: Note[]
   vision: VisionEntry[]
   daily_commands: DailyCommand[]
+  brand_accounts: BrandAccount[]
   next_id: number
   next_memory_id: number
   next_project_id: number
@@ -142,6 +171,22 @@ function defaultDb(): Db {
     next_note_id: 4,
     next_vision_id: 7,
     intake_log: [],
+    brand_accounts: [
+      { id: 'aimomatwork', handle: '@aimomatwork', platform: 'Instagram', status: 'restricted', priority: 'high', color: '#E1306C', emoji: '🤖', brand_name: 'AI Mom at Work', topic: 'AI tools for moms', bio: 'Helping moms use AI to get their time back. Room30.ai founder.', mission: 'Sell Room30.ai. Show moms that AI works for them, not against them.', content_format: 'Reels, carousels, direct offers', underlying_message: 'You deserve help. AI is that help.', problem_message: 'You\'re doing everything manually and it\'s costing you your life.', solution_message: 'AI can run the backend while you show up for the front.', transformation: 'From buried in busywork to running a business with AI', the_how: 'One system at a time', tone: 'Direct, confident, zero fluff', beliefs: ['AI is not the future. It\'s the now.', 'Moms are the most underestimated operators on earth.', 'Your time is worth protecting.'], hooks: ['POV: You let AI write your captions while you napped', 'Tell me you\'re a mom without telling me you\'re a mom', 'The $10 tool that gave me my mornings back'], offer: 'Room30.ai membership', offer_price: '$10/day', notes: 'Restricted — rebuilding value ratio. Prioritize give > ask.' },
+      { id: 'mandijoy', handle: '@mandij0y', platform: 'Instagram', status: 'active', priority: 'high', color: '#F2A65A', emoji: '✨', brand_name: 'Mandi Joy', topic: 'Inner child, confidence, parts work', bio: '✨Embrace your extraordinary✨\nAnd your inner child\nYour daily reminder to play more, laugh louder, and overcome your discomfort around people', mission: 'Spread joy, confidence, and self-esteem. Invite strangers to dance in public.', content_format: 'Dancing in public, inner child parts work, personal shares', underlying_message: 'You have what it takes to enjoy your days no matter what is going on.', problem_message: 'I was super sad for a long time', solution_message: 'Gratitude changed everything.', transformation: 'From down and out to up and about — one story at a time', the_how: 'One story at a time', tone: 'Light, fresh, joyful', beliefs: ['Inner Child healing is real', 'HEB (Human Emotional Behavior) drives everything', 'The journey IS the destination'], hooks: ['5 Signs she\'s confident, not crazy', '5 red flags that actually mean she\'s worth it', 'You say unhinged, I say deprogrammed', 'Why is no one talking about your pleasure threshold?!', 'I used to hate that version of me until I did this', 'Loving your cringy self is the poor man\'s ayahuasca'] },
+      { id: 'empoweredsupermom', handle: '@empoweredsupermom', platform: 'Instagram', status: 'active', priority: 'high', color: '#3DAA7C', emoji: '💪', brand_name: 'Empowered Super Mom', topic: 'Nervous system, safe kids, sane moms', bio: 'Empowering safe kids and sane moms\nFollow her on the go 💃🏽 with 4 under 4\n🌎 All parenting styles welcome', mission: 'Empower moms to soothe their overstimulated nervous system, giving greater safety to their kids.', content_format: 'Voiceover videos of me talking my babies through steps — kids making safe choices while exploring', underlying_message: 'Restore your nervous system.', problem_message: 'You are the problem. (Start with yourself.)', solution_message: 'Start with yourself — your nervous system is contagious.', transformation: 'From your wits end to expanded — one minute at a time', the_how: 'One minute at a time', tone: 'Empathetic peer — "I\'m listening"', beliefs: ['Most kids are overtired, undernourished, and dehydrated. Same goes for moms.', 'Kids are safer when encouraged to explore with curious, focused questions.'], hooks: ['How I talk to my babies about hurt feelings... when I\'m the one who is hurting', 'Mom of 4 under 4 coming through', 'Every time my heart leaps, I don\'t yell — I ask questions', 'The moment you\'re yelling "be careful" is the moment you need to try this', 'My twins don\'t need a referee. They need a pause button.', '"Be careful" won\'t raise strong kids. But falling and recovering will.'] },
+      { id: 'youradhdnature', handle: '@youradhdnature', platform: 'Instagram', status: 'active', priority: 'high', color: '#9B8FA6', emoji: '🌿', brand_name: 'Your ADHD Nature', topic: 'ADHD in women, nature, presence', bio: 'No quiz, no personality profile, no app, no games\nJust a $10 ebook that opens your eyes\nFor the undiagnosed, the exhausted, and the determined', mission: 'Support women with ADHD via simple reminders — present pause, daily intention, next simplest step toward highest purpose.', content_format: '8-second nature videos with text overlays', underlying_message: 'Breathe. You can grow through this like the trees, with ADHD like the mushrooms that connect the forest floor.', problem_message: 'Undiagnosed and not enough tools', solution_message: 'This $10 ebook — built with AI from the latest research — shows you how to spot it, what to do with it, and where to install systems.', transformation: 'From cancelling plans to leading communities — one habit at a time', the_how: 'One habit at a time', tone: 'Gentle, inviting', beliefs: ['ADHD is supported by nature, visuals of nature, imagining you\'re in nature, accepting your nature.'], hooks: [], offer: 'ADHD Ebook', offer_price: '$10' },
+      { id: 'theadderalleffect', handle: '@theadder.alleffect', platform: 'Instagram', status: 'active', priority: 'medium', color: '#C0A87E', emoji: '⚡', brand_name: 'The Adder All Effect', topic: 'ADHD hacking, mindset, goal systems', bio: 'ADHD Hacker | Mindset Aficionado | Goal Getter\nSharing a system based on the latest science. Adderall doesn\'t manage goals. Here\'s Your Cheat Sheet', mission: 'Drive traffic to sell ADHD ebooks via 5-second luxury content.', content_format: '5-second luxury footage — fancy nature, cars, women — claiming you can have it all with ADHD if you buy the ebook', underlying_message: 'Get a system. Buy the ebook.', problem_message: 'Drugs don\'t manage goals.', solution_message: 'This is the system to use.', transformation: 'From losing to winning — one win at a time', the_how: 'One win at a time', tone: 'Authoritative', beliefs: ['Men chase money, cars, and women — I can drive them toward progress by leading with beauty and power.'], hooks: [], offer: 'ADHD Goals Ebook', offer_price: '$10' },
+      { id: 'content4queens', handle: '@content4queens', platform: 'Instagram', status: 'active', priority: 'medium', color: '#E8448A', emoji: '👑', brand_name: 'Content 4 Queens', topic: 'Women making money online, content systems', bio: 'Give other women the playbook to financial freedom with the internet', mission: 'Give women the playbook to financial freedom online.', content_format: 'Videos with Em, Liz, and Mandi — sisterhood memes', underlying_message: 'You have everything you need.', problem_message: 'You lack clarity.', solution_message: 'Clarity (and a system) gives you consistency.', transformation: 'From drowning in social media to swimming in a sea of money — one message at a time', the_how: 'One message at a time', tone: 'Laughing, sister energy', beliefs: [], hooks: [] },
+      { id: 'homeschool4humans', handle: '@homeschool4humans', platform: 'Instagram', status: 'active', priority: 'medium', color: '#5A9E6F', emoji: '📚', brand_name: 'Homeschool 4 Humans', topic: 'Homeschooling, unschooling, world schooling', bio: 'Learning about our home\nBodies, land, seas, space\nCultures, food, music, art\nThe Beatles meets Shakespeare with a side of science. Math is inevitable.', mission: 'Enlighten the movement of unschoolers, homeschoolers, and world schoolers on topics that matter.', content_format: 'My kids on the go and learning', underlying_message: 'Kids need guidance.', problem_message: 'Kids are not gurus.', solution_message: 'Be the guidance they deserve.', transformation: 'From feeling like something is missing to discovering the age of information together — one interest at a time', the_how: 'One interest at a time', tone: 'Light & bright', beliefs: ['Unschooling is a disservice to society.', 'Public school serves the lowest common denominator — my kids are more a root than a bottom number.', 'Social norms are worth questioning — I want control over what influences my kids.'], hooks: [] },
+      { id: 'art4thefeminine', handle: '@art4thefeminine', platform: 'Instagram', status: 'active', priority: 'medium', color: '#C77DFF', emoji: '🎨', brand_name: 'Art 4 the Feminine', topic: 'Art, feminine power, women rising', bio: 'Speaking up for the feminine in a man\'s world', mission: 'Speak up for the feminine in a man\'s world.', content_format: 'Making art', underlying_message: 'You are free.', problem_message: 'Women are a target.', solution_message: 'Rise up anyway.', transformation: 'From fearful to free — one project at a time', the_how: 'One project at a time', tone: 'Empowering — "I see you."', beliefs: [], hooks: [] },
+      { id: 'philosophicalmom', handle: '@philosophicalmom', platform: 'Instagram', status: 'active', priority: 'medium', color: '#748CAB', emoji: '🧠', brand_name: 'Philosophical Mom', topic: 'Philosophy, stoicism, motherhood', bio: 'detangling concepts and content from my mind in real time', mission: 'Detangle concepts from mind in real time.', content_format: 'Carousels of writing — stories, stoicism, philosophy', underlying_message: 'Seek clarity.', problem_message: 'Life is complex.', solution_message: 'Philosophy gives you a frame.', transformation: 'From confusion to clarity', the_how: 'One concept at a time', tone: 'Thoughtful, curious', beliefs: [], hooks: [] },
+      { id: 'aimompodcast', handle: '@aimompodcast', platform: 'Instagram', status: 'active', priority: 'high', color: '#FF6B35', emoji: '🎙', brand_name: 'AI Mom Podcast', topic: 'AI for moms — education, interviews, tools', bio: 'The podcast for moms who want to use AI without the overwhelm', mission: 'Educate moms on AI through stories, interviews, and real demos. No sales. Pure give.', content_format: 'Podcast clips, audiograms, episode promos', underlying_message: 'AI is for you.', problem_message: 'AI feels overwhelming and like it\'s not for regular people.', solution_message: 'One episode at a time, we make AI simple.', transformation: 'From intimidated to empowered', the_how: 'One episode at a time', tone: 'Educational, warm, conversational', beliefs: ['Moms are the most creative problem solvers on earth.'], hooks: [] },
+      { id: 'airevealsus', handle: '@airevealsus', platform: 'Instagram', status: 'active', priority: 'medium', color: '#4CC9F0', emoji: '🔍', brand_name: 'AI Reveals Us', topic: 'AI self-discovery, what AI reveals about humanity', bio: 'What AI reveals about who we are', mission: 'Explore what AI reveals about human nature, connection, and meaning.', content_format: 'Thought experiments, AI-generated images with meaning', underlying_message: 'AI reveals us to ourselves.', problem_message: 'We fear what AI says about us.', solution_message: 'Let it. The mirror is the medicine.', transformation: 'From fear to fascination', the_how: 'One revelation at a time', tone: 'Curious, philosophical', beliefs: ['The AI age is a spiritual event, not just a tech event.'], hooks: [] },
+      { id: 'youradhdhusband', handle: '@youradhdhusband', platform: 'Instagram', status: 'planned', priority: 'medium', color: '#F77F00', emoji: '🤪', brand_name: 'Your ADHD Husband', topic: 'Wives of men with ADHD — humor, relief, education', bio: 'Make wives of ADHD men laugh and relate', mission: 'Make wives of ADHD men laugh and feel seen.', content_format: 'Humor, relatable moments, ADHD education from partner perspective', underlying_message: 'You\'re not crazy.', problem_message: 'Your husband is absurd.', solution_message: 'Learn about ADHD — it explains everything.', transformation: 'From lonely to held — one angle at a time', the_how: 'One angle at a time', tone: 'Funny', beliefs: [], hooks: [] },
+      { id: 'survivethedome', handle: '@survivethedome', platform: 'Instagram', status: 'active', priority: 'medium', color: '#2D6A4F', emoji: '🌍', brand_name: 'Survive the Dome', topic: 'Preparedness, resilience, sovereign living', bio: 'For the woman who knows something is coming and wants to be ready', mission: 'Equip families with practical survival skills, mindset, and community.', content_format: 'Practical tips, family preparedness, community building', underlying_message: 'Being prepared is an act of love.', problem_message: 'Most people are one crisis away from chaos.', solution_message: 'Preparedness is a practice, not a panic.', transformation: 'From anxious to equipped', the_how: 'One skill at a time', tone: 'Calm authority, practical', beliefs: ['Sovereignty begins at home.'], hooks: [] },
+      { id: 'gettriggered', handle: '@gettriggered', platform: 'Instagram', status: 'planned', priority: 'low', color: '#E07A5F', emoji: '⚡', brand_name: 'Get Triggered', topic: 'Triggers as doorways to healing', bio: 'The benefits of getting triggered', mission: 'Reframe triggers as activation, not attack.', content_format: 'Short philosophy, personal shares, breath work prompts', underlying_message: 'Triggers are a doorway to healing.', problem_message: 'Being triggered is bad.', solution_message: 'Let it activate you.', transformation: 'From angry to curious — one breath at a time', the_how: 'One breath at a time', tone: 'Compassionate — "Sucks, but you can do this."', beliefs: [], hooks: [] },
+    ],
     projects: [
       { id: 1, name: 'Reset Button Workshop', description: '$10 workshop — 60 guided minutes for moms. Drive sales daily.', status: 'active', priority: 'urgent', deadline: null, next_action: 'Post 3 promo pieces this week (Come Cranky angle)', notes: 'Luma event page live. Need caption strategy + daily promo.', assistant: 'content_director', progress: 40, created_at: now, updated_at: now },
       { id: 2, name: 'Room30.ai Launch', description: 'Main offer. New avatar Instagram account + content strategy.', status: 'active', priority: 'high', deadline: null, next_action: 'Set up new Instagram account + first 5 posts', notes: 'AI Mom at Work restricted. New avatar account in planning.', assistant: 'strategist', progress: 15, created_at: now, updated_at: now },
@@ -195,7 +240,13 @@ export function readDb(): Db {
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
     return db
   }
-  return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8')) as Db
+  const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8')) as Db
+  // Migrate: add brand_accounts if missing
+  if (!db.brand_accounts || db.brand_accounts.length === 0) {
+    db.brand_accounts = defaultDb().brand_accounts
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
+  return db
 }
 
 export function writeDb(db: Db) {
@@ -511,4 +562,31 @@ export function saveDailyCommand(data: DailyCommand): DailyCommand {
   else db.daily_commands[idx] = updated
   writeDb(db)
   return updated
+}
+
+// ── Brand Accounts ─────────────────────────────────────────────────────────────
+
+export function getAllBrandAccounts(): BrandAccount[] {
+  const db = readDb()
+  if (!db.brand_accounts) db.brand_accounts = defaultDb().brand_accounts
+  return db.brand_accounts
+}
+
+export function getBrandAccount(id: string): BrandAccount | null {
+  return getAllBrandAccounts().find(a => a.id === id) ?? null
+}
+
+export function upsertBrandAccount(data: Partial<BrandAccount> & { id: string }): BrandAccount {
+  const db = readDb()
+  if (!db.brand_accounts) db.brand_accounts = defaultDb().brand_accounts
+  const idx = db.brand_accounts.findIndex(a => a.id === data.id)
+  if (idx !== -1) {
+    db.brand_accounts[idx] = { ...db.brand_accounts[idx], ...data }
+    writeDb(db)
+    return db.brand_accounts[idx]
+  }
+  const newAccount = { ...data } as BrandAccount
+  db.brand_accounts.push(newAccount)
+  writeDb(db)
+  return newAccount
 }

@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
-import { Sparkles, Loader2, Plus, Minus, CheckCircle2, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Sparkles, Loader2, Plus, Minus, CheckCircle2 } from 'lucide-react'
 
 type ContentOrder = { type: string; qty: number }
+type BrandAccount = { id: string; handle: string; brand_name: string; emoji: string; color: string; status: string; topic: string }
 
 const CONTENT_TYPES = [
   {
@@ -89,6 +90,14 @@ export default function ContentOrderForm({ projectName, projectDescription, proj
   const [generating, setGenerating] = useState(false)
   const [result, setResult] = useState<{ created: number } | null>(null)
   const [expandedType, setExpandedType] = useState<string | null>(null)
+  const [accounts, setAccounts] = useState<BrandAccount[]>([])
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('')
+
+  useEffect(() => {
+    fetch('/api/accounts').then(r => r.json()).then((data: BrandAccount[]) => {
+      setAccounts(data.filter(a => a.status !== 'planned'))
+    }).catch(() => {})
+  }, [])
 
   const toggle = (id: string) => {
     setOrders(prev => {
@@ -120,7 +129,7 @@ export default function ContentOrderForm({ projectName, projectDescription, proj
       const res = await fetch('/api/generate/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectName, projectDescription, projectNotes, orders: contentOrders }),
+        body: JSON.stringify({ projectName, projectDescription, projectNotes, orders: contentOrders, accountId: selectedAccountId || undefined }),
       })
       const data = await res.json()
       setResult({ created: data.created ?? 0 })
@@ -134,6 +143,31 @@ export default function ContentOrderForm({ projectName, projectDescription, proj
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+      {/* Account selector */}
+      {accounts.length > 0 && (
+        <div>
+          <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '6px' }}>Which account is this for?</p>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <button onClick={() => setSelectedAccountId('')}
+              style={{ padding: '5px 10px', borderRadius: '20px', border: `2px solid ${!selectedAccountId ? 'var(--purple)' : 'var(--border)'}`, background: !selectedAccountId ? 'rgba(107,45,110,0.1)' : 'var(--bg)', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: !selectedAccountId ? 'var(--purple)' : 'var(--text-muted)', fontFamily: 'inherit' }}>
+              All / Generic
+            </button>
+            {accounts.map(a => (
+              <button key={a.id} onClick={() => setSelectedAccountId(a.id)}
+                style={{ padding: '5px 10px', borderRadius: '20px', border: `2px solid ${selectedAccountId === a.id ? a.color : 'var(--border)'}`, background: selectedAccountId === a.id ? `${a.color}15` : 'var(--bg)', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: selectedAccountId === a.id ? a.color : 'var(--text-muted)', fontFamily: 'inherit' }}>
+                {a.emoji} {a.handle}
+              </button>
+            ))}
+          </div>
+          {selectedAccountId && (
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Content will be written in <strong style={{ color: accounts.find(a => a.id === selectedAccountId)?.color }}>{accounts.find(a => a.id === selectedAccountId)?.brand_name}</strong> voice
+            </p>
+          )}
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
         {CONTENT_TYPES.map(ct => {
           const selected = orders[ct.id] !== undefined

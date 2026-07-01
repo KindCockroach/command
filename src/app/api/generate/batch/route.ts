@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { createContent } from '@/lib/db'
+import { createContent, getBrandAccount } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -162,8 +162,27 @@ function buildNotes(item: Record<string, string>, type: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { projectName, projectDescription, projectNotes, orders, count } = await req.json()
+  const { projectName, projectDescription, projectNotes, orders, count, accountId } = await req.json()
   if (!projectName) return NextResponse.json({ error: 'projectName required' }, { status: 400 })
+
+  // Load account brand DNA if specified
+  const account = accountId ? getBrandAccount(accountId) : null
+  const accountContext = account ? `
+ACCOUNT VOICE & BRAND DNA:
+Handle: ${account.handle} (${account.brand_name})
+Topic: ${account.topic}
+Mission: ${account.mission}
+Bio: ${account.bio}
+Underlying message: ${account.underlying_message}
+Problem: ${account.problem_message}
+Solution: ${account.solution_message}
+Transformation arc: ${account.transformation}
+Tone: ${account.tone}
+Beliefs: ${account.beliefs.join('; ')}
+${account.hooks.length ? `Pre-written hooks to riff on: ${account.hooks.join(' | ')}` : ''}
+${account.offer ? `Offer: ${account.offer} (${account.offer_price})` : ''}
+Write ALL content in this account's voice, not generic Mandi Beck voice.
+` : `VOICE: Mandi Beck — AI Mom educator. Direct, warm, no fluff. Speaks to exhausted moms done doing it all alone.`
 
   // Legacy: if no orders array, fall back to simple caption generation
   const contentOrders: ContentOrder[] = orders ?? [{ type: 'instagram_post', qty: count ?? 20 }]
@@ -174,7 +193,8 @@ export async function POST(req: NextRequest) {
     const promptFn = TYPE_PROMPTS[order.type]
     if (!promptFn) continue
 
-    const prompt = promptFn(projectName, projectDescription || '', projectNotes || '', order.qty)
+    const basePrompt = promptFn(projectName, projectDescription || '', projectNotes || '', order.qty)
+    const prompt = `${accountContext}\n\n${basePrompt}`
 
     try {
       const response = await client.responses.create({
@@ -186,6 +206,7 @@ export async function POST(req: NextRequest) {
       const raw = response.output_text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
       const items: Array<Record<string, string>> = JSON.parse(raw)
 
+      const accountTag = account ? account.handle.replace('@', '') : 'generic'
       const created = items.map(item =>
         createContent({
           title: item.title || `${order.type} — ${projectName}`,
@@ -193,8 +214,8 @@ export async function POST(req: NextRequest) {
           status: 'ready',
           type: order.type,
           platforms: [item.platform || order.type],
-          tags: ['generated', projectName.toLowerCase().replace(/\s+/g, '-'), order.type],
-          notes: buildNotes(item, order.type),
+          tags: ['generated', projectName.toLowerCase().replace(/\s+/g, '-'), order.type, accountTag],
+          notes: buildNotes(item, order.type) + (account ? ` | Account: ${account.handle}` : ''),
         })
       )
       allCreated.push(...created)
