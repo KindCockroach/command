@@ -282,6 +282,67 @@ function PlatformPreview({ form, onCopy }: { form: Partial<ContentPiece>; onCopy
     )
   }
 
+  // ── Medium ──────────────────────────────────────────────────────────
+  if (platform === 'medium') {
+    const subtitle = body.match(/Subtitle:\s*([^\n]+)/i)?.[1] ?? ''
+    const articleBody = body.match(/Body:\s*([\s\S]+?)(?:Tags:|$)/i)?.[1]?.trim() ?? body
+    const tags = meta.hashtags || (body.match(/Tags:\s*([^\n]+)/i)?.[1] ?? '')
+    return (
+      <div style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e5e5e5' }}>
+        {/* Medium header bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', borderBottom: '1px solid #e5e5e5' }}>
+          <svg viewBox="0 0 195 195" width="28" height="28"><circle cx="97.5" cy="97.5" r="97.5" fill="#000"/><path d="M54 68l8-9h71l8 9v3H54v-3zm0 57v3h87v-3l-8-9H62l-8 9zm0-29v3h87v-3H54zm0 14v3h87v-3H54z" fill="#fff"/></svg>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '13px', color: '#6b6b6b' }}>Draft</span>
+            <div style={{ background: '#1a8917', color: '#fff', fontSize: '12px', fontWeight: 700, padding: '6px 16px', borderRadius: '20px' }}>Publish</div>
+          </div>
+        </div>
+        {/* Article */}
+        <div style={{ padding: '40px 48px', maxWidth: '700px', margin: '0 auto' }}>
+          {/* Byline */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #e8448a, #6b2d6e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>M</span>
+            </div>
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>Mandi Beck</p>
+              <p style={{ fontSize: '11px', color: '#6b6b6b' }}>Published in AI Mom Education · 6 min read</p>
+            </div>
+          </div>
+          {/* Title */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: subtitle ? '10px' : '24px' }}>
+            <h1 style={{ fontSize: '32px', fontWeight: 900, color: '#1a1a1a', lineHeight: 1.2, fontFamily: 'Georgia, serif', flex: 1 }}>{title}</h1>
+            <CopyBtn text={title} label="title" />
+          </div>
+          {subtitle && (
+            <p style={{ fontSize: '20px', color: '#6b6b6b', lineHeight: 1.4, fontFamily: 'Georgia, serif', marginBottom: '24px', fontWeight: 400 }}>{subtitle}</p>
+          )}
+          {/* Divider */}
+          <hr style={{ border: 'none', borderTop: '1px solid #e5e5e5', marginBottom: '28px' }} />
+          {/* Body */}
+          <div style={{ fontSize: '18px', color: '#292929', lineHeight: 1.85, whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif' }}>
+            {articleBody}
+          </div>
+          {/* Tags */}
+          {tags && (
+            <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #e5e5e5', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {tags.split(/[,\s]+/).filter(Boolean).map((tag: string) => (
+                <span key={tag} style={{ fontSize: '13px', color: '#1a8917', background: '#f0faf0', padding: '4px 12px', borderRadius: '20px', fontWeight: 500 }}>{tag.replace(/^#/, '')}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', padding: '16px', borderTop: '1px solid #e5e5e5', flexWrap: 'wrap' }}>
+          <CopyBtn text={title} label="title" />
+          {subtitle && <CopyBtn text={subtitle} label="subtitle" />}
+          <CopyBtn text={articleBody} label="article" />
+          {tags && <CopyBtn text={tags} label="tags" />}
+          <CopyBtn text={`# ${title}\n\n${subtitle ? `*${subtitle}*\n\n` : ''}${articleBody}`} label="full article" />
+        </div>
+      </div>
+    )
+  }
+
   // ── Pinterest ────────────────────────────────────────────────────────
   if (platform === 'pinterest') {
     const pinTitle = body.match(/Pin title:\s*([^\n]+)/i)?.[1] ?? title
