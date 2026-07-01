@@ -3,6 +3,7 @@ import OpenAI from 'openai'
 import { createContent } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 

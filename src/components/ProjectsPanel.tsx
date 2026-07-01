@@ -107,9 +107,9 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
               <div style={{ background: 'rgba(107,45,110,0.07)', borderRadius: '10px', padding: '12px 14px' }}>
                 <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--purple)', marginBottom: '8px' }}>Generate ready-to-post content</p>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  {[10, 20, 30].map(n => (
+                  {[10, 20, 30, 50, 100].map(n => (
                     <button key={n} onClick={() => generatePosts(n)} disabled={generating}
-                      style={{ ...btnSt, background: 'var(--purple)', color: '#fff', opacity: generating ? 0.6 : 1 }}>
+                      style={{ ...btnSt, background: n >= 50 ? '#4A1F4C' : 'var(--purple)', color: '#fff', opacity: generating ? 0.6 : 1 }}>
                       {generating ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={12} />}
                       {n} posts
                     </button>
