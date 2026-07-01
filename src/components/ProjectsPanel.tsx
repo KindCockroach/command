@@ -30,7 +30,7 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
   const save = () => { onUpdate(project.id, draft); setEditing(false) }
 
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: `4px solid ${PRIORITY_COLORS[project.priority]}`, borderRadius: '12px', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: `4px solid ${PRIORITY_COLORS[project.priority]}`, borderRadius: '12px' }}>
       <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }} onClick={() => setOpen(v => !v)}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
@@ -83,7 +83,7 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
                   <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600 }}>{project.next_action}</p>
                 </div>
               )}
-              {project.notes && <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{project.notes}</p>}
+              {project.notes && <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{project.notes}</p>}
               <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Assistant: <strong>{project.assistant}</strong> · Progress: <strong>{project.progress}%</strong></p>
 
               {/* Generate content */}
