@@ -212,7 +212,7 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
           title: item.title || `${order.type} — ${projectName}`,
           description: buildDescription(item),
           status: 'ready',
-          type: order.type,
+          type: order.type as import('@/lib/db').ContentType,
           platforms: [item.platform || order.type],
           tags: ['generated', projectName.toLowerCase().replace(/\s+/g, '-'), order.type, accountTag],
           notes: buildNotes(item, order.type) + (account ? ` | Account: ${account.handle}` : ''),
