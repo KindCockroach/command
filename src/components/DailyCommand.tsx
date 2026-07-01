@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { Zap, Battery, BatteryLow, BatteryMedium, BatteryFull, Flame, CheckCheck, Sparkles, Loader2, ImageIcon, X } from 'lucide-react'
+import { Zap, Battery, BatteryLow, BatteryMedium, BatteryFull, Flame, CheckCheck, Sparkles, Loader2, ImageIcon } from 'lucide-react'
 
 type DailyData = {
   date: string
