@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Plus, ChevronDown, ChevronUp, Trash2, Edit3, CheckCheck, X, Sparkles, Loader2 } from 'lucide-react'
+import { Plus, ChevronDown, ChevronUp, Trash2, Edit3, CheckCheck, X } from 'lucide-react'
 import type { Project, ProjectStatus, ProjectPriority } from '@/lib/db'
+import ContentOrderForm from './ContentOrderForm'
 
 const STATUS_COLORS: Record<ProjectStatus, string> = {
   active: '#3daa7c', paused: '#f2a65a', complete: '#5a4fcf', archived: '#94a3b8'
@@ -23,28 +24,10 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(project)
-  const [generating, setGenerating] = useState(false)
-  const [genResult, setGenResult] = useState<{ created: number } | null>(null)
+  const [showGenerator, setShowGenerator] = useState(false)
+  const [lastGenCount, setLastGenCount] = useState<number | null>(null)
 
   const save = () => { onUpdate(project.id, draft); setEditing(false) }
-
-  const generatePosts = async (count: number) => {
-    setGenerating(true)
-    setGenResult(null)
-    try {
-      const res = await fetch('/api/generate/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectName: project.name, projectDescription: project.description, projectNotes: project.notes, count }),
-      })
-      const data = await res.json()
-      setGenResult({ created: data.created ?? 0 })
-    } catch {
-      setGenResult({ created: 0 })
-    } finally {
-      setGenerating(false)
-    }
-  }
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: `4px solid ${PRIORITY_COLORS[project.priority]}`, borderRadius: '12px', overflow: 'hidden' }}>
@@ -103,23 +86,26 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
               {project.notes && <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{project.notes}</p>}
               <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Assistant: <strong>{project.assistant}</strong> · Progress: <strong>{project.progress}%</strong></p>
 
-              {/* Generate content batch */}
+              {/* Generate content */}
               <div style={{ background: 'rgba(107,45,110,0.07)', borderRadius: '10px', padding: '12px 14px' }}>
-                <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--purple)', marginBottom: '8px' }}>Generate ready-to-post content</p>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  {[10, 20, 30, 50, 100].map(n => (
-                    <button key={n} onClick={() => generatePosts(n)} disabled={generating}
-                      style={{ ...btnSt, background: n >= 50 ? '#4A1F4C' : 'var(--purple)', color: '#fff', opacity: generating ? 0.6 : 1 }}>
-                      {generating ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={12} />}
-                      {n} posts
-                    </button>
-                  ))}
-                  {genResult && (
-                    <span style={{ fontSize: '11px', color: '#3daa7c', fontWeight: 700 }}>
-                      ✓ {genResult.created} posts added to Content Pipeline → Ready to Publish
-                    </span>
-                  )}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showGenerator ? '12px' : '0' }}>
+                  <div>
+                    <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--purple)' }}>Generate Content</p>
+                    {lastGenCount && !showGenerator && <p style={{ fontSize: '11px', color: '#3daa7c', marginTop: '2px' }}>✓ {lastGenCount} assets in Content Pipeline</p>}
+                  </div>
+                  <button onClick={() => setShowGenerator(v => !v)}
+                    style={{ ...btnSt, background: 'var(--purple)', color: '#fff', fontSize: '11px' }}>
+                    {showGenerator ? 'Close' : '+ Order Content'}
+                  </button>
                 </div>
+                {showGenerator && (
+                  <ContentOrderForm
+                    projectName={project.name}
+                    projectDescription={project.description}
+                    projectNotes={project.notes}
+                    onDone={(count) => { setLastGenCount(count); setShowGenerator(false) }}
+                  />
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>

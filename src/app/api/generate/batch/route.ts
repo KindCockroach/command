@@ -7,60 +7,201 @@ export const maxDuration = 300
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
+export type ContentOrder = {
+  type: string
+  qty: number
+}
+
+const TYPE_PROMPTS: Record<string, (project: string, desc: string, notes: string, qty: number) => string> = {
+  instagram_post: (p, d, n, q) => `
+Generate ${q} Instagram posts for project "${p}".
+Description: ${d}. Notes: ${n}.
+Each post must have:
+- "body": full caption with line breaks, emoji, and CTA
+- "hashtags": string of 20–30 relevant hashtags (space-separated, include niche + broad)
+- "alt_text": 1-sentence image description for accessibility
+- "angle": hook angle used
+
+Voice: Mandi Beck — AI Mom educator. Direct, warm, no fluff. Speaks to exhausted moms done doing it all alone.
+Vary angles: story, permission slip, objection buster, POV hook, direct offer, behind the scenes, real talk.
+Return JSON array. Each item: { title, body, hashtags, alt_text, angle, platform: "instagram" }`,
+
+  instagram_reel: (p, d, n, q) => `
+Generate ${q} Instagram Reel scripts for project "${p}".
+Description: ${d}. Notes: ${n}.
+Each reel must have:
+- "hook": opening line spoken on camera (first 3 seconds — must stop the scroll)
+- "script": full spoken script (15–30 seconds, punchy, conversational)
+- "caption": post caption with CTA
+- "hashtags": 15–20 hashtags
+- "b_roll": list of 3–5 suggested visual cuts/text overlays
+
+Voice: Mandi Beck. Relatable mom energy, confident, funny when natural.
+Return JSON array. Each item: { title, hook, script, caption, hashtags, b_roll, angle, platform: "instagram_reel" }`,
+
+  youtube: (p, d, n, q) => `
+Generate ${q} YouTube video packages for project "${p}".
+Description: ${d}. Notes: ${n}.
+Each package must have:
+- "headline": SEO-optimized video title (under 70 chars, includes keyword)
+- "description": full YouTube description (150–300 words, includes timestamps placeholder, links, CTA, keywords)
+- "tags": comma-separated YouTube tags (20–30 tags)
+- "thumbnail_concept": visual description of thumbnail (text overlay + background + expression)
+- "hook": opening 30 seconds spoken script
+
+Return JSON array. Each item: { title, headline, description, tags, thumbnail_concept, hook, platform: "youtube" }`,
+
+  medium_article: (p, d, n, q) => `
+Generate ${q} Medium articles for project "${p}".
+Description: ${d}. Notes: ${n}.
+Each article must have:
+- "title": clickable headline (curiosity + keyword)
+- "subtitle": supporting sentence under title
+- "body": full 600–900 word article (use subheadings, short paragraphs, conversational but smart tone)
+- "tags": 5 Medium tags
+
+Voice: Mandi Beck. Authoritative AI Mom educator. Teaches moms to use AI without overwhelm.
+Return JSON array. Each item: { title, subtitle, body, tags, platform: "medium" }`,
+
+  substack: (p, d, n, q) => `
+Generate ${q} Substack newsletter issues for project "${p}".
+Description: ${d}. Notes: ${n}.
+Each issue must have:
+- "subject_line": email subject (under 50 chars, high open rate)
+- "preview_text": preview snippet shown in inbox (under 90 chars)
+- "body": full newsletter body (400–700 words, personal tone, 1 main idea, practical tip, CTA at end)
+- "ps": a P.S. line (personal, often the best CTA)
+
+Voice: Mandi Beck writing to her mom community. Warm, honest, actionable.
+Return JSON array. Each item: { title, subject_line, preview_text, body, ps, platform: "substack" }`,
+
+  tiktok: (p, d, n, q) => `
+Generate ${q} TikTok video scripts for project "${p}".
+Description: ${d}. Notes: ${n}.
+Each script must have:
+- "hook": first spoken line (under 3 seconds, must stop scroll — use pattern interrupt or bold claim)
+- "script": full 30–60 second spoken script (casual, fast-paced, punchy)
+- "caption": TikTok caption with CTA (short — 1-2 sentences max)
+- "hashtags": 5–8 hashtags
+- "trending_sound_vibe": description of the audio energy that fits (e.g. "chaotic girl boss", "emotional reveal", "hype build")
+
+Voice: Mandi Beck. Mom energy. Relatable chaos with a confident solution.
+Return JSON array. Each item: { title, hook, script, caption, hashtags, trending_sound_vibe, angle, platform: "tiktok" }`,
+
+  email: (p, d, n, q) => `
+Generate ${q} marketing emails for project "${p}".
+Description: ${d}. Notes: ${n}.
+Each email must have:
+- "subject_line": email subject line (creates urgency or curiosity, under 50 chars)
+- "preview_text": preview text (under 90 chars)
+- "body": full email body (200–400 words, one clear CTA, personal tone, no corporate speak)
+- "cta_button_text": text for the main CTA button (5 words or less)
+
+Voice: Mandi Beck. Like a text from a smart friend who has your back.
+Return JSON array. Each item: { title, subject_line, preview_text, body, cta_button_text, platform: "email" }`,
+
+  pinterest: (p, d, n, q) => `
+Generate ${q} Pinterest pin packages for project "${p}".
+Description: ${d}. Notes: ${n}.
+Each pin must have:
+- "pin_title": SEO title for the pin (under 100 chars, keyword-rich)
+- "description": pin description (150–300 chars, includes keywords + CTA)
+- "board_suggestion": which board this fits best
+- "image_concept": visual description of the pin image (text overlay, colors, layout)
+- "keywords": 10 keyword phrases for SEO
+
+Return JSON array. Each item: { title, pin_title, description, board_suggestion, image_concept, keywords, platform: "pinterest" }`,
+
+  facebook_post: (p, d, n, q) => `
+Generate ${q} Facebook posts for project "${p}".
+Description: ${d}. Notes: ${n}.
+Each post must have:
+- "body": full post (can be longer than Instagram — storytelling format works well, end with question or CTA)
+- "angle": hook type used
+
+Voice: Mandi Beck. Community-first, conversational, invites engagement.
+Return JSON array. Each item: { title, body, angle, platform: "facebook" }`,
+
+  threads: (p, d, n, q) => `
+Generate ${q} Threads posts for project "${p}".
+Description: ${d}. Notes: ${n}.
+Each post must have:
+- "body": short punchy post (under 500 chars, no hashtags needed, conversational)
+- "angle": hook type
+
+Voice: Mandi Beck. Unfiltered thoughts, hot takes, real mom perspective.
+Return JSON array. Each item: { title, body, angle, platform: "threads" }`,
+}
+
+function buildDescription(item: Record<string, string>): string {
+  const parts = []
+  if (item.body) parts.push(item.body)
+  if (item.caption) parts.push(`\n\nCaption: ${item.caption}`)
+  if (item.hook) parts.push(`\n\nHook: ${item.hook}`)
+  if (item.script) parts.push(`\n\nScript: ${item.script}`)
+  if (item.headline) parts.push(`\n\nHeadline: ${item.headline}`)
+  if (item.description) parts.push(`\n\nDescription: ${item.description}`)
+  if (item.subject_line) parts.push(`\n\nSubject: ${item.subject_line}`)
+  if (item.preview_text) parts.push(`\n\nPreview: ${item.preview_text}`)
+  return parts.join('') || item.title || 'Generated content'
+}
+
+function buildNotes(item: Record<string, string>, type: string): string {
+  const extras: string[] = [`Type: ${type}`]
+  if (item.hashtags) extras.push(`Hashtags: ${item.hashtags}`)
+  if (item.tags) extras.push(`Tags: ${item.tags}`)
+  if (item.angle) extras.push(`Angle: ${item.angle}`)
+  if (item.alt_text) extras.push(`Alt text: ${item.alt_text}`)
+  if (item.b_roll) extras.push(`B-roll: ${Array.isArray(item.b_roll) ? item.b_roll.join(', ') : item.b_roll}`)
+  if (item.thumbnail_concept) extras.push(`Thumbnail: ${item.thumbnail_concept}`)
+  if (item.cta_button_text) extras.push(`CTA button: ${item.cta_button_text}`)
+  if (item.board_suggestion) extras.push(`Pinterest board: ${item.board_suggestion}`)
+  if (item.ps) extras.push(`P.S.: ${item.ps}`)
+  if (item.trending_sound_vibe) extras.push(`Sound vibe: ${item.trending_sound_vibe}`)
+  return extras.join(' | ')
+}
+
 export async function POST(req: NextRequest) {
-  const { projectName, projectDescription, projectNotes, count = 20 } = await req.json()
+  const { projectName, projectDescription, projectNotes, orders, count } = await req.json()
   if (!projectName) return NextResponse.json({ error: 'projectName required' }, { status: 400 })
 
-  const prompt = `You are Mandi Beck's Content Director at RISE Station. Mandi is an AI Mom educator who helps overwhelmed moms use AI to reclaim their time. Her brand voice: direct, warm, zero fluff, speaks to tired moms who've had it.
+  // Legacy: if no orders array, fall back to simple caption generation
+  const contentOrders: ContentOrder[] = orders ?? [{ type: 'instagram_post', qty: count ?? 20 }]
 
-Project: ${projectName}
-Description: ${projectDescription || ''}
-Notes: ${projectNotes || ''}
+  const allCreated = []
 
-Generate exactly ${count} ready-to-post social media captions for this project. Each should be scroll-stopping, platform-native, and speak directly to the exhausted, behind-the-scenes mom who is DONE doing it all manually.
+  for (const order of contentOrders) {
+    const promptFn = TYPE_PROMPTS[order.type]
+    if (!promptFn) continue
 
-Return a JSON array of objects. Each object must have:
-- "title": short card label (under 60 chars, describes the angle)
-- "caption": the full ready-to-post caption (with line breaks, emoji where natural, CTA at end)
-- "platform": one of "instagram", "facebook", "tiktok", "threads", "email_subject"
-- "angle": the hook angle used (e.g. "Come Cranky", "Permission slip", "Real talk", "Before/after", "Story", "Objection buster", "Trending audio hook")
+    const prompt = promptFn(projectName, projectDescription || '', projectNotes || '', order.qty)
 
-Vary the angles heavily. Include a mix of:
-- Short punchy hooks (1-3 sentences + CTA)
-- Story-format (relatable scenario → solution → CTA)
-- Permission slips ("You don't have to...")
-- Direct sales (unapologetic "here's what you get")
-- Objection busters ("But I don't have time to learn AI" → answer)
-- Trending audio formats (POV:, Tell me you're a mom without telling me...)
-- Behind the scenes
-- Real results / proof
-
-Return ONLY the JSON array, no markdown, no explanation.`
-
-  try {
-    const response = await client.responses.create({
-      model: 'gpt-4o',
-      instructions: 'You are a social media content expert. Return only valid JSON arrays.',
-      input: prompt,
-    })
-
-    const raw = response.output_text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
-    const posts: Array<{ title: string; caption: string; platform: string; angle: string }> = JSON.parse(raw)
-
-    const created = posts.map(p =>
-      createContent({
-        title: p.title,
-        description: p.caption,
-        status: 'ready',
-        type: 'caption',
-        platforms: [p.platform],
-        tags: ['generated', projectName.toLowerCase().replace(/\s+/g, '-'), p.angle.toLowerCase().replace(/\s+/g, '-')],
-        notes: `Angle: ${p.angle} | Project: ${projectName}`,
+    try {
+      const response = await client.responses.create({
+        model: 'gpt-4o',
+        instructions: 'You are a professional content strategist. Return only valid JSON arrays, no markdown, no explanation.',
+        input: prompt,
       })
-    )
 
-    return NextResponse.json({ created: created.length, posts: created })
-  } catch (e: unknown) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Generation failed' }, { status: 500 })
+      const raw = response.output_text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
+      const items: Array<Record<string, string>> = JSON.parse(raw)
+
+      const created = items.map(item =>
+        createContent({
+          title: item.title || `${order.type} — ${projectName}`,
+          description: buildDescription(item),
+          status: 'ready',
+          type: order.type,
+          platforms: [item.platform || order.type],
+          tags: ['generated', projectName.toLowerCase().replace(/\s+/g, '-'), order.type],
+          notes: buildNotes(item, order.type),
+        })
+      )
+      allCreated.push(...created)
+    } catch (e) {
+      console.error(`Failed generating ${order.type}:`, e)
+    }
   }
+
+  return NextResponse.json({ created: allCreated.length, posts: allCreated })
 }
