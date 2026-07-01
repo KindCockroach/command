@@ -1,8 +1,324 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { ContentPiece } from '@/lib/db'
-import { X, Trash2, CheckCircle, Send, Repeat2, Sparkles, Loader2, Copy, Volume2, Film } from 'lucide-react'
+import { X, Trash2, CheckCircle, Send, Sparkles, Loader2, Copy, Volume2, Film, Eye, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal } from 'lucide-react'
 import FileUpload from '../FileUpload'
+
+function parseMeta(notes: string) {
+  const get = (key: string) => { const m = notes.match(new RegExp(`${key}:\\s*([^|]+)`)); return m ? m[1].trim() : '' }
+  return {
+    type: get('Type'),
+    hashtags: get('Hashtags'),
+    angle: get('Angle'),
+    altText: get('Alt text'),
+    bRoll: get('B-roll'),
+    subject: get('Subject'),
+    preview: get('Preview'),
+    cta: get('CTA button'),
+    board: get('Pinterest board'),
+    ps: get('P\\.S\\.'),
+    sound: get('Sound vibe'),
+    account: get('Account'),
+  }
+}
+
+function PlatformPreview({ form, onCopy }: { form: Partial<ContentPiece>; onCopy: (text: string) => void }) {
+  const [copied, setCopied] = useState('')
+  const platforms = (form.platforms ?? []) as string[]
+  const meta = parseMeta(form.notes ?? '')
+  const platform = meta.type?.replace('_post','').replace('_reel','') || platforms[0] || 'instagram'
+  const body = form.description ?? ''
+  const title = form.title ?? ''
+
+  const copy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(label)
+    setTimeout(() => setCopied(''), 2000)
+    onCopy(text)
+  }
+
+  const CopyBtn = ({ text, label }: { text: string; label: string }) => (
+    <button onClick={() => copy(text, label)} style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '6px', border: 'none', background: copied === label ? '#3daa7c' : 'rgba(255,255,255,0.15)', color: '#fff', cursor: 'pointer', fontWeight: 700, backdropFilter: 'blur(4px)', transition: 'background 0.2s' }}>
+      {copied === label ? '✓ Copied' : `Copy ${label}`}
+    </button>
+  )
+
+  // ── Instagram / Threads ──────────────────────────────────────────────
+  if (platform === 'instagram' || platform === 'threads' || meta.type === 'instagram_post') {
+    const isReel = meta.type === 'instagram_reel'
+    const hook = meta.type === 'instagram_reel' ? body.match(/Hook:\s*([^\n]+)/)?.[1] ?? '' : ''
+    const script = meta.type === 'instagram_reel' ? body.match(/Script:\s*([\s\S]+?)(?:Caption:|$)/)?.[1]?.trim() ?? '' : ''
+    const caption = meta.type === 'instagram_reel' ? (body.match(/Caption:\s*([\s\S]+)/)?.[1]?.trim() ?? body) : body
+    const tags = meta.hashtags ? meta.hashtags.split(/\s+/).filter(t => t.startsWith('#')) : []
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {isReel && hook && (
+          <div style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#f2a65a' }}>Hook (first 3 sec)</span>
+              <CopyBtn text={hook} label="hook" />
+            </div>
+            <p style={{ fontSize: '20px', fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{hook}</p>
+          </div>
+        )}
+        {isReel && script && (
+          <div style={{ background: '#0f0f23', borderRadius: '16px', padding: '20px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#e8448a' }}>Script</span>
+              <CopyBtn text={script} label="script" />
+            </div>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{script}</p>
+          </div>
+        )}
+        {/* Instagram card */}
+        <div style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', border: '1px solid #dbdbdb', maxWidth: '468px', margin: '0 auto', width: '100%' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '14px', fontWeight: 900, color: '#fff' }}>M</span>
+              </div>
+              <div>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: '#000', lineHeight: 1 }}>aimomeducation</p>
+                {meta.account && <p style={{ fontSize: '10px', color: '#8e8e8e', lineHeight: 1, marginTop: '2px' }}>{meta.account}</p>}
+              </div>
+            </div>
+            <MoreHorizontal size={20} color="#000" />
+          </div>
+          {/* Image placeholder */}
+          <div style={{ background: 'linear-gradient(135deg, #e8448a15, #6b2d6e15)', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid #efefef', borderBottom: '1px solid #efefef' }}>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: '28px', marginBottom: '8px' }}>🖼</p>
+              {meta.altText && <p style={{ fontSize: '11px', color: '#8e8e8e', padding: '0 24px', lineHeight: 1.4 }}>{meta.altText}</p>}
+            </div>
+          </div>
+          {/* Actions */}
+          <div style={{ padding: '8px 16px 4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '14px' }}>
+              <Heart size={24} color="#000" />
+              <MessageCircle size={24} color="#000" />
+              <Share2 size={24} color="#000" />
+            </div>
+            <Bookmark size={24} color="#000" />
+          </div>
+          {/* Caption */}
+          <div style={{ padding: '4px 16px 12px' }}>
+            <p style={{ fontSize: '14px', color: '#000', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              <span style={{ fontWeight: 700 }}>aimomeducation </span>{caption}
+            </p>
+            {tags.length > 0 && (
+              <p style={{ fontSize: '13px', color: '#00376b', marginTop: '6px', lineHeight: 1.6 }}>{tags.join(' ')}</p>
+            )}
+            {meta.angle && <p style={{ fontSize: '10px', color: '#8e8e8e', marginTop: '6px' }}>Angle: {meta.angle}</p>}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <CopyBtn text={caption} label="caption" />
+          {tags.length > 0 && <CopyBtn text={tags.join(' ')} label="hashtags" />}
+          {caption && tags.length > 0 && <CopyBtn text={`${caption}\n\n${tags.join(' ')}`} label="full post" />}
+        </div>
+      </div>
+    )
+  }
+
+  // ── TikTok ──────────────────────────────────────────────────────────
+  if (platform === 'tiktok') {
+    const hook = body.match(/Hook:\s*([^\n]+)/)?.[1] ?? ''
+    const script = body.match(/Script:\s*([\s\S]+?)(?:Caption:|$)/)?.[1]?.trim() ?? body
+    const caption = body.match(/Caption:\s*([^\n]+)/)?.[1] ?? ''
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {hook && (
+          <div style={{ background: 'linear-gradient(135deg, #010101 0%, #1a1a1a 100%)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(255,255,255,0.08)', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '12px', right: '12px' }}><CopyBtn text={hook} label="hook" /></div>
+            <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#69C9D0', display: 'block', marginBottom: '10px' }}>Hook</span>
+            <p style={{ fontSize: '22px', fontWeight: 900, color: '#fff', lineHeight: 1.3 }}>{hook}</p>
+          </div>
+        )}
+        <div style={{ background: '#161823', borderRadius: '16px', padding: '20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#EE1D52' }}>Script</span>
+            <CopyBtn text={script} label="script" />
+          </div>
+          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{script}</p>
+        </div>
+        {caption && (
+          <div style={{ background: '#0f0f14', borderRadius: '12px', padding: '14px 16px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#69C9D0' }}>Caption</span>
+              <CopyBtn text={caption} label="caption" />
+            </div>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>{caption}</p>
+            {meta.sound && <p style={{ fontSize: '10px', color: '#EE1D52', marginTop: '8px' }}>🎵 Sound vibe: {meta.sound}</p>}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── Email ────────────────────────────────────────────────────────────
+  if (platform === 'email') {
+    const subject = meta.subject || title
+    const previewText = meta.preview
+    const cta = meta.cta
+    return (
+      <div style={{ background: '#f4f4f5', borderRadius: '16px', padding: '16px' }}>
+        {/* Email client chrome */}
+        <div style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.08)' }}>
+          <div style={{ background: '#f9f9f9', padding: '12px 16px', borderBottom: '1px solid #e5e5e5' }}>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff5f57' }} />
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#febc2e' }} />
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#28c840' }} />
+            </div>
+            <p style={{ fontSize: '11px', color: '#8e8e8e', marginBottom: '2px' }}>From: Mandi Beck &lt;hi@aimomeducation.com&gt;</p>
+            {previewText && <p style={{ fontSize: '10px', color: '#b0b0b0', fontStyle: 'italic' }}>{previewText}</p>}
+          </div>
+          <div style={{ padding: '20px 24px' }}>
+            {subject && (
+              <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #efefef' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1a1a1a', lineHeight: 1.3, flex: 1, marginRight: '12px' }}>{subject}</h2>
+                  <CopyBtn text={subject} label="subject" />
+                </div>
+              </div>
+            )}
+            <div style={{ fontSize: '15px', color: '#333', lineHeight: 1.8, whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif' }}>{body}</div>
+            {cta && (
+              <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                <span style={{ display: 'inline-block', background: '#e8448a', color: '#fff', padding: '12px 28px', borderRadius: '8px', fontSize: '14px', fontWeight: 700 }}>{cta}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
+          {subject && <CopyBtn text={subject} label="subject line" />}
+          <CopyBtn text={body} label="body" />
+          {subject && <CopyBtn text={`Subject: ${subject}\n\n${body}`} label="full email" />}
+        </div>
+      </div>
+    )
+  }
+
+  // ── YouTube ──────────────────────────────────────────────────────────
+  if (platform === 'youtube') {
+    const headline = body.match(/Headline:\s*([^\n]+)/)?.[1] ?? title
+    const desc = body.match(/Description:\s*([\s\S]+?)(?:Tags:|Hook:|$)/)?.[1]?.trim() ?? body
+    const hook = body.match(/Hook:\s*([\s\S]+)/)?.[1]?.trim() ?? ''
+    const thumbnail = body.match(/Thumbnail.*?:\s*([^\n|]+)/)?.[1]?.trim() ?? ''
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e5e5e5' }}>
+          <div style={{ background: '#1a1a2e', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            <div style={{ position: 'absolute', bottom: '12px', right: '12px', background: '#000', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>0:00</div>
+            {thumbnail ? (
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', padding: '16px', textAlign: 'center', fontStyle: 'italic' }}>🎨 {thumbnail}</p>
+            ) : (
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 0, height: 0, borderTop: '14px solid transparent', borderBottom: '14px solid transparent', borderLeft: '22px solid rgba(255,255,255,0.8)', marginLeft: '4px' }} />
+              </div>
+            )}
+          </div>
+          <div style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0f0f0f', lineHeight: 1.3, flex: 1 }}>{headline}</h3>
+              <CopyBtn text={headline} label="title" />
+            </div>
+            <p style={{ fontSize: '11px', color: '#606060', marginBottom: '10px' }}>aimomeducation • 1.2K views • Just now</p>
+            {desc && (
+              <div style={{ fontSize: '13px', color: '#0f0f0f', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: '120px', overflow: 'hidden', maskImage: 'linear-gradient(to bottom, black 70%, transparent)' }}>{desc}</div>
+            )}
+          </div>
+        </div>
+        {hook && (
+          <div style={{ background: '#0f0f0f', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#FF0000' }}>Opening Hook (30 sec)</span>
+              <CopyBtn text={hook} label="hook" />
+            </div>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{hook}</p>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <CopyBtn text={headline} label="title" />
+          {desc && <CopyBtn text={desc} label="description" />}
+          {meta.hashtags && <CopyBtn text={meta.hashtags} label="tags" />}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Substack / Newsletter ────────────────────────────────────────────
+  if (platform === 'substack' || platform === 'beehiiv') {
+    const subject = meta.subject || title
+    const previewText = meta.preview
+    const ps = meta.ps
+    const color = platform === 'substack' ? '#FF6719' : '#2563eb'
+    return (
+      <div style={{ background: '#fafaf8', borderRadius: '16px', padding: '16px' }}>
+        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e5e5', overflow: 'hidden' }}>
+          <div style={{ background: color, padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 800, color: '#fff', fontSize: '14px' }}>{platform === 'substack' ? 'Substack' : 'beehiiv'}</span>
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>AI Mom Newsletter</span>
+          </div>
+          <div style={{ padding: '24px 28px' }}>
+            {subject && <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#1a1a1a', lineHeight: 1.2, marginBottom: '8px' }}>{subject}</h2>}
+            {previewText && <p style={{ fontSize: '13px', color: '#888', fontStyle: 'italic', marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid #efefef' }}>{previewText}</p>}
+            <div style={{ fontSize: '16px', color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif' }}>{body}</div>
+            {ps && (
+              <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #efefef' }}>
+                <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.6, fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>P.S. {ps}</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
+          {subject && <CopyBtn text={subject} label="subject" />}
+          <CopyBtn text={body} label="body" />
+          {ps && <CopyBtn text={ps} label="P.S." />}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Pinterest ────────────────────────────────────────────────────────
+  if (platform === 'pinterest') {
+    const pinTitle = body.match(/Pin title:\s*([^\n]+)/i)?.[1] ?? title
+    const desc = body.match(/Description:\s*([^\n|]+)/i)?.[1] ?? body
+    const imgConcept = body.match(/Image concept:\s*([^\n]+)/i)?.[1] ?? ''
+    return (
+      <div style={{ maxWidth: '320px', margin: '0 auto' }}>
+        <div style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.1)' }}>
+          <div style={{ background: 'linear-gradient(180deg, #e8448a15 0%, #6b2d6e15 100%)', aspectRatio: '2/3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+            <p style={{ fontSize: '11px', color: '#8e8e8e', textAlign: 'center', fontStyle: 'italic', lineHeight: 1.5 }}>📌 {imgConcept || 'Image here'}</p>
+          </div>
+          <div style={{ padding: '12px 14px' }}>
+            <p style={{ fontSize: '14px', fontWeight: 800, color: '#111', lineHeight: 1.3, marginBottom: '6px' }}>{pinTitle}</p>
+            <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.5 }}>{desc.slice(0, 150)}{desc.length > 150 ? '…' : ''}</p>
+            {meta.board && <p style={{ fontSize: '10px', color: '#e60023', marginTop: '8px', fontWeight: 700 }}>📌 {meta.board}</p>}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
+          <CopyBtn text={pinTitle} label="title" />
+          <CopyBtn text={desc} label="description" />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Fallback / generic ───────────────────────────────────────────────
+  return (
+    <div style={{ background: 'var(--surface-raised)', borderRadius: '16px', padding: '24px', border: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.3, flex: 1, marginRight: '12px' }}>{title}</h3>
+        <CopyBtn text={body} label="content" />
+      </div>
+      <p style={{ fontSize: '15px', color: 'var(--ink)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{body}</p>
+      {meta.hashtags && <p style={{ fontSize: '13px', color: 'var(--hot-pink)', marginTop: '12px', lineHeight: 1.6 }}>{meta.hashtags}</p>}
+    </div>
+  )
+}
 
 const PLATFORMS = ['youtube', 'instagram', 'tiktok', 'facebook', 'linkedin', 'pinterest', 'beehiiv', 'substack', 'email']
 const TYPES = ['video', 'podcast', 'post', 'image', 'workshop', 'other'] as const
@@ -25,7 +341,7 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
   const [form, setForm] = useState<Partial<ContentPiece>>({})
   const [saving, setSaving] = useState(false)
   const [tagInput, setTagInput] = useState('')
-  const [tab, setTab] = useState<'edit' | 'expand' | 'voice' | 'media'>('edit')
+  const [tab, setTab] = useState<'edit' | 'preview' | 'expand' | 'voice' | 'media'>('edit')
   const [expanding, setExpanding] = useState(false)
   const [expanded, setExpanded] = useState('')
   const [synthesizing, setSynthesizing] = useState(false)
@@ -123,12 +439,15 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,31,59,0.5)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
-      <div style={{ position: 'relative', width: '100%', maxWidth: '720px', maxHeight: '92vh', overflowY: 'auto', borderRadius: '20px', background: 'var(--surface)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: tab === 'preview' ? '860px' : '720px', maxHeight: '92vh', overflowY: 'auto', borderRadius: '20px', background: 'var(--surface)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)', transition: 'max-width 0.25s ease' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px 14px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <button style={TAB_STYLE(tab === 'edit')} onClick={() => setTab('edit')}>Edit</button>
+            <button style={TAB_STYLE(tab === 'preview')} onClick={() => setTab('preview')}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Eye size={11} /> Preview</span>
+            </button>
             <button style={TAB_STYLE(tab === 'expand')} onClick={() => setTab('expand')}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Sparkles size={11} /> 1→30 Expand</span>
             </button>
@@ -183,6 +502,17 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
             </div>
             <div>{lbl('Notes / Context')}<textarea value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} rows={3} placeholder="Ideas, links, reminders, voice memo summary…" style={{ ...fieldStyle, resize: 'none' }} onFocus={e => (e.target.style.borderColor = 'var(--hot-pink)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
             <div>{lbl('Transcript / Script — paste raw content here')}<textarea value={form.transcript ?? ''} onChange={e => set('transcript', e.target.value)} rows={6} placeholder="Raw transcript from Riverside, voice memo, or CapCut export…" style={{ ...fieldStyle, resize: 'vertical', fontFamily: 'monospace', fontSize: '12px' }} onFocus={e => (e.target.style.borderColor = 'var(--hot-pink)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
+          </div>
+        )}
+
+        {/* ── PREVIEW TAB ── */}
+        {tab === 'preview' && (
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingBottom: '4px' }}>
+              <Eye size={14} color="var(--hot-pink)" />
+              <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Platform Preview — {((form.platforms ?? []) as string[])[0] ?? 'post'}</span>
+            </div>
+            <PlatformPreview form={form} onCopy={() => {}} />
           </div>
         )}
 
