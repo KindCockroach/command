@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { repurposeContent, callGPT, generateScript, enrichIdea, generateDailyBriefing, routeToAgent, listVoices, GPTRole } from '@/lib/ai'
+import { repurposeContent, callGPT, callGPTWithImage, generateScript, enrichIdea, generateDailyBriefing, routeToAgent, listVoices, GPTRole } from '@/lib/ai'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { action, role, message, title, description, notes, transcript, platforms, topic, duration, pipeline_summary, systemOverride } = body
+  const { action, role, message, image, title, description, notes, transcript, platforms, topic, duration, pipeline_summary, systemOverride } = body
 
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-your-key-here') {
     return NextResponse.json({ error: 'OPENAI_API_KEY not set in .env.local' }, { status: 503 })
@@ -36,7 +36,10 @@ export async function POST(req: NextRequest) {
 
       default:
         // Allow role+message without explicit action (used by Assistants panel + StationChat)
-        if (role && message) {
+        if (role && (message || image)) {
+          if (image) {
+            return NextResponse.json({ result: await callGPTWithImage(role as GPTRole, message ?? '', image, systemOverride) })
+          }
           return NextResponse.json({ result: await callGPT(role as GPTRole, message, systemOverride) })
         }
         return NextResponse.json({ error: 'unknown action' }, { status: 400 })

@@ -317,6 +317,33 @@ export async function callGPT(role: GPTRole, userMessage: string, instructionsOv
   return output
 }
 
+export async function callGPTWithImage(role: GPTRole, userMessage: string, imageBase64: string, instructionsOverride?: string): Promise<string> {
+  const c = client()
+  const baseInstructions = instructionsOverride ?? SYSTEM_PROMPTS[role]
+
+  // Extract mime type and data from data URL
+  const match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/)
+  if (!match) throw new Error('Invalid image format')
+  const [, mediaType, data] = match
+
+  const response = await c.responses.create({
+    model: 'gpt-4o',
+    instructions: baseInstructions,
+    input: [
+      {
+        type: 'message',
+        role: 'user',
+        content: [
+          { type: 'input_image', image_url: `data:${mediaType};base64,${data}` },
+          { type: 'input_text', text: userMessage || 'Analyze this image and tell me how it relates to my business.' },
+        ],
+      },
+    ] as Parameters<typeof c.responses.create>[0]['input'],
+  })
+
+  return response.output_text ?? ''
+}
+
 // ── Agent router — reads the situation and routes to the right agent ───────────
 export async function routeToAgent(message: string): Promise<{ agent: GPTRole; reason: string; handoff: string }> {
   const c = client()

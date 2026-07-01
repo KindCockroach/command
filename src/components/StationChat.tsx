@@ -1,10 +1,11 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
-import { MessageCircle, X, Send, Loader2, Sparkles } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { MessageCircle, X, Send, Loader2, Sparkles, Paperclip, Image as ImageIcon } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'ai'
   text: string
+  image?: string // base64 data URL
   ts: number
 }
 
@@ -30,12 +31,15 @@ RULES:
 export default function StationChat() {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'ai', text: "Hey Mandi 👋 I'm your RISE Station AI. Drop an idea, ask me anything, or tell me what you're working on.", ts: Date.now() }
+    { role: 'ai', text: "Hey Mandi 👋 I'm your RISE Station AI. Drop an idea, image, or ask me anything.", ts: Date.now() }
   ])
   const [input, setInput] = useState('')
+  const [pendingImage, setPendingImage] = useState<string | null>(null)
+  const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (open) {
@@ -44,11 +48,31 @@ export default function StationChat() {
     }
   }, [open, messages])
 
+  const loadImage = useCallback((file: File) => {
+    const reader = new FileReader()
+    reader.onload = e => setPendingImage(e.target?.result as string)
+    reader.readAsDataURL(file)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file?.type.startsWith('image/')) loadImage(file)
+  }, [loadImage])
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'))
+    if (item) { const file = item.getAsFile(); if (file) loadImage(file) }
+  }, [loadImage])
+
   const send = async () => {
-    if (!input.trim() || loading) return
+    if ((!input.trim() && !pendingImage) || loading) return
     const text = input.trim()
+    const image = pendingImage
     setInput('')
-    setMessages(m => [...m, { role: 'user', text, ts: Date.now() }])
+    setPendingImage(null)
+    setMessages(m => [...m, { role: 'user', text: text || '(image)', image: image ?? undefined, ts: Date.now() }])
     setLoading(true)
 
     try {
@@ -57,7 +81,8 @@ export default function StationChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           role: 'strategist',
-          message: text,
+          message: text || 'Please analyze this image and tell me what you see and how it relates to my business.',
+          image,
           systemOverride: STATION_PROMPT,
         }),
       })
@@ -82,7 +107,11 @@ export default function StationChat() {
 
       {/* Chat panel */}
       {open && (
-        <div style={{ position: 'fixed', bottom: '88px', right: '24px', zIndex: 199, width: '360px', maxHeight: '520px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '18px', boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div
+          onDragOver={e => { e.preventDefault(); setDragging(true) }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          style={{ position: 'fixed', bottom: '88px', right: '24px', zIndex: 199, width: '360px', maxHeight: '540px', background: 'var(--surface)', border: `2px solid ${dragging ? 'var(--purple)' : 'var(--border)'}`, borderRadius: '18px', boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column', overflow: 'hidden', transition: 'border-color 0.15s' }}>
 
           {/* Header */}
           <div style={{ padding: '14px 16px', background: 'var(--purple)', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -91,22 +120,32 @@ export default function StationChat() {
             </div>
             <div>
               <p style={{ fontSize: '13px', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>RISE Station</p>
-              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>Always on · Always yours</p>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>Drop images · Paste screenshots · Ask anything</p>
             </div>
             <button onClick={() => setOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', padding: '4px' }}>
               <X size={16} />
             </button>
           </div>
 
+          {/* Drag overlay */}
+          {dragging && (
+            <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(107,45,110,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+              <div style={{ textAlign: 'center', color: 'var(--purple)' }}>
+                <ImageIcon size={32} />
+                <p style={{ fontSize: '13px', fontWeight: 700, marginTop: '8px' }}>Drop image here</p>
+              </div>
+            </div>
+          )}
+
           {/* Messages */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
             {messages.map((m, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                <div style={{ maxWidth: '85%', padding: '10px 13px', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px', fontSize: '13px', lineHeight: 1.6,
+                <div style={{ maxWidth: '85%', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
                   background: m.role === 'user' ? 'var(--purple)' : 'var(--surface-raised)',
-                  color: m.role === 'user' ? '#fff' : 'var(--text)',
-                }}>
-                  {m.text}
+                  color: m.role === 'user' ? '#fff' : 'var(--text)', overflow: 'hidden' }}>
+                  {m.image && <img src={m.image} alt="" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', display: 'block' }} />}
+                  {m.text !== '(image)' && <p style={{ padding: '10px 13px', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{m.text}</p>}
                 </div>
               </div>
             ))}
@@ -121,14 +160,29 @@ export default function StationChat() {
             <div ref={bottomRef} />
           </div>
 
+          {/* Pending image preview */}
+          {pendingImage && (
+            <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--bg)' }}>
+              <img src={pendingImage} alt="" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }} />
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', flex: 1 }}>Image ready to send</span>
+              <button onClick={() => setPendingImage(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}><X size={13} /></button>
+            </div>
+          )}
+
           {/* Input */}
           <div style={{ padding: '12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) loadImage(f); e.target.value = '' }} />
+            <button onClick={() => fileRef.current?.click()} title="Attach image"
+              style={{ width: '34px', height: '34px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: pendingImage ? 'var(--purple)' : 'var(--text-muted)', flexShrink: 0 }}>
+              <Paperclip size={14} />
+            </button>
             <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-              placeholder="Ask anything or drop an idea..."
+              onPaste={handlePaste}
+              placeholder="Ask anything, drop or paste an image..."
               rows={1} style={{ flex: 1, padding: '9px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px', resize: 'none', fontFamily: 'inherit', outline: 'none', lineHeight: 1.5 }} />
-            <button onClick={send} disabled={loading || !input.trim()}
-              style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--purple)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', opacity: !input.trim() ? 0.5 : 1, flexShrink: 0 }}>
+            <button onClick={send} disabled={loading || (!input.trim() && !pendingImage)}
+              style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--purple)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', opacity: (!input.trim() && !pendingImage) ? 0.5 : 1, flexShrink: 0 }}>
               <Send size={14} />
             </button>
           </div>
