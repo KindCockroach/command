@@ -44,7 +44,58 @@ function PlatformPreview({ form, onCopy }: { form: Partial<ContentPiece>; onCopy
   )
 
   // ── Instagram / Threads ──────────────────────────────────────────────
-  if (platform === 'instagram' || platform === 'threads' || meta.type === 'instagram_post') {
+  // ── Threads ──────────────────────────────────────────────────────────
+  if (platform === 'threads') {
+    const posts = body.split(/\n{2,}/).filter(Boolean)
+    return (
+      <div style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e5e5e5', maxWidth: '540px', margin: '0 auto', width: '100%' }}>
+        {/* Threads header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid #efefef' }}>
+          <svg viewBox="0 0 192 192" width="24" height="24" fill="none"><path d="M141.537 88.988a66.667 66.667 0 0 0-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.11 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.141-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 10.208 125.202.195 97.07 0h-.113C68.882.195 47.292 10.24 32.777 29.813 19.966 47.42 13.306 72.08 13.044 96v.08c.262 23.92 6.922 48.574 19.733 66.187 14.515 19.57 36.105 29.613 64.268 29.813h.113c25.303-.178 43.818-6.832 58.755-21.75 19.681-19.663 19.07-44.324 12.605-59.467-4.724-11.02-13.738-19.948-26.981-26.875Zm-47.24 42.97c-10.463.589-21.327-4.099-21.904-14.092-.424-7.924 5.647-16.754 24.009-17.803 2.1-.121 4.166-.18 6.199-.18 6.0 0 11.582.552 16.63 1.597-1.893 23.56-14.584 29.903-24.934 30.478Z" fill="#000"/></svg>
+          <MoreHorizontal size={20} color="#000" />
+        </div>
+
+        {/* Post(s) */}
+        {posts.map((post, i) => (
+          <div key={i} style={{ padding: '16px', borderBottom: i < posts.length - 1 ? '1px solid #efefef' : 'none', position: 'relative' }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #e8448a, #6b2d6e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>M</span>
+                </div>
+                {i < posts.length - 1 && (
+                  <div style={{ width: '2px', background: '#e5e5e5', margin: '6px auto 0', height: '100%', minHeight: '24px' }} />
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#000' }}>aimomeducation</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#999' }}>now</span>
+                    <CopyBtn text={post} label={posts.length > 1 ? `post ${i + 1}` : 'post'} />
+                  </div>
+                </div>
+                <p style={{ fontSize: '15px', color: '#000', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{post}</p>
+                <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
+                  <Heart size={18} color="#999" />
+                  <MessageCircle size={18} color="#999" />
+                  <Share2 size={18} color="#999" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Footer */}
+        <div style={{ padding: '12px 16px', borderTop: '1px solid #efefef', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <CopyBtn text={body} label="full thread" />
+          {meta.angle && <span style={{ fontSize: '10px', color: '#999', alignSelf: 'center' }}>Angle: {meta.angle}</span>}
+        </div>
+      </div>
+    )
+  }
+
+  if (platform === 'instagram' || meta.type === 'instagram_post') {
     const isReel = meta.type === 'instagram_reel'
     const hook = meta.type === 'instagram_reel' ? body.match(/Hook:\s*([^\n]+)/)?.[1] ?? '' : ''
     const script = meta.type === 'instagram_reel' ? body.match(/Script:\s*([\s\S]+?)(?:Caption:|$)/)?.[1]?.trim() ?? '' : ''
