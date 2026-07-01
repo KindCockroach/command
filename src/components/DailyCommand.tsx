@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { Zap, Battery, BatteryLow, BatteryMedium, BatteryFull, Flame, CheckCheck, AlertCircle, Sparkles, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Zap, Battery, BatteryLow, BatteryMedium, BatteryFull, Flame, CheckCheck, Sparkles, Loader2, ImageIcon, X } from 'lucide-react'
 
 type DailyData = {
   date: string
@@ -28,6 +28,10 @@ export default function DailyCommand() {
   const [briefing, setBriefing] = useState('')
   const [briefingLoading, setBriefingLoading] = useState(false)
   const [savedNote, setSavedNote] = useState('')
+  const [pendingImage, setPendingImage] = useState<string | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetch(`/api/daily?date=${today}`).then(r => r.json()).then(d => {
@@ -66,6 +70,43 @@ export default function DailyCommand() {
       const d = await res.json()
       setBriefing(d.result ?? '')
     } finally { setBriefingLoading(false) }
+  }
+
+  const analyzeImage = async (base64: string) => {
+    setPendingImage(base64)
+    setAnalyzing(true)
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'content_director', image: base64, message: 'Describe this image in 2-3 sentences as a content idea or visual reference. Be specific and actionable.' }),
+      })
+      const d = await res.json()
+      if (d.result) {
+        setData(prev => ({ ...prev, notes: prev.notes ? `${prev.notes}\n\n[Image] ${d.result}` : `[Image] ${d.result}` }))
+      }
+    } finally {
+      setAnalyzing(false)
+      setPendingImage(null)
+    }
+  }
+
+  const loadImage = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = e => { if (e.target?.result) analyzeImage(e.target.result as string) }
+    reader.readAsDataURL(file)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragging(false)
+    const file = Array.from(e.dataTransfer.files).find(f => f.type.startsWith('image/'))
+    if (file) loadImage(file)
+  }
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const file = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'))?.getAsFile()
+    if (file) { e.preventDefault(); loadImage(file) }
   }
 
   const EnergyIcon = ENERGY_OPTIONS.find(e => e.value === data.energy)?.icon ?? Battery
@@ -168,16 +209,43 @@ export default function DailyCommand() {
       </div>
 
       {/* Notes + save */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: '3px solid var(--purple)', borderRadius: '14px', padding: '18px' }}>
+      <div
+        onDragOver={e => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+        style={{ background: 'var(--surface)', border: `1px solid ${dragging ? 'var(--hot-pink)' : 'var(--border)'}`, borderTop: `3px solid ${dragging ? 'var(--hot-pink)' : 'var(--purple)'}`, borderRadius: '14px', padding: '18px', transition: 'border-color 0.15s', position: 'relative' }}>
+        {dragging && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(214,31,120,0.06)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, pointerEvents: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--hot-pink)', fontWeight: 700, fontSize: '14px' }}>
+              <ImageIcon size={20} /> Drop to analyze with AI
+            </div>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>Quick Capture</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Brain dump — saved with your day log</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Brain dump · drop images · paste screenshots</span>
+            <button onClick={() => fileInputRef.current?.click()} title="Attach image" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', padding: '2px' }}>
+              <ImageIcon size={13} />
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) loadImage(f); e.target.value = '' }} />
+          </div>
         </div>
+        {analyzing && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderRadius: '8px', background: 'var(--bg)', border: '1px solid var(--border)', marginBottom: '10px' }}>
+            {pendingImage && <img src={pendingImage} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--hot-pink)', fontSize: '12px', fontWeight: 600 }}>
+              <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+              AI is reading your image...
+            </div>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: '12px' }}>
           <textarea
             value={data.notes}
             onChange={e => setData(d => ({ ...d, notes: e.target.value }))}
-            placeholder="Thoughts, ideas, reminders, free write fragments, anything... Saved to your daily log when you click Let's Go."
+            onPaste={handlePaste}
+            placeholder="Thoughts, ideas, reminders, free write fragments... Drop or paste an image to analyze it. Saved to your daily log when you click Let's Go."
             rows={3}
             style={{ flex: 1, padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '13px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'none', outline: 'none', lineHeight: 1.6 }}
           />
@@ -187,7 +255,7 @@ export default function DailyCommand() {
           </button>
         </div>
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
-          💡 To drop images or free write for content → use <strong>Story</strong> tab. Generated content lives in <strong>Content</strong> tab → Kanban board.
+          💡 Generated content lives in <strong>Content</strong> tab → Kanban board. Free write → <strong>Story</strong> tab.
         </p>
       </div>
 
