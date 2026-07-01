@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Plus, ChevronDown, ChevronUp, Trash2, Edit3, CheckCheck, X } from 'lucide-react'
-import type { Project, ProjectStatus, ProjectPriority } from '@/lib/db'
+import { Plus, ChevronDown, ChevronUp, Trash2, Edit3, CheckCheck, X, Inbox, Send } from 'lucide-react'
+import type { Project, ProjectStatus, ProjectPriority, ContentPiece } from '@/lib/db'
 import ContentOrderForm from './ContentOrderForm'
 
 const STATUS_COLORS: Record<ProjectStatus, string> = {
@@ -26,6 +26,26 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
   const [draft, setDraft] = useState(project)
   const [showGenerator, setShowGenerator] = useState(false)
   const [lastGenCount, setLastGenCount] = useState<number | null>(null)
+  const [heldContent, setHeldContent] = useState<ContentPiece[]>([])
+  const [showHeld, setShowHeld] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      fetch(`/api/content?project_id=${project.id}&status=held`)
+        .then(r => r.json())
+        .then((data: ContentPiece[]) => setHeldContent(Array.isArray(data) ? data : []))
+        .catch(() => {})
+    }
+  }, [open, project.id, lastGenCount])
+
+  const releaseToKanban = async (contentId: number) => {
+    await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: contentId, status: 'ready', project_id: null }) })
+    setHeldContent(prev => prev.filter(c => c.id !== contentId))
+  }
+
+  const releaseAll = async () => {
+    await Promise.all(heldContent.map(c => releaseToKanban(c.id)))
+  }
 
   const save = () => { onUpdate(project.id, draft); setEditing(false) }
 
@@ -103,10 +123,44 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
                     projectName={project.name}
                     projectDescription={project.description}
                     projectNotes={project.notes}
+                    projectId={project.id}
                     onDone={(count) => { setLastGenCount(count); setShowGenerator(false) }}
                   />
                 )}
               </div>
+
+              {/* Held content */}
+              {heldContent.length > 0 && (
+                <div style={{ background: 'rgba(242,166,90,0.07)', borderRadius: '10px', padding: '12px 14px', border: '1px solid rgba(242,166,90,0.25)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showHeld ? '10px' : '0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Inbox size={13} color="#f2a65a" />
+                      <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#f2a65a' }}>Held ({heldContent.length})</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button onClick={releaseAll} style={{ ...btnSt, background: '#f2a65a', color: '#fff', fontSize: '10px', padding: '5px 10px' }}>
+                        <Send size={11} /> Release All to Kanban
+                      </button>
+                      <button onClick={() => setShowHeld(v => !v)} style={{ ...btnSt, background: 'var(--border)', color: 'var(--text)', fontSize: '10px', padding: '5px 10px' }}>
+                        {showHeld ? 'Hide' : 'View'}
+                      </button>
+                    </div>
+                  </div>
+                  {showHeld && heldContent.map(c => (
+                    <div key={c.id} style={{ background: '#fff', borderRadius: '8px', padding: '10px 12px', marginBottom: '6px', border: '1px solid rgba(242,166,90,0.2)' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{c.title}</p>
+                          <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{(c.platforms ?? []).join(', ')}</p>
+                        </div>
+                        <button onClick={() => releaseToKanban(c.id)} style={{ ...btnSt, background: '#f2a65a', color: '#fff', fontSize: '10px', padding: '4px 8px', flexShrink: 0 }}>
+                          <Send size={10} /> Release
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={() => setEditing(true)} style={{ ...btnSt, background: 'var(--bg)', color: 'var(--text)' }}><Edit3 size={12} /> Edit</button>

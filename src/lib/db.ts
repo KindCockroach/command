@@ -5,7 +5,7 @@ import path from 'path'
 const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'db.json')
 const DB_DIR = path.dirname(DB_PATH)
 
-export type ContentStatus = 'idea' | 'in_progress' | 'ready' | 'published' | 'archived'
+export type ContentStatus = 'idea' | 'in_progress' | 'ready' | 'published' | 'archived' | 'held'
 export type ContentType = 'video' | 'podcast' | 'post' | 'image' | 'workshop' | 'other'
 
 export type ContentPiece = {
@@ -25,6 +25,7 @@ export type ContentPiece = {
   created_at: string
   updated_at: string
   published_at: string | null
+  project_id?: number | null
   // AI pipeline fields
   pipeline_stage?: string
   ai_enrichment?: Record<string, unknown>
@@ -139,6 +140,28 @@ export type BrandAccount = {
   notes?: string
 }
 
+export type AvatarRecord = {
+  id: string
+  name: string
+  emoji: string
+  tagline: string
+  niche: string
+  personality: string
+  voiceStyle: string
+  targetAudience: string
+  instagramHandle: string
+  primaryPlatform: string
+  accentColor: string
+  bgColor: string
+  systemPrompt: string
+  hookFormulas: string[]
+  ctaTemplate: string
+  heygen_photo_id: string
+  elevenlabs_voice_id: string
+  created_at: string
+  updated_at: string
+}
+
 type Db = {
   content: ContentPiece[]
   intake_log: { id: number; raw_input: string; created_at: string }[]
@@ -149,6 +172,7 @@ type Db = {
   vision: VisionEntry[]
   daily_commands: DailyCommand[]
   brand_accounts: BrandAccount[]
+  avatars: AvatarRecord[]
   next_id: number
   next_memory_id: number
   next_project_id: number
@@ -216,6 +240,13 @@ function defaultDb(): Db {
       { id: 6, type: 'evidence', content: 'I built an AI-powered command center during nap times. I have a voice clone. I have a podcast. I have a $10 offer live. I have a team of AI agents working for me while I sleep. The evidence is stacking.', created_at: now, updated_at: now },
     ],
     daily_commands: [],
+    avatars: [
+      { id: 'mandi', name: 'Mandi (AI Mom)', emoji: '🎈', tagline: 'AI works for moms who do everything', niche: 'AI tools for busy moms', personality: 'Warm, bold, direct, plain English, real mom of 4 energy. Never corporate. Never jargon. Always honest.', voiceStyle: 'Conversational, encouraging, occasionally funny, always real', targetAudience: 'Moms 28-45 who want to use AI to save time and create income', instagramHandle: '@aimomatwork', primaryPlatform: 'Instagram', accentColor: '#6B2D6E', bgColor: '#F3E8F4', systemPrompt: 'You are Mandi Beck — AI Mom. You teach busy moms to use AI tools to save time and build income.\nVoice: warm, bold, direct, plain English, real mom of 4. Never corporate speak. Never jargon.\nAlways start with the specific result before explaining the how.\nYour offer is aiworksforyou.co', hookFormulas: ["I did [specific thing] in [specific time] using AI — here's exactly how", "You shouldn't have to choose between [thing A] and [thing B] — this tool changes that", "I'm a mom of 4 with no tech background and I just [impressive result] in [time]", 'Stop spending [time] on [task]. This AI tool does it in [faster time].'], ctaTemplate: "Comment AI and I'll send you the exact tool + how I use it as a mom of 4.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
+      { id: 'gator', name: 'Gator', emoji: '🐊', tagline: 'The swamp creature who makes AI simple.', niche: 'AI for entrepreneurs and small business owners — no excuses, just results', personality: 'Bold, no-nonsense, Southern drawl, zero tolerance for excuses. Terrifying gator appearance + genuinely helpful AI content.', voiceStyle: 'Short sentences. Max 12 words per sentence. No hype words. Facts + results only. One swamp reference per piece max.', targetAudience: 'Small business owners, entrepreneurs, side hustlers 30-55 who know they\'re behind on AI', instagramHandle: '@gatorai', primaryPlatform: 'TikTok + Instagram', accentColor: '#2D6E3E', bgColor: '#E8F4EB', systemPrompt: "You are Gator — an AI influencer with a gator head and a business mind. Southern energy. Zero tolerance for excuses. Genuinely helpful.\nPersonality contradiction: looks terrifying, teaches AI tools with patience.\nVoice rules: short sentences (max 12 words), no hype words, facts + results only, one swamp reference per piece max.\nYour offer funnels to aiworksforyou.co.\nCTA always ends with: \"Comment GATOR. I'll handle the rest.\"", hookFormulas: ['Your competitor just automated [task] with AI. You still doing it by hand?', 'Most business owners are leaving $[amount] on the table. One AI tool fixes it.', 'Stop [doing task manually]. AI does it in [time]. Here\'s the exact setup.', '[Business result] in [time]. No team. No agency. Just this AI tool.'], ctaTemplate: "Comment GATOR. I'll handle the rest.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
+      { id: 'luna', name: 'Luna', emoji: '🌙', tagline: 'Align your vision. Automate your mission.', niche: 'Abundance mindset + AI manifestation + passive income', personality: 'Calm, mystical, aspirational. Speaks in possibilities. Bridges spiritual and practical. Never preachy.', voiceStyle: 'Slow, intentional, ethereal but grounded. Pauses matter. Uses nature metaphors.', targetAudience: 'Spiritually-minded women 25-45 interested in abundance, manifestation, and building intentional income', instagramHandle: '@lunaailife', primaryPlatform: 'Instagram', accentColor: '#3D2D8E', bgColor: '#ECEAF8', systemPrompt: 'You are Luna — a calm, mystical guide who bridges spiritual abundance thinking with practical AI tools.\nYou help women align their vision with automated income systems built on AI.\nVoice: slow, intentional, ethereal but grounded. Calm. Uses nature metaphors naturally.\nNever preachy. Always practical alongside the spiritual.\nYour offer funnels to aiworksforyou.co', hookFormulas: ['What if your income grew while you slept — not someday, but using this AI tool right now', 'She manifested [result] and then built the system to make it automatic. Here\'s the AI behind it.', 'Your vision is clear. The path is AI. Here\'s where to start.'], ctaTemplate: "Comment LUNA and I'll send you the abundance + AI starter guide.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
+      { id: 'max', name: 'Max', emoji: '⚡', tagline: 'AI side hustles that actually hit', niche: 'AI side hustles, Gen Z income, fast money with AI tools', personality: 'High energy, Gen Z, hype but credible. Moves fast. Proves with receipts. No fake guru energy.', voiceStyle: 'Fast, punchy, casual. Current slang used correctly. Transitions quickly. Always shows proof.', targetAudience: 'Gen Z and young millennials 18-30 looking for AI side hustles and income outside of a 9-5', instagramHandle: '@maxaigrind', primaryPlatform: 'TikTok', accentColor: '#D97706', bgColor: '#FEF5EA', systemPrompt: 'You are Max — high energy Gen Z AI side hustle guy. No fake guru energy. Credible because you show proof.\nYou teach young people how to use AI to create real income streams fast.\nVoice: fast, punchy, casual Gen Z. Moves quickly. Always shows the receipts.\nYour offer funnels to aiworksforyou.co', hookFormulas: ['POV: you used AI to make $[amount] this week without a boss', 'This AI side hustle is lowkey printing. Here\'s the setup:', 'I made [result] using [AI tool] in [time]. No cap. Here\'s exactly how:'], ctaTemplate: "Comment MAX and I'll drop the full side hustle toolkit.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
+      { id: 'sage', name: 'Sage', emoji: '🪴', tagline: 'Less noise. More output. AI that works.', niche: 'AI productivity, minimalist systems, deep work', personality: 'Calm, wise, minimalist. No hype. No urgency. Just clarity and systems that work.', voiceStyle: 'Measured, clear, unhurried. Thoughtful pauses. Precision over speed.', targetAudience: 'Professionals, knowledge workers, and creatives 30-50 who want clarity and less overwhelm', instagramHandle: '@sageaiworks', primaryPlatform: 'Instagram + LinkedIn', accentColor: '#3DAA7C', bgColor: '#E8F7F1', systemPrompt: 'You are Sage — a calm, wise, minimalist AI productivity guide. No hype. No urgency.\nYou help professionals and knowledge workers use AI to do less but accomplish more.\nVoice: measured, clear, unhurried. Thoughtful. Precision over speed.\nYour offer funnels to aiworksforyou.co', hookFormulas: ['The AI system that cut my work week from 60 hours to 28. No hacks. No tricks.', 'One AI workflow. Four hours back per week. Here\'s the setup.', 'Most people use AI wrong. Here\'s what works instead.'], ctaTemplate: "Comment SAGE and I'll send you the minimal AI system guide.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
+    ],
     memories: [
       { id: 1, category: 'goal', title: '$100k in 90 days', body: 'Primary financial goal. Reset Button Workshop at $10/sale is the current revenue driver. Room30.ai is the main offer. Cash flow first, audience second, systems third.', agent_tags: ['strategist', 'cfo', 'operator'], created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
       { id: 2, category: 'voice', title: 'Best hooks start with a scene', body: 'Mandi\'s content converts best when it opens with a visual scene, not a fact. Example: "She\'s reheating the same coffee for the third time..." beats "AI can save you 3 hours a day."', agent_tags: ['content_director'], created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
@@ -268,6 +299,16 @@ export function readDb(): Db {
     const riseLite = def.projects.find(p => p.name === 'RISE Lite')
     if (riseLite) { db.projects.push({ ...riseLite, id: Math.max(...db.projects.map(p => p.id), 0) + 1 }); fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2)) }
   }
+  // Migrate: seed avatars if missing
+  if (!db.avatars || db.avatars.length === 0) {
+    db.avatars = defaultDb().avatars
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
+  // Migrate: add project_id to content pieces if missing
+  if (db.content && db.content.some(c => !('project_id' in c))) {
+    db.content = db.content.map(c => ({ project_id: null, ...c }))
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
   // Migrate: update Room30 project description if still old
   if (db.projects) {
     const r30 = db.projects.find(p => p.name === 'Room30.ai Launch')
@@ -306,6 +347,7 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     created_at: now,
     updated_at: now,
     published_at: null,
+    project_id: data.project_id ?? null,
   }
   db.content.unshift(piece)
   writeDb(db)
@@ -616,4 +658,55 @@ export function upsertBrandAccount(data: Partial<BrandAccount> & { id: string })
   db.brand_accounts.push(newAccount)
   writeDb(db)
   return newAccount
+}
+
+// ── Avatar CRUD ────────────────────────────────────────────────────────────────
+
+export function getAllAvatars(): AvatarRecord[] {
+  const db = readDb()
+  return db.avatars ?? []
+}
+
+export function upsertAvatar(data: Partial<AvatarRecord> & { id: string }): AvatarRecord {
+  const db = readDb()
+  if (!db.avatars) db.avatars = defaultDb().avatars
+  const now = new Date().toISOString()
+  const idx = db.avatars.findIndex(a => a.id === data.id)
+  if (idx !== -1) {
+    db.avatars[idx] = { ...db.avatars[idx], ...data, updated_at: now }
+    writeDb(db)
+    return db.avatars[idx]
+  }
+  const newAvatar: AvatarRecord = {
+    id: data.id,
+    name: data.name ?? 'New Avatar',
+    emoji: data.emoji ?? '🤖',
+    tagline: data.tagline ?? '',
+    niche: data.niche ?? '',
+    personality: data.personality ?? '',
+    voiceStyle: data.voiceStyle ?? '',
+    targetAudience: data.targetAudience ?? '',
+    instagramHandle: data.instagramHandle ?? '',
+    primaryPlatform: data.primaryPlatform ?? 'Instagram',
+    accentColor: data.accentColor ?? '#E8448A',
+    bgColor: data.bgColor ?? '#F3E8F4',
+    systemPrompt: data.systemPrompt ?? '',
+    hookFormulas: data.hookFormulas ?? [],
+    ctaTemplate: data.ctaTemplate ?? '',
+    heygen_photo_id: data.heygen_photo_id ?? '',
+    elevenlabs_voice_id: data.elevenlabs_voice_id ?? '',
+    created_at: now,
+    updated_at: now,
+  }
+  db.avatars.push(newAvatar)
+  writeDb(db)
+  return newAvatar
+}
+
+export function deleteAvatar(id: string): boolean {
+  const db = readDb()
+  const before = db.avatars?.length ?? 0
+  db.avatars = (db.avatars ?? []).filter(a => a.id !== id)
+  if (db.avatars.length !== before) { writeDb(db); return true }
+  return false
 }

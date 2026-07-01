@@ -193,7 +193,7 @@ function buildNotes(item: Record<string, string>, type: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { projectName, projectDescription, projectNotes, orders, count, accountId } = await req.json()
+  const { projectName, projectDescription, projectNotes, orders, count, accountId, projectId, holdInProject } = await req.json()
   if (!projectName) return NextResponse.json({ error: 'projectName required' }, { status: 400 })
 
   // Load account brand DNA if specified
@@ -242,11 +242,12 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
         createContent({
           title: item.title || `${order.type} — ${projectName}`,
           description: buildDescription(item),
-          status: 'ready',
+          status: holdInProject ? 'held' : 'ready',
           type: order.type as import('@/lib/db').ContentType,
           platforms: [item.platform || order.type],
           tags: ['generated', projectName.toLowerCase().replace(/\s+/g, '-'), order.type, accountTag],
           notes: buildNotes(item, order.type) + (account ? ` | Account: ${account.handle}` : ''),
+          project_id: holdInProject && projectId ? projectId : null,
         })
       )
       allCreated.push(...created)

@@ -82,16 +82,18 @@ interface Props {
   projectName: string
   projectDescription: string
   projectNotes: string
+  projectId?: number
   onDone: (count: number) => void
 }
 
-export default function ContentOrderForm({ projectName, projectDescription, projectNotes, onDone }: Props) {
+export default function ContentOrderForm({ projectName, projectDescription, projectNotes, projectId, onDone }: Props) {
   const [orders, setOrders] = useState<Record<string, number>>({})
   const [generating, setGenerating] = useState(false)
   const [result, setResult] = useState<{ created: number } | null>(null)
   const [expandedType, setExpandedType] = useState<string | null>(null)
   const [accounts, setAccounts] = useState<BrandAccount[]>([])
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
+  const [holdInProject, setHoldInProject] = useState(!!projectId)
 
   useEffect(() => {
     fetch('/api/accounts').then(r => r.json()).then((data: BrandAccount[]) => {
@@ -129,7 +131,7 @@ export default function ContentOrderForm({ projectName, projectDescription, proj
       const res = await fetch('/api/generate/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectName, projectDescription, projectNotes, orders: contentOrders, accountId: selectedAccountId || undefined }),
+        body: JSON.stringify({ projectName, projectDescription, projectNotes, orders: contentOrders, accountId: selectedAccountId || undefined, projectId, holdInProject }),
       })
       const data = await res.json()
       setResult({ created: data.created ?? 0 })
@@ -226,6 +228,19 @@ export default function ContentOrderForm({ projectName, projectDescription, proj
           )
         })}
       </div>
+
+      {/* Hold toggle */}
+      {projectId && (
+        <button onClick={() => setHoldInProject(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', border: `2px solid ${holdInProject ? '#f2a65a' : 'var(--border)'}`, background: holdInProject ? 'rgba(242,166,90,0.08)' : 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+          <div style={{ width: '16px', height: '16px', borderRadius: '4px', border: `2px solid ${holdInProject ? '#f2a65a' : 'var(--border)'}`, background: holdInProject ? '#f2a65a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {holdInProject && <span style={{ color: '#fff', fontSize: '10px', fontWeight: 900 }}>✓</span>}
+          </div>
+          <div>
+            <p style={{ fontSize: '12px', fontWeight: 700, color: holdInProject ? '#f2a65a' : 'var(--text)', lineHeight: 1 }}>Hold in Project</p>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.3 }}>{holdInProject ? 'Content stays in this project until you release it to the Kanban' : 'Content goes straight to the Kanban pipeline'}</p>
+          </div>
+        </button>
+      )}
 
       {/* Summary + generate */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '4px', flexWrap: 'wrap' }}>

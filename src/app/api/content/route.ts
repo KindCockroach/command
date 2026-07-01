@@ -6,7 +6,17 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status') ?? undefined
-  return NextResponse.json(getAllContent(status))
+  const projectId = searchParams.get('project_id')
+  let results = getAllContent(status)
+  if (projectId) {
+    const pid = parseInt(projectId)
+    results = results.filter(c => c.project_id === pid)
+  }
+  // Exclude held content from the default (no-status-filter) Kanban feed
+  if (!status && !projectId) {
+    results = results.filter(c => c.status !== 'held')
+  }
+  return NextResponse.json(results)
 }
 
 export async function POST(req: NextRequest) {
