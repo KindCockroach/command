@@ -16,27 +16,40 @@ const TYPE_PROMPTS: Record<string, (project: string, desc: string, notes: string
   instagram_post: (p, d, n, q) => `
 Generate ${q} Instagram posts for project "${p}".
 Description: ${d}. Notes: ${n}.
+
+CONTENT AUDIT RULES — every post must pass all of these:
+1. HER FRAME: Lead with her specific Tuesday-night problem, not Mandi's journey. Never narrate Mandi's transformation and expect the reader to project. Put the reader in the frame.
+2. 3-SECOND TEST: A cold stranger must immediately know this is for her. No abstract feelings, no poetry, no vague inspiration.
+3. HOOK MECHANICS — WINNING: Direct question about HER life ("What's one thing you wish you never had to think about again?"), concrete stats, bold specific analogies. LOSING: vague openers ("done beats perfect!"), mood without meaning ("disgust. regrets."), fortune-cookie abstractions.
+4. ONE CTA: Every post ends with "Comment WISH and I'll DM you [specific thing] — no link-hunting, no funnel." Never "link in bio" as primary CTA.
+5. VOICE: "Grab the damn cup" energy — funny, warm, human, direct. Aimed at her, not at Mandi.
+6. STRUCTURE: Open with her pain → show you've lived it (briefly) → deliver the tool/insight → Comment WISH CTA.
+
 Each post must have:
-- "body": full caption with line breaks, emoji, and CTA
+- "body": full caption with line breaks, emoji, and CTA ending in "Comment WISH"
 - "hashtags": string of 20–30 relevant hashtags (space-separated, include niche + broad)
 - "alt_text": 1-sentence image description for accessibility
-- "angle": hook angle used
+- "angle": hook angle used (question / stat / reframe / permission slip / objection buster)
 
-Voice: Mandi Beck — AI Mom educator. Direct, warm, no fluff. Speaks to exhausted moms done doing it all alone.
-Vary angles: story, permission slip, objection buster, POV hook, direct offer, behind the scenes, real talk.
-Return JSON array. Each item: { title, body, hashtags, alt_text, angle, platform: "instagram" }`,
+Vary angles across the batch. Return JSON array. Each item: { title, body, hashtags, alt_text, angle, platform: "instagram" }`,
 
   instagram_reel: (p, d, n, q) => `
 Generate ${q} Instagram Reel scripts for project "${p}".
 Description: ${d}. Notes: ${n}.
+
+CONTENT AUDIT RULES — every reel must pass all of these:
+1. Hook (first 3 seconds) must be about HER life, not Mandi's. Specific, concrete, second-person.
+2. Script leads with her pain, positions Mandi as proof it's solvable, delivers the tool fast.
+3. End with: "Comment WISH and I'll DM you [specific deliverable]."
+4. Voice: warm, direct, funny when natural. Never corporate. Never vague inspiration.
+
 Each reel must have:
-- "hook": opening line spoken on camera (first 3 seconds — must stop the scroll)
-- "script": full spoken script (15–30 seconds, punchy, conversational)
-- "caption": post caption with CTA
+- "hook": opening line spoken on camera (first 3 seconds — specific, stops scroll, about HER)
+- "script": full spoken script (15–30 seconds, punchy, conversational, ends with Comment WISH CTA)
+- "caption": post caption with Comment WISH CTA
 - "hashtags": 15–20 hashtags
 - "b_roll": list of 3–5 suggested visual cuts/text overlays
 
-Voice: Mandi Beck. Relatable mom energy, confident, funny when natural.
 Return JSON array. Each item: { title, hook, script, caption, hashtags, b_roll, angle, platform: "instagram_reel" }`,
 
   youtube: (p, d, n, q) => `
@@ -78,10 +91,16 @@ Return JSON array. Each item: { title, subject_line, preview_text, body, ps, pla
   tiktok: (p, d, n, q) => `
 Generate ${q} TikTok video scripts for project "${p}".
 Description: ${d}. Notes: ${n}.
+
+CONTENT AUDIT RULES:
+1. Hook must be about HER specific problem, not a mood or Mandi's feelings. Concrete + second-person wins.
+2. Script: open with her pain → Mandi as proof → tool → CTA. Never "I was lost but now I'm found" self-narration.
+3. CTA: "Comment WISH and I'll DM you [specific thing]."
+
 Each script must have:
-- "hook": first spoken line (under 3 seconds, must stop scroll — use pattern interrupt or bold claim)
-- "script": full 30–60 second spoken script (casual, fast-paced, punchy)
-- "caption": TikTok caption with CTA (short — 1-2 sentences max)
+- "hook": first spoken line (under 3 seconds — specific, about HER, stops scroll)
+- "script": full 30–60 second spoken script (casual, fast-paced, punchy, ends with Comment WISH CTA)
+- "caption": TikTok caption with Comment WISH CTA (1-2 sentences max)
 - "hashtags": 5–8 hashtags
 - "trending_sound_vibe": description of the audio energy that fits (e.g. "chaotic girl boss", "emotional reveal", "hype build")
 
@@ -91,13 +110,19 @@ Return JSON array. Each item: { title, hook, script, caption, hashtags, trending
   email: (p, d, n, q) => `
 Generate ${q} marketing emails for project "${p}".
 Description: ${d}. Notes: ${n}.
+
+CONTENT AUDIT RULES:
+1. Subject line must speak to HER specific pain or curiosity — not a clever Mandi moment.
+2. Open with her problem, not "I wanted to share something with you."
+3. Body: her pain → Mandi's lived proof → tool → one clear CTA.
+4. Voice: like a text from a smart friend who has your back. Never corporate. Never vague.
+
 Each email must have:
-- "subject_line": email subject line (creates urgency or curiosity, under 50 chars)
-- "preview_text": preview text (under 90 chars)
+- "subject_line": email subject line (her pain or curiosity, under 50 chars)
+- "preview_text": preview text — extends the hook, under 90 chars
 - "body": full email body (200–400 words, one clear CTA, personal tone, no corporate speak)
 - "cta_button_text": text for the main CTA button (5 words or less)
 
-Voice: Mandi Beck. Like a text from a smart friend who has your back.
 Return JSON array. Each item: { title, subject_line, preview_text, body, cta_button_text, platform: "email" }`,
 
   pinterest: (p, d, n, q) => `
@@ -125,11 +150,17 @@ Return JSON array. Each item: { title, body, angle, platform: "facebook" }`,
   threads: (p, d, n, q) => `
 Generate ${q} Threads posts for project "${p}".
 Description: ${d}. Notes: ${n}.
-Each post must have:
-- "body": short punchy post (under 500 chars, no hashtags needed, conversational)
-- "angle": hook type
 
-Voice: Mandi Beck. Unfiltered thoughts, hot takes, real mom perspective.
+CONTENT AUDIT RULES:
+1. Every post must pass the "cold mom" test — would a stranger feel "this is for me"?
+2. No abstract feelings. No self-narration. Her Tuesday, her problem, her relief.
+3. Hot takes and real talk are great — but aim them at HER situation, not Mandi's.
+
+Each post must have:
+- "body": short punchy post (under 500 chars, no hashtags, conversational, second-person or bold hot take)
+- "angle": hook type (hot take / question / permission slip / reframe / real talk)
+
+Voice: Mandi Beck. Unfiltered thoughts, warm directness, real mom perspective aimed at the reader.
 Return JSON array. Each item: { title, body, angle, platform: "threads" }`,
 }
 
