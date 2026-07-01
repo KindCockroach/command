@@ -27,6 +27,7 @@ export default function DailyCommand() {
   const [saved, setSaved] = useState(false)
   const [briefing, setBriefing] = useState('')
   const [briefingLoading, setBriefingLoading] = useState(false)
+  const [savedNote, setSavedNote] = useState('')
 
   useEffect(() => {
     fetch(`/api/daily?date=${today}`).then(r => r.json()).then(d => {
@@ -50,8 +51,12 @@ export default function DailyCommand() {
 
   const save = async () => {
     setSaving(true)
+    const captured = data.notes.trim()
     await fetch('/api/daily', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
-    setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
+    setSaving(false)
+    setSaved(true)
+    if (captured) setSavedNote(captured)
+    setTimeout(() => setSaved(false), 2000)
   }
 
   const getBriefing = async () => {
@@ -185,6 +190,48 @@ export default function DailyCommand() {
           💡 To drop images or free write for content → use <strong>Story</strong> tab. Generated content lives in <strong>Content</strong> tab → Kanban board.
         </p>
       </div>
+
+      {/* Save confirmation */}
+      {savedNote && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '4px solid #3daa7c', borderRadius: '12px', padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCheck size={15} color="#3daa7c" />
+              <span style={{ fontSize: '12px', fontWeight: 800, color: '#3daa7c', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Day saved — idea captured</span>
+            </div>
+            <button onClick={() => setSavedNote('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '16px', lineHeight: 1, padding: '0 4px' }}>×</button>
+          </div>
+          <p style={{ fontSize: '13px', color: 'var(--text)', fontStyle: 'italic', marginBottom: '12px', lineHeight: 1.5, background: 'var(--bg)', padding: '10px 12px', borderRadius: '8px', borderLeft: '2px solid var(--border)' }}>
+            "{savedNote}"
+          </p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+            This is saved to your <strong>daily log for {todayLabel}</strong>. To turn it into something, pick a path:
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '16px', flexShrink: 0 }}>✍️</span>
+              <div>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', marginBottom: '2px' }}>Story tab → turn it into content</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Paste this into Story Processor → get IG captions, TikTok hook, carousel, Medium article in one pass.</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '16px', flexShrink: 0 }}>📁</span>
+              <div>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', marginBottom: '2px' }}>Projects tab → give it a home</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>If this is a multi-step idea (a design, a product, a visual series), open Projects → + New Project → paste this as the description.</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '16px', flexShrink: 0 }}>💡</span>
+              <div>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', marginBottom: '2px' }}>Content tab → add it as an idea</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Click the + in the Kanban Idea column → add title + description → it enters your pipeline as a seed to be developed.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI Briefing output */}
       {briefing && (
