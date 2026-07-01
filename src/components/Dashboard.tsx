@@ -18,12 +18,14 @@ import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
 import StationChat from './StationChat'
 import PodcastEngine from './PodcastEngine'
-import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic } from 'lucide-react'
+import PitchStudio from './PitchStudio'
+import StoryProcessor from './StoryProcessor'
+import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars' | 'media' | 'podcast'
+type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch'
 
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
@@ -68,6 +70,8 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'avatars',    label: 'Avatars',       icon: <span style={{fontSize:'12px'}}>🎭</span> },
     { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
     { id: 'podcast',    label: 'Podcast',       icon: <Mic size={12} /> },
+    { id: 'story',      label: 'Story',         icon: <PenLine size={12} /> },
+    { id: 'pitch',      label: 'Travel Pitch',  icon: <Globe size={12} /> },
   ]
 
   return (
@@ -160,6 +164,8 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'accounts'   && <AccountsPanel />}
         {view === 'avatars'    && <AvatarsPanel />}
         {view === 'podcast'    && <PodcastEngine />}
+        {view === 'story'      && <StoryProcessor />}
+        {view === 'pitch'      && <PitchStudio />}
         {view === 'media'      && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <UniversalCapture />

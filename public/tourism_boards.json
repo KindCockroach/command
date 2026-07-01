@@ -1,0 +1,972 @@
+[
+  {
+    "country": "Afghanistan",
+    "website": "https://tourism.gov.af/",
+    "email": "info@tourism.gov.af"
+  },
+  {
+    "country": "Albania",
+    "website": "http://albania.al",
+    "email": "info@akt.gov.al"
+  },
+  {
+    "country": "Algeria",
+    "website": "https://www.tourismalgeria.com/",
+    "email": "info@tourismalgeria.com"
+  },
+  {
+    "country": "Andorra",
+    "website": "http://visitandorra.com/en/",
+    "email": "info@visitandorra.com\ninfo@oficinaturisme.ad"
+  },
+  {
+    "country": "Antigua and Barbuda",
+    "website": "http://www.visitantiguabarbuda.com",
+    "email": "info@visitaandb.com"
+  },
+  {
+    "country": "Argentina",
+    "website": "http://www.argentina.travel/en",
+    "email": "info@argentina.travel"
+  },
+  {
+    "country": "Armenia",
+    "website": "https://armenia.travel/en",
+    "email": "marketing@armenia.travel"
+  },
+  {
+    "country": "Aruba",
+    "website": "http://www.aruba.com",
+    "email": "support@aruba.com"
+  },
+  {
+    "country": "Australia",
+    "website": "http://www.tourism.australia.com/en",
+    "email": "ask.us@tourism.australia.com"
+  },
+  {
+    "country": "Austria",
+    "website": "https://www.austria.info/us",
+    "email": "info@austria.info"
+  },
+  {
+    "country": "Azerbajan",
+    "website": "https://tourismboard.az/",
+    "email": "info@tourismboard.az"
+  },
+  {
+    "country": "Bahamas",
+    "website": "https://www.bahamas.com/",
+    "email": "tourism@bahamas.com"
+  },
+  {
+    "country": "Bahrain",
+    "website": "http://www.btea.bh/",
+    "email": "socialmedia@btea.bh"
+  },
+  {
+    "country": "Bangladesh",
+    "website": "http://www.tourismboard.gov.bd/",
+    "email": "btbnto@gmail.com"
+  },
+  {
+    "country": "Barbados",
+    "website": "https://www.visitbarbados.org",
+    "email": "btmiinfo@visitbarbados.org"
+  },
+  {
+    "country": "Belarus",
+    "website": "http://www.mst.by/en/",
+    "email": "info@mst.gov.by"
+  },
+  {
+    "country": "Belgium",
+    "website": "https://visit.brussels/en",
+    "email": "tourist@visit.brussels  //  hello@visit.brussels"
+  },
+  {
+    "country": "Belize",
+    "website": "http://www.belizetourismboard.org",
+    "email": "info@belizetourismboard.org"
+  },
+  {
+    "country": "Benin",
+    "website": "http://www.tourismebenin.bj",
+    "email": "info@tourismebenin.bj"
+  },
+  {
+    "country": "Bermuda",
+    "website": "http://www.gotobermuda.com",
+    "email": "travel@bermudatourism.com"
+  },
+  {
+    "country": "Bhutan",
+    "website": "https://www.tourism.gov.bt/",
+    "email": "info@tourism.gov.bt"
+  },
+  {
+    "country": "Bolivia",
+    "website": "http://www.minculturas.gob.bo/en",
+    "email": "info@minculturas.gob.bo"
+  },
+  {
+    "country": "Bosnia & Herzegovina",
+    "website": "http://www.bhtourism.ba/eng/",
+    "email": "media@tourism.ba"
+  },
+  {
+    "country": "Botswana",
+    "website": "https://www.botswanatourism.co.bw/",
+    "email": "marketing@botswanatourism.co.bw"
+  },
+  {
+    "country": "Brazil",
+    "website": "http://www.visitbrasil.com/en/",
+    "email": "Imprensa@turismo.gov.br"
+  },
+  {
+    "country": "Brunei",
+    "website": "http://www.tourism.gov.bn/",
+    "email": "info@tourism.gov.bn"
+  },
+  {
+    "country": "Bulgaria",
+    "website": "https://www.tourism.government.bg/en",
+    "email": "edoc@tourism.government.bg"
+  },
+  {
+    "country": "Burkina Faso",
+    "website": "https://www.culture.gov.bf/culture-er-tourisme",
+    "email": "info@discover-burkinafaso.com"
+  },
+  {
+    "country": "Burundi",
+    "website": "https://www.mae.gov.bi/en/category/tourism-in-burundi/",
+    "email": "info@mae.gov.bi"
+  },
+  {
+    "country": "Cabo Verde",
+    "website": "https://turismo.cv/",
+    "email": "itcv@mtt.gov.cv"
+  },
+  {
+    "country": "Cambodia",
+    "website": "http://www.tourismcambodia.org",
+    "email": "info@tourismcambodia.org\nmarketing@mot.gov.kh"
+  },
+  {
+    "country": "Cameroon",
+    "website": "https://tourisminformationcameroon.net/",
+    "email": "cambitwashington@yahoo.com"
+  },
+  {
+    "country": "Canada",
+    "website": "https://www.destinationcanada.com/en",
+    "email": "communications@destinationcanada.com"
+  },
+  {
+    "country": "Cayman Islands",
+    "website": "http://www.caymanislands.ky",
+    "email": "contact_us@caymanislands.ky"
+  },
+  {
+    "country": "Central African Republic",
+    "website": "https://www.culture-tourisme.gouv.cf/",
+    "email": "geotouckia@gmail.com\ngeotouckia@yahoo.fr"
+  },
+  {
+    "country": "Chad",
+    "website": "N/A",
+    "email": "butdra.tchad@yahoo.fr"
+  },
+  {
+    "country": "Chile",
+    "website": "http://chile.travel/en",
+    "email": "turismoatiende@sernatur.cl"
+  },
+  {
+    "country": "China",
+    "website": "http://www.cnto.org",
+    "email": "ny@cnto.org"
+  },
+  {
+    "country": "Colombia",
+    "website": "http://www.colombia.travel/en",
+    "email": "info@colombia.travel"
+  },
+  {
+    "country": "Congo",
+    "website": "http://congotourismboard.org/\nhttps://republic-congo.com/en/contact-us/",
+    "email": "contact@republic-congo.com"
+  },
+  {
+    "country": "Costa Rica",
+    "website": "https://www.ict.go.cr/en/",
+    "email": "info@visitcostarica.com"
+  },
+  {
+    "country": "Cote D'Ivoire",
+    "website": "https://tourismecotedivoire.ci/",
+    "email": "cote.ivoire.tourisme@gmail.com"
+  },
+  {
+    "country": "Croatia",
+    "website": "https://www.croatia.hr",
+    "email": "info@htz.hr"
+  },
+  {
+    "country": "Cuba",
+    "website": "https://www.cubatravel.cu/en/destinations/havana-cuba",
+    "email": "info@habana.infotur.tur.cu"
+  },
+  {
+    "country": "Cyprus",
+    "website": "http://www.visitcyprus.com/index.php/en/",
+    "email": "cytour@visitcyprus.com"
+  },
+  {
+    "country": "Czech Republic",
+    "website": "https://www.czechtourism.cz/",
+    "email": "stafenova@czechtourism.cz"
+  },
+  {
+    "country": "Denmark",
+    "website": "https://www.visitdenmark.com",
+    "email": "contact@visitdenmark.com"
+  },
+  {
+    "country": "Djibouti",
+    "website": "https://guide.visitdjibouti.dj/",
+    "email": "N/A"
+  },
+  {
+    "country": "Dominica",
+    "website": "http://tourism.gov.dm/",
+    "email": "tourism@dominica.gov.dm"
+  },
+  {
+    "country": "Dominican Republic",
+    "website": "http://www.godominicanrepublic.com",
+    "email": "newyork@godominicanrepublic.com / godr@mitur.gob.do"
+  },
+  {
+    "country": "Ecuador",
+    "website": "https://ecuador.travel",
+    "email": "ecuador.travel.gob@gmail.com"
+  },
+  {
+    "country": "Egypt",
+    "website": "http://www.egypt.travel",
+    "email": "info@mota.gov.eg"
+  },
+  {
+    "country": "El Salvador",
+    "website": "https://elsalvador.travel/",
+    "email": "svelasco@corsatur.gob.sv"
+  },
+  {
+    "country": "Eritrea",
+    "website": "http://www.eritrea.be/MoT.htm",
+    "email": "hans@eritrea.be"
+  },
+  {
+    "country": "Estonia",
+    "website": "https://www.visitestonia.com/",
+    "email": "info@visitestonia.com"
+  },
+  {
+    "country": "Ethiopia",
+    "website": "http://www.moct.gov.et/",
+    "email": "http://www.moct.gov.et/contacts"
+  },
+  {
+    "country": "Fiji",
+    "website": "https://www.fiji.travel",
+    "email": "infous@tourismfiji.com.fj"
+  },
+  {
+    "country": "Finland",
+    "website": "http://www.visitfinland.com",
+    "email": "visitfinland@zapwater.com"
+  },
+  {
+    "country": "France",
+    "website": "http://atout-france.fr/",
+    "email": "Info@atout-france.fr"
+  },
+  {
+    "country": "French Polynesia / Tahiti",
+    "website": "https://tahititourisme.com/en-us/",
+    "email": "Head Office: info@tahiti-tourisme.pf\nUS: info@tahiti-tourisme.com"
+  },
+  {
+    "country": "Gambia",
+    "website": "http://www.visitthegambia.gm/",
+    "email": "info@gtboard.gm"
+  },
+  {
+    "country": "Germany",
+    "website": "http://www.germany.travel/en/index.html / https://www.germany.travel/en/about-us/cooperation-agreements-and-partners.html",
+    "email": "https://www.germany.travel/en/press/international-contacts/market-contacts.html (This link has a list of contacts based on region)"
+  },
+  {
+    "country": "Ghana",
+    "website": "https://www.ghana.travel/",
+    "email": "info@visitghana.com"
+  },
+  {
+    "country": "Greece",
+    "website": "http://www.visitgreece.gr",
+    "email": "marketing@gnto.gr"
+  },
+  {
+    "country": "Grenada",
+    "website": "https://www.puregrenada.com/",
+    "email": "info@puregrenada.com"
+  },
+  {
+    "country": "Guadeloupe",
+    "website": "https://www.guadeloupe-islands.com/",
+    "email": "info@guadeloupe-islands.com"
+  },
+  {
+    "country": "Guatemala",
+    "website": "https://visitguatemala.gt/en/",
+    "email": "info@inguat.gob.gt"
+  },
+  {
+    "country": "Haiti",
+    "website": "https://visithaiti.com/",
+    "email": "info@visithaiti.com"
+  },
+  {
+    "country": "Honduras",
+    "website": "https://iht.hn/en/",
+    "email": "tourisminfo@iht.hn"
+  },
+  {
+    "country": "Hungary",
+    "website": "https://visithungary.com/",
+    "email": "info@mtu.gov.hu"
+  },
+  {
+    "country": "Iceland",
+    "website": "https://www.ferdamalastofa.is/en",
+    "email": "info@touristboard.is / upplysingar@ferdamalastofa.is"
+  },
+  {
+    "country": "India",
+    "website": "http://tourism.gov.in",
+    "email": "goitodelhi@nic.in"
+  },
+  {
+    "country": "Indonesia",
+    "website": "https://indonesia.travel/gb/en/",
+    "email": "info@indonesia.travel"
+  },
+  {
+    "country": "Iran",
+    "website": "https://www.mcth.ir/english",
+    "email": "info@visitiran.ir"
+  },
+  {
+    "country": "Iraq",
+    "website": "https://tourism.gov.iq/",
+    "email": "tourismboard@tourism.gov.iq"
+  },
+  {
+    "country": "Ireland",
+    "website": "https://www.ireland.com",
+    "email": "info.us@tourismireland.com"
+  },
+  {
+    "country": "Israel",
+    "website": "https://new.goisrael.com",
+    "email": "igtolosangeles@goisrael.gov.il"
+  },
+  {
+    "country": "Italy",
+    "website": "http://www.italia.it/en/home.html",
+    "email": "comunicazione@enit.it"
+  },
+  {
+    "country": "Jamaica",
+    "website": "http://www.jtbonline.org",
+    "email": "information@visitjamaica.com"
+  },
+  {
+    "country": "Japan",
+    "website": "https://www.jnto.go.jp/eng/",
+    "email": "infolax@jnto.go.jp"
+  },
+  {
+    "country": "Jordan",
+    "website": "http://www.visitjordan.com",
+    "email": "info@visitjordan.com"
+  },
+  {
+    "country": "Kenya",
+    "website": "http://ktb.go.ke\nhttp://www.magicalkenya.com",
+    "email": "info@ktb.go.ke"
+  },
+  {
+    "country": "Kiribati",
+    "website": "https://www.kiribatitourism.gov.ki/",
+    "email": "info@kiribatitourism.gov.ki"
+  },
+  {
+    "country": "Korea",
+    "website": "http://english.visitkorea.or.kr/enu/index.kto",
+    "email": "english@knto.or.kr"
+  },
+  {
+    "country": "Kuwait",
+    "website": "https://e.gov.kw/sites/kgoenglish/Pages/Visitors/InfoSubPages/TourismInKuwait.aspx",
+    "email": "info@tec.com.kw"
+  },
+  {
+    "country": "Laos",
+    "website": "http://www.tourismlaos.org",
+    "email": "info@tourismlaos.org"
+  },
+  {
+    "country": "Latvia",
+    "website": "https://www.latvia.travel/en/about-us",
+    "email": "info@latvia.travel"
+  },
+  {
+    "country": "Lebanon",
+    "website": "http://mot.gov.lb/",
+    "email": "info@destinationlebanon.gov.lb"
+  },
+  {
+    "country": "Libya",
+    "website": "https://tourism.gov.ly/",
+    "email": "N/A"
+  },
+  {
+    "country": "Lithuania",
+    "website": "https://www.lithuania.travel/en/",
+    "email": "info@lithuania.travel"
+  },
+  {
+    "country": "Luxembourg",
+    "website": "https://www.visitluxembourg.com/en",
+    "email": "info@visitluxembourg.com"
+  },
+  {
+    "country": "Madagascar",
+    "website": "https://madagascar-tourisme.com/en/",
+    "email": "ontm@moov.mg / ontm.contact@gmail.com"
+  },
+  {
+    "country": "Malawi",
+    "website": "http://www.visitmalawi.mw/",
+    "email": "info@visitmalawi.mw"
+  },
+  {
+    "country": "Malaysia",
+    "website": "https://www.tourism.gov.my",
+    "email": "enquiries@tourism.gov.my"
+  },
+  {
+    "country": "Maldives",
+    "website": "http://www.tourism.gov.mv \nhttps://visitmaldives.com",
+    "email": "info@visitmaldives.com"
+  },
+  {
+    "country": "Mali",
+    "website": "https://www.visitlosinj.hr/",
+    "email": "losinj@visitlosinj.hr"
+  },
+  {
+    "country": "Malta",
+    "website": "https://www.mta.com.mt/en/home",
+    "email": "info@visitmalta.com"
+  },
+  {
+    "country": "Marshall Islands",
+    "website": "https://www.rmiocit.org/tourism",
+    "email": "ourteam@rmiocit.org"
+  },
+  {
+    "country": "Martinique",
+    "website": "http://us.martinique.org",
+    "email": "info@martinique.org"
+  },
+  {
+    "country": "Maurititania",
+    "website": "https://visitmauritania.com/",
+    "email": "info@ont.mr"
+  },
+  {
+    "country": "Mauritius",
+    "website": "https://tourism.govmu.org/SitePages/Index.aspx",
+    "email": "mtou@govmu.org"
+  },
+  {
+    "country": "Mexico",
+    "website": "https://www.visit-mexico.mx/",
+    "email": "info@visit-mexico.mx"
+  },
+  {
+    "country": "Micronesia",
+    "website": "http://www.visit-micronesia.fm/index.html",
+    "email": "fsmtourism@gmail.com"
+  },
+  {
+    "country": "Moldova",
+    "website": "https://invest.gov.md/",
+    "email": "office@invest.gov.md"
+  },
+  {
+    "country": "Monaco",
+    "website": "http://www.visitmonaco.com",
+    "email": "monaco@aboutdci.com"
+  },
+  {
+    "country": "Monaco",
+    "website": "https://www.visitmonaco.com/us",
+    "email": "visitmonaco@gouv.mc"
+  },
+  {
+    "country": "Mongolia",
+    "website": "https://www.mongolia.travel/",
+    "email": "support@visitmongolia.com"
+  },
+  {
+    "country": "Montenegro",
+    "website": "https://www.montenegro.travel/en",
+    "email": "info@montenegro.travel"
+  },
+  {
+    "country": "Morocco",
+    "website": "http://www.visitmorocco.com/en",
+    "email": "inquiries@onmt.org.ma"
+  },
+  {
+    "country": "Mozambique",
+    "website": "https://www.visitmozambique.gov.mz/",
+    "email": "tourismmozambique@gmail.com"
+  },
+  {
+    "country": "Namibia",
+    "website": "http://www.namibiatourism.com.na",
+    "email": "INFO@VISITNAMIBIA.COM.NA"
+  },
+  {
+    "country": "Nepal",
+    "website": "https://www.welcomenepal.com",
+    "email": "info@ntb.org.np"
+  },
+  {
+    "country": "Netherlands",
+    "website": "https://www.holland.com/global/meetings/contact/contact-us.htm",
+    "email": "mice@holland.com"
+  },
+  {
+    "country": "New Zealand",
+    "website": "https://www.newzealand.com/ie/\nhttps://www.tourismnewzealand.com",
+    "email": "https://media.newzealand.com/en/contact-us/\nsocial.media@tnz.govt.nz"
+  },
+  {
+    "country": "Nicaragua",
+    "website": "http://www.visitnicaragua.us",
+    "email": "https://www.visitnicaragua.us/contact/\ninformation@visitnicaragua.us"
+  },
+  {
+    "country": "Nigeria",
+    "website": "https://tournigeria.gov.ng/",
+    "email": "hello@tournigeria.gov.ng"
+  },
+  {
+    "country": "Norway",
+    "website": "https://www.visitnorway.com",
+    "email": "hello@visitnorway.com"
+  },
+  {
+    "country": "Pakistan",
+    "website": "https://tourism.gov.pk/",
+    "email": "info@tourism.gov.pk"
+  },
+  {
+    "country": "Palau",
+    "website": "http://palaugov.pw/bureau-of-tourism/",
+    "email": "bureauoftourism@gmail.com"
+  },
+  {
+    "country": "Palestine",
+    "website": "http://www.travelpalestine.ps/",
+    "email": "majedishaq@travelpalestine.ps"
+  },
+  {
+    "country": "Panama",
+    "website": "https://www.tourismpanama.com/",
+    "email": "contact@visitpanama.com"
+  },
+  {
+    "country": "Paraguay",
+    "website": "https://www.visitparaguay.travel/",
+    "email": "visitparaguay1@gmail.com"
+  },
+  {
+    "country": "Peru",
+    "website": "http://www.peru.travel/en-us",
+    "email": "iperu@promperu.gob.pe"
+  },
+  {
+    "country": "Philippines",
+    "website": "http://tpb.gov.ph",
+    "email": "info@tpb.gov.ph"
+  },
+  {
+    "country": "Poland",
+    "website": "https://www.pot.gov.pl/en",
+    "email": "pot@pot.gov.pl"
+  },
+  {
+    "country": "Portugal",
+    "website": "https://www.visitportugal.com/en",
+    "email": "info@turismodeportugal.pt"
+  },
+  {
+    "country": "Quatar",
+    "website": "https://www.visitqatar.qa/en/home",
+    "email": "info@visitqatar.qa  //  qtourism@visitqatar.qa"
+  },
+  {
+    "country": "Romania",
+    "website": "http://romaniatourism.com/",
+    "email": "travel@romaniatourism.com"
+  },
+  {
+    "country": "Russia",
+    "website": "https://www.visitrussia.com/",
+    "email": "info@visitrussia.com"
+  },
+  {
+    "country": "Rwanda",
+    "website": "https://www.visitrwanda.com/",
+    "email": "eac@rwandatourism.com"
+  },
+  {
+    "country": "Saint Lucia",
+    "website": "http://www.stlucia.org",
+    "email": "information@stlucia.org"
+  },
+  {
+    "country": "Saint Vincent And The Granadines",
+    "website": "http://www.tourism.gov.vc/tourism/",
+    "email": "tourism@gov.vc"
+  },
+  {
+    "country": "Samoa",
+    "website": "http://www.samoa.travel",
+    "email": "info@samoa.travel"
+  },
+  {
+    "country": "Saudi Arabia",
+    "website": "https://www.visitsaudi.com/en",
+    "email": "social@sta.gov.sa  /  ask@visitsaudi.com"
+  },
+  {
+    "country": "Scotland",
+    "website": "https://www.visitscotland.com",
+    "email": "travelpr@visitscotland.com  /  info@visitscotland.com"
+  },
+  {
+    "country": "Senegal",
+    "website": "https://www.visitezlesenegal.sn/",
+    "email": "https://www.discoversenegal.com/contact.html"
+  },
+  {
+    "country": "Serbia",
+    "website": "https://www.serbia.travel/en",
+    "email": "info@serbia.travel"
+  },
+  {
+    "country": "Seychelles",
+    "website": "http://www.seychelles.travel",
+    "email": "info@seychelles.travel"
+  },
+  {
+    "country": "Sierra Leone",
+    "website": "https://ntb.gov.sl/",
+    "email": "info@ntb.gov.sl"
+  },
+  {
+    "country": "Singapore",
+    "website": "https://www.stb.gov.sg \nhttp://www.visitsingapore.com/en/",
+    "email": "newyork@stb.gov.sg"
+  },
+  {
+    "country": "Slovakia",
+    "website": "https://slovakia.travel/en",
+    "email": "info@slovakia.travel"
+  },
+  {
+    "country": "Slovenia",
+    "website": "https://www.slovenia.info/en",
+    "email": "info@slovenia.info\npress@slovenia.info"
+  },
+  {
+    "country": "Solomon Islands",
+    "website": "https://www.visitsolomons.com.sb/",
+    "email": "info@tourismsolomons.com.sb"
+  },
+  {
+    "country": "Somalia",
+    "website": "https://tourism.gov.so/",
+    "email": "info@tourism.gov.so"
+  },
+  {
+    "country": "South Africa",
+    "website": "https://www.southafrica.net/gl/en \nhttps://www.tourism.gov.za",
+    "email": "callcentre@tourism.gov.za\nmediaq@southafrica.net"
+  },
+  {
+    "country": "Spain",
+    "website": "http://www.spain.info",
+    "email": "rrssturismo@tourspain.es"
+  },
+  {
+    "country": "Sri Lanka",
+    "website": "http://www.sltda.gov.lk/index.html",
+    "email": "info@srilanka.travel"
+  },
+  {
+    "country": "Sudan",
+    "website": "http://www.sudan-tourism.gov.sd/",
+    "email": "info@mofiac.gov.ss"
+  },
+  {
+    "country": "Suriname",
+    "website": "https://www.surinametourism.sr/",
+    "email": "info@surinametourism.sr"
+  },
+  {
+    "country": "Sweden",
+    "website": "https://visitsweden.com",
+    "email": "info@visitsweden.com"
+  },
+  {
+    "country": "Switzerland",
+    "website": "https://www.myswitzerland.com/en/home.html",
+    "email": "info@myswitzerland.com"
+  },
+  {
+    "country": "Syria",
+    "website": "N/A",
+    "email": "N/A"
+  },
+  {
+    "country": "Taiwan",
+    "website": "https://eng.taiwan.net.tw",
+    "email": "tbrocnyc@tbroc.gov.tw"
+  },
+  {
+    "country": "Tajikistan",
+    "website": "https://traveltajikistan.tj/",
+    "email": "info@ctd.tj"
+  },
+  {
+    "country": "Tanzania",
+    "website": "https://www.tanzaniatourism.go.tz/en",
+    "email": "md@tanzaniatourism.go.tz  /  info@tanzaniatourism.go.tz"
+  },
+  {
+    "country": "Thailand",
+    "website": "https://www.tourismthailand.org",
+    "email": "NY Office: info@tatny.com / Bangkok Office: center@tat.or.th"
+  },
+  {
+    "country": "United  Kingdom",
+    "website": "https://www.visitbritain.org",
+    "email": "websiteaccessibility@visitbritain.org"
+  },
+  {
+    "country": "Timor-Leste",
+    "website": "https://www.timorleste.tl/",
+    "email": "info@timorleste.tl"
+  },
+  {
+    "country": "Togo",
+    "website": "https://www.republicoftogo.com/Toutes-les-rubriques/Tourisme",
+    "email": "contact@republicoftogo.com"
+  },
+  {
+    "country": "Tonga",
+    "website": "https://tongatourism.travel/",
+    "email": "tongatourismarketing@gmail.com"
+  },
+  {
+    "country": "Trinidad and Tobago",
+    "website": "https://visittrinidad.tt/\nhttps://www.visittobago.gov.tt/",
+    "email": "info@visittrinidad.co.tt\ninfo@tobagotourism.org"
+  },
+  {
+    "country": "Tunisia",
+    "website": "https://www.tourisme.gov.tn/",
+    "email": "info@cometotunisia.co.uk"
+  },
+  {
+    "country": "Turkey",
+    "website": "http://www.kultur.gov.tr/",
+    "email": "info@visitturkey.in"
+  },
+  {
+    "country": "Uganda",
+    "website": "https://www.utb.go.ug/",
+    "email": "utb@utb.go.ug"
+  },
+  {
+    "country": "Ukraine",
+    "website": "https://visitukraine.today/",
+    "email": "info@visitukraine.today"
+  },
+  {
+    "country": "Uruguay",
+    "website": "https://turismo.gub.uy/index.php/en/",
+    "email": "webmaster@mintur.gub.uy"
+  },
+  {
+    "country": "Uzbekistan",
+    "website": "https://uzbektourism.uz/en",
+    "email": "info@motach.uz"
+  },
+  {
+    "country": "Vanuatu",
+    "website": "https://tourism.gov.vu/",
+    "email": "tourism@vanuatu.gov.vu"
+  },
+  {
+    "country": "Venezuela",
+    "website": "https://www.mintur.gob.ve/",
+    "email": "N/A"
+  },
+  {
+    "country": "Vietnam",
+    "website": "https://vietnam.travel/home",
+    "email": "contact@vietnamtourism.gov.vn"
+  },
+  {
+    "country": "Wales",
+    "website": "http://www.visitwales.com/",
+    "email": "customerhelp@gov.wales"
+  },
+  {
+    "country": "Zambia",
+    "website": "https://www.zambia.travel/",
+    "email": "info@zambia.travel"
+  },
+  {
+    "country": "Zimbabwe",
+    "website": "https://www.zimbabwetourism.net/",
+    "email": "info@ztazim.co.zw"
+  },
+  {
+    "country": "MAJOR CITIES",
+    "website": "",
+    "email": ""
+  },
+  {
+    "country": "Abu Dhabi",
+    "website": "http://tcaabudhabi.ae/en",
+    "email": "info@dctabudhabi.ae"
+  },
+  {
+    "country": "Amsterdam",
+    "website": "https://www.iamsterdam.com",
+    "email": "webcare@amsterdam.com"
+  },
+  {
+    "country": "Barcelona",
+    "website": "http://www.barcelonaturisme.com/wv3/en/",
+    "email": "info@barcelonaturisme.com"
+  },
+  {
+    "country": "Berlin",
+    "website": "https://about.visitberlin.de",
+    "email": "hallo@visitBerlin.de"
+  },
+  {
+    "country": "Cape Town",
+    "website": "http://www.capetown.travel",
+    "email": "info@capetown.travel"
+  },
+  {
+    "country": "Dubai",
+    "website": "https://www.visitdubai.com/en",
+    "email": "info@dubaitourism.ae\ninfo@visitdubai.ae\nmediarelations@dubaitourism.ae"
+  },
+  {
+    "country": "Havana",
+    "website": "http://www.cubatravel.cu/en/destinations/havana-cuba",
+    "email": "info@habana.infotur.tur.cu"
+  },
+  {
+    "country": "Hong Kong",
+    "website": "http://www.discoverhongkong.com",
+    "email": "HQ: info@hktb.com\nUS: nycwwo@hktb.com"
+  },
+  {
+    "country": "London",
+    "website": "https://www.visitlondon.com",
+    "email": "press@londonandpartners.com"
+  },
+  {
+    "country": "Madrid",
+    "website": "https://www.esmadrid.com/en?utm_referrer=https%3A%2F%2Fwww.google.com%2F",
+    "email": "redessociales@esmadrid.com"
+  },
+  {
+    "country": "Paris",
+    "website": "https://press.parisinfo.com",
+    "email": "ideferran@parisinfo.com"
+  },
+  {
+    "country": "Rio",
+    "website": "http://visit.rio/en/welcome/",
+    "email": "contatoredes.riotur@gmail.com"
+  },
+  {
+    "country": "Rome",
+    "website": "http://www.turismoroma.it/?lang=en",
+    "email": "turismo@comune.roma.it  /  redazione.turismo@comune.roma.it"
+  },
+  {
+    "country": "Tokyo",
+    "website": "https://www.gotokyo.org/en/index.html",
+    "email": "info@tokyo-tourism.jp"
+  },
+  {
+    "country": "US (Arizona)",
+    "website": "https://tourism.az.gov/ \nhttps://www.visitarizona.com",
+    "email": "info@tourism.az.gov"
+  },
+  {
+    "country": "US (California)",
+    "website": "https://tourism.ca.gov/s/contact-us?language=en_US",
+    "email": "assessment@tourism.ca.gov"
+  },
+  {
+    "country": "US (Chicago)",
+    "website": "https://www.choosechicago.com",
+    "email": "laustin@choosechicago.com"
+  },
+  {
+    "country": "US (Florida)",
+    "website": "http://www.visitflorida.com/en-us.html",
+    "email": "contactus@visitflorida.org"
+  },
+  {
+    "country": "US (Hawaii)",
+    "website": "http://hawaiitourismauthority.org",
+    "email": "info@gohawaii.com"
+  },
+  {
+    "country": "US (New York)",
+    "website": "https://business.nycgo.com",
+    "email": "press@nycgo.com   /   https://business.nycgo.com/about-us/contact-us/"
+  }
+]
