@@ -189,8 +189,9 @@ function defaultDb(): Db {
     ],
     projects: [
       { id: 1, name: 'Reset Button Workshop', description: '$10 workshop — 60 guided minutes for moms. Drive sales daily.', status: 'active', priority: 'urgent', deadline: null, next_action: 'Post 3 promo pieces this week (Come Cranky angle)', notes: 'Luma event page live. Need caption strategy + daily promo.', assistant: 'content_director', progress: 40, created_at: now, updated_at: now },
-      { id: 2, name: 'Room30.ai Launch', description: 'Main offer. New avatar Instagram account + content strategy.', status: 'active', priority: 'high', deadline: null, next_action: 'Set up new Instagram account + first 5 posts', notes: 'AI Mom at Work restricted. New avatar account in planning.', assistant: 'strategist', progress: 15, created_at: now, updated_at: now },
-      { id: 3, name: 'AI Mom Podcast', description: '3 episodes queued and ready. Need publish workflow.', status: 'active', priority: 'medium', deadline: null, next_action: 'Set up Riverside + publish Ep 1', notes: 'Episodes recorded. Using Riverside for distribution.', assistant: 'operator', progress: 60, created_at: now, updated_at: now },
+      { id: 2, name: 'Room30.ai Affiliate Push', description: 'Primary $30k revenue driver. Portugal retreat = $10k per referral. Need 3 referrals by Aug 3.', status: 'active', priority: 'urgent', deadline: '2026-08-03', next_action: 'Post first carousel using Room30 templates across @aimomatwork + @content4queens', notes: 'Affiliate link: https://room30.ai/sep2026?fpr=l04zhc — 70% commission. Target: women who want to learn AI influencer business.', assistant: 'strategist', progress: 5, created_at: now, updated_at: now },
+      { id: 3, name: 'AI Mom Podcast', description: 'Launch July 1. School and Work After AI. Episodes recorded.', status: 'active', priority: 'high', deadline: '2026-07-01', next_action: 'Confirm platform + publish Ep 1 + launch captions', notes: 'Episodes in Downloads folder. Cover art done. Intro written.', assistant: 'operator', progress: 70, created_at: now, updated_at: now },
+      { id: 4, name: 'RISE Lite', description: 'Standalone sellable version of the Vision + Daily Command + Story Processor flow. A woman\'s personal productivity journal with content-to-platform pipeline built in.', status: 'active', priority: 'medium', deadline: '2027-01-01', next_action: 'Define MVP feature set: Vision board + Daily Command + Story → Content pipeline', notes: 'Core insight: Vision tab is the hook. Free write → Story Processor → instant content output is the WOW. Strip down RISE Station to the personal transformation + content OS and sell as RISE Lite. Price point TBD ($47/mo or one-time $197).', assistant: 'strategist', progress: 5, created_at: now, updated_at: now },
     ],
     tasks: [
       { id: 1, title: 'Generate Reset Button Workshop posts in Projects tab', notes: 'Projects → Reset Button Workshop → open card → Generate Posts → 20 posts → check Content Pipeline', status: 'today', priority: 'urgent', energy: 'low', project_id: 1, recurring: false, due_date: null, created_at: now, updated_at: now },
@@ -245,6 +246,17 @@ export function readDb(): Db {
   if (!db.brand_accounts || db.brand_accounts.length === 0) {
     db.brand_accounts = defaultDb().brand_accounts
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
+  // Migrate: add RISE Lite project if missing
+  if (db.projects && !db.projects.find(p => p.name === 'RISE Lite')) {
+    const def = defaultDb()
+    const riseLite = def.projects.find(p => p.name === 'RISE Lite')
+    if (riseLite) { db.projects.push({ ...riseLite, id: Math.max(...db.projects.map(p => p.id), 0) + 1 }); fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2)) }
+  }
+  // Migrate: update Room30 project description if still old
+  if (db.projects) {
+    const r30 = db.projects.find(p => p.name === 'Room30.ai Launch')
+    if (r30) { r30.name = 'Room30.ai Affiliate Push'; r30.description = 'Primary $30k revenue driver. Portugal retreat = $10k per referral. Need 3 referrals by Aug 3.'; r30.priority = 'urgent'; fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2)) }
   }
   return db
 }

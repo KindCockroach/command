@@ -9,7 +9,7 @@ type DailyData = {
   notes: string
 }
 
-type OnFireItem = { title: string; status: string; label: string; checked?: boolean }
+type OnFireItem = { id?: string; title: string; status: string; label: string; checked?: boolean }
 
 const today = new Date().toISOString().split('T')[0]
 const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
@@ -38,8 +38,8 @@ export default function DailyCommand() {
       fetch('/api/projects').then(r => r.json()),
     ]).then(([tasks, projects]) => {
       const fire: OnFireItem[] = []
-      tasks.filter((t: { priority: string }) => t.priority === 'urgent').slice(0, 3).forEach((t: { title: string; status: string }) =>
-        fire.push({ title: t.title, status: 'Task', label: 'urgent' })
+      tasks.filter((t: { priority: string }) => t.priority === 'urgent').slice(0, 3).forEach((t: { id: string; title: string; status: string }) =>
+        fire.push({ id: t.id, title: t.title, status: 'Task', label: 'urgent' })
       )
       projects.filter((p: { priority: string; status: string }) => p.priority === 'urgent' && p.status === 'active').forEach((p: { name: string; next_action: string }) =>
         fire.push({ title: p.name, status: 'Project', label: p.next_action })
@@ -93,7 +93,13 @@ export default function DailyCommand() {
           {onFire.map((item, i) => (
             <div
               key={i}
-              onClick={() => setOnFire(prev => prev.map((it, idx) => idx === i ? { ...it, checked: !it.checked } : it))}
+              onClick={async () => {
+                const next = !item.checked
+                setOnFire(prev => prev.map((it, idx) => idx === i ? { ...it, checked: next } : it))
+                if (item.id && next) {
+                  await fetch(`/api/tasks/${item.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'done' }) }).catch(() => {})
+                }
+              }}
               style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '8px 0', borderBottom: i < onFire.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}
             >
               <div style={{
@@ -157,18 +163,27 @@ export default function DailyCommand() {
       </div>
 
       {/* Notes + save */}
-      <div style={{ display: 'flex', gap: '12px' }}>
-        <textarea
-          value={data.notes}
-          onChange={e => setData(d => ({ ...d, notes: e.target.value }))}
-          placeholder="Quick capture — thoughts, ideas, reminders, anything..."
-          rows={3}
-          style={{ flex: 1, padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--border)', fontSize: '13px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)', resize: 'none', outline: 'none' }}
-        />
-        <button onClick={save} disabled={saving}
-          style={{ padding: '12px 20px', borderRadius: '12px', border: 'none', background: saved ? '#3daa7c' : 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background 0.2s' }}>
-          {saved ? <><CheckCheck size={14} /> Saved</> : saving ? 'Saving...' : 'Save Day'}
-        </button>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: '3px solid var(--purple)', borderRadius: '14px', padding: '18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>Quick Capture</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Brain dump — saved with your day log</span>
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <textarea
+            value={data.notes}
+            onChange={e => setData(d => ({ ...d, notes: e.target.value }))}
+            placeholder="Thoughts, ideas, reminders, free write fragments, anything... Saved to your daily log when you click Save Day."
+            rows={3}
+            style={{ flex: 1, padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '13px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'none', outline: 'none', lineHeight: 1.6 }}
+          />
+          <button onClick={save} disabled={saving}
+            style={{ padding: '12px 20px', borderRadius: '10px', border: 'none', background: saved ? '#3daa7c' : 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background 0.2s', whiteSpace: 'nowrap' }}>
+            {saved ? <><CheckCheck size={14} /> Saved</> : saving ? 'Saving...' : 'Save Day'}
+          </button>
+        </div>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
+          💡 To drop images or free write for content → use <strong>Story</strong> tab. Generated content lives in <strong>Content</strong> tab → Kanban board.
+        </p>
       </div>
 
       {/* AI Briefing output */}
