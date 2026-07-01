@@ -177,13 +177,13 @@ export default function DailyCommand() {
           <textarea
             value={data.notes}
             onChange={e => setData(d => ({ ...d, notes: e.target.value }))}
-            placeholder="Thoughts, ideas, reminders, free write fragments, anything... Saved to your daily log when you click Save Day."
+            placeholder="Thoughts, ideas, reminders, free write fragments, anything... Saved to your daily log when you click Let's Go."
             rows={3}
             style={{ flex: 1, padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '13px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'none', outline: 'none', lineHeight: 1.6 }}
           />
           <button onClick={save} disabled={saving}
             style={{ padding: '12px 20px', borderRadius: '10px', border: 'none', background: saved ? '#3daa7c' : 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background 0.2s', whiteSpace: 'nowrap' }}>
-            {saved ? <><CheckCheck size={14} /> Saved</> : saving ? 'Saving...' : 'Save Day'}
+            {saved ? <><CheckCheck size={14} /> Saved</> : saving ? 'Saving...' : "Let's Go"}
           </button>
         </div>
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
