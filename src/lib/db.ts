@@ -35,6 +35,9 @@ export type ContentPiece = {
   // GoHighLevel scheduling
   ghl_post_id?: string | null      // GHL social planner post id once pushed
   scheduled_at?: string | null     // when GHL is set to publish it
+  // River (sorting hat) fields
+  open_questions?: string[]        // questions only Mandi can answer before this post is complete
+  river_source?: string            // which stream fed this in (capture, story, podcast, vision...)
   // AI pipeline fields
   pipeline_stage?: string
   ai_enrichment?: Record<string, unknown>
@@ -171,6 +174,32 @@ export type AvatarRecord = {
   updated_at: string
 }
 
+export type Goal = {
+  id: number
+  title: string
+  account_id: string | null        // null = station-wide goal
+  target_per_week: number          // posts per week this goal demands
+  deadline: string | null
+  notes: string
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type WatchAccount = {
+  id: number
+  handle: string
+  platform: string
+  niche: string
+  why_watching: string             // what they do well / what we want to learn
+  formats: string[]                // content formats they win with
+  buzzwords: string[]              // words/phrases they repeat
+  keywords: string[]               // SEO/discovery keywords they rank on
+  notes: string
+  created_at: string
+  updated_at: string
+}
+
 type Db = {
   content: ContentPiece[]
   intake_log: { id: number; raw_input: string; created_at: string }[]
@@ -182,6 +211,10 @@ type Db = {
   daily_commands: DailyCommand[]
   brand_accounts: BrandAccount[]
   avatars: AvatarRecord[]
+  goals: Goal[]
+  watch_accounts: WatchAccount[]
+  next_goal_id: number
+  next_watch_id: number
   next_id: number
   next_memory_id: number
   next_project_id: number
@@ -249,6 +282,13 @@ function defaultDb(): Db {
       { id: 6, type: 'evidence', content: 'I built an AI-powered command center during nap times. I have a voice clone. I have a podcast. I have a $10 offer live. I have a team of AI agents working for me while I sleep. The evidence is stacking.', created_at: now, updated_at: now },
     ],
     daily_commands: [],
+    next_goal_id: 3,
+    goals: [
+      { id: 1, title: 'Reset Button Workshop sales content', account_id: 'aimomatwork', target_per_week: 5, deadline: null, notes: 'Daily promo until workshop fills', active: true, created_at: now, updated_at: now },
+      { id: 2, title: 'Room30 affiliate push — 3 referrals by Aug 3', account_id: null, target_per_week: 7, deadline: '2026-08-03', notes: 'Across @aimomatwork + @content4queens', active: true, created_at: now, updated_at: now },
+    ],
+    next_watch_id: 1,
+    watch_accounts: [],
     avatars: [
       { id: 'mandi', name: 'Mandi (AI Mom)', emoji: '🎈', tagline: 'AI works for moms who do everything', niche: 'AI tools for busy moms', personality: 'Warm, bold, direct, plain English, real mom of 4 energy. Never corporate. Never jargon. Always honest.', voiceStyle: 'Conversational, encouraging, occasionally funny, always real', targetAudience: 'Moms 28-45 who want to use AI to save time and create income', instagramHandle: '@aimomatwork', primaryPlatform: 'Instagram', accentColor: '#6B2D6E', bgColor: '#F3E8F4', systemPrompt: 'You are Mandi Beck — AI Mom. You teach busy moms to use AI tools to save time and build income.\nVoice: warm, bold, direct, plain English, real mom of 4. Never corporate speak. Never jargon.\nAlways start with the specific result before explaining the how.\nYour offer is aiworksforyou.co', hookFormulas: ["I did [specific thing] in [specific time] using AI — here's exactly how", "You shouldn't have to choose between [thing A] and [thing B] — this tool changes that", "I'm a mom of 4 with no tech background and I just [impressive result] in [time]", 'Stop spending [time] on [task]. This AI tool does it in [faster time].'], ctaTemplate: "Comment AI and I'll send you the exact tool + how I use it as a mom of 4.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
       { id: 'gator', name: 'Gator', emoji: '🐊', tagline: 'The swamp creature who makes AI simple.', niche: 'AI for entrepreneurs and small business owners — no excuses, just results', personality: 'Bold, no-nonsense, Southern drawl, zero tolerance for excuses. Terrifying gator appearance + genuinely helpful AI content.', voiceStyle: 'Short sentences. Max 12 words per sentence. No hype words. Facts + results only. One swamp reference per piece max.', targetAudience: 'Small business owners, entrepreneurs, side hustlers 30-55 who know they\'re behind on AI', instagramHandle: '@gatorai', primaryPlatform: 'TikTok + Instagram', accentColor: '#2D6E3E', bgColor: '#E8F4EB', systemPrompt: "You are Gator — an AI influencer with a gator head and a business mind. Southern energy. Zero tolerance for excuses. Genuinely helpful.\nPersonality contradiction: looks terrifying, teaches AI tools with patience.\nVoice rules: short sentences (max 12 words), no hype words, facts + results only, one swamp reference per piece max.\nYour offer funnels to aiworksforyou.co.\nCTA always ends with: \"Comment GATOR. I'll handle the rest.\"", hookFormulas: ['Your competitor just automated [task] with AI. You still doing it by hand?', 'Most business owners are leaving $[amount] on the table. One AI tool fixes it.', 'Stop [doing task manually]. AI does it in [time]. Here\'s the exact setup.', '[Business result] in [time]. No team. No agency. Just this AI tool.'], ctaTemplate: "Comment GATOR. I'll handle the rest.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
@@ -318,6 +358,17 @@ export function readDb(): Db {
     db.content = db.content.map(c => ({ project_id: null, ...c }))
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
   }
+  // Migrate: add goals + watch_accounts
+  if (!db.goals) {
+    db.goals = defaultDb().goals
+    db.next_goal_id = defaultDb().next_goal_id
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
+  if (!db.watch_accounts) {
+    db.watch_accounts = []
+    db.next_watch_id = 1
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
   // Migrate: backfill account_id from "Account: @handle" in notes / account tag
   if (db.content && db.content.some(c => !('account_id' in c))) {
     const accounts = db.brand_accounts ?? []
@@ -379,6 +430,8 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     media_url: data.media_url ?? '',
     ghl_post_id: null,
     scheduled_at: null,
+    open_questions: data.open_questions ?? [],
+    river_source: data.river_source ?? '',
   }
   db.content.unshift(piece)
   writeDb(db)
@@ -665,6 +718,115 @@ export function saveDailyCommand(data: DailyCommand): DailyCommand {
 }
 
 // ── Brand Accounts ─────────────────────────────────────────────────────────────
+
+// ── Goals CRUD ────────────────────────────────────────────────────────────────
+
+export function getAllGoals(): Goal[] {
+  const db = readDb()
+  return db.goals ?? []
+}
+
+export function createGoal(data: Partial<Goal>): Goal {
+  const db = readDb()
+  if (!db.goals) { db.goals = []; db.next_goal_id = 1 }
+  const now = new Date().toISOString()
+  const g: Goal = {
+    id: db.next_goal_id++,
+    title: data.title ?? 'Untitled goal',
+    account_id: data.account_id ?? null,
+    target_per_week: data.target_per_week ?? 3,
+    deadline: data.deadline ?? null,
+    notes: data.notes ?? '',
+    active: data.active ?? true,
+    created_at: now,
+    updated_at: now,
+  }
+  db.goals.push(g)
+  writeDb(db)
+  return g
+}
+
+export function updateGoal(id: number, updates: Partial<Goal>): Goal | null {
+  const db = readDb()
+  if (!db.goals) return null
+  const idx = db.goals.findIndex(g => g.id === id)
+  if (idx === -1) return null
+  db.goals[idx] = { ...db.goals[idx], ...updates, id, updated_at: new Date().toISOString() }
+  writeDb(db)
+  return db.goals[idx]
+}
+
+export function deleteGoal(id: number): boolean {
+  const db = readDb()
+  if (!db.goals) return false
+  const before = db.goals.length
+  db.goals = db.goals.filter(g => g.id !== id)
+  writeDb(db)
+  return db.goals.length < before
+}
+
+// ── Watch accounts (external audit) CRUD ─────────────────────────────────────
+
+export function getAllWatchAccounts(): WatchAccount[] {
+  const db = readDb()
+  return db.watch_accounts ?? []
+}
+
+export function createWatchAccount(data: Partial<WatchAccount>): WatchAccount {
+  const db = readDb()
+  if (!db.watch_accounts) { db.watch_accounts = []; db.next_watch_id = 1 }
+  const now = new Date().toISOString()
+  const w: WatchAccount = {
+    id: db.next_watch_id++,
+    handle: data.handle ?? '',
+    platform: data.platform ?? 'Instagram',
+    niche: data.niche ?? '',
+    why_watching: data.why_watching ?? '',
+    formats: data.formats ?? [],
+    buzzwords: data.buzzwords ?? [],
+    keywords: data.keywords ?? [],
+    notes: data.notes ?? '',
+    created_at: now,
+    updated_at: now,
+  }
+  db.watch_accounts.push(w)
+  writeDb(db)
+  return w
+}
+
+export function updateWatchAccount(id: number, updates: Partial<WatchAccount>): WatchAccount | null {
+  const db = readDb()
+  if (!db.watch_accounts) return null
+  const idx = db.watch_accounts.findIndex(w => w.id === id)
+  if (idx === -1) return null
+  db.watch_accounts[idx] = { ...db.watch_accounts[idx], ...updates, id, updated_at: new Date().toISOString() }
+  writeDb(db)
+  return db.watch_accounts[idx]
+}
+
+export function deleteWatchAccount(id: number): boolean {
+  const db = readDb()
+  if (!db.watch_accounts) return false
+  const before = db.watch_accounts.length
+  db.watch_accounts = db.watch_accounts.filter(w => w.id !== id)
+  writeDb(db)
+  return db.watch_accounts.length < before
+}
+
+/** Aggregated trend context from watched external accounts — injected into generators */
+export function getWatchContext(): string {
+  const watched = getAllWatchAccounts()
+  if (!watched.length) return ''
+  const buzz = [...new Set(watched.flatMap(w => w.buzzwords))].slice(0, 40)
+  const keys = [...new Set(watched.flatMap(w => w.keywords))].slice(0, 40)
+  const fmts = [...new Set(watched.flatMap(w => w.formats))].slice(0, 20)
+  return `
+TREND INTELLIGENCE (from ${watched.length} tracked winning accounts in our niches):
+${fmts.length ? `Formats that are winning: ${fmts.join('; ')}` : ''}
+${buzz.length ? `Buzzwords/phrases to weave in naturally: ${buzz.join(', ')}` : ''}
+${keys.length ? `Keywords for discovery: ${keys.join(', ')}` : ''}
+Mimic the FORMATTING patterns of these winners. Never copy their content.`
+}
 
 export function getAllBrandAccounts(): BrandAccount[] {
   const db = readDb()

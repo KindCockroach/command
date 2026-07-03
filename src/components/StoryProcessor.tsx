@@ -60,6 +60,32 @@ export default function StoryProcessor() {
   const [title, setTitle] = useState('')
   const [processing, setProcessing] = useState(false)
   const [result, setResult] = useState<StoryResult | null>(null)
+  const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done'>('idle')
+  const [riverMsg, setRiverMsg] = useState('')
+
+  const sendToRiver = async () => {
+    if (!result) return
+    setRiverStatus('sending')
+    try {
+      const input = `STORY: ${title || 'Untitled'}\n\nFREE WRITE:\n${freeWrite}\n\nPROCESSED TRUTH: ${result.final_summary}\n\nBEST CAPTION DRAFT:\n${result.instagram_caption_2 || result.instagram_caption_1}\n\nTIKTOK HOOK: ${result.tiktok_hook}`
+      const res = await fetch('/api/river', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, source: 'story' }),
+      })
+      const d = await res.json()
+      if (d.complete && d.account) {
+        setRiverMsg(`✓ Complete post filed under ${d.account.emoji} ${d.account.handle} — flip its card in Accounts to approve.`)
+      } else if (d.account) {
+        setRiverMsg(`Filed under ${d.account.handle} — it needs: ${(d.open_questions ?? []).join(' · ') || (d.needs ?? []).join(', ')}`)
+      } else {
+        setRiverMsg(d.error ? `River error: ${d.error}` : 'Filed to the pipeline.')
+      }
+      setRiverStatus('done')
+    } catch {
+      setRiverMsg('River connection failed — story is still processed above.')
+      setRiverStatus('done')
+    }
+  }
 
   const process = async () => {
     if (!freeWrite.trim()) return
@@ -118,6 +144,17 @@ export default function StoryProcessor() {
 
       {result && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Send to river */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '4px solid var(--purple)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--purple)' }}>🌊 Send through the River</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{riverMsg || 'Sorts this story to the best account and composes the final post-card, ready for your approval.'}</p>
+            </div>
+            <button onClick={sendToRiver} disabled={riverStatus === 'sending'}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: 'none', background: riverStatus === 'done' ? '#3daa7c' : 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
+              {riverStatus === 'sending' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Sorting…</> : riverStatus === 'done' ? <><CheckCheck size={13} /> Filed</> : <><Sparkles size={13} /> Compose & File</>}
+            </button>
+          </div>
           {/* Summary + bullets always visible */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
             <p style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Summary</p>

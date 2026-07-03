@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { createContent, getBrandAccount } from '@/lib/db'
+import { createContent, getBrandAccount, getWatchContext } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -231,7 +231,7 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
     if (!promptFn) continue
 
     const basePrompt = promptFn(projectName, projectDescription || '', projectNotes || '', order.qty)
-    const prompt = `${accountContext}\n\n${basePrompt}\n${VISUAL_RULE}`
+    const prompt = `${accountContext}\n${getWatchContext()}\n\n${basePrompt}\n${VISUAL_RULE}`
 
     try {
       const response = await client.responses.create({

@@ -20,12 +20,13 @@ import StationChat from './StationChat'
 import PodcastEngine from './PodcastEngine'
 import PitchStudio from './PitchStudio'
 import StoryProcessor from './StoryProcessor'
-import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine } from 'lucide-react'
+import AuditPanel from './AuditPanel'
+import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch'
+type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit'
 
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
@@ -67,6 +68,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'vision',     label: 'Vision',        icon: <Star size={12} /> },
     { id: 'notes',      label: 'Notes',         icon: <BookOpen size={12} /> },
     { id: 'accounts',   label: 'Accounts',      icon: <Users size={12} /> },
+    { id: 'audit',      label: 'Audit',         icon: <Radar size={12} /> },
     { id: 'avatars',    label: 'Avatars',       icon: <span style={{fontSize:'12px'}}>🎭</span> },
     { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
     { id: 'podcast',    label: 'Podcast',       icon: <Mic size={12} /> },
@@ -162,6 +164,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'vision'     && <VisionPanel />}
         {view === 'notes'      && <NotesPanel />}
         {view === 'accounts'   && <AccountsPanel />}
+        {view === 'audit'      && <AuditPanel />}
         {view === 'avatars'    && <AvatarsPanel />}
         {view === 'podcast'    && <PodcastEngine />}
         {view === 'story'      && <StoryProcessor />}
