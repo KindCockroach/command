@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Image as ImageIcon, Copy, Archive, Pencil, X, Save, Plus } from 'lucide-react'
+import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus } from 'lucide-react'
 import type { BrandAccount, ContentPiece } from '@/lib/db'
 
 const BLANK_ACCOUNT: Partial<BrandAccount> = {
@@ -177,87 +177,113 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged }: { post
     setCopied(true); setTimeout(() => setCopied(false), 1500)
   }
 
+  // Per-section copy button with its own confirmation
+  const SectionCopy = ({ text }: { text: string }) => {
+    const [ok, setOk] = useState(false)
+    return (
+      <button onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500) }}
+        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: '10px', fontWeight: 700, color: ok ? '#3DAA7C' : 'var(--text-muted)', flexShrink: 0 }}>
+        {ok ? <CheckCircle2 size={11} /> : <Copy size={11} />} {ok ? 'Copied' : 'Copy'}
+      </button>
+    )
+  }
+
+  const Section = ({ label, text, children, bold }: { label: string; text?: string; children?: React.ReactNode; bold?: boolean }) => (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+        <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)' }}>{label}</p>
+        {text && <SectionCopy text={text} />}
+      </div>
+      {children ?? <p style={{ fontSize: bold ? '13px' : '12px', fontWeight: bold ? 700 : 400, color: bold ? 'var(--text)' : 'var(--text-muted)', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{text}</p>}
+    </div>
+  )
+
+  const statusChip = hasQuestions
+    ? { label: '❓ Needs your answers', bg: 'rgba(224,82,82,0.1)', color: '#E05252' }
+    : isApproved ? { label: 'Approved · awaiting GHL', bg: 'rgba(242,166,90,0.14)', color: '#C47A1A' }
+    : isScheduled ? { label: `Scheduled${post.scheduled_at ? ` · ${new Date(post.scheduled_at).toLocaleDateString()}` : ''}`, bg: 'rgba(76,201,240,0.14)', color: '#2B9CC4' }
+    : (post.status === 'published' || post.status === 'archived') ? { label: '✓ Posted', bg: 'rgba(61,170,124,0.14)', color: '#3DAA7C' }
+    : { label: 'Ready for review', bg: 'var(--surface-raised, rgba(0,0,0,0.04))', color: 'var(--text-muted)' }
+
   return (
-    <div style={{ border: '1px solid var(--border)', borderRadius: '10px', background: 'var(--bg)', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px' }}>
+    <div style={{ border: `1px solid ${open ? accentColor : 'var(--border)'}`, borderRadius: '12px', background: 'var(--bg)', flexShrink: 0, transition: 'border-color 0.15s' }}>
+      {/* Header row — click to expand */}
+      <div onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 14px', cursor: 'pointer' }}>
         {/* Approval checkbox */}
         <button
-          onClick={e => { e.stopPropagation(); if (isPending && !approving) onApprove(post) }}
-          title={isPending ? 'Approve → send to GHL scheduler' : isApproved ? 'Approved — waiting for GHL connection' : isScheduled ? 'Scheduled in GHL' : 'Posted'}
+          onClick={e => { e.stopPropagation(); if (isPending && !approving && !hasQuestions) onApprove(post) }}
+          title={hasQuestions ? 'Answer its questions first' : isPending ? 'Approve → send to scheduler' : isApproved ? 'Approved — waiting for GHL connection' : isScheduled ? 'Scheduled in GHL' : 'Posted'}
           style={{
-            width: '18px', height: '18px', borderRadius: '5px', flexShrink: 0, marginTop: '1px',
-            border: isPending ? '2px solid var(--border)' : 'none', cursor: isPending ? 'pointer' : 'default',
+            width: '20px', height: '20px', borderRadius: '6px', flexShrink: 0, marginTop: '1px',
+            border: isPending ? `2px solid ${hasQuestions ? '#E05252' : 'var(--border)'}` : 'none',
+            cursor: isPending && !hasQuestions ? 'pointer' : 'default',
             background: isPending ? 'transparent' : isApproved ? '#F2A65A' : isScheduled ? '#4CC9F0' : '#3DAA7C',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-          {approving ? <RefreshCw size={10} color="#999" style={{ animation: 'spin 1s linear infinite' }} />
-            : !isPending && <CheckCircle2 size={11} color="#fff" />}
+          {approving ? <RefreshCw size={11} color="#999" style={{ animation: 'spin 1s linear infinite' }} />
+            : !isPending && <CheckCircle2 size={12} color="#fff" />}
         </button>
 
-        <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => setOpen(o => !o)}>
-          <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{post.title}</p>
-          <div style={{ display: 'flex', gap: '6px', marginTop: '3px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', padding: '2px 6px', borderRadius: '10px', background: `${accentColor}18`, color: accentColor }}>{post.type}</span>
-            {hasQuestions && <span style={{ fontSize: '9px', fontWeight: 700, color: '#E05252' }}>❓ NEEDS YOUR ANSWERS</span>}
-            {isApproved && <span style={{ fontSize: '9px', fontWeight: 700, color: '#F2A65A' }}>APPROVED — awaiting GHL</span>}
-            {isScheduled && <span style={{ fontSize: '9px', fontWeight: 700, color: '#4CC9F0' }}>SCHEDULED{post.scheduled_at ? ` · ${new Date(post.scheduled_at).toLocaleDateString()}` : ''}</span>}
-            {post.media_url ? <span style={{ fontSize: '9px', color: '#3DAA7C', fontWeight: 700 }}>📎 media attached</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4, wordBreak: 'break-word' }}>{post.title}</p>
+          <div style={{ display: 'flex', gap: '6px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: accentColor }}>{post.type.replace(/_/g, ' ')}</span>
+            <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 8px', borderRadius: '10px', background: statusChip.bg, color: statusChip.color }}>{statusChip.label}</span>
+            {post.media_url ? <span style={{ fontSize: '9px', color: '#3DAA7C', fontWeight: 700 }}>📎 media</span>
               : post.image_prompt ? <span style={{ fontSize: '9px', color: 'var(--text-subtle)' }}>🎨 prompt ready</span> : null}
           </div>
         </div>
-        <button onClick={copyAll} title="Copy post" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: copied ? '#3DAA7C' : 'var(--text-subtle)', padding: '2px', flexShrink: 0 }}>
-          {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />}
-        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+          <button onClick={e => { e.stopPropagation(); copyAll() }} title="Copy full post" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: copied ? '#3DAA7C' : 'var(--text-subtle)', padding: '4px', display: 'flex' }}>
+            {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+          </button>
+          <span style={{ color: 'var(--text-subtle)', fontSize: '10px', padding: '4px' }}>{open ? '▲' : '▼'}</span>
+        </div>
       </div>
 
       {open && (
-        <div style={{ padding: '0 10px 10px 36px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {/* Open questions — answer here, river finishes the post */}
           {hasQuestions && (
-            <div style={{ padding: '10px', background: 'rgba(224,82,82,0.06)', borderRadius: '8px', border: '1px solid rgba(224,82,82,0.25)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#E05252' }}>Answer these — the river finishes the post</p>
+            <div style={{ padding: '12px', background: 'rgba(224,82,82,0.05)', borderRadius: '10px', border: '1px solid rgba(224,82,82,0.25)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#E05252' }}>Answer these — the river finishes the post</p>
               {post.open_questions!.map((q, i) => (
                 <div key={i}>
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginBottom: '3px' }}>{i + 1}. {q}</p>
+                  <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>{i + 1}. {q}</p>
                   <textarea value={answers[i] ?? ''} onChange={e => setAnswers(a => { const next = [...a]; next[i] = e.target.value; return next })}
                     rows={2} placeholder="Your answer…"
-                    style={{ width: '100%', padding: '7px 9px', borderRadius: '7px', border: '1px solid var(--border)', fontSize: '11px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
               ))}
               <button onClick={completePost} disabled={completing || answers.filter(a => a?.trim()).length === 0}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '8px', borderRadius: '8px', border: 'none', background: '#E05252', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: 'pointer', opacity: completing || answers.filter(a => a?.trim()).length === 0 ? 0.6 : 1 }}>
-                {completing ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Composing…</> : '🌊 Complete this post'}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '10px', borderRadius: '8px', border: 'none', background: '#E05252', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: completing || answers.filter(a => a?.trim()).length === 0 ? 0.6 : 1 }}>
+                {completing ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Composing…</> : '🌊 Complete this post'}
               </button>
             </div>
           )}
 
           {/* Visual: media or prompt */}
           {post.media_url ? (
-            <img src={post.media_url} alt="" style={{ width: '100%', borderRadius: '8px', maxHeight: '180px', objectFit: 'cover' }} />
+            <img src={post.media_url} alt="" style={{ width: '100%', borderRadius: '10px', maxHeight: '220px', objectFit: 'cover' }} />
           ) : post.image_prompt ? (
-            <div style={{ padding: '8px 10px', background: 'var(--surface-raised)', borderRadius: '8px', borderLeft: `3px solid ${accentColor}` }}>
-              <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '4px' }}><ImageIcon size={10} /> Image / Video Prompt</p>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{post.image_prompt}</p>
-            </div>
+            <Section label="🎨 Image / Video Prompt" text={post.image_prompt} />
           ) : null}
 
-          {post.onscreen_text && (
-            <div>
-              <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginBottom: '2px' }}>On-Screen Text / Script</p>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4 }}>{post.onscreen_text}</p>
-            </div>
+          {post.onscreen_text && <Section label="On-Screen Text / Hook" text={post.onscreen_text} bold />}
+          <Section label="Body / Caption / Script" text={post.description} />
+          {post.hashtags && (
+            <Section label="Hashtags / Metadata" text={post.hashtags}>
+              <p style={{ fontSize: '11px', color: accentColor, lineHeight: 1.6, wordBreak: 'break-word' }}>{post.hashtags}</p>
+            </Section>
           )}
 
-          <div>
-            <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginBottom: '2px' }}>Body</p>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{post.description}</p>
-          </div>
-
-          {post.hashtags && (
-            <div>
-              <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginBottom: '2px' }}>Hashtags / Metadata</p>
-              <p style={{ fontSize: '10px', color: accentColor, lineHeight: 1.5, wordBreak: 'break-word' }}>{post.hashtags}</p>
-            </div>
+          {/* Action bar */}
+          {isPending && !hasQuestions && (
+            <button onClick={() => onApprove(post)} disabled={approving}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: approving ? 0.7 : 1 }}>
+              {approving ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Approving…</> : <><CheckCircle2 size={14} /> Approve — send to scheduler</>}
+            </button>
           )}
         </div>
       )}
@@ -274,6 +300,7 @@ export default function AccountsPanel() {
   const [approvingId, setApprovingId] = useState<number | null>(null)
   const [ghlConfigured, setGhlConfigured] = useState<boolean | null>(null)
   const [showArchive, setShowArchive] = useState(false)
+  const [queueFilter, setQueueFilter] = useState('all')
   const [editing, setEditing] = useState<Partial<BrandAccount> | null>(null)
 
   const handleAccountSaved = (saved: BrandAccount) => {
@@ -391,41 +418,73 @@ export default function AccountsPanel() {
           const isFlipped = flipped === acct.id
 
           if (isFlipped) {
-            // ── BACK of card: post queue ──
-            const activePosts = [...queued, ...approved, ...scheduled]
+            // ── BACK of card: full-width workspace ──
+            const needsAnswers = queued.filter(p => (p.open_questions?.length ?? 0) > 0)
+            const reviewable = queued.filter(p => !(p.open_questions?.length ?? 0))
+            const buckets: { key: string; label: string; count: number; posts: ContentPiece[]; color: string }[] = [
+              { key: 'all', label: 'All active', count: queued.length + approved.length + scheduled.length, posts: [...needsAnswers, ...reviewable, ...approved, ...scheduled], color: acct.color },
+              { key: 'answers', label: '❓ Needs answers', count: needsAnswers.length, posts: needsAnswers, color: '#E05252' },
+              { key: 'review', label: 'To review', count: reviewable.length, posts: reviewable, color: 'var(--text-muted)' },
+              { key: 'approved', label: 'Approved', count: approved.length, posts: approved, color: '#F2A65A' },
+              { key: 'scheduled', label: 'Scheduled', count: scheduled.length, posts: scheduled, color: '#4CC9F0' },
+            ]
+            const active = buckets.find(b => b.key === queueFilter) ?? buckets[0]
+            const shown = showArchive ? posted : active.posts
             return (
-              <div key={acct.id} className="rounded-xl border flex flex-col" style={{ background: 'var(--surface)', borderColor: acct.color, boxShadow: 'var(--shadow-sm)', borderWidth: '2px', maxHeight: '520px' }}>
-                <button onClick={() => { setFlipped(null); setShowArchive(false) }}
-                  className="flex items-center justify-between px-4 py-3 flex-shrink-0"
-                  style={{ borderBottom: '1px solid var(--border)', background: acct.color + '10', border: 'none', cursor: 'pointer', borderRadius: '10px 10px 0 0' }}>
-                  <span className="flex items-center gap-2 text-[13px] font-bold" style={{ color: 'var(--cosmic-midnight)' }}>
-                    {acct.emoji} {acct.handle}
-                  </span>
-                  <span className="text-[10px] font-semibold" style={{ color: acct.color }}>↩ flip back</span>
-                </button>
+              <div key={acct.id} className="rounded-xl border flex flex-col" style={{ gridColumn: '1 / -1', background: 'var(--surface)', borderColor: acct.color, boxShadow: 'var(--shadow-sm)', borderWidth: '2px' }}>
+                {/* Workspace header */}
+                <div className="flex items-center justify-between gap-3 px-4 py-3 flex-wrap"
+                  style={{ borderBottom: '1px solid var(--border)', background: acct.color + '0d', borderRadius: '10px 10px 0 0' }}>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="flex items-center gap-2 text-[15px] font-extrabold" style={{ color: 'var(--cosmic-midnight)' }}>
+                      {acct.emoji} {acct.handle}
+                    </span>
+                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{acct.mission || acct.topic}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setEditing(acct)} title="Edit purpose & brand DNA"
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                      <Pencil size={11} /> Edit
+                    </button>
+                    <a href={profileUrl(acct)} target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '11px', fontWeight: 700, color: 'var(--electric-nebula)', textDecoration: 'none' }}>
+                      <ExternalLink size={11} /> Open
+                    </a>
+                    <button onClick={() => { setFlipped(null); setShowArchive(false); setQueueFilter('all') }}
+                      style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', background: acct.color, color: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}>
+                      ↩ Flip back
+                    </button>
+                  </div>
+                </div>
 
-                <div className="flex flex-col gap-2 p-3 overflow-y-auto">
-                  {activePosts.length === 0 && (
-                    <p className="text-[11px] text-center py-6" style={{ color: 'var(--text-subtle)' }}>
-                      No posts queued for this account yet.<br />Generate content and pick <strong>{acct.handle}</strong> as the account.
+                {/* Queue filter chips */}
+                <div className="flex items-center gap-1.5 px-4 py-2.5 flex-wrap" style={{ borderBottom: '1px solid var(--border)' }}>
+                  {buckets.filter(b => b.key === 'all' || b.count > 0).map(b => (
+                    <button key={b.key} onClick={() => { setQueueFilter(b.key); setShowArchive(false) }}
+                      style={{ padding: '5px 11px', borderRadius: '20px', border: `2px solid ${!showArchive && queueFilter === b.key ? acct.color : 'var(--border)'}`, background: !showArchive && queueFilter === b.key ? `${acct.color}12` : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: !showArchive && queueFilter === b.key ? acct.color : 'var(--text-muted)', fontFamily: 'inherit' }}>
+                      {b.label} · {b.count}
+                    </button>
+                  ))}
+                  {posted.length > 0 && (
+                    <button onClick={() => setShowArchive(v => !v)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '20px', border: `2px solid ${showArchive ? '#3DAA7C' : 'var(--border)'}`, background: showArchive ? 'rgba(61,170,124,0.1)' : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: showArchive ? '#3DAA7C' : 'var(--text-subtle)', fontFamily: 'inherit', marginLeft: 'auto' }}>
+                      <Archive size={11} /> Archive · {posted.length}
+                    </button>
+                  )}
+                </div>
+
+                {/* Post grid */}
+                <div style={{ padding: '14px', maxHeight: '640px', overflowY: 'auto' }}>
+                  {shown.length === 0 && (
+                    <p className="text-[12px] text-center py-10" style={{ color: 'var(--text-subtle)' }}>
+                      {showArchive ? 'Nothing posted yet.' : <>Nothing here yet. Generate content and pick <strong>{acct.handle}</strong> as the account — or drop an idea in Quick Capture and let the river sort it.</>}
                     </p>
                   )}
-                  {activePosts.map(p => (
-                    <PostCard key={p.id} post={p} accentColor={acct.color} onApprove={approve} approving={approvingId === p.id} onChanged={loadContent} />
-                  ))}
-
-                  {posted.length > 0 && (
-                    <>
-                      <button onClick={() => setShowArchive(v => !v)}
-                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide mt-1"
-                        style={{ color: 'var(--text-subtle)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}>
-                        <Archive size={11} /> Archive · {posted.length} posted {showArchive ? '▲' : '▼'}
-                      </button>
-                      {showArchive && posted.map(p => (
-                        <PostCard key={p.id} post={p} accentColor={acct.color} onApprove={approve} approving={false} />
-                      ))}
-                    </>
-                  )}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(420px, 100%), 1fr))', gap: '10px', alignItems: 'start' }}>
+                    {shown.map(p => (
+                      <PostCard key={p.id} post={p} accentColor={acct.color} onApprove={approve} approving={approvingId === p.id} onChanged={loadContent} />
+                    ))}
+                  </div>
                 </div>
               </div>
             )
