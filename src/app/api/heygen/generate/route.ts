@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AVATARS, type AvatarId } from '@/lib/avatars'
+import { getAllAvatars } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const { script, avatarId } = await req.json() as { script: string; avatarId: AvatarId }
+  const { script, avatarId } = await req.json() as { script: string; avatarId: string }
 
   const apiKey = process.env.HEYGEN_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'HEYGEN_API_KEY not set' }, { status: 500 })
 
-  const avatar = AVATARS[avatarId]
+  // Read from the DB — that's where the in-station avatar editor saves photo/voice IDs
+  const avatar = getAllAvatars().find(a => a.id === avatarId)
   if (!avatar) return NextResponse.json({ error: 'Unknown avatar' }, { status: 400 })
 
   // Use avatar-specific photo ID, fall back to default

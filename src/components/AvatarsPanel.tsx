@@ -495,7 +495,7 @@ Stay 100% in character as ${av.name}. Match their voice exactly. Keep the whole 
                     <button onClick={() => launchVideo(s)} disabled={videoLoading === key}
                       style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', borderRadius: '8px', border: 'none', background: av.accentColor, cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#fff', opacity: videoLoading === key ? 0.7 : 1 }}>
                       {videoLoading === key ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Video size={12} />}
-                      {vidId ? 'Rendering...' : 'Make Video'}
+                      {videoLoading === key ? 'Launching…' : vidId === 'error' ? 'Retry Video' : vidId ? 'Rendering ✓' : 'Make Video'}
                     </button>
                     <button onClick={() => fileToRiver(s)} disabled={riverLoading === key || !!riverResults[key]}
                       title="Send through the River — becomes a post-card under the best account"
