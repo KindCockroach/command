@@ -155,6 +155,26 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged }: { post
   const [completing, setCompleting] = useState(false)
   const hasQuestions = (post.open_questions?.length ?? 0) > 0
 
+  const [marking, setMarking] = useState(false)
+
+  // Manual-mode completion: Mandi posted it herself → published + archived, counts toward goals
+  const markPosted = async () => {
+    setMarking(true)
+    try {
+      await fetch('/api/content', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: post.id, status: 'published' }),
+      })
+      await fetch('/api/content', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: post.id, status: 'archived' }),
+      })
+      onChanged?.()
+    } finally {
+      setMarking(false)
+    }
+  }
+
   const completePost = async () => {
     setCompleting(true)
     try {
@@ -284,6 +304,19 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged }: { post
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: approving ? 0.7 : 1 }}>
               {approving ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Approving…</> : <><CheckCircle2 size={14} /> Approve — send to scheduler</>}
             </button>
+          )}
+          {(isApproved || isScheduled) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {isApproved && (
+                <p style={{ fontSize: '11px', color: '#C47A1A', background: 'rgba(242,166,90,0.1)', padding: '8px 10px', borderRadius: '8px', lineHeight: 1.5 }}>
+                  GHL isn&apos;t connected yet, so nothing is scheduled automatically. <strong>Manual mode:</strong> Copy the post above, publish it on the platform yourself, then mark it posted below.
+                </p>
+              )}
+              <button onClick={markPosted} disabled={marking}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: '#3DAA7C', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: marking ? 0.7 : 1 }}>
+                {marking ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Archiving…</> : <>📤 I posted this — archive it</>}
+              </button>
+            </div>
           )}
         </div>
       )}
