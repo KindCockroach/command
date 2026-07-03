@@ -1,7 +1,126 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Image as ImageIcon, Copy, Archive } from 'lucide-react'
+import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Image as ImageIcon, Copy, Archive, Pencil, X, Save, Plus } from 'lucide-react'
 import type { BrandAccount, ContentPiece } from '@/lib/db'
+
+const BLANK_ACCOUNT: Partial<BrandAccount> = {
+  id: '', handle: '', platform: 'Instagram', status: 'planned', priority: 'medium', color: '#E8448A', emoji: '✨',
+  brand_name: '', topic: '', bio: '', mission: '', content_format: '', underlying_message: '', problem_message: '',
+  solution_message: '', transformation: '', the_how: '', tone: '', beliefs: [], hooks: [], offer: '', offer_price: '', url: '', notes: '',
+}
+
+// ── Full account editor: every field of the brand DNA is editable in-station ──
+function AccountEditorModal({ account, onSave, onDelete, onClose }: { account: Partial<BrandAccount>; onSave: (a: BrandAccount) => void; onDelete?: (id: string) => void; onClose: () => void }) {
+  const [form, setForm] = useState<Partial<BrandAccount>>({ ...BLANK_ACCOUNT, ...account })
+  const [saving, setSaving] = useState(false)
+  const isNew = !account.id
+  const set = (k: keyof BrandAccount, v: unknown) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleSave = async () => {
+    if (!form.handle) return
+    setSaving(true)
+    const id = form.id || (form.handle ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '')
+    const res = await fetch('/api/accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, id }) })
+    onSave(await res.json())
+    setSaving(false)
+  }
+
+  const fld = { padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '13px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', outline: 'none', width: '100%', boxSizing: 'border-box' as const }
+  const area = { ...fld, resize: 'vertical' as const }
+  const lbl = (t: string) => <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-subtle)', marginBottom: '4px' }}>{t}</label>
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,31,59,0.5)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div style={{ position: 'relative', width: '100%', maxWidth: '720px', maxHeight: '92vh', overflowY: 'auto', borderRadius: '20px', background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px 14px', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text)' }}>{isNew ? 'New Account' : `Edit ${account.handle}`}</h3>
+          <button onClick={onClose} style={{ padding: '6px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
+        </div>
+
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '64px 1.5fr 1fr 1fr', gap: '10px' }}>
+            <div>{lbl('Emoji')}<input value={form.emoji ?? ''} onChange={e => set('emoji', e.target.value)} style={{ ...fld, textAlign: 'center', fontSize: '20px' }} /></div>
+            <div>{lbl('Handle')}<input value={form.handle ?? ''} onChange={e => set('handle', e.target.value)} placeholder="@handle" style={fld} /></div>
+            <div>{lbl('Platform')}
+              <select value={form.platform ?? 'Instagram'} onChange={e => set('platform', e.target.value)} style={{ ...fld, cursor: 'pointer' }}>
+                {['Instagram', 'TikTok', 'YouTube', 'LinkedIn', 'Threads', 'Pinterest', 'Beehiiv', 'Facebook'].map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+            <div>{lbl('Brand name')}<input value={form.brand_name ?? ''} onChange={e => set('brand_name', e.target.value)} style={fld} /></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+            <div>{lbl('Status')}
+              <select value={form.status ?? 'planned'} onChange={e => set('status', e.target.value)} style={{ ...fld, cursor: 'pointer' }}>
+                {['active', 'restricted', 'planned', 'paused'].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>{lbl('Priority')}
+              <select value={form.priority ?? 'medium'} onChange={e => set('priority', e.target.value)} style={{ ...fld, cursor: 'pointer' }}>
+                {['high', 'medium', 'low'].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>{lbl('Color')}
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input type="color" value={form.color ?? '#E8448A'} onChange={e => set('color', e.target.value)} style={{ width: '38px', height: '38px', borderRadius: '6px', border: '1px solid var(--border)', cursor: 'pointer', padding: '2px' }} />
+                <input value={form.color ?? ''} onChange={e => set('color', e.target.value)} style={{ ...fld, fontSize: '11px' }} />
+              </div>
+            </div>
+          </div>
+
+          <div>{lbl('Purpose / Mission — what is this account FOR')}<textarea value={form.mission ?? ''} onChange={e => set('mission', e.target.value)} rows={2} style={area} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>{lbl('Topic / Niche')}<input value={form.topic ?? ''} onChange={e => set('topic', e.target.value)} style={fld} /></div>
+            <div>{lbl('Content format')}<input value={form.content_format ?? ''} onChange={e => set('content_format', e.target.value)} style={fld} /></div>
+          </div>
+          <div>{lbl('Bio')}<textarea value={form.bio ?? ''} onChange={e => set('bio', e.target.value)} rows={2} style={area} /></div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>{lbl('Problem message')}<textarea value={form.problem_message ?? ''} onChange={e => set('problem_message', e.target.value)} rows={2} style={area} /></div>
+            <div>{lbl('Solution message')}<textarea value={form.solution_message ?? ''} onChange={e => set('solution_message', e.target.value)} rows={2} style={area} /></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>{lbl('Underlying message')}<input value={form.underlying_message ?? ''} onChange={e => set('underlying_message', e.target.value)} style={fld} /></div>
+            <div>{lbl('Transformation (from X to Y)')}<input value={form.transformation ?? ''} onChange={e => set('transformation', e.target.value)} style={fld} /></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>{lbl('Tone')}<input value={form.tone ?? ''} onChange={e => set('tone', e.target.value)} style={fld} /></div>
+            <div>{lbl('The how')}<input value={form.the_how ?? ''} onChange={e => set('the_how', e.target.value)} style={fld} /></div>
+          </div>
+
+          <div>{lbl('Beliefs (one per line)')}
+            <textarea value={(form.beliefs ?? []).join('\n')} onChange={e => set('beliefs', e.target.value.split('\n').filter(Boolean))} rows={3} style={area} />
+          </div>
+          <div>{lbl('Hook templates (one per line)')}
+            <textarea value={(form.hooks ?? []).join('\n')} onChange={e => set('hooks', e.target.value.split('\n').filter(Boolean))} rows={4} style={area} />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
+            <div>{lbl('Offer')}<input value={form.offer ?? ''} onChange={e => set('offer', e.target.value)} style={fld} /></div>
+            <div>{lbl('Offer price')}<input value={form.offer_price ?? ''} onChange={e => set('offer_price', e.target.value)} style={fld} /></div>
+          </div>
+          <div>{lbl('Profile URL')}<input value={form.url ?? ''} onChange={e => set('url', e.target.value)} placeholder="https://instagram.com/..." style={fld} /></div>
+          <div>{lbl('Non-negotiable rules / notes (the generator obeys these)')}<textarea value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} rows={3} style={area} /></div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between', padding: '14px 20px', borderTop: '1px solid var(--border)', position: 'sticky', bottom: 0, background: 'var(--surface)' }}>
+          {!isNew && onDelete ? (
+            <button onClick={() => { if (confirm(`Delete ${account.handle}? Its content stays but loses its account link.`)) onDelete(account.id!) }}
+              style={{ padding: '9px 14px', borderRadius: '10px', border: 'none', background: 'rgba(224,82,82,0.1)', color: '#E05252', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>Delete account</button>
+          ) : <span />}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '10px', border: 'none', background: 'var(--border)', color: 'var(--text)', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={handleSave} disabled={saving || !form.handle}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 20px', borderRadius: '10px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: 'pointer', opacity: saving || !form.handle ? 0.6 : 1 }}>
+              <Save size={13} /> {saving ? 'Saving…' : isNew ? 'Create Account' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 type AccountStatus = 'active' | 'restricted' | 'planned' | 'paused'
 
@@ -155,6 +274,18 @@ export default function AccountsPanel() {
   const [approvingId, setApprovingId] = useState<number | null>(null)
   const [ghlConfigured, setGhlConfigured] = useState<boolean | null>(null)
   const [showArchive, setShowArchive] = useState(false)
+  const [editing, setEditing] = useState<Partial<BrandAccount> | null>(null)
+
+  const handleAccountSaved = (saved: BrandAccount) => {
+    setAccounts(prev => prev.find(a => a.id === saved.id) ? prev.map(a => a.id === saved.id ? saved : a) : [...prev, saved])
+    setEditing(null)
+  }
+
+  const handleAccountDeleted = async (id: string) => {
+    await fetch(`/api/accounts?id=${id}`, { method: 'DELETE' })
+    setAccounts(prev => prev.filter(a => a.id !== id))
+    setEditing(null)
+  }
 
   const loadContent = useCallback(() => {
     // Fetch everything including held/archived so account stats are complete
@@ -209,19 +340,29 @@ export default function AccountsPanel() {
 
   return (
     <div className="space-y-4">
+      {editing && (
+        <AccountEditorModal account={editing} onSave={handleAccountSaved} onDelete={editing.id ? handleAccountDeleted : undefined} onClose={() => setEditing(null)} />
+      )}
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-[20px] font-bold" style={{ color: 'var(--cosmic-midnight)' }}>Accounts</h1>
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Click a card to flip it — see queued posts, approve them, track what&apos;s live.
+            Click a card to flip it — see queued posts, approve them, track what&apos;s live. Pencil to edit purpose &amp; brand DNA.
           </p>
         </div>
-        {ghlConfigured === false && (
-          <span className="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg" style={{ background: '#FEF5EA', color: '#F2A65A' }}>
-            GHL not connected — approvals queue until the key is added
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {ghlConfigured === false && (
+            <span className="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg" style={{ background: '#FEF5EA', color: '#F2A65A' }}>
+              GHL not connected — approvals queue until the key is added
+            </span>
+          )}
+          <button onClick={() => setEditing({ ...BLANK_ACCOUNT })}
+            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-lg"
+            style={{ background: 'var(--cosmic-midnight)', color: 'var(--soft-light)', border: 'none', cursor: 'pointer' }}>
+            <Plus size={12} /> Add Account
+          </button>
+        </div>
       </div>
 
       {/* Filter tabs */}
@@ -305,8 +446,14 @@ export default function AccountsPanel() {
                     <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{acct.platform}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: s.color }}>
-                  {s.icon} {s.label}
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: s.color }}>
+                    {s.icon} {s.label}
+                  </div>
+                  <button onClick={e => { e.stopPropagation(); setEditing(acct) }} title="Edit purpose & brand DNA"
+                    style={{ padding: '4px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', display: 'flex' }}>
+                    <Pencil size={12} />
+                  </button>
                 </div>
               </div>
 

@@ -967,6 +967,15 @@ ${keys.length ? `Keywords for discovery: ${keys.join(', ')}` : ''}
 Mimic the FORMATTING patterns of these winners. Never copy their content.`
 }
 
+export function deleteBrandAccount(id: string): boolean {
+  const db = readDb()
+  if (!db.brand_accounts) return false
+  const before = db.brand_accounts.length
+  db.brand_accounts = db.brand_accounts.filter(a => a.id !== id)
+  writeDb(db)
+  return db.brand_accounts.length < before
+}
+
 export function getAllBrandAccounts(): BrandAccount[] {
   const db = readDb()
   if (!db.brand_accounts) db.brand_accounts = defaultDb().brand_accounts
