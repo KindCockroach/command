@@ -70,7 +70,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'vision',     label: 'Vision',        icon: <Star size={12} /> },
     { id: 'notes',      label: 'Notes',         icon: <BookOpen size={12} /> },
     { id: 'accounts',   label: 'Accounts',      icon: <Users size={12} /> },
-    { id: 'audit',      label: 'Audit',         icon: <Radar size={12} /> },
+    { id: 'audit',      label: 'Trends',        icon: <Radar size={12} /> },
     { id: 'avatars',    label: 'Avatars',       icon: <span style={{fontSize:'12px'}}>🎭</span> },
     { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
     { id: 'podcast',    label: 'Podcast',       icon: <Mic size={12} /> },

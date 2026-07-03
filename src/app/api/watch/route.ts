@@ -25,12 +25,14 @@ export async function POST(req: NextRequest) {
   "formats": ["3-6 content format patterns they win with, e.g. 'talking-head hook then b-roll with bold captions'"],
   "buzzwords": ["10-20 words/phrases this niche's winners repeat"],
   "keywords": ["10-20 SEO/discovery keywords for this niche"],
+  "top_hooks": ["3-5 hook structures they use, written as reusable templates with [brackets] for variables"],
+  "engagement_note": "1 sentence on what drives their engagement (comments bait, saves, shares...)",
   "notes": "2-3 sentences: what makes their content convert and what we should copy structurally"
 }`,
       input: `Account: ${subject.handle} on ${subject.platform}\nNiche: ${subject.niche}\nWhy we're watching: ${subject.why_watching}\n${data.pastedContent ? `SAMPLE OF THEIR CONTENT (pasted by Mandi):\n${data.pastedContent}` : ''}`,
     })
     try {
-      const parsed = JSON.parse(res.output_text.match(/\{[\s\S]*\}/)![0])
+      const parsed = { ...JSON.parse(res.output_text.match(/\{[\s\S]*\}/)![0]), last_analyzed: new Date().toISOString() }
       if (existing) {
         return NextResponse.json(updateWatchAccount(existing.id, parsed))
       }

@@ -196,6 +196,24 @@ export type WatchAccount = {
   buzzwords: string[]              // words/phrases they repeat
   keywords: string[]               // SEO/discovery keywords they rank on
   notes: string
+  followers?: number               // last known follower count (manual)
+  engagement_note?: string         // what their engagement looks like
+  top_hooks?: string[]             // their best-performing hooks worth studying
+  last_analyzed?: string | null    // when AI last extracted patterns
+  created_at: string
+  updated_at: string
+}
+
+export type EventKind = 'launch' | 'promo' | 'holiday' | 'personal' | 'trend' | 'other'
+
+export type CalendarEvent = {
+  id: number
+  date: string                     // YYYY-MM-DD
+  time: string                     // HH:MM or ''
+  title: string
+  kind: EventKind
+  notes: string
+  account_id: string | null        // optional account this event is for
   created_at: string
   updated_at: string
 }
@@ -213,8 +231,10 @@ type Db = {
   avatars: AvatarRecord[]
   goals: Goal[]
   watch_accounts: WatchAccount[]
+  events: CalendarEvent[]
   next_goal_id: number
   next_watch_id: number
+  next_event_id: number
   next_id: number
   next_memory_id: number
   next_project_id: number
@@ -289,6 +309,8 @@ function defaultDb(): Db {
     ],
     next_watch_id: 1,
     watch_accounts: [],
+    next_event_id: 1,
+    events: [],
     avatars: [
       { id: 'mandi', name: 'Mandi (AI Mom)', emoji: '🎈', tagline: 'AI works for moms who do everything', niche: 'AI tools for busy moms', personality: 'Warm, bold, direct, plain English, real mom of 4 energy. Never corporate. Never jargon. Always honest.', voiceStyle: 'Conversational, encouraging, occasionally funny, always real', targetAudience: 'Moms 28-45 who want to use AI to save time and create income', instagramHandle: '@aimomatwork', primaryPlatform: 'Instagram', accentColor: '#6B2D6E', bgColor: '#F3E8F4', systemPrompt: 'You are Mandi Beck — AI Mom. You teach busy moms to use AI tools to save time and build income.\nVoice: warm, bold, direct, plain English, real mom of 4. Never corporate speak. Never jargon.\nAlways start with the specific result before explaining the how.\nYour offer is aiworksforyou.co', hookFormulas: ["I did [specific thing] in [specific time] using AI — here's exactly how", "You shouldn't have to choose between [thing A] and [thing B] — this tool changes that", "I'm a mom of 4 with no tech background and I just [impressive result] in [time]", 'Stop spending [time] on [task]. This AI tool does it in [faster time].'], ctaTemplate: "Comment AI and I'll send you the exact tool + how I use it as a mom of 4.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
       { id: 'gator', name: 'Gator', emoji: '🐊', tagline: 'The swamp creature who makes AI simple.', niche: 'AI for entrepreneurs and small business owners — no excuses, just results', personality: 'Bold, no-nonsense, Southern drawl, zero tolerance for excuses. Terrifying gator appearance + genuinely helpful AI content.', voiceStyle: 'Short sentences. Max 12 words per sentence. No hype words. Facts + results only. One swamp reference per piece max.', targetAudience: 'Small business owners, entrepreneurs, side hustlers 30-55 who know they\'re behind on AI', instagramHandle: '@gatorai', primaryPlatform: 'TikTok + Instagram', accentColor: '#2D6E3E', bgColor: '#E8F4EB', systemPrompt: "You are Gator — an AI influencer with a gator head and a business mind. Southern energy. Zero tolerance for excuses. Genuinely helpful.\nPersonality contradiction: looks terrifying, teaches AI tools with patience.\nVoice rules: short sentences (max 12 words), no hype words, facts + results only, one swamp reference per piece max.\nYour offer funnels to aiworksforyou.co.\nCTA always ends with: \"Comment GATOR. I'll handle the rest.\"", hookFormulas: ['Your competitor just automated [task] with AI. You still doing it by hand?', 'Most business owners are leaving $[amount] on the table. One AI tool fixes it.', 'Stop [doing task manually]. AI does it in [time]. Here\'s the exact setup.', '[Business result] in [time]. No team. No agency. Just this AI tool.'], ctaTemplate: "Comment GATOR. I'll handle the rest.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
@@ -367,6 +389,11 @@ export function readDb(): Db {
   if (!db.watch_accounts) {
     db.watch_accounts = []
     db.next_watch_id = 1
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
+  if (!db.events) {
+    db.events = []
+    db.next_event_id = 1
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
   }
   // Migrate: backfill account_id from "Account: @handle" in notes / account tag
@@ -811,6 +838,52 @@ export function deleteWatchAccount(id: number): boolean {
   db.watch_accounts = db.watch_accounts.filter(w => w.id !== id)
   writeDb(db)
   return db.watch_accounts.length < before
+}
+
+// ── Calendar events CRUD ──────────────────────────────────────────────────────
+
+export function getAllEvents(): CalendarEvent[] {
+  const db = readDb()
+  return db.events ?? []
+}
+
+export function createEvent(data: Partial<CalendarEvent>): CalendarEvent {
+  const db = readDb()
+  if (!db.events) { db.events = []; db.next_event_id = 1 }
+  const now = new Date().toISOString()
+  const ev: CalendarEvent = {
+    id: db.next_event_id++,
+    date: data.date ?? now.split('T')[0],
+    time: data.time ?? '',
+    title: data.title ?? 'Untitled event',
+    kind: data.kind ?? 'other',
+    notes: data.notes ?? '',
+    account_id: data.account_id ?? null,
+    created_at: now,
+    updated_at: now,
+  }
+  db.events.push(ev)
+  writeDb(db)
+  return ev
+}
+
+export function updateEvent(id: number, updates: Partial<CalendarEvent>): CalendarEvent | null {
+  const db = readDb()
+  if (!db.events) return null
+  const idx = db.events.findIndex(e => e.id === id)
+  if (idx === -1) return null
+  db.events[idx] = { ...db.events[idx], ...updates, id, updated_at: new Date().toISOString() }
+  writeDb(db)
+  return db.events[idx]
+}
+
+export function deleteEvent(id: number): boolean {
+  const db = readDb()
+  if (!db.events) return false
+  const before = db.events.length
+  db.events = db.events.filter(e => e.id !== id)
+  writeDb(db)
+  return db.events.length < before
 }
 
 /** Aggregated trend context from watched external accounts — injected into generators */
