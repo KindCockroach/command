@@ -106,11 +106,53 @@ export default function PodcastEngine() {
     }
   }
 
+  const [kitSaved, setKitSaved] = useState(false)
+
+  // The full episode kit persists to Notes (storage) so nothing is lost on click-away
+  const saveKitToNotes = async (d: Deliverables) => {
+    const body = [
+      `# ${d.title}`,
+      d.subtitle,
+      `\n## Headlines\n${(d.headlines ?? []).map(h => `- ${h}`).join('\n')}`,
+      `\n## SEO Description\n${d.seo_description}`,
+      `\n## Keywords\n${(d.keywords ?? []).join(', ')}`,
+      `\n## Show Notes\n${d.description}`,
+      `\n## Chapters\n${(d.chapters ?? []).map(c => `${c.time} — ${c.title}`).join('\n')}`,
+      `\n## Pull Quotes\n${(d.pull_quotes ?? []).map(q => `> "${q}"`).join('\n')}`,
+      `\n## Reels Scripts\n${(d.reels_scripts ?? []).map((s, i) => `### Reel ${i + 1} (${s.platform})\nHOOK: ${s.hook}\nBODY: ${s.body}\nCTA: ${s.cta}`).join('\n\n')}`,
+      `\n## Newsletter\nSubject: ${d.newsletter_subject}\n${d.newsletter_angle}`,
+      d.medium_article ? `\n## Medium Article\n# ${d.medium_article.title}\n*${d.medium_article.subtitle}*\n\n${d.medium_article.body}` : '',
+      `\n## YouTube\nTitle: ${d.youtube_title}\n\n${d.youtube_description}\n\nTags: ${(d.youtube_tags ?? []).join(', ')}`,
+      `\n## Spotify Description\n${d.spotify_description}`,
+      `\n## Apple Description\n${d.apple_description}`,
+      d.ad_reads ? `\n## Ad Reads\nPRE-ROLL: ${d.ad_reads.pre_roll}\n\nMID-ROLL: ${d.ad_reads.mid_roll}\n\nPOST-ROLL: ${d.ad_reads.post_roll}` : '',
+      `\n## Pinterest Pins\n${(d.pinterest_pins ?? []).map(p => `- ${p.title}: ${p.description}`).join('\n')}`,
+      d.manychat_trigger ? `\n## ManyChat\nTrigger: ${d.manychat_trigger}\nDM: ${d.manychat_dm}` : '',
+      d.guest_share_kit?.dm_message ? `\n## Guest Share Kit\nDM: ${d.guest_share_kit.dm_message}\nCaption: ${d.guest_share_kit.suggested_caption}\nQuote graphic: ${d.guest_share_kit.quote_graphic_text}` : '',
+      d.producer_feedback ? `\n## Producer Feedback\nGrade: ${d.producer_feedback.overall_grade}\nStrengths: ${(d.producer_feedback.strengths ?? []).join('; ')}\nTopic drift: ${d.producer_feedback.topic_drift}\nDepth gaps: ${d.producer_feedback.depth_gaps}\nBiggest win: ${d.producer_feedback.biggest_win}\nNext episode: ${d.producer_feedback.next_episode_suggestion}` : '',
+    ].filter(Boolean).join('\n')
+    try {
+      await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `🎙 Ep ${episodeNumber || '?'} Deliverables Kit — ${d.title}`,
+          body,
+          category: 'script',
+          tags: ['podcast', 'episode-kit', episodeNumber ? `ep-${episodeNumber}` : 'unnumbered'],
+          pinned: false,
+        }),
+      })
+      setKitSaved(true)
+    } catch { /* kit save is best-effort; content stays on screen */ }
+  }
+
   const generate = async () => {
     if (!transcript.trim()) return
     setLoading(true)
     setError(null)
     setResult(null)
+    setKitSaved(false)
     try {
       const res = await fetch('/api/podcast', {
         method: 'POST',
@@ -118,7 +160,10 @@ export default function PodcastEngine() {
         body: JSON.stringify({ transcript, episodeNumber, guestName }),
       })
       const data = await res.json()
-      if (data.deliverables) setResult(data.deliverables)
+      if (data.deliverables) {
+        setResult(data.deliverables)
+        saveKitToNotes(data.deliverables)
+      }
       else setError(data.error ?? 'Something went wrong')
     } catch {
       setError('Connection error — check Railway is running')
@@ -167,6 +212,13 @@ export default function PodcastEngine() {
 
       {result && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+          {/* Kit saved confirmation */}
+          {kitSaved && (
+            <div style={{ background: 'rgba(61,170,124,0.08)', border: '1px solid rgba(61,170,124,0.3)', borderRadius: '10px', padding: '10px 14px', fontSize: '12px', color: '#3DAA7C', fontWeight: 600 }}>
+              💾 Full episode kit saved to <strong>Notes</strong> — everything on this screen is stored there permanently, even after you click away.
+            </div>
+          )}
 
           {/* Send reels through the river */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '4px solid var(--purple)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
