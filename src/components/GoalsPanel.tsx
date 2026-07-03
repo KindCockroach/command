@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Target, Plus, Loader2, Trash2, Pause, Play, Pencil, X, Save, Flame } from 'lucide-react'
-import type { BrandAccount } from '@/lib/db'
+import { Target, Plus, Loader2, Trash2, Pause, Play, Pencil, X, Save, Flame, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
+import type { BrandAccount, ContentPiece } from '@/lib/db'
 
 type GoalRow = {
   id: number
@@ -20,6 +20,170 @@ type GoalRow = {
 }
 
 const BLANK = { title: '', account_id: '', target_per_week: 3, deadline: '', notes: '' }
+
+const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+// ── Live clock + posting calendar ─────────────────────────────────────────────
+function ScheduleCalendar({ goals, accounts }: { goals: GoalRow[]; accounts: BrandAccount[] }) {
+  const [now, setNow] = useState(new Date())
+  const [viewMonth, setViewMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) })
+  const [content, setContent] = useState<ContentPiece[]>([])
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
+
+  // The station always knows what day and time it is
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/content').then(r => r.json()),
+      fetch('/api/content?status=held').then(r => r.json()),
+    ]).then(([main, held]: ContentPiece[][]) => {
+      const seen = new Set<number>()
+      setContent([...main, ...held].filter(c => !seen.has(c.id) && seen.add(c.id)))
+    }).catch(() => {})
+  }, [])
+
+  // Map content onto days: posted (published_at) and scheduled (scheduled_at)
+  const byDay = new Map<string, { posted: ContentPiece[]; scheduled: ContentPiece[] }>()
+  const bucket = (k: string) => {
+    if (!byDay.has(k)) byDay.set(k, { posted: [], scheduled: [] })
+    return byDay.get(k)!
+  }
+  content.forEach(c => {
+    if (c.published_at) bucket(dateKey(new Date(c.published_at))).posted.push(c)
+    if (c.scheduled_at && c.status === 'scheduled') bucket(dateKey(new Date(c.scheduled_at))).scheduled.push(c)
+  })
+  const deadlines = new Map<string, GoalRow[]>()
+  goals.filter(g => g.deadline && g.active).forEach(g => {
+    const k = g.deadline!
+    deadlines.set(k, [...(deadlines.get(k) ?? []), g])
+  })
+
+  // Build a Monday-first month grid
+  const first = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1)
+  const startOffset = (first.getDay() + 6) % 7
+  const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate()
+  const cells: (Date | null)[] = [
+    ...Array.from({ length: startOffset }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => new Date(viewMonth.getFullYear(), viewMonth.getMonth(), i + 1)),
+  ]
+  while (cells.length % 7 !== 0) cells.push(null)
+
+  const todayKey = dateKey(now)
+  const monthLabel = viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const isCurrentMonth = viewMonth.getFullYear() === now.getFullYear() && viewMonth.getMonth() === now.getMonth()
+  const sel = selectedDay ? byDay.get(selectedDay) : null
+  const selDeadlines = selectedDay ? deadlines.get(selectedDay) ?? [] : []
+  const acctFor = (id?: string | null) => accounts.find(a => a.id === id)
+
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: '3px solid #5a4fcf', borderRadius: '14px', padding: '18px' }}>
+      {/* Header: live clock + month nav */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Clock size={14} color="#5a4fcf" />
+          <div>
+            <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>
+              {now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              <span style={{ color: '#5a4fcf', marginLeft: '8px', fontVariantNumeric: 'tabular-nums' }}>{now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</span>
+            </p>
+            <p style={{ fontSize: '10px', color: 'var(--text-subtle)', marginTop: '1px' }}>
+              Day {(now.getDay() + 6) % 7 + 1} of 7 this week — pace targets pro-rate against this
+            </p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button onClick={() => setViewMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))} style={{ padding: '5px', border: '1px solid var(--border)', borderRadius: '7px', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}><ChevronLeft size={13} /></button>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)', minWidth: '120px', textAlign: 'center' }}>{monthLabel}</span>
+          <button onClick={() => setViewMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))} style={{ padding: '5px', border: '1px solid var(--border)', borderRadius: '7px', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}><ChevronRight size={13} /></button>
+          {!isCurrentMonth && (
+            <button onClick={() => { const d = new Date(); setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1)) }} style={{ padding: '5px 10px', border: 'none', borderRadius: '7px', background: '#5a4fcf', color: '#fff', cursor: 'pointer', fontSize: '10px', fontWeight: 700 }}>Today</button>
+          )}
+        </div>
+      </div>
+
+      {/* Weekday headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '4px' }}>
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
+          <p key={d} style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', textAlign: 'center' }}>{d}</p>
+        ))}
+      </div>
+
+      {/* Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} />
+          const k = dateKey(d)
+          const day = byDay.get(k)
+          const dl = deadlines.get(k)
+          const isToday = k === todayKey
+          const isPast = k < todayKey
+          const isSelected = selectedDay === k
+          return (
+            <button key={i} onClick={() => setSelectedDay(isSelected ? null : k)}
+              style={{
+                minHeight: '52px', padding: '4px', borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
+                border: isToday ? '2px solid #5a4fcf' : isSelected ? '2px solid var(--hot-pink)' : '1px solid var(--border)',
+                background: isSelected ? 'rgba(232,68,138,0.06)' : isToday ? 'rgba(90,79,207,0.06)' : 'var(--bg)',
+                opacity: isPast && !day?.posted.length && !isToday ? 0.55 : 1,
+                display: 'flex', flexDirection: 'column', gap: '2px',
+              }}>
+              <span style={{ fontSize: '10px', fontWeight: isToday ? 900 : 600, color: isToday ? '#5a4fcf' : 'var(--text-muted)' }}>{d.getDate()}</span>
+              <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap', alignItems: 'center' }}>
+                {day?.posted.slice(0, 4).map((_, j) => <span key={`p${j}`} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3daa7c' }} />)}
+                {day?.scheduled.slice(0, 4).map((_, j) => <span key={`s${j}`} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4CC9F0' }} />)}
+                {((day?.posted.length ?? 0) + (day?.scheduled.length ?? 0)) > 4 && <span style={{ fontSize: '8px', color: 'var(--text-subtle)', fontWeight: 700 }}>+{(day!.posted.length + day!.scheduled.length) - 4}</span>}
+                {dl && <span style={{ fontSize: '9px' }} title={dl.map(g => g.title).join(', ')}>🎯</span>}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: '14px', marginTop: '10px', flexWrap: 'wrap' }}>
+        {[
+          { c: '#3daa7c', l: 'Posted' },
+          { c: '#4CC9F0', l: 'Scheduled (GHL)' },
+        ].map(x => (
+          <span key={x.l} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: x.c }} /> {x.l}
+          </span>
+        ))}
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>🎯 Goal deadline</span>
+      </div>
+
+      {/* Selected day detail */}
+      {selectedDay && (
+        <div style={{ marginTop: '12px', padding: '12px 14px', background: 'var(--bg)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>
+              {new Date(selectedDay + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+            <button onClick={() => setSelectedDay(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px' }}><X size={13} /></button>
+          </div>
+          {selDeadlines.map(g => (
+            <p key={g.id} style={{ fontSize: '11px', fontWeight: 700, color: '#F2A65A', marginBottom: '4px' }}>🎯 Deadline: {g.title}</p>
+          ))}
+          {(!sel || (sel.posted.length === 0 && sel.scheduled.length === 0)) && selDeadlines.length === 0 && (
+            <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>Nothing posted or scheduled this day.</p>
+          )}
+          {sel?.scheduled.map(c => {
+            const a = acctFor(c.account_id)
+            return <p key={`s${c.id}`} style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}><span style={{ color: '#4CC9F0', fontWeight: 800 }}>◷</span> {c.title} {a && <span style={{ color: a.color, fontWeight: 700 }}>· {a.handle}</span>}</p>
+          })}
+          {sel?.posted.map(c => {
+            const a = acctFor(c.account_id)
+            return <p key={`p${c.id}`} style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}><span style={{ color: '#3daa7c', fontWeight: 800 }}>✓</span> {c.title} {a && <span style={{ color: a.color, fontWeight: 700 }}>· {a.handle}</span>}</p>
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function GoalsPanel() {
   const [goals, setGoals] = useState<GoalRow[]>([])
@@ -206,6 +370,9 @@ export default function GoalsPanel() {
           ))}
         </div>
       )}
+
+      {/* Schedule / calendar — the station knows what day and time it is */}
+      {!loading && <ScheduleCalendar goals={goals} accounts={accounts} />}
 
       {editing === 'new' && editorFor('new')}
 
