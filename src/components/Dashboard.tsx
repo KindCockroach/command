@@ -21,12 +21,13 @@ import PodcastEngine from './PodcastEngine'
 import PitchStudio from './PitchStudio'
 import StoryProcessor from './StoryProcessor'
 import AuditPanel from './AuditPanel'
-import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar } from 'lucide-react'
+import GoalsPanel from './GoalsPanel'
+import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit'
+type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals'
 
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
@@ -60,6 +61,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
 
   const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode; accent?: boolean }[] = [
     { id: 'command',    label: 'Daily Command', icon: <Zap size={12} />, accent: true },
+    { id: 'goals',      label: 'Goals',         icon: <Target size={12} /> },
     { id: 'pipeline',   label: 'Content',       icon: <LayoutGrid size={12} /> },
     { id: 'projects',   label: 'Projects',      icon: <FolderKanban size={12} /> },
     { id: 'tasks',      label: 'Tasks',         icon: <CheckSquare size={12} /> },
@@ -165,6 +167,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'notes'      && <NotesPanel />}
         {view === 'accounts'   && <AccountsPanel />}
         {view === 'audit'      && <AuditPanel />}
+        {view === 'goals'      && <GoalsPanel />}
         {view === 'avatars'    && <AvatarsPanel />}
         {view === 'podcast'    && <PodcastEngine />}
         {view === 'story'      && <StoryProcessor />}
