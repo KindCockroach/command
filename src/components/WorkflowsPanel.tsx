@@ -205,10 +205,33 @@ function CopyBtn({ text }: { text: string }) {
 export default function WorkflowsPanel() {
   const [running, setRunning] = useState<string | null>(null)
   const [output, setOutput] = useState<{ id: string; text: string } | null>(null)
+  const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done'>('idle')
+  const [riverMsg, setRiverMsg] = useState('')
+
+  const sendToRiver = async () => {
+    if (!output) return
+    setRiverStatus('sending')
+    try {
+      const wf = WORKFLOWS.find(w => w.id === output.id)
+      const res = await fetch('/api/river', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: `WORKFLOW OUTPUT (${wf?.title ?? output.id}):\n\n${output.text}`, source: 'workflows' }),
+      })
+      const d = await res.json()
+      setRiverMsg(d.complete && d.account ? `✓ Filed under ${d.account.emoji} ${d.account.handle}`
+        : d.account ? `Sorted to ${d.account.handle} — needs answers (see its card in Accounts)` : d.error ? 'River error' : 'Filed to pipeline')
+      setRiverStatus('done')
+    } catch {
+      setRiverMsg('Connection failed')
+      setRiverStatus('done')
+    }
+  }
 
   const run = async (workflow: Workflow) => {
     setRunning(workflow.id)
     setOutput(null)
+    setRiverStatus('idle')
+    setRiverMsg('')
     try {
       const res = await fetch('/api/ai', {
         method: 'POST',
@@ -256,8 +279,15 @@ export default function WorkflowsPanel() {
             <p style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--hot-pink)' }}>
               {WORKFLOWS.find(w => w.id === output.id)?.emoji} {WORKFLOWS.find(w => w.id === output.id)?.title}
             </p>
-            <CopyBtn text={output.text} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button onClick={sendToRiver} disabled={riverStatus !== 'idle'}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '8px', border: 'none', background: riverStatus === 'done' ? '#3daa7c' : 'var(--hot-pink)', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: riverStatus === 'idle' ? 'pointer' : 'default' }}>
+                {riverStatus === 'sending' ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> Sorting…</> : riverStatus === 'done' ? <><CheckCheck size={11} /> Filed</> : '🌊 Send to River'}
+              </button>
+              <CopyBtn text={output.text} />
+            </div>
           </div>
+          {riverMsg && <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>{riverMsg}</p>}
           <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{output.text}</p>
         </div>
       )}

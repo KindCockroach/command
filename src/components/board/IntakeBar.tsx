@@ -6,44 +6,50 @@ import { ArrowRight, Loader2, Sparkles } from 'lucide-react'
 interface Props { onIntake: (piece: ContentPiece) => void }
 
 const PLACEHOLDERS = [
-  "One word. One phrase. One voice memo worth. Drop it here — we'll build it into content.",
-  "What's alive in your head right now? Capture it. We'll make it into 30 pieces.",
-  "Type the idea. Hit Enter. Everything else is on me.",
+  "One word. One phrase. One voice memo worth. Drop it here — the river sorts and composes it.",
+  "What's alive in your head right now? The river will find its account and build the post.",
+  "Type the idea. Hit Enter. The sorting hat does the rest.",
   "What are we working on today, Mandi?",
 ]
+
+type Verdict = {
+  complete: boolean
+  account: { handle: string; emoji: string; color: string } | null
+  open_questions: string[]
+}
 
 export default function IntakeBar({ onIntake }: Props) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [verdict, setVerdict] = useState<Verdict | null>(null)
   const [ph] = useState(() => PLACEHOLDERS[Math.floor(Math.random() * PLACEHOLDERS.length)])
 
   const submit = async () => {
     if (!input.trim() || loading) return
     setLoading(true)
-    const res = await fetch('/api/intake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input: input.trim() }) })
-    const piece = await res.json()
-    onIntake(piece)
-    setInput('')
-    setLoading(false)
-    setSuccess(true)
-    setTimeout(() => setSuccess(false), 2500)
-
-    // Background enrichment — silently updates the card after ~5s
-    if (process.env.NEXT_PUBLIC_OPENAI_ENABLED !== 'false') {
-      fetch('/api/ai', {
+    setVerdict(null)
+    try {
+      // Through the River: sorted to an account, composed if it stands alone
+      const res = await fetch('/api/river', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'enrich', title: piece.title, description: piece.description }),
-      }).then(r => r.json()).then(data => {
-        if (data.result && piece.id) {
-          fetch('/api/content', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: piece.id, ai_enrichment: data.result }),
-          }).catch(() => {})
-        }
-      }).catch(() => {})
+        body: JSON.stringify({ input: input.trim(), source: 'kanban' }),
+      })
+      const d = await res.json()
+      if (d.piece) {
+        onIntake(d.piece)
+        setInput('')
+        setVerdict({ complete: d.complete, account: d.account, open_questions: d.open_questions ?? [] })
+        setTimeout(() => setVerdict(null), 12000)
+      } else {
+        // River unavailable — fall back to plain intake so nothing is lost
+        const fb = await fetch('/api/intake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input: input.trim() }) })
+        const piece = await fb.json()
+        onIntake(piece)
+        setInput('')
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -55,7 +61,7 @@ export default function IntakeBar({ onIntake }: Props) {
           What are we working on today?
         </span>
         <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'var(--aurora-light)', color: 'var(--aurora-pink)' }}>
-          1 idea → 30 pieces
+          🌊 idea → the river → post-card
         </span>
       </div>
 
@@ -75,20 +81,30 @@ export default function IntakeBar({ onIntake }: Props) {
           onClick={submit}
           disabled={loading || !input.trim()}
           className="flex items-center gap-1.5 text-[13px] px-4 rounded-lg font-semibold transition-all min-w-[100px] justify-center"
-          style={success
+          style={verdict
             ? { background: '#E8F7F1', color: '#3DAA7C' }
             : { background: 'var(--cosmic-midnight)', color: 'var(--soft-light)', opacity: (!input.trim() || loading) ? 0.4 : 1 }
           }
         >
           {loading ? <Loader2 size={14} className="animate-spin" />
-           : success ? '✓ Captured'
+           : verdict ? '✓ Sorted'
            : <><ArrowRight size={14} /> Capture</>}
         </button>
       </div>
 
-      <p className="text-[10px] mt-2" style={{ color: 'var(--text-subtle)' }}>
-        Enter to capture instantly · Shift+Enter for new line · Lands in Ideas lane · Click any card to expand into full content
-      </p>
+      {verdict ? (
+        <div className="mt-2 px-3 py-2 rounded-lg text-[11px]" style={{ background: verdict.complete ? '#E8F7F1' : '#FEF5EA', color: verdict.complete ? '#3DAA7C' : '#C47A1A' }}>
+          {verdict.complete && verdict.account
+            ? <>🌊 Complete post composed and filed under <strong style={{ color: verdict.account.color }}>{verdict.account.emoji} {verdict.account.handle}</strong> — approve it on the flipped account card.</>
+            : verdict.account
+              ? <>🌊 Sorted to <strong>{verdict.account.handle}</strong> but it needs you: {verdict.open_questions.join(' · ') || 'more detail'}. Answer on its card in Accounts.</>
+              : <>🌊 Captured to the pipeline.</>}
+        </div>
+      ) : (
+        <p className="text-[10px] mt-2" style={{ color: 'var(--text-subtle)' }}>
+          Enter to capture · Shift+Enter for new line · The river sorts it to an account and composes the post — or asks you what&apos;s missing
+        </p>
+      )}
     </div>
   )
 }

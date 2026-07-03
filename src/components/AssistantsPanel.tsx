@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Loader2, Send } from 'lucide-react'
+import { Loader2, Send, Waves, CheckCheck } from 'lucide-react'
 import { AGENT_META } from '@/lib/agents'
 import type { GPTRole } from '@/lib/agents'
 
@@ -21,6 +21,29 @@ export default function AssistantsPanel() {
   const [msg, setMsg] = useState('')
   const [history, setHistory] = useState<{ role: 'user' | 'ai'; text: string }[]>([])
   const [loading, setLoading] = useState(false)
+  const [riverIdx, setRiverIdx] = useState<number | null>(null)   // message currently being sent
+  const [riverDone, setRiverDone] = useState<Record<number, string>>({})
+
+  const sendToRiver = async (i: number, text: string) => {
+    setRiverIdx(i)
+    try {
+      const res = await fetch('/api/river', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: `FROM ${active ? AGENT_META[active].label : 'assistant'} CONVERSATION:\n\n${text}`, source: 'assistants' }),
+      })
+      const d = await res.json()
+      setRiverDone(prev => ({
+        ...prev,
+        [i]: d.complete && d.account ? `✓ Filed under ${d.account.emoji} ${d.account.handle}`
+          : d.account ? `Sorted to ${d.account.handle} — needs: ${(d.open_questions ?? []).join(' · ') || 'detail'}`
+          : d.error ? 'River error' : 'Filed to pipeline',
+      }))
+    } catch {
+      setRiverDone(prev => ({ ...prev, [i]: 'Connection failed' }))
+    } finally {
+      setRiverIdx(null)
+    }
+  }
 
   const send = async () => {
     if (!msg.trim() || !active) return
@@ -83,6 +106,16 @@ export default function AssistantsPanel() {
                 <div style={{ fontSize: '13px', lineHeight: 1.7, padding: '10px 14px', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px', background: m.role === 'user' ? 'var(--hot-pink)' : 'var(--bg)', color: m.role === 'user' ? '#fff' : 'var(--text)', border: m.role === 'ai' ? '1px solid var(--border)' : 'none', whiteSpace: 'pre-wrap' }}>
                   {m.text}
                 </div>
+                {m.role === 'ai' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                    <button onClick={() => sendToRiver(i, m.text)} disabled={riverIdx === i || !!riverDone[i]}
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: riverDone[i] ? '#E8F7F1' : 'transparent', fontSize: '10px', fontWeight: 700, cursor: riverDone[i] ? 'default' : 'pointer', color: riverDone[i] ? '#3DAA7C' : 'var(--text-muted)' }}>
+                      {riverIdx === i ? <><Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} /> Sorting…</>
+                        : riverDone[i] ? <><CheckCheck size={10} /> {riverDone[i]}</>
+                        : <><Waves size={10} /> Send to River</>}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
             {loading && (

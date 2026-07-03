@@ -73,6 +73,29 @@ export default function RepurposeStudio() {
   const [chatHistory, setChatHistory] = useState<{ role: string; text: string }[]>([])
   const [chatLoading, setChatLoading] = useState(false)
 
+  // River state
+  const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done'>('idle')
+  const [riverMsg, setRiverMsg] = useState('')
+
+  const fileToRiver = async () => {
+    if (!result) return
+    setRiverStatus('sending')
+    try {
+      const input = `REPURPOSED CONTENT PACKAGE — "${title || 'Untitled'}":\n\nCORE MESSAGE: ${result.summary}\n\nBEST CAPTION:\n${result.captions?.medium ?? result.captions?.short ?? ''}\n\nTOP REEL HOOK: ${result.reels_hooks?.[0] ?? ''}\n\nOFFER BRIDGE: ${result.offer_bridge ?? ''}`
+      const res = await fetch('/api/river', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, source: 'repurpose' }),
+      })
+      const d = await res.json()
+      setRiverMsg(d.complete && d.account ? `✓ Post-card filed under ${d.account.emoji} ${d.account.handle} — approve it in Accounts`
+        : d.account ? `Sorted to ${d.account.handle} — needs: ${(d.open_questions ?? []).join(' · ') || 'detail'}` : d.error ? 'River error' : 'Filed to pipeline')
+      setRiverStatus('done')
+    } catch {
+      setRiverMsg('Connection failed')
+      setRiverStatus('done')
+    }
+  }
+
   const togglePlatform = (p: string) =>
     setSelectedPlatforms(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])
 
@@ -210,11 +233,18 @@ export default function RepurposeStudio() {
 
           {result && (
             <>
-              {/* Preview toggle */}
-              <button onClick={() => setPreviewOpen(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: '2px solid var(--hot-pink)', background: 'rgba(232,68,138,0.08)', color: 'var(--hot-pink)', cursor: 'pointer', fontWeight: 800, fontSize: '13px', alignSelf: 'flex-start', transition: 'background 0.15s' }}>
-                <Layout size={15} /> Preview All Platforms
-              </button>
+              {/* Preview + river */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <button onClick={() => setPreviewOpen(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: '2px solid var(--hot-pink)', background: 'rgba(232,68,138,0.08)', color: 'var(--hot-pink)', cursor: 'pointer', fontWeight: 800, fontSize: '13px', transition: 'background 0.15s' }}>
+                  <Layout size={15} /> Preview All Platforms
+                </button>
+                <button onClick={fileToRiver} disabled={riverStatus !== 'idle'}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: 'none', background: riverStatus === 'done' ? '#3daa7c' : 'var(--purple)', color: '#fff', cursor: riverStatus === 'idle' ? 'pointer' : 'default', fontWeight: 800, fontSize: '13px' }}>
+                  {riverStatus === 'sending' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Sorting…</> : riverStatus === 'done' ? '✓ Filed' : '🌊 Compose & File'}
+                </button>
+                {riverMsg && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{riverMsg}</span>}
+              </div>
 
               {/* Summary banner */}
               <div style={{ background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%)', borderRadius: '14px', padding: '18px 20px', color: '#fff' }}>

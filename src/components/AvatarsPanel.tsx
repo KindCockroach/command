@@ -182,6 +182,33 @@ export default function AvatarsPanel() {
   const [videoLoading, setVideoLoading] = useState<string | null>(null)
   const [videoResults, setVideoResults] = useState<Record<string, string>>({})
   const [editing, setEditing] = useState<Partial<AvatarRecord> | null>(null)
+  const [riverLoading, setRiverLoading] = useState<string | null>(null)
+  const [riverResults, setRiverResults] = useState<Record<string, string>>({})
+
+  const fileToRiver = async (s: GeneratedScript) => {
+    const key = `${s.avatarId}-${s.topic}`
+    const av = avatars.find(a => a.id === s.avatarId)
+    setRiverLoading(key)
+    try {
+      const res = await fetch('/api/river', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: `AVATAR SCRIPT — ${av?.name ?? s.avatarId} (${av?.instagramHandle ?? ''}) for ${s.platform}:\nTOPIC: ${s.topic}\nHOOK: ${s.hook}\nBODY: ${s.body}\nCTA: ${s.cta}`,
+          source: 'avatars',
+        }),
+      })
+      const d = await res.json()
+      setRiverResults(prev => ({
+        ...prev,
+        [key]: d.complete && d.account ? `✓ Filed under ${d.account.emoji} ${d.account.handle}`
+          : d.account ? `Sorted to ${d.account.handle} — needs answers` : d.error ? 'River error' : 'Filed',
+      }))
+    } catch {
+      setRiverResults(prev => ({ ...prev, [key]: 'Connection failed' }))
+    } finally {
+      setRiverLoading(null)
+    }
+  }
 
   useEffect(() => {
     fetch('/api/avatars').then(r => r.json()).then(setAvatars).catch(() => {})
@@ -469,6 +496,12 @@ Stay 100% in character as ${av.name}. Match their voice exactly. Keep the whole 
                       style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', borderRadius: '8px', border: 'none', background: av.accentColor, cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#fff', opacity: videoLoading === key ? 0.7 : 1 }}>
                       {videoLoading === key ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Video size={12} />}
                       {vidId ? 'Rendering...' : 'Make Video'}
+                    </button>
+                    <button onClick={() => fileToRiver(s)} disabled={riverLoading === key || !!riverResults[key]}
+                      title="Send through the River — becomes a post-card under the best account"
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: riverResults[key] ? '#E8F7F1' : 'var(--surface)', cursor: riverResults[key] ? 'default' : 'pointer', fontSize: '12px', fontWeight: 600, color: riverResults[key] ? '#3DAA7C' : 'var(--text-muted)' }}>
+                      {riverLoading === key ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : riverResults[key] ? <CheckCircle2 size={12} /> : '🌊'}
+                      {riverResults[key] ?? 'File'}
                     </button>
                   </div>
                 </div>

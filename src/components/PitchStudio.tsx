@@ -34,6 +34,28 @@ export default function PitchStudio() {
   const [generating, setGenerating] = useState(false)
   const [result, setResult] = useState<PitchResult | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done'>('idle')
+  const [riverMsg, setRiverMsg] = useState('')
+
+  const sendToRiver = async () => {
+    if (!result) return
+    setRiverStatus('sending')
+    try {
+      const res = await fetch('/api/river', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: `BEHIND-THE-SCENES CONTENT IDEA: Mandi (mom of 4 under 5) just pitched the ${result.country} tourism board for a family press trip. Angle used: ${angle}. Key talking points: ${result.key_talking_points?.join('; ')}. Turn this into content about a mom using AI to pitch her family's travel to tourism boards.`,
+          source: 'pitch',
+        }),
+      })
+      const d = await res.json()
+      setRiverMsg(d.complete && d.account ? `✓ Filed under ${d.account.emoji} ${d.account.handle}` : d.account ? `Sorted to ${d.account.handle} — needs answers` : 'Filed to pipeline')
+      setRiverStatus('done')
+    } catch {
+      setRiverMsg('Connection failed')
+      setRiverStatus('done')
+    }
+  }
 
   useEffect(() => {
     fetch('/tourism_boards.json').then(r => r.json()).then(setBoards).catch(() => {})
@@ -45,6 +67,8 @@ export default function PitchStudio() {
     if (!selected) return
     setGenerating(true)
     setResult(null)
+    setRiverStatus('idle')
+    setRiverMsg('')
     try {
       const res = await fetch('/api/pitch', {
         method: 'POST',
@@ -133,6 +157,14 @@ export default function PitchStudio() {
       {/* Result */}
       {result && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Turn the pitch itself into content */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '4px solid var(--purple)', borderRadius: '12px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{riverMsg || 'The pitch is content too — behind-the-scenes of a mom of 4 pitching tourism boards.'}</p>
+            <button onClick={sendToRiver} disabled={riverStatus !== 'idle'}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 14px', borderRadius: '9px', border: 'none', background: riverStatus === 'done' ? '#3DAA7C' : 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: riverStatus === 'idle' ? 'pointer' : 'default', flexShrink: 0 }}>
+              {riverStatus === 'sending' ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> Sorting…</> : riverStatus === 'done' ? <><CheckCheck size={11} /> Filed</> : '🌊 Make content from this pitch'}
+            </button>
+          </div>
           {/* Contact info */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
