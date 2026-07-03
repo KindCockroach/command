@@ -411,6 +411,72 @@ export function readDb(): Db {
     })
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
   }
+  // Migrate (2026-07-03): AI Mom at Work pivots to faceless content + RISE (off Room30)
+  if (db.brand_accounts) {
+    const amw = db.brand_accounts.find(a => a.id === 'aimomatwork')
+    if (amw && amw.offer === 'Room30.ai membership') {
+      amw.mission = 'Sell faceless content systems to moms and beginners. Eventually sell RISE Lite. NOT a Room30 channel.'
+      amw.topic = 'Faceless content systems, AI tools for moms'
+      amw.underlying_message = 'You can build income online without showing your face or burning out.'
+      amw.solution_message = 'A faceless content system that runs on AI while you live your life.'
+      amw.offer = 'Faceless content systems → RISE Lite (coming)'
+      amw.offer_price = 'TBD'
+      amw.notes = 'Pivoted off Room30 2026-07-03. Still rebuilding value ratio — give > ask. Room30 sales now live on the Sage account.'
+      fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+    }
+    // Migrate: Sage account for Room30 sales — restriction-safe by design
+    if (!db.brand_accounts.find(a => a.id === 'sage')) {
+      db.brand_accounts.push({
+        id: 'sage', handle: '@sageaiworks', platform: 'Instagram', status: 'active', priority: 'high',
+        color: '#3DAA7C', emoji: '🪴', brand_name: 'Sage', topic: 'Minimalist AI systems, calm productivity',
+        bio: 'Less noise. More output. AI that works.',
+        mission: 'Sell Room30.ai through calm, value-first content. Zero spam signals — this account must never get restricted.',
+        content_format: 'Short reels with text overlays, faceless b-roll, calm talking points',
+        underlying_message: 'You don\'t need more hustle. You need a system.',
+        problem_message: 'You\'re drowning in tools, tabs, and advice.',
+        solution_message: 'One calm system that runs itself.',
+        transformation: 'From overwhelmed to automated — one system at a time',
+        the_how: 'One system at a time', tone: 'Measured, clear, unhurried. Precision over hype.',
+        beliefs: ['Most people use AI wrong.', 'Fewer tools, deeper systems.', 'Calm sells better than hype.'],
+        hooks: [
+          "The Most Efficient Way To ___ If You're ___…",
+          'How To Get ___ Quickly',
+          'If you want ___ avoid this, and try this!',
+          "Want to feel ___ but don't want to break the bank?",
+          'Want ___? Then stop scrolling',
+          "What ___ industry don't want you to know about ___",
+          "here's why [common belief] is a myth.",
+          "here's why [common belief] is misleading.",
+          "here's why [common product] is overrated.",
+          "here's why [popular advice] isn't working for you.",
+        ],
+        offer: 'Room30.ai membership (affiliate)', offer_price: '$10/day',
+        notes: 'RESTRICTION SAFETY — NON-NEGOTIABLE: never put links in captions or on-screen text. CTA is always "Comment SAGE" (keyword only). Give:ask ratio at least 4:1. No income claims, no "DM me now" pressure, no engagement bait, no follow-for-follow language. Calm > salesy, always.',
+      })
+      fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+    }
+  }
+  // Migrate: Sage avatar gets her 10 launch hooks + Room30 mission
+  if (db.avatars) {
+    const sage = db.avatars.find(a => a.id === 'sage')
+    if (sage && !sage.hookFormulas.some(h => h.startsWith('The Most Efficient'))) {
+      sage.hookFormulas = [
+        "The Most Efficient Way To ___ If You're ___…",
+        'How To Get ___ Quickly',
+        'If you want ___ avoid this, and try this!',
+        "Want to feel ___ but don't want to break the bank?",
+        'Want ___? Then stop scrolling',
+        "What ___ industry don't want you to know about ___",
+        "here's why [common belief] is a myth.",
+        "here's why [common belief] is misleading.",
+        "here's why [common product] is overrated.",
+        "here's why [popular advice] isn't working for you.",
+      ]
+      sage.systemPrompt += '\nYou now sell Room30.ai (affiliate) through calm value-first content.\nRESTRICTION SAFETY: never mention or show links in captions or on-screen text. CTA is always "Comment SAGE". No income claims, no pressure tactics, no engagement bait.'
+      sage.ctaTemplate = 'Comment SAGE and I\'ll send you the system.'
+      fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+    }
+  }
   // Migrate: update Room30 project description if still old
   if (db.projects) {
     const r30 = db.projects.find(p => p.name === 'Room30.ai Launch')
