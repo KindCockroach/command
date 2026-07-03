@@ -26,12 +26,15 @@ type GoalRow = {
 }
 
 type RiverResult = {
+  kind?: 'content' | 'task' | 'event'
   complete: boolean
   piece: { id: number; title: string }
   account: { handle: string; emoji: string; color: string } | null
   open_questions: string[]
   needs: string[]
   researched: string | null
+  task?: { id: number; title: string; due_date: string | null; priority: string }
+  event?: { id: number; title: string; date: string; time: string; kind: string }
 }
 
 const today = new Date().toISOString().split('T')[0]
@@ -137,6 +140,9 @@ export default function DailyCommand() {
           setRiverResult(result)
           setData(d => ({ ...d, notes: '' }))
           loadFire()
+          if (result.kind === 'task') {
+            fetch('/api/tasks?status=today').then(r => r.json()).then(setTasks).catch(() => {})
+          }
         }
       } finally {
         setRiverRunning(false)
@@ -280,14 +286,30 @@ export default function DailyCommand() {
 
       {/* River verdict */}
       {riverResult && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: `4px solid ${riverResult.complete ? '#3daa7c' : '#f2a65a'}`, borderRadius: '12px', padding: '16px 18px' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: `4px solid ${riverResult.kind === 'task' ? 'var(--purple)' : riverResult.kind === 'event' ? '#5a4fcf' : riverResult.complete ? '#3daa7c' : '#f2a65a'}`, borderRadius: '12px', padding: '16px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 800, color: riverResult.complete ? '#3daa7c' : '#f2a65a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              {riverResult.complete ? '🌊 Composed & filed' : '🌊 Sorted — needs you'}
+            <span style={{ fontSize: '12px', fontWeight: 800, color: riverResult.kind === 'task' ? 'var(--purple)' : riverResult.kind === 'event' ? '#5a4fcf' : riverResult.complete ? '#3daa7c' : '#f2a65a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              {riverResult.kind === 'task' ? '✓ Task captured' : riverResult.kind === 'event' ? '📅 Event added' : riverResult.complete ? '🌊 Composed & filed' : '🌊 Sorted — needs you'}
             </span>
             <button onClick={() => setRiverResult(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '16px', lineHeight: 1, padding: '0 4px' }}>×</button>
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 700 }}>{riverResult.piece.title}</p>
+          {riverResult.kind === 'task' && riverResult.task && (
+            <>
+              <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 700 }}>{riverResult.task.title}</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                Added to your tasks{riverResult.task.due_date ? ` · due ${new Date(riverResult.task.due_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}` : ''} · {riverResult.task.priority} priority — it&apos;s in the &quot;Your tasks today&quot; card and the Tasks tab.
+              </p>
+            </>
+          )}
+          {riverResult.kind === 'event' && riverResult.event && (
+            <>
+              <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 700 }}>{riverResult.event.title}</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                On the calendar for <strong>{new Date(riverResult.event.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>{riverResult.event.time ? ` at ${riverResult.event.time}` : ''} — the concept engine on the Goals tab will build content around it.
+              </p>
+            </>
+          )}
+          {(!riverResult.kind || riverResult.kind === 'content') && <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 700 }}>{riverResult.piece?.title}</p>}
           {riverResult.account && (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
               {riverResult.complete

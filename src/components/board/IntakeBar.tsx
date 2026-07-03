@@ -13,9 +13,12 @@ const PLACEHOLDERS = [
 ]
 
 type Verdict = {
+  kind?: 'content' | 'task' | 'event'
   complete: boolean
   account: { handle: string; emoji: string; color: string } | null
   open_questions: string[]
+  task?: { title: string; due_date: string | null }
+  event?: { title: string; date: string }
 }
 
 export default function IntakeBar({ onIntake }: Props) {
@@ -36,10 +39,14 @@ export default function IntakeBar({ onIntake }: Props) {
         body: JSON.stringify({ input: input.trim(), source: 'kanban' }),
       })
       const d = await res.json()
-      if (d.piece) {
+      if (d.kind === 'task' || d.kind === 'event') {
+        setInput('')
+        setVerdict({ kind: d.kind, complete: true, account: null, open_questions: [], task: d.task, event: d.event })
+        setTimeout(() => setVerdict(null), 12000)
+      } else if (d.piece) {
         onIntake(d.piece)
         setInput('')
-        setVerdict({ complete: d.complete, account: d.account, open_questions: d.open_questions ?? [] })
+        setVerdict({ kind: 'content', complete: d.complete, account: d.account, open_questions: d.open_questions ?? [] })
         setTimeout(() => setVerdict(null), 12000)
       } else {
         // River unavailable — fall back to plain intake so nothing is lost
@@ -94,11 +101,15 @@ export default function IntakeBar({ onIntake }: Props) {
 
       {verdict ? (
         <div className="mt-2 px-3 py-2 rounded-lg text-[11px]" style={{ background: verdict.complete ? '#E8F7F1' : '#FEF5EA', color: verdict.complete ? '#3DAA7C' : '#C47A1A' }}>
-          {verdict.complete && verdict.account
-            ? <>🌊 Complete post composed and filed under <strong style={{ color: verdict.account.color }}>{verdict.account.emoji} {verdict.account.handle}</strong> — approve it on the flipped account card.</>
-            : verdict.account
-              ? <>🌊 Sorted to <strong>{verdict.account.handle}</strong> but it needs you: {verdict.open_questions.join(' · ') || 'more detail'}. Answer on its card in Accounts.</>
-              : <>🌊 Captured to the pipeline.</>}
+          {verdict.kind === 'task' && verdict.task
+            ? <>✓ That&apos;s a to-do — added <strong>{verdict.task.title}</strong> to your Tasks{verdict.task.due_date ? ` (due ${verdict.task.due_date})` : ''}.</>
+            : verdict.kind === 'event' && verdict.event
+              ? <>📅 Added <strong>{verdict.event.title}</strong> to the calendar on {verdict.event.date} — see the Goals tab.</>
+              : verdict.complete && verdict.account
+                ? <>🌊 Complete post composed and filed under <strong style={{ color: verdict.account.color }}>{verdict.account.emoji} {verdict.account.handle}</strong> — approve it on the flipped account card.</>
+                : verdict.account
+                  ? <>🌊 Sorted to <strong>{verdict.account.handle}</strong> but it needs you: {verdict.open_questions.join(' · ') || 'more detail'}. Answer on its card in Accounts.</>
+                  : <>🌊 Captured to the pipeline.</>}
         </div>
       ) : (
         <p className="text-[10px] mt-2" style={{ color: 'var(--text-subtle)' }}>

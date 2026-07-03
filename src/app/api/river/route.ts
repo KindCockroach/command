@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, createNote } from '@/lib/db'
-import type { ContentType } from '@/lib/db'
+import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, createNote, createTask, createEvent } from '@/lib/db'
+import type { ContentType, EventKind } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -9,6 +9,18 @@ export const maxDuration = 300
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 type RiverVerdict = {
+  kind: 'content' | 'task' | 'event'
+  // task fields
+  task_title?: string
+  task_notes?: string
+  task_priority?: 'urgent' | 'high' | 'medium' | 'low'
+  task_due?: string | null
+  // event fields
+  event_title?: string
+  event_date?: string
+  event_time?: string
+  event_kind?: string
+  // content fields
   stands_alone: boolean
   account_id: string | null
   account_reason: string
@@ -45,8 +57,15 @@ export async function POST(req: NextRequest) {
 
   const triage = await client.responses.create({
     model: 'gpt-4o',
-    instructions: `You are the RIVER — the sorting-hat brain of Mandi Beck's content command center.
-Raw ideas, stories, fragments, and images flow in from every tab. Your job:
+    instructions: `You are the RIVER — the sorting-hat brain of Mandi Beck's content command center. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
+Raw ideas, stories, fragments, tasks, and images flow in from every tab. Your job:
+
+0. CLASSIFY FIRST — is this input a TASK, an EVENT, or CONTENT?
+   - TASK: a to-do directed at Mandi herself ("remind me to...", "I need to call...", "upload the podcast", "email the school"). Set kind:"task" and fill task_title (imperative, short), task_notes, task_priority (urgent/high/medium/low), task_due (YYYY-MM-DD if a date/day is mentioned, else null). Skip all content fields.
+   - EVENT: a dated happening ("workshop goes live July 10", "twins' birthday on the 15th", "launch next Friday"). Set kind:"event" and fill event_title, event_date (YYYY-MM-DD — resolve relative dates from today's date above), event_time (HH:MM or ""), event_kind (launch/promo/holiday/personal/trend/other). Skip content fields.
+   - CONTENT: everything else — an idea, story, observation, or fragment meant to become a post. Set kind:"content" and continue below.
+
+For kind:"content" only:
 1. SORT: pick the ONE best account for this input from the roster below (prioritize accounts tied to active goals).
 2. JUDGE: can this stand alone as a complete post, or does it need something?
    - "research": facts/stats/context you can supply yourself — supply them, don't flag them.
@@ -59,6 +78,9 @@ ${watchContext}
 
 Return ONLY valid JSON:
 {
+  "kind": "content" | "task" | "event",
+  "task_title": "...", "task_notes": "...", "task_priority": "urgent|high|medium|low", "task_due": "YYYY-MM-DD" | null,
+  "event_title": "...", "event_date": "YYYY-MM-DD", "event_time": "HH:MM" | "", "event_kind": "launch|promo|holiday|personal|trend|other",
   "stands_alone": boolean,
   "account_id": "id from roster" | null,
   "account_reason": "one sentence why this account",
@@ -81,6 +103,31 @@ Return ONLY valid JSON:
     verdict = JSON.parse(match![0])
   } catch {
     return NextResponse.json({ error: 'River could not parse this input', raw: triage.output_text }, { status: 502 })
+  }
+
+  // Task capture: "remind me to..." → straight to the Tasks panel
+  if (verdict.kind === 'task' && verdict.task_title) {
+    const today = new Date().toISOString().split('T')[0]
+    const task = createTask({
+      title: verdict.task_title,
+      notes: verdict.task_notes ?? '',
+      priority: verdict.task_priority ?? 'medium',
+      status: verdict.task_due && verdict.task_due <= today ? 'today' : verdict.task_due ? 'this_week' : 'today',
+      due_date: verdict.task_due ?? null,
+    })
+    return NextResponse.json({ kind: 'task', task })
+  }
+
+  // Event capture: "workshop July 10" → onto the Goals calendar
+  if (verdict.kind === 'event' && verdict.event_title && verdict.event_date) {
+    const event = createEvent({
+      title: verdict.event_title,
+      date: verdict.event_date,
+      time: verdict.event_time ?? '',
+      kind: (verdict.event_kind as EventKind) ?? 'other',
+      notes: `Captured via the river: "${String(input).slice(0, 200)}"`,
+    })
+    return NextResponse.json({ kind: 'event', event })
   }
 
   // If the river researched something, store the research to Notes (storage, not the river)
@@ -113,6 +160,7 @@ Return ONLY valid JSON:
   })
 
   return NextResponse.json({
+    kind: 'content',
     complete,
     piece,
     account: accounts.find(a => a.id === verdict.account_id) ?? null,
