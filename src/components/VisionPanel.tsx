@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Star, CheckCheck } from 'lucide-react'
+import { Star, CheckCheck, Sparkles, Loader2 } from 'lucide-react'
 import type { VisionEntry, VisionType } from '@/lib/db'
 
 const VISION_SECTIONS: { type: VisionType; label: string; emoji: string; placeholder: string; color: string }[] = [
@@ -16,6 +16,8 @@ function VisionCard({ section, entry, onSave }: { section: typeof VISION_SECTION
   const [editing, setEditing] = useState(!entry?.content)
   const [draft, setDraft] = useState(entry?.content ?? '')
   const [saved, setSaved] = useState(false)
+  const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done'>('idle')
+  const [riverMsg, setRiverMsg] = useState('')
 
   const save = async () => {
     if (!draft.trim()) return
@@ -23,6 +25,25 @@ function VisionCard({ section, entry, onSave }: { section: typeof VISION_SECTION
     setEditing(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  const sendToRiver = async () => {
+    if (!entry?.content) return
+    setRiverStatus('sending')
+    try {
+      const res = await fetch('/api/river', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: `VISION WRITING — "${section.label}":\n\n${entry.content}\n\nTurn this personal vision writing into content that invites HER (the reader) into the same becoming.`, source: 'vision' }),
+      })
+      const d = await res.json()
+      if (d.complete && d.account) setRiverMsg(`✓ Post filed under ${d.account.emoji} ${d.account.handle}`)
+      else if (d.account) setRiverMsg(`Filed under ${d.account.handle} — needs: ${(d.open_questions ?? []).join(' · ') || 'more detail'}`)
+      else setRiverMsg(d.error ? 'River error — try again' : 'Filed to pipeline')
+      setRiverStatus('done')
+    } catch {
+      setRiverMsg('Connection failed')
+      setRiverStatus('done')
+    }
   }
 
   return (
@@ -55,9 +76,20 @@ function VisionCard({ section, entry, onSave }: { section: typeof VISION_SECTION
           </div>
         </div>
       ) : (
-        <p style={{ fontSize: '14px', color: 'var(--text)', lineHeight: 1.8, fontStyle: section.type === 'future_self' ? 'italic' : 'normal', opacity: 0.9 }}>
-          {entry?.content ?? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Click to write...</span>}
-        </p>
+        <>
+          <p style={{ fontSize: '14px', color: 'var(--text)', lineHeight: 1.8, fontStyle: section.type === 'future_self' ? 'italic' : 'normal', opacity: 0.9 }}>
+            {entry?.content ?? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Click to write...</span>}
+          </p>
+          {entry?.content && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+              <button onClick={sendToRiver} disabled={riverStatus === 'sending'}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '8px', border: `1px solid ${section.color}50`, background: riverStatus === 'done' ? '#3daa7c' : 'transparent', color: riverStatus === 'done' ? '#fff' : section.color, fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                {riverStatus === 'sending' ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> Composing…</> : riverStatus === 'done' ? <><CheckCheck size={11} /> Filed</> : <><Sparkles size={11} /> 🌊 Make content from this</>}
+              </button>
+              {riverMsg && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{riverMsg}</span>}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
@@ -97,6 +129,7 @@ export default function VisionPanel() {
           />
         ))}
       </div>
+      <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }

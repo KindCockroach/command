@@ -79,6 +79,32 @@ export default function PodcastEngine() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<Deliverables | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done'>('idle')
+  const [riverMsg, setRiverMsg] = useState('')
+
+  const fileUnderAccounts = async () => {
+    if (!result) return
+    setRiverStatus('sending')
+    const filed: string[] = []
+    try {
+      // Each reel script becomes its own post-card, sorted to the right account
+      for (const [i, s] of (result.reels_scripts ?? []).entries()) {
+        setRiverMsg(`Filing reel ${i + 1} of ${result.reels_scripts.length}…`)
+        const input = `PODCAST EPISODE${episodeNumber ? ` ${episodeNumber}` : ''}: ${result.title}\n\nREEL SCRIPT (${s.platform}):\nHOOK: ${s.hook}\nBODY: ${s.body}\nCTA: ${s.cta}\n\nEPISODE CONTEXT: ${result.seo_description}\nPULL QUOTE: ${result.pull_quotes?.[i] ?? result.pull_quotes?.[0] ?? ''}`
+        const res = await fetch('/api/river', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input, source: 'podcast' }),
+        })
+        const d = await res.json()
+        if (d.account) filed.push(`${d.account.emoji} ${d.account.handle}`)
+      }
+      setRiverMsg(filed.length ? `✓ ${filed.length} post-cards filed under: ${[...new Set(filed)].join(', ')} — flip their cards in Accounts to approve.` : 'No reels to file.')
+      setRiverStatus('done')
+    } catch {
+      setRiverMsg('River connection failed — deliverables are still available above.')
+      setRiverStatus('done')
+    }
+  }
 
   const generate = async () => {
     if (!transcript.trim()) return
@@ -141,6 +167,18 @@ export default function PodcastEngine() {
 
       {result && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+          {/* Send reels through the river */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '4px solid var(--purple)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--purple)' }}>🌊 File under accounts</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{riverMsg || `Send the ${result.reels_scripts?.length ?? 0} reel scripts through the River — each becomes a post-card under the best account, ready for approval.`}</p>
+            </div>
+            <button onClick={fileUnderAccounts} disabled={riverStatus === 'sending'}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: 'none', background: riverStatus === 'done' ? '#3DAA7C' : 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
+              {riverStatus === 'sending' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Filing…</> : riverStatus === 'done' ? <><CheckCircle2 size={13} /> Filed</> : <><Zap size={13} /> Compose & File</>}
+            </button>
+          </div>
 
           {/* Episode Identity */}
           <Section title="📌 Episode Identity" defaultOpen>

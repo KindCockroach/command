@@ -29,9 +29,26 @@ function profileUrl(acct: BrandAccount): string {
 }
 
 // ── Post card shown on the flip side ──────────────────────────────────────────
-function PostCard({ post, accentColor, onApprove, approving }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean }) {
+function PostCard({ post, accentColor, onApprove, approving, onChanged }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; onChanged?: () => void }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [answers, setAnswers] = useState<string[]>([])
+  const [completing, setCompleting] = useState(false)
+  const hasQuestions = (post.open_questions?.length ?? 0) > 0
+
+  const completePost = async () => {
+    setCompleting(true)
+    try {
+      const res = await fetch('/api/river/complete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: post.id, answers }),
+      })
+      const d = await res.json()
+      if (d.complete) onChanged?.()
+    } finally {
+      setCompleting(false)
+    }
+  }
   const isPending = post.status === 'ready' || post.status === 'held' || post.status === 'in_progress' || post.status === 'idea'
   const isApproved = post.status === 'approved'
   const isScheduled = post.status === 'scheduled'
@@ -62,6 +79,7 @@ function PostCard({ post, accentColor, onApprove, approving }: { post: ContentPi
           <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{post.title}</p>
           <div style={{ display: 'flex', gap: '6px', marginTop: '3px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', padding: '2px 6px', borderRadius: '10px', background: `${accentColor}18`, color: accentColor }}>{post.type}</span>
+            {hasQuestions && <span style={{ fontSize: '9px', fontWeight: 700, color: '#E05252' }}>❓ NEEDS YOUR ANSWERS</span>}
             {isApproved && <span style={{ fontSize: '9px', fontWeight: 700, color: '#F2A65A' }}>APPROVED — awaiting GHL</span>}
             {isScheduled && <span style={{ fontSize: '9px', fontWeight: 700, color: '#4CC9F0' }}>SCHEDULED{post.scheduled_at ? ` · ${new Date(post.scheduled_at).toLocaleDateString()}` : ''}</span>}
             {post.media_url ? <span style={{ fontSize: '9px', color: '#3DAA7C', fontWeight: 700 }}>📎 media attached</span>
@@ -75,6 +93,25 @@ function PostCard({ post, accentColor, onApprove, approving }: { post: ContentPi
 
       {open && (
         <div style={{ padding: '0 10px 10px 36px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Open questions — answer here, river finishes the post */}
+          {hasQuestions && (
+            <div style={{ padding: '10px', background: 'rgba(224,82,82,0.06)', borderRadius: '8px', border: '1px solid rgba(224,82,82,0.25)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#E05252' }}>Answer these — the river finishes the post</p>
+              {post.open_questions!.map((q, i) => (
+                <div key={i}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginBottom: '3px' }}>{i + 1}. {q}</p>
+                  <textarea value={answers[i] ?? ''} onChange={e => setAnswers(a => { const next = [...a]; next[i] = e.target.value; return next })}
+                    rows={2} placeholder="Your answer…"
+                    style={{ width: '100%', padding: '7px 9px', borderRadius: '7px', border: '1px solid var(--border)', fontSize: '11px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              ))}
+              <button onClick={completePost} disabled={completing || answers.filter(a => a?.trim()).length === 0}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '8px', borderRadius: '8px', border: 'none', background: '#E05252', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: 'pointer', opacity: completing || answers.filter(a => a?.trim()).length === 0 ? 0.6 : 1 }}>
+                {completing ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Composing…</> : '🌊 Complete this post'}
+              </button>
+            </div>
+          )}
+
           {/* Visual: media or prompt */}
           {post.media_url ? (
             <img src={post.media_url} alt="" style={{ width: '100%', borderRadius: '8px', maxHeight: '180px', objectFit: 'cover' }} />
@@ -233,7 +270,7 @@ export default function AccountsPanel() {
                     </p>
                   )}
                   {activePosts.map(p => (
-                    <PostCard key={p.id} post={p} accentColor={acct.color} onApprove={approve} approving={approvingId === p.id} />
+                    <PostCard key={p.id} post={p} accentColor={acct.color} onApprove={approve} approving={approvingId === p.id} onChanged={loadContent} />
                   ))}
 
                   {posted.length > 0 && (
