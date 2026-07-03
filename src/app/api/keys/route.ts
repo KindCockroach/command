@@ -14,5 +14,7 @@ export async function GET() {
     higgsfield_id:       { configured: !!e.HIGGSFIELD_API_KEY_ID, label: 'Higgsfield API Key ID' },
     higgsfield_secret:   { configured: !!e.HIGGSFIELD_API_KEY_SECRET, label: 'Higgsfield API Key Secret' },
     mem0:                { configured: !!e.MEM0_API_KEY, label: 'mem0 (Persistent AI Memory)' },
+    ghl:                 { configured: !!e.GHL_API_KEY, label: 'GoHighLevel (Social Planner scheduling)' },
+    ghl_location:        { configured: !!e.GHL_LOCATION_ID, label: 'GoHighLevel Location ID' },
   })
 }

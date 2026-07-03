@@ -164,6 +164,12 @@ Voice: Mandi Beck. Unfiltered thoughts, warm directness, real mom perspective ai
 Return JSON array. Each item: { title, body, angle, platform: "threads" }`,
 }
 
+// Every generated item, regardless of type, must include a visual prompt
+const VISUAL_RULE = `
+ADDITIONALLY every item must include:
+- "image_prompt": a detailed, ready-to-paste AI image or video generation prompt for this post's visual (subject, setting, mood, style, aspect ratio). Make it specific to the post's hook.
+- "onscreen_text": the exact text overlay (or opening on-screen line for video) shown on the visual — short, bold, scroll-stopping.`
+
 function buildDescription(item: Record<string, string>): string {
   const parts = []
   if (item.body) parts.push(item.body)
@@ -225,7 +231,7 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
     if (!promptFn) continue
 
     const basePrompt = promptFn(projectName, projectDescription || '', projectNotes || '', order.qty)
-    const prompt = `${accountContext}\n\n${basePrompt}`
+    const prompt = `${accountContext}\n\n${basePrompt}\n${VISUAL_RULE}`
 
     try {
       const response = await client.responses.create({
@@ -248,6 +254,10 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
           tags: ['generated', projectName.toLowerCase().replace(/\s+/g, '-'), order.type, accountTag],
           notes: buildNotes(item, order.type) + (account ? ` | Account: ${account.handle}` : ''),
           project_id: holdInProject && projectId ? projectId : null,
+          account_id: account ? account.id : null,
+          image_prompt: item.image_prompt || item.thumbnail_concept || item.image_concept || '',
+          onscreen_text: item.onscreen_text || item.hook || '',
+          hashtags: String(item.hashtags || item.tags || item.keywords || ''),
         })
       )
       allCreated.push(...created)

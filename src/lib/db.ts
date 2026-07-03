@@ -5,7 +5,7 @@ import path from 'path'
 const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'db.json')
 const DB_DIR = path.dirname(DB_PATH)
 
-export type ContentStatus = 'idea' | 'in_progress' | 'ready' | 'published' | 'archived' | 'held'
+export type ContentStatus = 'idea' | 'in_progress' | 'ready' | 'approved' | 'scheduled' | 'published' | 'archived' | 'held'
 export type ContentType = 'video' | 'podcast' | 'post' | 'image' | 'workshop' | 'other'
 
 export type ContentPiece = {
@@ -26,6 +26,15 @@ export type ContentPiece = {
   updated_at: string
   published_at: string | null
   project_id?: number | null
+  // Account linkage + structured post anatomy
+  account_id?: string | null       // brand_accounts id this post belongs to
+  image_prompt?: string            // AI image/video generation prompt for the visual
+  onscreen_text?: string           // text overlay or spoken script shown on screen
+  hashtags?: string                // hashtags/metadata string
+  media_url?: string               // uploaded or generated visual attached to this post
+  // GoHighLevel scheduling
+  ghl_post_id?: string | null      // GHL social planner post id once pushed
+  scheduled_at?: string | null     // when GHL is set to publish it
   // AI pipeline fields
   pipeline_stage?: string
   ai_enrichment?: Record<string, unknown>
@@ -309,6 +318,21 @@ export function readDb(): Db {
     db.content = db.content.map(c => ({ project_id: null, ...c }))
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
   }
+  // Migrate: backfill account_id from "Account: @handle" in notes / account tag
+  if (db.content && db.content.some(c => !('account_id' in c))) {
+    const accounts = db.brand_accounts ?? []
+    db.content = db.content.map(c => {
+      if ('account_id' in c) return c
+      let account_id: string | null = null
+      const m = (c.notes || '').match(/Account:\s*(@\S+)/)
+      if (m) account_id = accounts.find(a => a.handle === m[1])?.id ?? null
+      if (!account_id && c.tags) {
+        account_id = accounts.find(a => c.tags.includes(a.handle.replace('@', '')))?.id ?? null
+      }
+      return { ...c, account_id, ghl_post_id: null, scheduled_at: null }
+    })
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
   // Migrate: update Room30 project description if still old
   if (db.projects) {
     const r30 = db.projects.find(p => p.name === 'Room30.ai Launch')
@@ -348,6 +372,13 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     updated_at: now,
     published_at: null,
     project_id: data.project_id ?? null,
+    account_id: data.account_id ?? null,
+    image_prompt: data.image_prompt ?? '',
+    onscreen_text: data.onscreen_text ?? '',
+    hashtags: data.hashtags ?? '',
+    media_url: data.media_url ?? '',
+    ghl_post_id: null,
+    scheduled_at: null,
   }
   db.content.unshift(piece)
   writeDb(db)

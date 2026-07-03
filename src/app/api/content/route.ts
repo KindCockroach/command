@@ -7,13 +7,17 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status') ?? undefined
   const projectId = searchParams.get('project_id')
+  const accountId = searchParams.get('account_id')
   let results = getAllContent(status)
   if (projectId) {
     const pid = parseInt(projectId)
     results = results.filter(c => c.project_id === pid)
   }
+  if (accountId) {
+    results = results.filter(c => c.account_id === accountId)
+  }
   // Exclude held content from the default (no-status-filter) Kanban feed
-  if (!status && !projectId) {
+  if (!status && !projectId && !accountId) {
     results = results.filter(c => c.status !== 'held')
   }
   return NextResponse.json(results)
