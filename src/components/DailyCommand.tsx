@@ -28,7 +28,7 @@ type GoalRow = {
 type RiverResult = {
   kind?: 'content' | 'task' | 'event'
   complete: boolean
-  piece: { id: number; title: string }
+  piece: { id: number; title: string; description: string; onscreen_text?: string; image_prompt?: string; hashtags?: string }
   account: { handle: string; emoji: string; color: string } | null
   open_questions: string[]
   needs: string[]
@@ -309,7 +309,41 @@ export default function DailyCommand() {
               </p>
             </>
           )}
-          {(!riverResult.kind || riverResult.kind === 'content') && <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 700 }}>{riverResult.piece?.title}</p>}
+          {(!riverResult.kind || riverResult.kind === 'content') && (
+            <>
+              <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 700 }}>{riverResult.piece?.title}</p>
+              {/* The full processed post, right here — no hunting */}
+              {riverResult.complete && riverResult.piece && (
+                <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {riverResult.piece.onscreen_text && (
+                    <div style={{ padding: '10px 12px', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)', marginBottom: '4px' }}>On-screen / Hook</p>
+                      <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4 }}>{riverResult.piece.onscreen_text}</p>
+                    </div>
+                  )}
+                  <div style={{ padding: '10px 12px', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)' }}>Composed post</p>
+                      <button onClick={() => navigator.clipboard.writeText([riverResult.piece.description, riverResult.piece.hashtags].filter(Boolean).join('\n\n'))}
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                        <Copy size={10} /> Copy
+                      </button>
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{riverResult.piece.description}</p>
+                  </div>
+                  {riverResult.piece.image_prompt && (
+                    <div style={{ padding: '10px 12px', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)', marginBottom: '4px' }}>🎨 Image / video prompt</p>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{riverResult.piece.image_prompt}</p>
+                    </div>
+                  )}
+                  {riverResult.piece.hashtags && (
+                    <p style={{ fontSize: '10px', color: riverResult.account?.color ?? 'var(--purple)', lineHeight: 1.5, wordBreak: 'break-word', padding: '0 2px' }}>{riverResult.piece.hashtags}</p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
           {riverResult.account && (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
               {riverResult.complete
