@@ -156,6 +156,32 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged }: { post
   const hasQuestions = (post.open_questions?.length ?? 0) > 0
 
   const [marking, setMarking] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadErr, setUploadErr] = useState('')
+
+  // Attach a photo/video to this post — uploads to R2, saves media_url on the card
+  const attachMedia = async (file: File) => {
+    setUploading(true)
+    setUploadErr('')
+    try {
+      const presign = await fetch('/api/upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type, folder: 'post-media' }),
+      }).then(r => r.json())
+      if (!presign.uploadUrl) throw new Error(presign.error || 'no upload url')
+      const put = await fetch(presign.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
+      if (!put.ok) throw new Error(`upload failed (${put.status})`)
+      await fetch('/api/content', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: post.id, media_url: presign.publicUrl }),
+      })
+      onChanged?.()
+    } catch (e) {
+      setUploadErr(e instanceof Error ? e.message : 'upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   // Manual-mode completion: Mandi posted it herself → published + archived, counts toward goals
   const markPosted = async () => {
@@ -285,10 +311,25 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged }: { post
 
           {/* Visual: media or prompt */}
           {post.media_url ? (
-            <img src={post.media_url} alt="" style={{ width: '100%', borderRadius: '10px', maxHeight: '220px', objectFit: 'cover' }} />
-          ) : post.image_prompt ? (
-            <Section label="🎨 Image / Video Prompt" text={post.image_prompt} />
-          ) : null}
+            <div>
+              {/\.(mp4|mov|webm|m4v)(\?|$)/i.test(post.media_url)
+                ? <video src={post.media_url} controls style={{ width: '100%', borderRadius: '10px', maxHeight: '260px', background: '#000' }} />
+                : <img src={post.media_url} alt="" style={{ width: '100%', borderRadius: '10px', maxHeight: '220px', objectFit: 'cover' }} />}
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: 'pointer', marginTop: '4px' }}>
+                {uploading ? 'Uploading…' : 'Replace media'}
+                <input type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) attachMedia(f); e.target.value = '' }} />
+              </label>
+            </div>
+          ) : (
+            <>
+              {post.image_prompt && <Section label="🎨 Image / Video Prompt" text={post.image_prompt} />}
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '12px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: uploading ? 'default' : 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
+                {uploading ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>📎 Attach photo / video to this post</>}
+                <input type="file" accept="image/*,video/*" style={{ display: 'none' }} disabled={uploading} onChange={e => { const f = e.target.files?.[0]; if (f) attachMedia(f); e.target.value = '' }} />
+              </label>
+              {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
+            </>
+          )}
 
           {post.onscreen_text && <Section label="On-Screen Text / Hook" text={post.onscreen_text} bold />}
           <Section label="Body / Caption / Script" text={post.description} />
