@@ -40,15 +40,26 @@ async function fetchGhlAccounts(token: string, locationId: string): Promise<{ ac
   return { accounts: [], raw: null, path: 'none' }
 }
 
-// First user in the location — GHL requires a userId on created posts
-async function fetchGhlUserId(token: string, locationId: string): Promise<string | null> {
-  try {
-    const res = await fetch(`${GHL_BASE}/users/?locationId=${locationId}`, { headers: ghlHeaders(token) })
-    if (!res.ok) return null
-    const data = await res.json()
-    const users = data?.users ?? data?.results ?? []
-    return users[0]?.id ?? null
-  } catch { return null }
+// First user in the location — GHL requires a userId on created posts.
+// GHL_USER_ID env var wins if set; otherwise probe the users endpoints.
+async function fetchGhlUserId(token: string, locationId: string): Promise<{ userId: string | null; debug: string }> {
+  if (process.env.GHL_USER_ID) return { userId: process.env.GHL_USER_ID, debug: 'env' }
+  const attempts = [`/users/?locationId=${locationId}`, `/users/search?locationId=${locationId}`]
+  const debugParts: string[] = []
+  for (const p of attempts) {
+    try {
+      const res = await fetch(`${GHL_BASE}${p}`, { headers: ghlHeaders(token) })
+      const text = await res.text()
+      debugParts.push(`${p} → ${res.status}: ${text.slice(0, 200)}`)
+      if (!res.ok) continue
+      const data = JSON.parse(text)
+      const users = data?.users ?? data?.results ?? (Array.isArray(data) ? data : [])
+      if (users[0]?.id) return { userId: users[0].id, debug: p }
+    } catch (e) {
+      debugParts.push(`${p} → threw ${e instanceof Error ? e.message : 'err'}`)
+    }
+  }
+  return { userId: null, debug: debugParts.join(' || ') }
 }
 
 // GET: connection status + sync — checks GHL for posts that have gone live and archives them
@@ -65,8 +76,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   if (searchParams.get('accounts')) {
     const { accounts, raw, path } = await fetchGhlAccounts(token!, locationId!)
-    const userId = await fetchGhlUserId(token!, locationId!)
-    return NextResponse.json({ configured: true, path, userId, accounts, raw: accounts.length ? undefined : raw })
+    const { userId, debug } = await fetchGhlUserId(token!, locationId!)
+    return NextResponse.json({ configured: true, path, userId, userDebug: userId ? undefined : debug, accounts, raw: accounts.length ? undefined : raw })
   }
 
   // Sync: find scheduled content and check if GHL published it
@@ -129,7 +140,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ configured: true, queued: true, content: updated, note: 'No connected social accounts found in GHL Social Planner — post stays approved. Connect accounts in GHL and approve again.' })
     }
 
-    const userId = await fetchGhlUserId(token!, locationId!)
+    const { userId } = await fetchGhlUserId(token!, locationId!)
     const summary = [piece.description, piece.hashtags].filter(Boolean).join('\n\n')
     const res = await fetch(`${GHL_BASE}/social-media-posting/${locationId}/posts`, {
       method: 'POST',
