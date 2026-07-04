@@ -16,6 +16,7 @@ import AssistantsPanel from './AssistantsPanel'
 import AvatarsPanel from './AvatarsPanel'
 import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
+import InstantCompose from './InstantCompose'
 import StationChat from './StationChat'
 import PodcastEngine from './PodcastEngine'
 import PitchStudio from './PitchStudio'
@@ -181,6 +182,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'pitch'      && <PitchStudio />}
         {view === 'media'      && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <InstantCompose />
             <UniversalCapture />
             <MediaLibrary />
           </div>
