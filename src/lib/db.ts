@@ -170,6 +170,7 @@ export type AvatarRecord = {
   ctaTemplate: string
   heygen_photo_id: string
   elevenlabs_voice_id: string
+  heygen_voice_id?: string       // HeyGen's own id for the (linked) voice — what video generation needs
   created_at: string
   updated_at: string
 }

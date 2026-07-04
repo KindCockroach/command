@@ -49,5 +49,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(await res.json())
   }
 
+  if (action === 'list_voices') {
+    const res = await fetch(`${BASE}/v2/voices`, { headers: { 'X-Api-Key': key } })
+    return NextResponse.json(await res.json())
+  }
+
   return NextResponse.json({ error: 'unknown action' }, { status: 400 })
 }

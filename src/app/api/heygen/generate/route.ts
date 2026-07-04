@@ -17,8 +17,9 @@ export async function POST(req: NextRequest) {
   const photoId = avatar.heygen_photo_id || process.env.HEYGEN_PHOTO_DEFAULT
   if (!photoId) return NextResponse.json({ error: `No HeyGen photo ID configured for ${avatar.name}` }, { status: 400 })
 
-  // Use avatar-specific voice, fall back to default
-  const voiceId = avatar.elevenlabs_voice_id || process.env.ELEVENLABS_VOICE_ID
+  // HeyGen v2 wants type 'text' + a HeyGen voice_id (linked ElevenLabs voices get one).
+  // Prefer the avatar's heygen_voice_id; fall back to any stored voice id.
+  const voiceId = avatar.heygen_voice_id || avatar.elevenlabs_voice_id || process.env.HEYGEN_VOICE_DEFAULT
 
   const body = {
     video_inputs: [{
@@ -26,14 +27,11 @@ export async function POST(req: NextRequest) {
         type: 'talking_photo',
         talking_photo_id: photoId,
       },
-      voice: voiceId
-        ? { type: 'elevenlabs', voice_id: voiceId, elevenlabs_settings: { stability: 0.5, similarity_boost: 0.75 } }
-        : { type: 'text', input_text: script, voice_id: 'en-US-JennyNeural' },
+      voice: { type: 'text', input_text: script, ...(voiceId ? { voice_id: voiceId } : {}) },
       background: { type: 'color', value: '#FBFAF7' },
     }],
     dimension: { width: 1080, height: 1920 },
     caption: true,
-    script: { type: 'text', input: script },
     title: `${avatar.name} — ${new Date().toISOString().slice(0, 10)}`,
   }
 

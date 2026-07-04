@@ -20,13 +20,25 @@ function ghlHeaders(token: string) {
 }
 
 // GET: connection status + sync — checks GHL for posts that have gone live and archives them
-export async function GET() {
+// ?accounts=1 lists the social accounts connected in GHL's Social Planner
+export async function GET(req: NextRequest) {
   const { token, locationId, configured } = ghlConfig()
   if (!configured) {
     return NextResponse.json({
       configured: false,
       message: 'GHL not connected yet. Add GHL_API_KEY (Private Integration token) and GHL_LOCATION_ID to environment variables.',
     })
+  }
+
+  const { searchParams } = new URL(req.url)
+  if (searchParams.get('accounts')) {
+    try {
+      const res = await fetch(`${GHL_BASE}/social-media-posting/oauth/${locationId}/accounts`, { headers: ghlHeaders(token!) })
+      const data = await res.json()
+      return NextResponse.json({ configured: true, status: res.status, accounts: data })
+    } catch (e) {
+      return NextResponse.json({ error: `GHL accounts fetch failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
+    }
   }
 
   // Sync: find scheduled content and check if GHL published it
