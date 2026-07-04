@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllContent, updateContent } from '@/lib/db'
+import { getAllContent, updateContent, getBrandAccount } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +19,38 @@ function ghlHeaders(token: string) {
   }
 }
 
+type GhlSocialAccount = { id?: string; _id?: string; oauthId?: string; platform?: string; type?: string; name?: string; username?: string }
+
+// Connected Social Planner accounts — GHL has shuffled this path across versions, so try known variants
+async function fetchGhlAccounts(token: string, locationId: string): Promise<{ accounts: GhlSocialAccount[]; raw: unknown; path: string }> {
+  const paths = [
+    `/social-media-posting/${locationId}/accounts`,
+    `/social-media-posting/oauth/${locationId}/accounts`,
+    `/social-media-posting/${locationId}/accounts/list`,
+  ]
+  for (const p of paths) {
+    try {
+      const res = await fetch(`${GHL_BASE}${p}`, { headers: ghlHeaders(token) })
+      if (!res.ok) continue
+      const data = await res.json()
+      const list = data?.results?.accounts ?? data?.accounts ?? data?.results ?? (Array.isArray(data) ? data : [])
+      return { accounts: Array.isArray(list) ? list : [], raw: data, path: p }
+    } catch { /* try next */ }
+  }
+  return { accounts: [], raw: null, path: 'none' }
+}
+
+// First user in the location — GHL requires a userId on created posts
+async function fetchGhlUserId(token: string, locationId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${GHL_BASE}/users/?locationId=${locationId}`, { headers: ghlHeaders(token) })
+    if (!res.ok) return null
+    const data = await res.json()
+    const users = data?.users ?? data?.results ?? []
+    return users[0]?.id ?? null
+  } catch { return null }
+}
+
 // GET: connection status + sync — checks GHL for posts that have gone live and archives them
 // ?accounts=1 lists the social accounts connected in GHL's Social Planner
 export async function GET(req: NextRequest) {
@@ -32,13 +64,9 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   if (searchParams.get('accounts')) {
-    try {
-      const res = await fetch(`${GHL_BASE}/social-media-posting/oauth/${locationId}/accounts`, { headers: ghlHeaders(token!) })
-      const data = await res.json()
-      return NextResponse.json({ configured: true, status: res.status, accounts: data })
-    } catch (e) {
-      return NextResponse.json({ error: `GHL accounts fetch failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
-    }
+    const { accounts, raw, path } = await fetchGhlAccounts(token!, locationId!)
+    const userId = await fetchGhlUserId(token!, locationId!)
+    return NextResponse.json({ configured: true, path, userId, accounts, raw: accounts.length ? undefined : raw })
   }
 
   // Sync: find scheduled content and check if GHL published it
@@ -79,12 +107,36 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Resolve target accounts: explicit > match station account handle/platform > all connected
+    let targetIds: string[] = accountIds ?? []
+    if (!targetIds.length) {
+      const { accounts } = await fetchGhlAccounts(token!, locationId!)
+      const stationAcct = piece.account_id ? getBrandAccount(piece.account_id) : null
+      const handle = stationAcct?.handle?.replace('@', '').toLowerCase()
+      const platform = stationAcct?.platform?.toLowerCase()
+      const matches = accounts.filter(a => {
+        const name = `${a.name ?? ''} ${a.username ?? ''}`.toLowerCase()
+        const plat = `${a.platform ?? a.type ?? ''}`.toLowerCase()
+        if (handle && name.includes(handle)) return true
+        if (platform && plat.includes(platform) && !handle) return true
+        return false
+      })
+      const pool = matches.length ? matches : accounts
+      targetIds = pool.map(a => a.id ?? a._id ?? a.oauthId ?? '').filter(Boolean)
+    }
+    if (!targetIds.length) {
+      const updated = updateContent(piece.id, { status: 'approved' })
+      return NextResponse.json({ configured: true, queued: true, content: updated, note: 'No connected social accounts found in GHL Social Planner — post stays approved. Connect accounts in GHL and approve again.' })
+    }
+
+    const userId = await fetchGhlUserId(token!, locationId!)
     const summary = [piece.description, piece.hashtags].filter(Boolean).join('\n\n')
     const res = await fetch(`${GHL_BASE}/social-media-posting/${locationId}/posts`, {
       method: 'POST',
       headers: ghlHeaders(token!),
       body: JSON.stringify({
-        accountIds: accountIds ?? [],
+        accountIds: targetIds,
+        ...(userId ? { userId } : {}),
         summary,
         media: piece.media_url ? [{ url: piece.media_url }] : [],
         status: scheduleAt ? 'scheduled' : 'draft',
