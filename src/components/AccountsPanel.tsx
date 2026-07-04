@@ -402,6 +402,12 @@ export default function AccountsPanel() {
   }, [])
 
   useEffect(() => {
+    // Arrived via a "Publish now" link? Open flipped to that account's queue
+    const handoff = localStorage.getItem('station-flip-account')
+    if (handoff !== null) {
+      localStorage.removeItem('station-flip-account')
+      if (handoff) { setFlipped(handoff); setQueueFilter('all') }
+    }
     fetch('/api/accounts').then(r => r.json()).then(setAccounts).catch(() => {})
     loadContent()
     // GHL sync: check connection + auto-archive anything GHL has posted

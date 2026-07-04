@@ -45,6 +45,19 @@ export default function DailyBriefingPanel({ content }: { content: ContentPiece[
   // Auto-run once on mount
   useEffect(() => { generate() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Jump to the Accounts tab, flipped open to the account whose post this is
+  const goToApprovals = (itemText?: string) => {
+    let accountId = ''
+    if (itemText) {
+      const lower = itemText.toLowerCase()
+      const match = content.find(c => c.status === 'ready' && c.title && lower.includes(c.title.toLowerCase().slice(0, 24)))
+        ?? content.find(c => c.status === 'ready' && c.title && c.title.toLowerCase().split(' ').slice(0, 3).every(w => lower.includes(w)))
+      accountId = match?.account_id ?? ''
+    }
+    localStorage.setItem('station-flip-account', accountId)
+    window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'accounts' } }))
+  }
+
   return (
     <div style={{ background: 'var(--navy)', borderRadius: '16px', padding: '20px', color: '#fff', position: 'relative', overflow: 'hidden' }}>
       {/* bg glow */}
@@ -97,15 +110,24 @@ export default function DailyBriefingPanel({ content }: { content: ContentPiece[
               </div>
             )}
 
-            {/* Ready */}
+            {/* Ready — each item jumps to its account's approval queue */}
             {briefing.ready_to_publish.length > 0 && (
               <div style={{ background: 'rgba(61,170,124,0.1)', borderRadius: '10px', padding: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                  <CheckCircle2 size={12} color="#3DAA7C" />
-                  <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#3DAA7C' }}>Publish now</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <CheckCircle2 size={12} color="#3DAA7C" />
+                    <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#3DAA7C' }}>Publish now</span>
+                  </div>
+                  <button onClick={() => goToApprovals()}
+                    style={{ fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '12px', border: 'none', background: '#3DAA7C', color: '#fff', cursor: 'pointer' }}>
+                    Review all →
+                  </button>
                 </div>
                 {briefing.ready_to_publish.map((item, i) => (
-                  <p key={i} style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '4px', lineHeight: 1.4 }}>· {item}</p>
+                  <button key={i} onClick={() => goToApprovals(item)}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', fontSize: '12px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px', lineHeight: 1.4, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', textDecoration: 'underline', textDecorationColor: 'rgba(61,170,124,0.4)', textUnderlineOffset: '3px', fontFamily: 'inherit' }}>
+                    · {item}
+                  </button>
                 ))}
               </div>
             )}

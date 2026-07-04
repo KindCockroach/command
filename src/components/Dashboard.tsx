@@ -38,6 +38,13 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
   useEffect(() => {
     const saved = localStorage.getItem('cc-theme')
     if (saved === 'dark') { setDark(true); document.documentElement.setAttribute('data-theme', 'dark') }
+    // Cross-tab navigation (e.g. briefing "Publish now" → Accounts approval queue)
+    const nav = (e: Event) => {
+      const view = (e as CustomEvent).detail?.view
+      if (view) setView(view as View)
+    }
+    window.addEventListener('station:navigate', nav)
+    return () => window.removeEventListener('station:navigate', nav)
   }, [])
 
   const toggleTheme = () => {
