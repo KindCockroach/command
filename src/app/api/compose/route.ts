@@ -22,13 +22,13 @@ export async function POST(req: NextRequest) {
   ).join('\n')
 
   const isImage = mediaType?.startsWith('image') && mediaUrl
-  const videoFrames: string[] = Array.isArray(frames) ? frames.slice(0, 6) : []
+  const videoFrames: string[] = Array.isArray(frames) ? frames.slice(0, 12) : []
 
   const contentParts: Array<Record<string, unknown>> = [{
     type: 'input_text',
     text: [
       `MANDI'S CONTEXT ABOUT THIS MEDIA:\n${context}`,
-      videoFrames.length ? `\nThe images attached are FRAMES SAMPLED FROM HER VIDEO, in order. Read the visual story — who's in it, what happens, the mood — and blend it with her words.` : '',
+      videoFrames.length ? `\nThe ${videoFrames.length} images attached are FRAMES SAMPLED FROM HER VIDEO, evenly spaced IN ORDER from start to finish (~1 per 3 seconds). Read them as an evolving story — track how scenes change frame to frame, who appears, what happens, the arc — and time your on-screen beats to that progression. Blend the visual story with her words; her summary tells you what matters most.` : '',
       previous ? `\nPREVIOUS VARIATIONS YOU WROTE:\n${JSON.stringify(previous)}` : '',
       feedback ? `\nMANDI'S FEEDBACK — THIS OVERRIDES EVERYTHING, FOLLOW IT EXACTLY:\n${feedback}` : '',
     ].filter(Boolean).join('\n'),
