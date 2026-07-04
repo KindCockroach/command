@@ -7,8 +7,47 @@ type ComposeResult = {
   account_id: string
   account_reason: string
   story_summary: string
+  media_read?: string
   variations: Variation[]
   account: { handle: string; emoji: string; color: string } | null
+}
+
+// Sample frames from a video in the browser so the AI can actually see the footage
+async function extractFrames(file: File, count = 4): Promise<string[]> {
+  return new Promise(resolve => {
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    video.muted = true
+    video.playsInline = true
+    video.src = URL.createObjectURL(file)
+    const frames: string[] = []
+    const canvas = document.createElement('canvas')
+    const fail = setTimeout(() => resolve(frames), 20000)
+
+    video.onloadedmetadata = () => {
+      const duration = video.duration
+      if (!duration || !isFinite(duration)) { clearTimeout(fail); resolve(frames); return }
+      const scale = Math.min(1, 480 / (video.videoWidth || 480))
+      canvas.width = Math.round((video.videoWidth || 480) * scale)
+      canvas.height = Math.round((video.videoHeight || 852) * scale)
+      const times = Array.from({ length: count }, (_, i) => duration * (0.12 + (0.76 * i) / Math.max(count - 1, 1)))
+      let idx = 0
+      const seekNext = () => {
+        if (idx >= times.length) { clearTimeout(fail); URL.revokeObjectURL(video.src); resolve(frames); return }
+        video.currentTime = times[idx]
+      }
+      video.onseeked = () => {
+        try {
+          canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height)
+          frames.push(canvas.toDataURL('image/jpeg', 0.6))
+        } catch { /* frame skipped */ }
+        idx++
+        seekNext()
+      }
+      seekNext()
+    }
+    video.onerror = () => { clearTimeout(fail); resolve(frames) }
+  })
 }
 
 function CopyBtn({ text, label }: { text: string; label: string }) {
@@ -33,6 +72,9 @@ export default function InstantCompose() {
   const [dragging, setDragging] = useState(false)
   const [filedIdx, setFiledIdx] = useState<Record<number, boolean>>({})
   const [filingIdx, setFilingIdx] = useState<number | null>(null)
+  const [frames, setFrames] = useState<string[]>([])
+  const [feedback, setFeedback] = useState('')
+  const [refining, setRefining] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const acceptFile = async (f: File) => {
@@ -41,6 +83,11 @@ export default function InstantCompose() {
     setMediaUrl('')
     setResult(null)
     setError('')
+    setFrames([])
+    // Videos: sample frames so RISE can actually watch the footage
+    if (f.type.startsWith('video')) {
+      extractFrames(f).then(setFrames).catch(() => {})
+    }
     // Upload to R2 immediately — lands in the Media library
     setUploading(true)
     try {
@@ -68,7 +115,7 @@ export default function InstantCompose() {
     try {
       const res = await fetch('/api/compose', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ context, mediaUrl: mediaUrl || undefined, mediaType: file?.type }),
+        body: JSON.stringify({ context, mediaUrl: mediaUrl || undefined, mediaType: file?.type, frames: frames.length ? frames : undefined }),
       })
       const d = await res.json()
       if (d.error) setError(d.error)
@@ -77,6 +124,30 @@ export default function InstantCompose() {
       setError('Compose failed — try again.')
     } finally {
       setComposing(false)
+    }
+  }
+
+  // Refinement loop: her feedback overrides everything, previous variations included for contrast
+  const refine = async () => {
+    if (!feedback.trim() || !result) return
+    setRefining(true)
+    setError('')
+    try {
+      const res = await fetch('/api/compose', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context, mediaUrl: mediaUrl || undefined, mediaType: file?.type,
+          frames: frames.length ? frames : undefined,
+          previous: result.variations, feedback,
+        }),
+      })
+      const d = await res.json()
+      if (d.error) setError(d.error)
+      else { setResult(d); setFiledIdx({}); setFeedback('') }
+    } catch {
+      setError('Refine failed — try again.')
+    } finally {
+      setRefining(false)
     }
   }
 
@@ -166,6 +237,11 @@ export default function InstantCompose() {
             {result.account && <>Best fit: <strong style={{ color: result.account.color }}>{result.account.emoji} {result.account.handle}</strong> — {result.account_reason}</>}
             <span style={{ color: 'var(--text-subtle)' }}> · Story archived to Notes 📚 · Media in library 🎬</span>
           </p>
+          {result.media_read && (
+            <p style={{ fontSize: '11px', color: 'var(--text-subtle)', padding: '8px 12px', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              👁 What RISE saw: {result.media_read}
+            </p>
+          )}
 
           {result.variations?.map((v, i) => (
             <div key={i} style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '14px', background: 'var(--bg)', borderLeft: `3px solid ${result.account?.color ?? 'var(--hot-pink)'}` }}>
@@ -173,8 +249,8 @@ export default function InstantCompose() {
 
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
                 <div>
-                  <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-subtle)', marginBottom: '2px' }}>On-screen text</p>
-                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.35 }}>{v.onscreen_text}</p>
+                  <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-subtle)', marginBottom: '2px' }}>On-screen text {v.onscreen_text.includes('\n') && <span style={{ color: 'var(--hot-pink)' }}>· {v.onscreen_text.split('\n').filter(Boolean).length} beats</span>}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{v.onscreen_text}</p>
                 </div>
                 <CopyBtn text={v.onscreen_text} label="Copy text" />
               </div>
@@ -195,6 +271,20 @@ export default function InstantCompose() {
               </div>
             </div>
           ))}
+
+          {/* Refinement loop — feedback overrides everything */}
+          <div style={{ border: '1px solid var(--border)', borderLeft: '3px solid var(--hot-pink)', borderRadius: '12px', padding: '14px', background: 'var(--surface)' }}>
+            <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--hot-pink)', marginBottom: '6px' }}>Not quite right? Direct it.</p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <textarea value={feedback} onChange={e => setFeedback(e.target.value)} rows={2}
+                placeholder='e.g. "Expand the on-screen text to 30 seconds — 5-10 punchy lines that tell the story" or "funnier" or "make variation 2 the base but softer"'
+                style={{ flex: 1, padding: '10px 12px', borderRadius: '9px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical', outline: 'none', lineHeight: 1.5 }} />
+              <button onClick={refine} disabled={refining || !feedback.trim()}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '10px 16px', borderRadius: '9px', border: 'none', background: 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer', alignSelf: 'flex-end', opacity: refining || !feedback.trim() ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+                {refining ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Reworking…</> : <><Sparkles size={12} /> Refine</>}
+              </button>
+            </div>
+          </div>
         </div>
       )}
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
