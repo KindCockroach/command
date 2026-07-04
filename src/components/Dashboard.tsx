@@ -178,11 +178,15 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'goals'      && <GoalsPanel />}
         {view === 'avatars'    && <AvatarsPanel />}
         {view === 'podcast'    && <PodcastEngine />}
-        {view === 'story'      && <StoryProcessor />}
+        {view === 'story'      && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <InstantCompose />
+            <StoryProcessor />
+          </div>
+        )}
         {view === 'pitch'      && <PitchStudio />}
         {view === 'media'      && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <InstantCompose />
             <UniversalCapture />
             <MediaLibrary />
           </div>
