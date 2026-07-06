@@ -49,14 +49,11 @@ export default function UniversalCapture() {
         : f.type.startsWith('audio') ? 'audio'
         : f.type.startsWith('image') ? 'images' : 'files'
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: f.name, contentType: f.type, folder }),
-      })
-      const { uploadUrl, publicUrl } = await res.json()
-
-      await fetch(uploadUrl, { method: 'PUT', body: f, headers: { 'Content-Type': f.type } })
+      const fd = new FormData()
+      fd.append('file', f)
+      fd.append('folder', folder)
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const { publicUrl } = await res.json()
       return { publicUrl, fileType: f.type, fileName: f.name }
     } finally {
       setUploading(false)

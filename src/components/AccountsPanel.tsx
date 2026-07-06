@@ -349,14 +349,13 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   const gallery = post.media_urls?.length ? post.media_urls : (post.media_url ? [post.media_url] : [])
 
   const uploadOne = async (file: File): Promise<string> => {
-    const presign = await fetch('/api/upload', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename: file.name, contentType: file.type, folder: 'post-media' }),
-    }).then(r => r.json())
-    if (!presign.uploadUrl) throw new Error(presign.error || 'no upload url')
-    const put = await fetch(presign.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
-    if (!put.ok) throw new Error(`upload failed (${put.status})`)
-    return presign.publicUrl
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('folder', 'post-media')
+    const res = await fetch('/api/upload', { method: 'POST', body: fd })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || !data.publicUrl) throw new Error(data.error || `upload failed (${res.status})`)
+    return data.publicUrl
   }
 
   // Attach one or MANY images (carousel) — appends to the ordered gallery

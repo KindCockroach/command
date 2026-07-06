@@ -23,6 +23,14 @@ export async function getUploadUrl(key: string, contentType: string): Promise<st
   return getSignedUrl(client, cmd, { expiresIn: 300 })
 }
 
+/** Upload bytes to R2 from the server (no browser CORS involved) */
+export async function putObject(key: string, body: Uint8Array | Buffer, contentType: string): Promise<boolean> {
+  const client = r2Client()
+  if (!client) return false
+  await client.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: contentType }))
+  return true
+}
+
 /** Public URL for a stored object (requires R2 public bucket or custom domain) */
 export function getPublicUrl(key: string): string {
   const base = process.env.R2_PUBLIC_URL ?? ''

@@ -94,14 +94,13 @@ export default function InstantCompose() {
     // Upload to R2 immediately — lands in the Media library
     setUploading(true)
     try {
-      const presign = await fetch('/api/upload', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: f.name, contentType: f.type, folder: 'media' }),
-      }).then(r => r.json())
-      if (!presign.uploadUrl) throw new Error(presign.error || 'upload not configured')
-      const put = await fetch(presign.uploadUrl, { method: 'PUT', headers: { 'Content-Type': f.type }, body: f })
-      if (!put.ok) throw new Error(`upload failed (${put.status})`)
-      setMediaUrl(presign.publicUrl)
+      const fd = new FormData()
+      fd.append('file', f)
+      fd.append('folder', 'media')
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.publicUrl) throw new Error(data.error || `upload failed (${res.status})`)
+      setMediaUrl(data.publicUrl)
     } catch (e) {
       setError(`Media upload issue: ${e instanceof Error ? e.message : 'failed'} — you can still compose from your description.`)
     } finally {
