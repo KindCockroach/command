@@ -130,6 +130,21 @@ Return ONLY valid JSON:
     return NextResponse.json({ kind: 'event', event })
   }
 
+  // Always keep a verbatim copy of direct captures in Notes — the raw-idea vault.
+  // (Only for hand-typed capture sources; processed streams like story/podcast store their own way.)
+  const rawSources = ['capture', 'quick-capture', 'kanban', 'daily', 'station-chat']
+  if (rawSources.includes(source ?? 'capture')) {
+    try {
+      const words = String(input).trim()
+      createNote({
+        title: `💡 ${words.slice(0, 56)}${words.length > 56 ? '…' : ''}`,
+        body: words,
+        category: 'idea',
+        tags: ['raw-capture', verdict.account_id ?? 'unsorted'],
+      })
+    } catch { /* vault write is best-effort */ }
+  }
+
   // If the river researched something, store the research to Notes (storage, not the river)
   if (verdict.research_topic) {
     try {
