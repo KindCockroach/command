@@ -325,12 +325,13 @@ export async function callGPT(role: GPTRole, userMessage: string, instructionsOv
     ? '\n\nYou can search the web live. When a question calls for current facts, data, trends, or research, search and CITE sources inline (title + link). Prefer reputable sources — peer-reviewed journals, .gov/.edu, established clinical or industry orgs — over blogs, listicles, or sponsored content. If a claim is contested or thin, say so. End with a short "Sources:" list. Never present a single blog as settled fact.'
     : ''
 
-  const response = await c.responses.create({
+  const params: Parameters<typeof c.responses.create>[0] = {
     model: 'gpt-4o',
     instructions: instructions + searchNote,
     input: userMessage,
-    ...(useWebSearch ? { tools: [{ type: 'web_search_preview' }] } : {}),
-  } as Parameters<typeof c.responses.create>[0])
+  }
+  if (useWebSearch) (params as { tools?: unknown[] }).tools = [{ type: 'web_search_preview' }]
+  const response = await c.responses.create(params) as { output_text?: string }
 
   const output = response.output_text ?? ''
 
