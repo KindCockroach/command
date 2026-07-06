@@ -286,7 +286,7 @@ function profileUrl(acct: BrandAccount): string {
 }
 
 // ── Post card shown on the flip side ──────────────────────────────────────────
-function PostCard({ post, accentColor, onApprove, approving, onChanged, onPreview }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; onChanged?: () => void; onPreview?: (p: ContentPiece) => void }) {
+function PostCard({ post, accentColor, onApprove, approving, onChanged, onPreview, accounts }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; onChanged?: () => void; onPreview?: (p: ContentPiece) => void; accounts?: BrandAccount[] }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [answers, setAnswers] = useState<string[]>([])
@@ -318,6 +318,28 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
       setUploadErr(e instanceof Error ? e.message : 'upload failed')
     } finally {
       setUploading(false)
+    }
+  }
+
+  const [moving, setMoving] = useState(false)
+  const [showMove, setShowMove] = useState(false)
+
+  // Move a suggestion to a different account — the river recomposes it in that account's voice
+  const moveTo = async (targetId: string) => {
+    if (targetId === post.account_id) { setShowMove(false); return }
+    setMoving(true)
+    try {
+      const res = await fetch('/api/content/reassign', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: post.id, accountId: targetId }),
+      })
+      if (!res.ok) {
+        await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, account_id: targetId }) })
+      }
+      setShowMove(false)
+      onChanged?.()
+    } finally {
+      setMoving(false)
     }
   }
 
@@ -480,6 +502,31 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             <Section label="Hashtags / Metadata" text={post.hashtags}>
               <p style={{ fontSize: '11px', color: accentColor, lineHeight: 1.6, wordBreak: 'break-word' }}>{post.hashtags}</p>
             </Section>
+          )}
+
+          {/* Move to another account */}
+          {accounts && accounts.length > 1 && (
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setShowMove(v => !v)} disabled={moving}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                {moving ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Moving &amp; recomposing…</> : <>↔ Move to another account</>}
+              </button>
+              {showMove && (
+                <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 5, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', maxHeight: '240px', overflowY: 'auto', padding: '4px' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', padding: '6px 8px 4px' }}>Rewrite this idea for…</p>
+                  {accounts.filter(a => a.id !== post.account_id).map(a => (
+                    <button key={a.id} onClick={() => moveTo(a.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 10px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', fontSize: '12px', color: 'var(--text)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <span style={{ fontSize: '15px' }}>{a.emoji}</span>
+                      <span style={{ fontWeight: 700 }}>{a.handle}</span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-subtle)', marginLeft: 'auto' }}>{a.platform}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* Action bar */}
@@ -701,7 +748,7 @@ export default function AccountsPanel() {
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {shown.map(p => (
-                    <PostCard key={p.id} post={p} accentColor={theme.color} onApprove={approve} approving={approvingId === p.id} onChanged={loadContent} onPreview={setPreviewPost} />
+                    <PostCard key={p.id} post={p} accentColor={theme.color} onApprove={approve} approving={approvingId === p.id} onChanged={loadContent} onPreview={setPreviewPost} accounts={accounts} />
                   ))}
                 </div>
               </div>

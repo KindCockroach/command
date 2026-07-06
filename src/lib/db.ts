@@ -484,6 +484,15 @@ export function readDb(): Db {
       fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
     }
   }
+  // Migrate (2026-07-04): AI Mom Podcast content boundary — keep it clean
+  if (db.brand_accounts) {
+    const pod = db.brand_accounts.find(a => a.id === 'aimompodcast')
+    if (pod && !(pod.notes ?? '').includes('CONTENT BOUNDARY')) {
+      pod.notes = 'CONTENT BOUNDARY (non-negotiable): This channel is ONLY about paying jobs, job training, and educational tools in the age of AI. Mandi\'s personal AI journey appears solely as entertainment/context woven lightly in — never the subject. DO NOT talk about AI avatars, avatar businesses, Room30, or influencer/creator monetization here. No sales asks — pure give.'
+      pod.topic = 'Jobs, job training, and educational tools in the age of AI'
+      fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+    }
+  }
   // Migrate: update Room30 project description if still old
   if (db.projects) {
     const r30 = db.projects.find(p => p.name === 'Room30.ai Launch')

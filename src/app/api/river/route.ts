@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const watchContext = getWatchContext()
 
   const accountList = accounts.map(a =>
-    `- id:"${a.id}" ${a.handle} (${a.platform}) — ${a.topic}. Mission: ${a.mission}. Tone: ${a.tone}. ${a.offer ? `Offer: ${a.offer} (${a.offer_price})` : ''}`
+    `- id:"${a.id}" ${a.handle} (${a.platform}) — ${a.topic}. Mission: ${a.mission}. Tone: ${a.tone}. ${a.offer ? `Offer: ${a.offer} (${a.offer_price})` : ''}${a.notes ? ` ⚠ RULES: ${a.notes}` : ''}`
   ).join('\n')
 
   const goalList = goals.map(g =>
@@ -66,7 +66,7 @@ Raw ideas, stories, fragments, tasks, and images flow in from every tab. Your jo
    - CONTENT: everything else — an idea, story, observation, or fragment meant to become a post. Set kind:"content" and continue below.
 
 For kind:"content" only:
-1. SORT: pick the ONE best account for this input from the roster below (prioritize accounts tied to active goals).
+1. SORT: pick the ONE best account for this input from the roster below (prioritize accounts tied to active goals). If an account lists ⚠ RULES, obey them — never sort content to an account whose rules exclude that topic (e.g. don't put avatar/monetization talk on a jobs-and-training podcast channel).
 2. JUDGE: can this stand alone as a complete post, or does it need something?
    - "research": facts/stats/context you can supply yourself — supply them, don't flag them.
    - "media": it truly requires a photo/video only Mandi can capture (her kids, her face, her home). An AI image prompt does NOT count as needing media.
