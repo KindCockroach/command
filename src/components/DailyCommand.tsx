@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { Zap, Battery, BatteryLow, BatteryMedium, BatteryFull, Flame, CheckCheck, Sparkles, Loader2, ImageIcon, Target, Copy, Plus, HelpCircle } from 'lucide-react'
+import { Zap, Battery, BatteryLow, BatteryMedium, BatteryFull, Flame, CheckCheck, Sparkles, Loader2, ImageIcon, Target, Copy, Plus, HelpCircle, Crown, Waves } from 'lucide-react'
 
 type DailyData = {
   date: string
@@ -59,6 +59,32 @@ export default function DailyCommand() {
   const [saved, setSaved] = useState(false)
   const [briefing, setBriefing] = useState('')
   const [briefingLoading, setBriefingLoading] = useState(false)
+  const [review, setReview] = useState<{ reviewed: number; plans?: { idea: string; plan: string }[]; tasks_created?: number; goal_suggestions?: string[]; hooks?: { hook: string; account_id: string }[]; message?: string } | null>(null)
+  const [reviewing, setReviewing] = useState(false)
+  const [pendingReview, setPendingReview] = useState(0)
+  const [filedHook, setFiledHook] = useState<Record<number, boolean>>({})
+
+  const runReview = async (auto = false) => {
+    setReviewing(true)
+    try {
+      const res = await fetch('/api/ceo/review', { method: 'POST' })
+      const d = await res.json()
+      if (!d.error) {
+        setReview(d)
+        setPendingReview(0)
+        if (d.reviewed > 0) { localStorage.setItem('ceo-review-date', today); fetch('/api/tasks?status=today').then(r => r.json()).then(setTasks).catch(() => {}) }
+      }
+    } finally { setReviewing(false) }
+    if (auto) { /* silent */ }
+  }
+
+  const fileHook = async (h: { hook: string; account_id: string }, i: number) => {
+    await fetch('/api/river', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: `HOOK from CEO idea review${h.account_id ? ` (for ${h.account_id})` : ''}: ${h.hook}`, source: 'ceo-review' }),
+    }).catch(() => {})
+    setFiledHook(prev => ({ ...prev, [i]: true }))
+  }
   const [riverResult, setRiverResult] = useState<RiverResult | null>(null)
   const [riverRunning, setRiverRunning] = useState(false)
   const [pendingImage, setPendingImage] = useState<string | null>(null)
@@ -117,7 +143,12 @@ export default function DailyCommand() {
     })
     fetch('/api/tasks?status=today').then(r => r.json()).then(setTasks).catch(() => {})
     loadFire()
-  }, [])
+    // CEO idea review — run automatically once per day when the station is opened
+    fetch('/api/ceo/review').then(r => r.json()).then(d => {
+      setPendingReview(d.pending ?? 0)
+      if ((d.pending ?? 0) > 0 && localStorage.getItem('ceo-review-date') !== today) runReview(true)
+    }).catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = async () => {
     setSaving(true)
@@ -416,6 +447,63 @@ export default function DailyCommand() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* CEO Idea Review */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: '3px solid #C9956A', borderRadius: '14px', padding: '18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: review ? '14px' : 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <Crown size={14} color="#C9956A" />
+            <div>
+              <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#C9956A' }}>CEO Idea Review</span>
+              <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>Daily pass over your raw captures → plans, tasks, goal ideas, and fresh hooks</p>
+            </div>
+          </div>
+          <button onClick={() => runReview(false)} disabled={reviewing}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '9px', border: 'none', background: '#C9956A', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: 'pointer', opacity: reviewing ? 0.7 : 1 }}>
+            {reviewing ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Reviewing…</> : <><Sparkles size={12} /> Review {pendingReview > 0 ? `${pendingReview} raw idea${pendingReview !== 1 ? 's' : ''}` : 'ideas'}</>}
+          </button>
+        </div>
+
+        {review && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {review.message && review.reviewed === 0 && <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{review.message}</p>}
+            {(review.plans?.length ?? 0) > 0 && (
+              <div>
+                <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginBottom: '6px' }}>Plans</p>
+                {review.plans!.map((p, i) => (
+                  <div key={i} style={{ padding: '8px 10px', background: 'var(--bg)', borderRadius: '8px', marginBottom: '5px', borderLeft: '3px solid #C9956A' }}>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>{p.idea}</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.5 }}>{p.plan}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(review.tasks_created ?? 0) > 0 && (
+              <p style={{ fontSize: '11px', color: '#3daa7c', fontWeight: 700 }}>✓ {review.tasks_created} task{review.tasks_created !== 1 ? 's' : ''} added to your list this week.</p>
+            )}
+            {(review.goal_suggestions?.length ?? 0) > 0 && (
+              <div>
+                <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginBottom: '6px' }}>Goal suggestions</p>
+                {review.goal_suggestions!.map((g, i) => <p key={i} style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>🎯 {g}</p>)}
+              </div>
+            )}
+            {(review.hooks?.length ?? 0) > 0 && (
+              <div>
+                <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginBottom: '6px' }}>Hooks mined from your words</p>
+                {review.hooks!.map((h, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px 10px', background: 'var(--bg)', borderRadius: '8px', marginBottom: '5px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', fontStyle: 'italic' }}>“{h.hook}”{h.account_id && <span style={{ fontSize: '10px', color: 'var(--text-subtle)', fontStyle: 'normal', marginLeft: '6px' }}>· {h.account_id}</span>}</p>
+                    <button onClick={() => fileHook(h, i)} disabled={filedHook[i]}
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '7px', border: 'none', background: filedHook[i] ? '#E8F7F1' : 'var(--purple)', color: filedHook[i] ? '#3DAA7C' : '#fff', fontWeight: 700, fontSize: '10px', cursor: filedHook[i] ? 'default' : 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                      {filedHook[i] ? '✓ Filed' : <><Waves size={10} /> To River</>}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Goals — the pace-keeper */}

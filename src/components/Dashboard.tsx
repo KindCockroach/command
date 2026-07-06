@@ -94,11 +94,8 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
 
           {/* Brand — fixed left, never scrolls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-            <img src="/logo.png" alt="AI Mom" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25 }}>
-              <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '17px', fontWeight: 700, color: '#fff', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>AI MOM</span>
-              <span style={{ fontSize: '10px', fontWeight: 500, color: 'rgba(201,149,106,0.9)', letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>RISE Station</span>
-            </div>
+            <img src="/logo.png" alt="RISE AI" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+            <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '19px', fontWeight: 700, color: '#fff', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>RISE AI</span>
           </div>
 
           {/* Nav — scrollable on small windows */}
