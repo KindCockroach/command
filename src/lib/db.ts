@@ -103,6 +103,7 @@ export type Note = {
   category: NoteCategory
   tags: string[]
   pinned: boolean
+  archived?: boolean            // moved to archive once opened/read
   created_at: string
   updated_at: string
 }
