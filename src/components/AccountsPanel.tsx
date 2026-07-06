@@ -402,6 +402,37 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
 
   const [moving, setMoving] = useState(false)
   const [showMove, setShowMove] = useState(false)
+  const [showDup, setShowDup] = useState(false)
+  const [duping, setDuping] = useState(false)
+  const [spinning, setSpinning] = useState(false)
+  const [showSpin, setShowSpin] = useState(false)
+  const [spinCount, setSpinCount] = useState(5)
+  const [spinCmd, setSpinCmd] = useState('')
+
+  // Spin N variations → sibling cards under the same account
+  const spinVariations = async () => {
+    setSpinning(true)
+    try {
+      const res = await fetch('/api/content/variations', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: post.id, count: spinCount, command: spinCmd || undefined }),
+      })
+      if (res.ok) { setShowSpin(false); setSpinCmd(''); onChanged?.() }
+    } finally { setSpinning(false) }
+  }
+
+  // Duplicate this post to another account (re-voiced), original stays
+  const duplicateTo = async (targetId: string) => {
+    setDuping(true)
+    try {
+      await fetch('/api/content/duplicate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: post.id, accountId: targetId }),
+      })
+      setShowDup(false)
+      onChanged?.()
+    } finally { setDuping(false) }
+  }
 
   // Move a suggestion to a different account — the river recomposes it in that account's voice
   const moveTo = async (targetId: string) => {
@@ -644,28 +675,69 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             </>
           )}
 
-          {/* Move to another account */}
-          {accounts && accounts.length > 1 && (
-            <div style={{ position: 'relative' }}>
-              <button onClick={() => setShowMove(v => !v)} disabled={moving}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
-                {moving ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Moving &amp; recomposing…</> : <>↔ Move to another account</>}
-              </button>
-              {showMove && (
-                <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 5, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', maxHeight: '240px', overflowY: 'auto', padding: '4px' }}>
-                  <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', padding: '6px 8px 4px' }}>Rewrite this idea for…</p>
-                  {accounts.filter(a => a.id !== post.account_id).map(a => (
-                    <button key={a.id} onClick={() => moveTo(a.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 10px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', fontSize: '12px', color: 'var(--text)' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                      <span style={{ fontSize: '15px' }}>{a.emoji}</span>
-                      <span style={{ fontWeight: 700 }}>{a.handle}</span>
-                      <span style={{ fontSize: '10px', color: 'var(--text-subtle)', marginLeft: 'auto' }}>{a.platform}</span>
-                    </button>
+          {/* Spin variations */}
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => setShowSpin(v => !v)} disabled={spinning}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+              {spinning ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Spinning variations…</> : <>✨ Spin variations of this post</>}
+            </button>
+            {showSpin && (
+              <div style={{ marginTop: '6px', padding: '10px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>How many:</span>
+                  {[3, 5, 10].map(n => (
+                    <button key={n} onClick={() => setSpinCount(n)}
+                      style={{ padding: '4px 12px', borderRadius: '8px', border: `2px solid ${spinCount === n ? accentColor : 'var(--border)'}`, background: spinCount === n ? `${accentColor}12` : 'transparent', fontSize: '12px', fontWeight: 800, cursor: 'pointer', color: spinCount === n ? accentColor : 'var(--text-muted)' }}>{n}</button>
                   ))}
                 </div>
-              )}
+                <input value={spinCmd} onChange={e => setSpinCmd(e.target.value)}
+                  placeholder='Optional command: "punchier hooks", "different pain points", "for cold audiences"…'
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }} />
+                <button onClick={spinVariations} disabled={spinning}
+                  style={{ padding: '9px', borderRadius: '9px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}>
+                  {spinning ? 'Spinning…' : `Generate ${spinCount} sibling posts`}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Move / Duplicate to another account */}
+          {accounts && accounts.length > 1 && (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <button onClick={() => { setShowMove(v => !v); setShowDup(false) }} disabled={moving}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                  {moving ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <>↔ Move</>}
+                </button>
+                {showMove && (
+                  <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 5, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', maxHeight: '220px', overflowY: 'auto', padding: '4px' }}>
+                    <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-subtle)', padding: '6px 8px 4px' }}>Move (rewrite) to…</p>
+                    {accounts.filter(a => a.id !== post.account_id).map(a => (
+                      <button key={a.id} onClick={() => moveTo(a.id)} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '7px 10px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', fontSize: '12px', color: 'var(--text)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                        <span style={{ fontSize: '14px' }}>{a.emoji}</span><span style={{ fontWeight: 700 }}>{a.handle}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <button onClick={() => { setShowDup(v => !v); setShowMove(false) }} disabled={duping}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', width: '100%', padding: '9px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                  {duping ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <>⧉ Duplicate</>}
+                </button>
+                {showDup && (
+                  <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 5, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', maxHeight: '220px', overflowY: 'auto', padding: '4px' }}>
+                    <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-subtle)', padding: '6px 8px 4px' }}>Copy (keep original) to…</p>
+                    {accounts.filter(a => a.id !== post.account_id).map(a => (
+                      <button key={a.id} onClick={() => duplicateTo(a.id)} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '7px 10px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', fontSize: '12px', color: 'var(--text)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                        <span style={{ fontSize: '14px' }}>{a.emoji}</span><span style={{ fontWeight: 700 }}>{a.handle}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
