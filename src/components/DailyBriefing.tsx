@@ -69,10 +69,16 @@ export default function DailyBriefingPanel({ content }: { content: ContentPiece[
           <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--hot-pink)' }}>What Needs You Today</span>
           {lastRun && <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>· {lastRun}</span>}
         </div>
-        <button onClick={generate} disabled={loading} title="Refresh briefing"
-          style={{ background: 'none', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', color: 'rgba(255,255,255,0.35)', padding: '4px', display: 'flex', alignItems: 'center' }}>
-          {loading ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={13} />}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={() => { localStorage.setItem('station-open-agent', 'ceo'); window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'assistants' } })) }}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(201,149,106,0.5)', background: 'rgba(201,149,106,0.15)', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#C9956A' }}>
+            👑 Talk to your CEO
+          </button>
+          <button onClick={generate} disabled={loading} title="Refresh briefing"
+            style={{ background: 'none', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', color: 'rgba(255,255,255,0.35)', padding: '4px', display: 'flex', alignItems: 'center' }}>
+            {loading ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={13} />}
+          </button>
+        </div>
       </div>
 
       {loading && !briefing && (

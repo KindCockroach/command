@@ -5,6 +5,7 @@ import { AGENT_META } from '@/lib/agents'
 import type { GPTRole } from '@/lib/agents'
 
 const AGENTS: { role: GPTRole; color: string }[] = [
+  { role: 'ceo',              color: '#C9956A' },
   { role: 'future_her',       color: '#7c3aed' },
   { role: 'strategist',       color: '#e8448a' },
   { role: 'content_director', color: '#f2a65a' },
@@ -17,7 +18,14 @@ const AGENTS: { role: GPTRole; color: string }[] = [
 ]
 
 export default function AssistantsPanel() {
-  const [active, setActive] = useState<GPTRole | null>(null)
+  const [active, setActive] = useState<GPTRole | null>(() => {
+    // Arrived via "Talk to your CEO" (or similar) handoff?
+    if (typeof window !== 'undefined') {
+      const handoff = localStorage.getItem('station-open-agent')
+      if (handoff) { localStorage.removeItem('station-open-agent'); return handoff as GPTRole }
+    }
+    return null
+  })
   const [msg, setMsg] = useState('')
   const [history, setHistory] = useState<{ role: 'user' | 'ai'; text: string }[]>([])
   const [loading, setLoading] = useState(false)
