@@ -42,7 +42,11 @@ function PlatformPreviewModal({ post, account, onClose }: { post: ContentPiece; 
   const caption = cleanCaption(post)
   const hashtags = cleanHashtags(post)
   const [copied, setCopied] = useState(false)
+  const [slide, setSlide] = useState(0)
   const handle = account.handle.replace('@', '')
+  const slides = post.media_urls?.length ? post.media_urls : (post.media_url ? [post.media_url] : [])
+  const cur = slides[slide]
+  const isCarousel = slides.length > 1
   const isVideo = post.type === 'video' || post.type.includes('reel') || post.platforms?.some(p => p.includes('reel') || p.includes('tiktok'))
   const isYouTube = account.platform === 'YouTube'
   const isThreads = account.platform === 'Threads'
@@ -71,21 +75,32 @@ function PlatformPreviewModal({ post, account, onClose }: { post: ContentPiece; 
             </div>
 
             {/* Media area */}
-            <div style={{ aspectRatio: isYouTube ? '16 / 9' : isVideo ? '9 / 16' : '1 / 1', maxHeight: '380px', background: post.media_url ? '#000' : 'linear-gradient(135deg, #1C1F3B 0%, #3a2d5c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-              {post.media_url ? (
-                post.media_url.match(/\.(mp4|mov|webm)/i)
-                  ? <video src={post.media_url} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                  : <img src={post.media_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ aspectRatio: isYouTube ? '16 / 9' : isVideo ? '9 / 16' : '1 / 1', maxHeight: '380px', background: cur ? '#000' : 'linear-gradient(135deg, #1C1F3B 0%, #3a2d5c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+              {cur ? (
+                cur.match(/\.(mp4|mov|webm)/i)
+                  ? <video src={cur} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  : <img src={cur} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <div style={{ padding: '20px', textAlign: 'center' }}>
                   <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>🎨 visual to create</p>
                   <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>{post.image_prompt || 'No visual yet'}</p>
                 </div>
               )}
+              {/* Carousel controls */}
+              {isCarousel && (
+                <>
+                  {slide > 0 && <button onClick={() => setSlide(s => s - 1)} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.85)', color: '#111', cursor: 'pointer', fontWeight: 800, zIndex: 3 }}>‹</button>}
+                  {slide < slides.length - 1 && <button onClick={() => setSlide(s => s + 1)} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.85)', color: '#111', cursor: 'pointer', fontWeight: 800, zIndex: 3 }}>›</button>}
+                  <span style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', zIndex: 3 }}>{slide + 1}/{slides.length}</span>
+                  <div style={{ position: 'absolute', bottom: post.onscreen_text ? '44px' : '8px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '5px', zIndex: 3 }}>
+                    {slides.map((_, i) => <span key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: i === slide ? '#fff' : 'rgba(255,255,255,0.5)' }} />)}
+                  </div>
+                </>
+              )}
               {/* On-screen text overlay */}
               {post.onscreen_text && (
                 <div style={{ position: 'absolute', bottom: '14px', left: '12px', right: '12px' }}>
-                  <p style={{ fontSize: '13px', fontWeight: 900, color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.9)', lineHeight: 1.35, whiteSpace: 'pre-wrap' }}>{post.onscreen_text.split('\n')[0]}</p>
+                  <p style={{ fontSize: '13px', fontWeight: 900, color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.9)', lineHeight: 1.35, whiteSpace: 'pre-wrap' }}>{post.onscreen_text.split('\n')[isCarousel ? Math.min(slide, post.onscreen_text.split('\n').length - 1) : 0]}</p>
                 </div>
               )}
             </div>
@@ -331,21 +346,31 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
     } finally { setRegenerating(false) }
   }
 
-  // Attach a photo/video to this post — uploads to R2, saves media_url on the card
-  const attachMedia = async (file: File) => {
+  const gallery = post.media_urls?.length ? post.media_urls : (post.media_url ? [post.media_url] : [])
+
+  const uploadOne = async (file: File): Promise<string> => {
+    const presign = await fetch('/api/upload', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: file.name, contentType: file.type, folder: 'post-media' }),
+    }).then(r => r.json())
+    if (!presign.uploadUrl) throw new Error(presign.error || 'no upload url')
+    const put = await fetch(presign.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
+    if (!put.ok) throw new Error(`upload failed (${put.status})`)
+    return presign.publicUrl
+  }
+
+  // Attach one or MANY images (carousel) — appends to the ordered gallery
+  const attachMedia = async (files: FileList | File[]) => {
     setUploading(true)
     setUploadErr('')
     try {
-      const presign = await fetch('/api/upload', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, folder: 'post-media' }),
-      }).then(r => r.json())
-      if (!presign.uploadUrl) throw new Error(presign.error || 'no upload url')
-      const put = await fetch(presign.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
-      if (!put.ok) throw new Error(`upload failed (${put.status})`)
+      const list = Array.from(files)
+      const uploaded: string[] = []
+      for (const f of list) uploaded.push(await uploadOne(f))
+      const next = [...gallery, ...uploaded]
       await fetch('/api/content', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: post.id, media_url: presign.publicUrl }),
+        body: JSON.stringify({ id: post.id, media_urls: next, media_url: next[0] }),
       })
       onChanged?.()
     } catch (e) {
@@ -353,6 +378,27 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
     } finally {
       setUploading(false)
     }
+  }
+
+  const removeSlide = async (url: string) => {
+    const next = gallery.filter(u => u !== url)
+    await fetch('/api/content', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: post.id, media_urls: next, media_url: next[0] ?? '' }),
+    })
+    onChanged?.()
+  }
+
+  const moveSlide = async (i: number, dir: -1 | 1) => {
+    const j = i + dir
+    if (j < 0 || j >= gallery.length) return
+    const next = [...gallery]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    await fetch('/api/content', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: post.id, media_urls: next, media_url: next[0] }),
+    })
+    onChanged?.()
   }
 
   const [moving, setMoving] = useState(false)
@@ -469,7 +515,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
           <div style={{ display: 'flex', gap: '6px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: accentColor }}>{post.type.replace(/_/g, ' ')}</span>
             <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 8px', borderRadius: '10px', background: statusChip.bg, color: statusChip.color }}>{statusChip.label}</span>
-            {post.media_url ? <span style={{ fontSize: '9px', color: '#3DAA7C', fontWeight: 700 }}>📎 media</span>
+            {gallery.length > 0 ? <span style={{ fontSize: '9px', color: '#3DAA7C', fontWeight: 700 }}>📎 {gallery.length > 1 ? `${gallery.length} slides` : 'media'}</span>
               : post.image_prompt ? <span style={{ fontSize: '9px', color: 'var(--text-subtle)' }}>🎨 prompt ready</span> : null}
           </div>
         </div>
@@ -511,23 +557,49 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             </div>
           )}
 
-          {/* Visual: media or prompt */}
-          {post.media_url ? (
+          {/* Visual: carousel gallery or prompt */}
+          {gallery.length > 0 ? (
             <div>
-              {/\.(mp4|mov|webm|m4v)(\?|$)/i.test(post.media_url)
-                ? <video src={post.media_url} controls style={{ width: '100%', borderRadius: '10px', maxHeight: '260px', background: '#000' }} />
-                : <img src={post.media_url} alt="" style={{ width: '100%', borderRadius: '10px', maxHeight: '220px', objectFit: 'cover' }} />}
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: 'pointer', marginTop: '4px' }}>
-                {uploading ? 'Uploading…' : 'Replace media'}
-                <input type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) attachMedia(f); e.target.value = '' }} />
+              {gallery.length > 1 && (
+                <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)', marginBottom: '6px' }}>Carousel · {gallery.length} slides (drag order with ◀ ▶)</p>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: gallery.length > 1 ? 'repeat(auto-fill, minmax(90px, 1fr))' : '1fr', gap: '8px' }}>
+                {gallery.map((url, i) => {
+                  const isVid = /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url)
+                  return (
+                    <div key={url} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: gallery.length > 1 ? '1px solid var(--border)' : 'none' }}>
+                      {gallery.length > 1 && (
+                        <span style={{ position: 'absolute', top: '4px', left: '4px', zIndex: 2, background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '10px' }}>{i + 1}</span>
+                      )}
+                      {isVid
+                        ? <video src={url} controls style={{ width: '100%', height: gallery.length > 1 ? '90px' : 'auto', maxHeight: '260px', objectFit: 'cover', background: '#000', display: 'block' }} />
+                        : <img src={url} alt={`slide ${i + 1}`} style={{ width: '100%', height: gallery.length > 1 ? '90px' : 'auto', maxHeight: gallery.length > 1 ? '90px' : '260px', objectFit: 'cover', display: 'block' }} />}
+                      {/* Slide controls */}
+                      <div style={{ position: 'absolute', bottom: '3px', right: '3px', display: 'flex', gap: '2px', zIndex: 2 }}>
+                        {gallery.length > 1 && (
+                          <>
+                            <button onClick={() => moveSlide(i, -1)} disabled={i === 0} title="Move left" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: i === 0 ? 'default' : 'pointer', fontSize: '10px', opacity: i === 0 ? 0.3 : 1 }}>◀</button>
+                            <button onClick={() => moveSlide(i, 1)} disabled={i === gallery.length - 1} title="Move right" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: i === gallery.length - 1 ? 'default' : 'pointer', fontSize: '10px', opacity: i === gallery.length - 1 ? 0.3 : 1 }}>▶</button>
+                          </>
+                        )}
+                        <button onClick={() => removeSlide(url)} title="Remove slide" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(224,82,82,0.85)', color: '#fff', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: uploading ? 'default' : 'pointer', marginTop: '8px' }}>
+                {uploading ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>➕ Add slide(s)</>}
+                <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
               </label>
+              {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
             </div>
           ) : (
             <>
               {post.image_prompt && <Section label="🎨 Image / Video Prompt" text={post.image_prompt} />}
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '12px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: uploading ? 'default' : 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
-                {uploading ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>📎 Attach photo / video to this post</>}
-                <input type="file" accept="image/*,video/*" style={{ display: 'none' }} disabled={uploading} onChange={e => { const f = e.target.files?.[0]; if (f) attachMedia(f); e.target.value = '' }} />
+                {uploading ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>📎 Attach photo(s) / video — pick several for a carousel</>}
+                <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
               </label>
               {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
             </>

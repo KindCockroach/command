@@ -31,7 +31,8 @@ export type ContentPiece = {
   image_prompt?: string            // AI image/video generation prompt for the visual
   onscreen_text?: string           // text overlay or spoken script shown on screen
   hashtags?: string                // hashtags/metadata string
-  media_url?: string               // uploaded or generated visual attached to this post
+  media_url?: string               // primary visual (first slide) — kept for scheduling/preview compat
+  media_urls?: string[]            // full carousel: ordered list of image/video URLs
   // GoHighLevel scheduling
   ghl_post_id?: string | null      // GHL social planner post id once pushed
   scheduled_at?: string | null     // when GHL is set to publish it
@@ -537,6 +538,7 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     onscreen_text: data.onscreen_text ?? '',
     hashtags: data.hashtags ?? '',
     media_url: data.media_url ?? '',
+    media_urls: data.media_urls ?? (data.media_url ? [data.media_url] : []),
     ghl_post_id: null,
     scheduled_at: null,
     open_questions: data.open_questions ?? [],
