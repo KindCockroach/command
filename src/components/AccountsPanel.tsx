@@ -1,7 +1,145 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus } from 'lucide-react'
+import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus, CheckSquare, Eye, Heart, MessageCircle, Send, Bookmark } from 'lucide-react'
 import type { BrandAccount, ContentPiece } from '@/lib/db'
+
+// ── Platform theming: the flip side wears the platform's colors ───────────────
+const PLATFORM_THEMES: Record<string, { color: string; gradient: string; fg: string }> = {
+  Instagram: { color: '#E1306C', gradient: 'linear-gradient(90deg, #833AB4 0%, #E1306C 50%, #F77737 100%)', fg: '#fff' },
+  TikTok:    { color: '#010101', gradient: 'linear-gradient(90deg, #010101 0%, #2b2b2b 60%, #EE1D52 100%)', fg: '#fff' },
+  YouTube:   { color: '#FF0000', gradient: 'linear-gradient(90deg, #CC0000 0%, #FF0000 100%)', fg: '#fff' },
+  Facebook:  { color: '#1877F2', gradient: 'linear-gradient(90deg, #1877F2 0%, #4293FB 100%)', fg: '#fff' },
+  LinkedIn:  { color: '#0A66C2', gradient: 'linear-gradient(90deg, #0A66C2 0%, #378FE9 100%)', fg: '#fff' },
+  Threads:   { color: '#101010', gradient: 'linear-gradient(90deg, #101010 0%, #333 100%)', fg: '#fff' },
+  Pinterest: { color: '#E60023', gradient: 'linear-gradient(90deg, #BD081C 0%, #E60023 100%)', fg: '#fff' },
+  Beehiiv:   { color: '#FF6719', gradient: 'linear-gradient(90deg, #E85A0C 0%, #FF6719 100%)', fg: '#fff' },
+}
+const themeFor = (platform: string) => PLATFORM_THEMES[platform] ?? { color: 'var(--purple)', gradient: 'var(--purple)', fg: '#fff' }
+
+// ── Copy-ready caption: strip generator scaffolding, normalize hashtags ──────
+function cleanCaption(post: ContentPiece): string {
+  let body = post.description || ''
+  // If the generator concatenated sections, extract just the caption
+  const capMatch = body.match(/(?:^|\n)Caption:\s*([\s\S]*?)(?=\n\n(?:Hook|Script|Headline|Subject|Preview|Description):|$)/)
+  if (capMatch) body = capMatch[1].trim()
+  else body = body.replace(/^\s*(?:Hook|Script):.*$/gm, '').trim()
+  return body
+}
+
+function cleanHashtags(post: ContentPiece): string {
+  let h = (post.hashtags || '').trim()
+  if (!h) return ''
+  // Comma-separated → space-separated; ensure each tag has #
+  h = h.split(/[,\s]+/).filter(Boolean).map(t => t.startsWith('#') ? t : `#${t.replace(/^#+/, '')}`).join(' ')
+  return h
+}
+
+const pasteReady = (post: ContentPiece) => [cleanCaption(post), cleanHashtags(post)].filter(Boolean).join('\n\n')
+
+// ── Platform preview: what the post will look like in the wild ───────────────
+function PlatformPreviewModal({ post, account, onClose }: { post: ContentPiece; account: BrandAccount; onClose: () => void }) {
+  const theme = themeFor(account.platform)
+  const caption = cleanCaption(post)
+  const hashtags = cleanHashtags(post)
+  const [copied, setCopied] = useState(false)
+  const handle = account.handle.replace('@', '')
+  const isVideo = post.type === 'video' || post.type.includes('reel') || post.platforms?.some(p => p.includes('reel') || p.includes('tiktok'))
+  const isYouTube = account.platform === 'YouTube'
+  const isThreads = account.platform === 'Threads'
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,31,59,0.6)', backdropFilter: 'blur(5px)' }} onClick={onClose} />
+      <div style={{ position: 'relative', width: '100%', maxWidth: '420px', maxHeight: '92vh', overflowY: 'auto', borderRadius: '20px', background: 'var(--surface)', boxShadow: '0 30px 80px rgba(0,0,0,0.4)' }}>
+        {/* Themed header */}
+        <div style={{ background: theme.gradient, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '20px 20px 0 0', position: 'sticky', top: 0, zIndex: 2 }}>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: theme.fg }}>{account.platform} preview</span>
+          <button onClick={onClose} style={{ border: 'none', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', color: theme.fg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={13} /></button>
+        </div>
+
+        <div style={{ padding: '16px' }}>
+          {/* Phone-style mock */}
+          <div style={{ border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', background: isThreads || account.platform === 'TikTok' ? '#101010' : '#fff' }}>
+            {/* Post header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: theme.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px' }}>{account.emoji}</div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: isThreads || account.platform === 'TikTok' ? '#fff' : '#111' }}>{handle}</p>
+                {isYouTube && <p style={{ fontSize: '10px', color: '#666' }}>{account.brand_name}</p>}
+              </div>
+              <span style={{ color: isThreads || account.platform === 'TikTok' ? '#888' : '#999', fontSize: '16px', lineHeight: 0.4 }}>…</span>
+            </div>
+
+            {/* Media area */}
+            <div style={{ aspectRatio: isYouTube ? '16 / 9' : isVideo ? '9 / 16' : '1 / 1', maxHeight: '380px', background: post.media_url ? '#000' : 'linear-gradient(135deg, #1C1F3B 0%, #3a2d5c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+              {post.media_url ? (
+                post.media_url.match(/\.(mp4|mov|webm)/i)
+                  ? <video src={post.media_url} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  : <img src={post.media_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ padding: '20px', textAlign: 'center' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>🎨 visual to create</p>
+                  <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>{post.image_prompt || 'No visual yet'}</p>
+                </div>
+              )}
+              {/* On-screen text overlay */}
+              {post.onscreen_text && (
+                <div style={{ position: 'absolute', bottom: '14px', left: '12px', right: '12px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 900, color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.9)', lineHeight: 1.35, whiteSpace: 'pre-wrap' }}>{post.onscreen_text.split('\n')[0]}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Action row */}
+            {!isYouTube && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 12px', color: isThreads || account.platform === 'TikTok' ? '#fff' : '#111' }}>
+                <Heart size={20} /> <MessageCircle size={20} /> <Send size={20} />
+                <span style={{ marginLeft: 'auto' }}><Bookmark size={20} /></span>
+              </div>
+            )}
+
+            {/* Caption */}
+            <div style={{ padding: isYouTube ? '10px 12px 14px' : '0 12px 14px' }}>
+              {isYouTube ? (
+                <p style={{ fontSize: '14px', fontWeight: 800, color: '#111', lineHeight: 1.35 }}>{post.title}</p>
+              ) : (
+                <p style={{ fontSize: '12px', color: isThreads || account.platform === 'TikTok' ? '#eee' : '#222', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                  <strong>{handle}</strong> {caption.length > 240 ? caption.slice(0, 240) + '… more' : caption}
+                </p>
+              )}
+              {hashtags && !isYouTube && <p style={{ fontSize: '11px', color: theme.color === '#010101' || theme.color === '#101010' ? '#7bb0ff' : '#3b5fa8', marginTop: '4px', lineHeight: 1.5 }}>{hashtags.split(' ').slice(0, 8).join(' ')}{hashtags.split(' ').length > 8 ? ' …' : ''}</p>}
+            </div>
+          </div>
+
+          {/* Copy-ready block — paste without editing */}
+          <div style={{ marginTop: '14px', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--surface-raised, var(--bg))' }}>
+              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-subtle)' }}>Ready to paste — caption + hashtags</p>
+              <button onClick={() => { navigator.clipboard.writeText(pasteReady(post)); setCopied(true); setTimeout(() => setCopied(false), 1800) }}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 14px', borderRadius: '8px', border: 'none', background: copied ? '#3DAA7C' : theme.color, color: '#fff', fontWeight: 800, fontSize: '11px', cursor: 'pointer' }}>
+                {copied ? <CheckCircle2 size={12} /> : <Copy size={12} />} {copied ? 'Copied!' : 'Copy all'}
+              </button>
+            </div>
+            <p style={{ padding: '12px', fontSize: '12px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '180px', overflowY: 'auto', margin: 0 }}>{pasteReady(post)}</p>
+          </div>
+
+          {post.onscreen_text && (
+            <div style={{ marginTop: '10px', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--surface-raised, var(--bg))' }}>
+                <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-subtle)' }}>On-screen text</p>
+                <button onClick={() => navigator.clipboard.writeText(post.onscreen_text!)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', fontWeight: 700, fontSize: '10px', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                  <Copy size={11} /> Copy
+                </button>
+              </div>
+              <p style={{ padding: '12px', fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>{post.onscreen_text}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const BLANK_ACCOUNT: Partial<BrandAccount> = {
   id: '', handle: '', platform: 'Instagram', status: 'planned', priority: 'medium', color: '#E8448A', emoji: '✨',
@@ -148,7 +286,7 @@ function profileUrl(acct: BrandAccount): string {
 }
 
 // ── Post card shown on the flip side ──────────────────────────────────────────
-function PostCard({ post, accentColor, onApprove, approving, onChanged }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; onChanged?: () => void }) {
+function PostCard({ post, accentColor, onApprove, approving, onChanged, onPreview }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; onChanged?: () => void; onPreview?: (p: ContentPiece) => void }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [answers, setAnswers] = useState<string[]>([])
@@ -219,7 +357,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged }: { post
   const isScheduled = post.status === 'scheduled'
 
   const copyAll = () => {
-    navigator.clipboard.writeText([post.onscreen_text && `ON-SCREEN: ${post.onscreen_text}`, post.description, post.hashtags].filter(Boolean).join('\n\n'))
+    navigator.clipboard.writeText(pasteReady(post))
     setCopied(true); setTimeout(() => setCopied(false), 1500)
   }
 
@@ -281,7 +419,12 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged }: { post
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
-          <button onClick={e => { e.stopPropagation(); copyAll() }} title="Copy full post" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: copied ? '#3DAA7C' : 'var(--text-subtle)', padding: '4px', display: 'flex' }}>
+          {onPreview && (
+            <button onClick={e => { e.stopPropagation(); onPreview(post) }} title="Preview on platform" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', padding: '4px', display: 'flex' }}>
+              <Eye size={14} />
+            </button>
+          )}
+          <button onClick={e => { e.stopPropagation(); copyAll() }} title="Copy paste-ready caption + hashtags" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: copied ? '#3DAA7C' : 'var(--text-subtle)', padding: '4px', display: 'flex' }}>
             {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
           </button>
           <span style={{ color: 'var(--text-subtle)', fontSize: '10px', padding: '4px' }}>{open ? '▲' : '▼'}</span>
@@ -376,6 +519,40 @@ export default function AccountsPanel() {
   const [showArchive, setShowArchive] = useState(false)
   const [queueFilter, setQueueFilter] = useState('all')
   const [editing, setEditing] = useState<Partial<BrandAccount> | null>(null)
+  const [previewPost, setPreviewPost] = useState<ContentPiece | null>(null)
+  // Bulk edit
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulk, setBulk] = useState<{ status: string; priority: string; color: string }>({ status: '', priority: '', color: '' })
+  const [bulkSaving, setBulkSaving] = useState(false)
+
+  const toggleSelect = (id: string) => setSelected(prev => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
+
+  const applyBulk = async () => {
+    if (selected.size === 0) return
+    setBulkSaving(true)
+    try {
+      const updates: Partial<BrandAccount> = {}
+      if (bulk.status) updates.status = bulk.status as BrandAccount['status']
+      if (bulk.priority) updates.priority = bulk.priority as BrandAccount['priority']
+      if (bulk.color) updates.color = bulk.color
+      if (!Object.keys(updates).length) return
+      for (const id of selected) {
+        await fetch('/api/accounts', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) })
+      }
+      const fresh = await fetch('/api/accounts').then(r => r.json())
+      setAccounts(fresh)
+      setSelected(new Set())
+      setSelectMode(false)
+      setBulk({ status: '', priority: '', color: '' })
+    } finally {
+      setBulkSaving(false)
+    }
+  }
 
   const handleAccountSaved = (saved: BrandAccount) => {
     setAccounts(prev => prev.find(a => a.id === saved.id) ? prev.map(a => a.id === saved.id ? saved : a) : [...prev, saved])
@@ -450,6 +627,94 @@ export default function AccountsPanel() {
       {editing && (
         <AccountEditorModal account={editing} onSave={handleAccountSaved} onDelete={editing.id ? handleAccountDeleted : undefined} onClose={() => setEditing(null)} />
       )}
+
+      {/* ── FLIP SIDE: layered overlay wearing the platform's colors ── */}
+      {(() => {
+        const acct = accounts.find(a => a.id === flipped)
+        if (!acct) return null
+        const theme = themeFor(acct.platform)
+        const posts = postsFor(acct.id)
+        const queued = posts.filter(p => ['idea', 'in_progress', 'ready', 'held'].includes(p.status))
+        const approved = posts.filter(p => p.status === 'approved')
+        const scheduled = posts.filter(p => p.status === 'scheduled')
+        const posted = posts.filter(p => p.status === 'published' || p.status === 'archived')
+        const needsAnswers = queued.filter(p => (p.open_questions?.length ?? 0) > 0)
+        const reviewable = queued.filter(p => !(p.open_questions?.length ?? 0))
+        const buckets = [
+          { key: 'all', label: 'All active', count: queued.length + approved.length + scheduled.length, posts: [...needsAnswers, ...reviewable, ...approved, ...scheduled] },
+          { key: 'answers', label: '❓ Needs answers', count: needsAnswers.length, posts: needsAnswers },
+          { key: 'review', label: 'To review', count: reviewable.length, posts: reviewable },
+          { key: 'approved', label: 'Approved', count: approved.length, posts: approved },
+          { key: 'scheduled', label: 'Scheduled', count: scheduled.length, posts: scheduled },
+        ]
+        const active = buckets.find(b => b.key === queueFilter) ?? buckets[0]
+        const shown = showArchive ? posted : active.posts
+        const close = () => { setFlipped(null); setShowArchive(false); setQueueFilter('all') }
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,31,59,0.55)', backdropFilter: 'blur(5px)' }} onClick={close} />
+            <div style={{ position: 'relative', width: '100%', maxWidth: '880px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', borderRadius: '20px', background: 'var(--surface)', boxShadow: '0 30px 80px rgba(0,0,0,0.45)', overflow: 'hidden' }}>
+              {/* Platform-branded header */}
+              <div style={{ background: theme.gradient, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>{acct.emoji}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: '16px', fontWeight: 900, color: theme.fg }}>{acct.handle}</p>
+                    <p style={{ fontSize: '11px', color: theme.fg, opacity: 0.85, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{acct.platform} · {acct.mission || acct.topic}</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                  <button onClick={() => setEditing(acct)} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '7px 12px', borderRadius: '9px', border: 'none', background: 'rgba(255,255,255,0.2)', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: theme.fg }}>
+                    <Pencil size={11} /> Edit
+                  </button>
+                  <a href={profileUrl(acct)} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '7px 12px', borderRadius: '9px', background: 'rgba(255,255,255,0.2)', fontSize: '11px', fontWeight: 700, color: theme.fg, textDecoration: 'none' }}>
+                    <ExternalLink size={11} /> Open
+                  </a>
+                  <button onClick={close} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.25)', cursor: 'pointer', color: theme.fg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <X size={15} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Queue filter chips */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', flexWrap: 'wrap', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                {buckets.filter(b => b.key === 'all' || b.count > 0).map(b => (
+                  <button key={b.key} onClick={() => { setQueueFilter(b.key); setShowArchive(false) }}
+                    style={{ padding: '5px 11px', borderRadius: '20px', border: `2px solid ${!showArchive && queueFilter === b.key ? theme.color : 'var(--border)'}`, background: !showArchive && queueFilter === b.key ? `${theme.color}12` : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: !showArchive && queueFilter === b.key ? theme.color : 'var(--text-muted)', fontFamily: 'inherit' }}>
+                    {b.label} · {b.count}
+                  </button>
+                ))}
+                {posted.length > 0 && (
+                  <button onClick={() => setShowArchive(v => !v)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '20px', border: `2px solid ${showArchive ? '#3DAA7C' : 'var(--border)'}`, background: showArchive ? 'rgba(61,170,124,0.1)' : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: showArchive ? '#3DAA7C' : 'var(--text-subtle)', fontFamily: 'inherit', marginLeft: 'auto' }}>
+                    <Archive size={11} /> Archive · {posted.length}
+                  </button>
+                )}
+              </div>
+
+              {/* Post list */}
+              <div style={{ padding: '14px 16px', overflowY: 'auto', flex: 1 }}>
+                {shown.length === 0 && (
+                  <p style={{ fontSize: '12px', textAlign: 'center', padding: '40px 0', color: 'var(--text-subtle)' }}>
+                    {showArchive ? 'Nothing posted yet.' : <>Nothing here yet. Generate content and pick <strong>{acct.handle}</strong> as the account — or drop an idea in Quick Capture.</>}
+                  </p>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {shown.map(p => (
+                    <PostCard key={p.id} post={p} accentColor={theme.color} onApprove={approve} approving={approvingId === p.id} onChanged={loadContent} onPreview={setPreviewPost} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Platform preview modal */}
+      {previewPost && (() => {
+        const acct = accounts.find(a => a.id === previewPost.account_id) ?? accounts.find(a => a.id === flipped)
+        return acct ? <PlatformPreviewModal post={previewPost} account={acct} onClose={() => setPreviewPost(null)} /> : null
+      })()}
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
@@ -464,6 +729,11 @@ export default function AccountsPanel() {
               GHL not connected — approvals queue until the key is added
             </span>
           )}
+          <button onClick={() => { setSelectMode(m => !m); setSelected(new Set()) }}
+            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-lg"
+            style={{ background: selectMode ? 'var(--purple)' : 'var(--surface)', color: selectMode ? '#fff' : 'var(--text-muted)', border: '1px solid var(--border)', cursor: 'pointer' }}>
+            <CheckSquare size={12} /> {selectMode ? 'Done selecting' : 'Bulk Edit'}
+          </button>
           <button onClick={() => setEditing({ ...BLANK_ACCOUNT })}
             className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-lg"
             style={{ background: 'var(--cosmic-midnight)', color: 'var(--soft-light)', border: 'none', cursor: 'pointer' }}>
@@ -471,6 +741,37 @@ export default function AccountsPanel() {
           </button>
         </div>
       </div>
+
+      {/* Bulk edit bar */}
+      {selectMode && (
+        <div className="rounded-xl border p-3 flex items-center gap-3 flex-wrap" style={{ background: 'var(--surface)', borderColor: 'var(--purple)', borderWidth: '2px' }}>
+          <span className="text-[12px] font-bold" style={{ color: 'var(--purple)' }}>
+            {selected.size} selected — click cards to add/remove
+          </span>
+          <select value={bulk.status} onChange={e => setBulk(b => ({ ...b, status: e.target.value }))}
+            style={{ padding: '7px 10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', cursor: 'pointer' }}>
+            <option value="">Status: keep as-is</option>
+            {['active', 'restricted', 'planned', 'paused'].map(s => <option key={s} value={s}>Status → {s}</option>)}
+          </select>
+          <select value={bulk.priority} onChange={e => setBulk(b => ({ ...b, priority: e.target.value }))}
+            style={{ padding: '7px 10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', cursor: 'pointer' }}>
+            <option value="">Priority: keep as-is</option>
+            {['high', 'medium', 'low'].map(s => <option key={s} value={s}>Priority → {s}</option>)}
+          </select>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Color:</span>
+            <input type="color" value={bulk.color || '#E8448A'} onChange={e => setBulk(b => ({ ...b, color: e.target.value }))}
+              style={{ width: '30px', height: '30px', borderRadius: '6px', border: '1px solid var(--border)', cursor: 'pointer', padding: '2px' }} />
+            {bulk.color && <button onClick={() => setBulk(b => ({ ...b, color: '' }))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '10px' }}>keep as-is ✕</button>}
+          </div>
+          <button onClick={applyBulk} disabled={bulkSaving || selected.size === 0 || (!bulk.status && !bulk.priority && !bulk.color)}
+            className="ml-auto flex items-center gap-1.5 text-[12px] font-extrabold px-4 py-2 rounded-lg"
+            style={{ background: 'var(--purple)', color: '#fff', border: 'none', cursor: 'pointer', opacity: bulkSaving || selected.size === 0 || (!bulk.status && !bulk.priority && !bulk.color) ? 0.5 : 1 }}>
+            {bulkSaving ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={12} />}
+            Apply to {selected.size}
+          </button>
+        </div>
+      )}
 
       {/* Filter tabs */}
       <div className="flex gap-1.5 flex-wrap">
@@ -497,84 +798,16 @@ export default function AccountsPanel() {
           const posted = posts.filter(p => p.status === 'published' || p.status === 'archived')
           const isFlipped = flipped === acct.id
 
-          if (isFlipped) {
-            // ── BACK of card: full-width workspace ──
-            const needsAnswers = queued.filter(p => (p.open_questions?.length ?? 0) > 0)
-            const reviewable = queued.filter(p => !(p.open_questions?.length ?? 0))
-            const buckets: { key: string; label: string; count: number; posts: ContentPiece[]; color: string }[] = [
-              { key: 'all', label: 'All active', count: queued.length + approved.length + scheduled.length, posts: [...needsAnswers, ...reviewable, ...approved, ...scheduled], color: acct.color },
-              { key: 'answers', label: '❓ Needs answers', count: needsAnswers.length, posts: needsAnswers, color: '#E05252' },
-              { key: 'review', label: 'To review', count: reviewable.length, posts: reviewable, color: 'var(--text-muted)' },
-              { key: 'approved', label: 'Approved', count: approved.length, posts: approved, color: '#F2A65A' },
-              { key: 'scheduled', label: 'Scheduled', count: scheduled.length, posts: scheduled, color: '#4CC9F0' },
-            ]
-            const active = buckets.find(b => b.key === queueFilter) ?? buckets[0]
-            const shown = showArchive ? posted : active.posts
-            return (
-              <div key={acct.id} className="rounded-xl border flex flex-col" style={{ gridColumn: '1 / -1', background: 'var(--surface)', borderColor: acct.color, boxShadow: 'var(--shadow-sm)', borderWidth: '2px' }}>
-                {/* Workspace header */}
-                <div className="flex items-center justify-between gap-3 px-4 py-3 flex-wrap"
-                  style={{ borderBottom: '1px solid var(--border)', background: acct.color + '0d', borderRadius: '10px 10px 0 0' }}>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="flex items-center gap-2 text-[15px] font-extrabold" style={{ color: 'var(--cosmic-midnight)' }}>
-                      {acct.emoji} {acct.handle}
-                    </span>
-                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{acct.mission || acct.topic}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setEditing(acct)} title="Edit purpose & brand DNA"
-                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
-                      <Pencil size={11} /> Edit
-                    </button>
-                    <a href={profileUrl(acct)} target="_blank" rel="noopener noreferrer"
-                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '11px', fontWeight: 700, color: 'var(--electric-nebula)', textDecoration: 'none' }}>
-                      <ExternalLink size={11} /> Open
-                    </a>
-                    <button onClick={() => { setFlipped(null); setShowArchive(false); setQueueFilter('all') }}
-                      style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', background: acct.color, color: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}>
-                      ↩ Flip back
-                    </button>
-                  </div>
-                </div>
-
-                {/* Queue filter chips */}
-                <div className="flex items-center gap-1.5 px-4 py-2.5 flex-wrap" style={{ borderBottom: '1px solid var(--border)' }}>
-                  {buckets.filter(b => b.key === 'all' || b.count > 0).map(b => (
-                    <button key={b.key} onClick={() => { setQueueFilter(b.key); setShowArchive(false) }}
-                      style={{ padding: '5px 11px', borderRadius: '20px', border: `2px solid ${!showArchive && queueFilter === b.key ? acct.color : 'var(--border)'}`, background: !showArchive && queueFilter === b.key ? `${acct.color}12` : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: !showArchive && queueFilter === b.key ? acct.color : 'var(--text-muted)', fontFamily: 'inherit' }}>
-                      {b.label} · {b.count}
-                    </button>
-                  ))}
-                  {posted.length > 0 && (
-                    <button onClick={() => setShowArchive(v => !v)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '20px', border: `2px solid ${showArchive ? '#3DAA7C' : 'var(--border)'}`, background: showArchive ? 'rgba(61,170,124,0.1)' : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: showArchive ? '#3DAA7C' : 'var(--text-subtle)', fontFamily: 'inherit', marginLeft: 'auto' }}>
-                      <Archive size={11} /> Archive · {posted.length}
-                    </button>
-                  )}
-                </div>
-
-                {/* Post grid */}
-                <div style={{ padding: '14px', maxHeight: '640px', overflowY: 'auto' }}>
-                  {shown.length === 0 && (
-                    <p className="text-[12px] text-center py-10" style={{ color: 'var(--text-subtle)' }}>
-                      {showArchive ? 'Nothing posted yet.' : <>Nothing here yet. Generate content and pick <strong>{acct.handle}</strong> as the account — or drop an idea in Quick Capture and let the river sort it.</>}
-                    </p>
-                  )}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(420px, 100%), 1fr))', gap: '10px', alignItems: 'start' }}>
-                    {shown.map(p => (
-                      <PostCard key={p.id} post={p} accentColor={acct.color} onApprove={approve} approving={approvingId === p.id} onChanged={loadContent} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )
-          }
-
-          // ── FRONT of card ──
+          // ── FRONT of card (flip side renders as a layered overlay below) ──
           return (
-            <div key={acct.id} onClick={() => setFlipped(acct.id)}
+            <div key={acct.id} onClick={() => selectMode ? toggleSelect(acct.id) : setFlipped(acct.id)}
               className="rounded-xl border p-4 flex flex-col gap-3 cursor-pointer transition-transform hover:scale-[1.01]"
-              style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+              style={{ background: 'var(--surface)', borderColor: selectMode && selected.has(acct.id) ? 'var(--purple)' : 'var(--border)', borderWidth: selectMode && selected.has(acct.id) ? '2px' : '1px', boxShadow: 'var(--shadow-sm)', position: 'relative' }}>
+              {selectMode && (
+                <div style={{ position: 'absolute', top: '10px', right: '10px', width: '20px', height: '20px', borderRadius: '6px', border: selected.has(acct.id) ? 'none' : '2px solid var(--border)', background: selected.has(acct.id) ? 'var(--purple)' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+                  {selected.has(acct.id) && <CheckCircle2 size={13} color="#fff" />}
+                </div>
+              )}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0" style={{ background: acct.color + '18' }}>
