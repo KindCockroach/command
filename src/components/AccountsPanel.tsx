@@ -297,6 +297,40 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   const [uploading, setUploading] = useState(false)
   const [uploadErr, setUploadErr] = useState('')
 
+  // Inline editing of the card's fields
+  const [editing, setEditing] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
+  const [form, setForm] = useState({
+    title: post.title, onscreen_text: post.onscreen_text ?? '', description: post.description ?? '',
+    hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '',
+  })
+  const startEdit = () => {
+    setForm({ title: post.title, onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '' })
+    setEditing(true); setOpen(true)
+  }
+  const saveEdit = async () => {
+    setSavingEdit(true)
+    try {
+      await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...form }) })
+      setEditing(false)
+      onChanged?.()
+    } finally { setSavingEdit(false) }
+  }
+  // Regenerate the caption/on-screen text — RISE re-reads the attached image + the (edited) prompt
+  const regenerate = async () => {
+    setRegenerating(true)
+    try {
+      // Save any pending edits first so the new prompt is what regenerates
+      if (editing) await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...form }) })
+      const res = await fetch('/api/content/regenerate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: post.id, prompt: editing ? form.image_prompt : post.image_prompt }),
+      })
+      if (res.ok) { setEditing(false); onChanged?.() }
+    } finally { setRegenerating(false) }
+  }
+
   // Attach a photo/video to this post — uploads to R2, saves media_url on the card
   const attachMedia = async (file: File) => {
     setUploading(true)
@@ -441,6 +475,9 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+          <button onClick={e => { e.stopPropagation(); startEdit() }} title="Edit this post" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: editing ? accentColor : 'var(--text-subtle)', padding: '4px', display: 'flex' }}>
+            <Pencil size={14} />
+          </button>
           {onPreview && (
             <button onClick={e => { e.stopPropagation(); onPreview(post) }} title="Preview on platform" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', padding: '4px', display: 'flex' }}>
               <Eye size={14} />
@@ -496,12 +533,44 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             </>
           )}
 
-          {post.onscreen_text && <Section label="On-Screen Text / Hook" text={post.onscreen_text} bold />}
-          <Section label="Body / Caption / Script" text={post.description} />
-          {post.hashtags && (
-            <Section label="Hashtags / Metadata" text={post.hashtags}>
-              <p style={{ fontSize: '11px', color: accentColor, lineHeight: 1.6, wordBreak: 'break-word' }}>{post.hashtags}</p>
-            </Section>
+          {editing ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: 'var(--bg)', borderRadius: '10px', border: `1px solid ${accentColor}` }}>
+              {([
+                ['title', 'Title', 1],
+                ['image_prompt', '🎨 Image / Video Prompt (paste your updated prompt here)', 3],
+                ['onscreen_text', 'On-Screen Text / Hook', 3],
+                ['description', 'Body / Caption / Script', 5],
+                ['hashtags', 'Hashtags / Metadata', 2],
+              ] as const).map(([key, label, rows]) => (
+                <div key={key}>
+                  <label style={{ display: 'block', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)', marginBottom: '4px' }}>{label}</label>
+                  <textarea value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} rows={rows}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.5 }} />
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button onClick={saveEdit} disabled={savingEdit}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 16px', borderRadius: '9px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}>
+                  {savingEdit ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={12} />} Save edits
+                </button>
+                <button onClick={regenerate} disabled={regenerating}
+                  title={post.media_url ? 'RISE re-reads your attached image and rewrites the caption' : 'Rewrites from your updated prompt'}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 16px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                  {regenerating ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Regenerating…</> : <>🔄 Save &amp; regenerate {post.media_url ? 'from image' : 'from prompt'}</>}
+                </button>
+                <button onClick={() => setEditing(false)} style={{ padding: '9px 14px', borderRadius: '9px', border: 'none', background: 'transparent', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {post.onscreen_text && <Section label="On-Screen Text / Hook" text={post.onscreen_text} bold />}
+              <Section label="Body / Caption / Script" text={post.description} />
+              {post.hashtags && (
+                <Section label="Hashtags / Metadata" text={post.hashtags}>
+                  <p style={{ fontSize: '11px', color: accentColor, lineHeight: 1.6, wordBreak: 'break-word' }}>{post.hashtags}</p>
+                </Section>
+              )}
+            </>
           )}
 
           {/* Move to another account */}
