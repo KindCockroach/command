@@ -59,7 +59,7 @@ export default function AssistantsPanel() {
     setHistory(h => [...h, { role: 'user', text: userMsg }])
     setLoading(true)
     try {
-      const res = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'chat', role: active, message: userMsg }) })
+      const res = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'chat', role: active, message: userMsg, history: history.slice(-12).map(h => ({ role: h.role === 'ai' ? 'assistant' : 'user', content: h.text })) }) })
       const data = await res.json()
       setHistory(h => [...h, { role: 'ai', text: data.result ?? data.error ?? 'No response' }])
     } finally { setLoading(false) }

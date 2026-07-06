@@ -84,6 +84,7 @@ export default function StationChat() {
           message: text || 'Please analyze this image and tell me what you see and how it relates to my business.',
           image,
           systemOverride: STATION_PROMPT,
+          history: messages.slice(-12).map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text })),
         }),
       })
       const data = await res.json()

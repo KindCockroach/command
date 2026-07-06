@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { action, role, message, image, title, description, notes, transcript, platforms, topic, duration, pipeline_summary, systemOverride } = body
+  const { action, role, message, image, title, description, notes, transcript, platforms, topic, duration, pipeline_summary, systemOverride, history } = body
 
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-your-key-here') {
     return NextResponse.json({ error: 'OPENAI_API_KEY not set in .env.local' }, { status: 503 })
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ result: await repurposeContent(title ?? '', description ?? '', notes ?? '', transcript ?? '', platforms ?? []) })
 
       case 'chat':
-        return NextResponse.json({ result: await callGPT(role as GPTRole, message, systemOverride) })
+        return NextResponse.json({ result: await callGPT(role as GPTRole, message, systemOverride, history) })
 
       case 'route':
         return NextResponse.json({ result: await routeToAgent(message) })
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
           if (image) {
             return NextResponse.json({ result: await callGPTWithImage(role as GPTRole, message ?? '', image, systemOverride) })
           }
-          return NextResponse.json({ result: await callGPT(role as GPTRole, message, systemOverride) })
+          return NextResponse.json({ result: await callGPT(role as GPTRole, message, systemOverride, history) })
         }
         return NextResponse.json({ error: 'unknown action' }, { status: 400 })
     }

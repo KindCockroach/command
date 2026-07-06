@@ -299,7 +299,9 @@ DELIVER AS: Short summary → key findings → recommendation → sources or sea
 }
 
 // ── Core call using Responses API ─────────────────────────────────────────────
-export async function callGPT(role: GPTRole, userMessage: string, instructionsOverride?: string): Promise<string> {
+type ChatTurn = { role: 'user' | 'assistant'; content: string }
+
+export async function callGPT(role: GPTRole, userMessage: string, instructionsOverride?: string, history?: ChatTurn[]): Promise<string> {
   const c = client()
 
   // 1. Pull local db memory context (manual Brain entries)
@@ -325,10 +327,16 @@ export async function callGPT(role: GPTRole, userMessage: string, instructionsOv
     ? '\n\nYou can search the web live. When a question calls for current facts, data, trends, or research, search and CITE sources inline (title + link). Prefer reputable sources — peer-reviewed journals, .gov/.edu, established clinical or industry orgs — over blogs, listicles, or sponsored content. If a claim is contested or thin, say so. End with a short "Sources:" list. Never present a single blog as settled fact.'
     : ''
 
+  // Include recent conversation so follow-ups ("give me only X", "make it shorter") have context
+  const trimmedHistory = (history ?? []).slice(-12)
+  const input = trimmedHistory.length
+    ? [...trimmedHistory.map(t => ({ role: t.role, content: t.content })), { role: 'user' as const, content: userMessage }]
+    : userMessage
+
   const params: Parameters<typeof c.responses.create>[0] = {
     model: 'gpt-4o',
     instructions: instructions + searchNote,
-    input: userMessage,
+    input: input as Parameters<typeof c.responses.create>[0]['input'],
   }
   if (useWebSearch) (params as { tools?: unknown[] }).tools = [{ type: 'web_search_preview' }]
   const response = await c.responses.create(params) as { output_text?: string }
