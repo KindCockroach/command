@@ -11,5 +11,5 @@ export const AGENT_META: Record<GPTRole, { label: string; emoji: string; desc: s
   future_her:       { label: 'Future Her',        emoji: '🔮', desc: 'Legacy, perspective, long view',              route_when: "I'm discouraged or playing small" },
   healing:          { label: 'Healing',           emoji: '🌿', desc: 'Reflection, emotional patterns, journaling', route_when: "I'm overwhelmed, reactive, or need to process something" },
   client_offer:     { label: 'Client & Offer',    emoji: '🎯', desc: 'Offer design, client delivery, messaging',   route_when: "I'm building an offer or serving a client" },
-  research:         { label: 'Research',          emoji: '🔭', desc: 'Tools, trends, examples, summaries',         route_when: "I need to know what's out there before I build or decide" },
+  research:         { label: 'Research',          emoji: '🔭', desc: 'Tools, trends, examples, summaries · 🔍 live web + citations', route_when: "I need to know what's out there before I build or decide" },
 }

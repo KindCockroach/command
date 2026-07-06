@@ -319,11 +319,18 @@ export async function callGPT(role: GPTRole, userMessage: string, instructionsOv
   const baseInstructions = instructionsOverride ?? SYSTEM_PROMPTS[role]
   const instructions = baseInstructions + dbMemory + mem0Memory
 
+  // Research assistant gets LIVE web search with citations (reputable-source lean).
+  const useWebSearch = role === 'research'
+  const searchNote = useWebSearch
+    ? '\n\nYou can search the web live. When a question calls for current facts, data, trends, or research, search and CITE sources inline (title + link). Prefer reputable sources — peer-reviewed journals, .gov/.edu, established clinical or industry orgs — over blogs, listicles, or sponsored content. If a claim is contested or thin, say so. End with a short "Sources:" list. Never present a single blog as settled fact.'
+    : ''
+
   const response = await c.responses.create({
     model: 'gpt-4o',
-    instructions,
+    instructions: instructions + searchNote,
     input: userMessage,
-  })
+    ...(useWebSearch ? { tools: [{ type: 'web_search_preview' }] } : {}),
+  } as Parameters<typeof c.responses.create>[0])
 
   const output = response.output_text ?? ''
 
