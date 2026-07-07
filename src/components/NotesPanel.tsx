@@ -83,6 +83,8 @@ export default function NotesPanel() {
   const [notes, setNotes] = useState<Note[]>([])
   const [search, setSearch] = useState('')
   const [bucket, setBucket] = useState('48h')
+  const [sortBy, setSortBy] = useState<'created' | 'updated'>('created')
+  const [source, setSource] = useState<'all' | 'ideas' | 'chats' | 'pinned'>('all')
   const [selected, setSelected] = useState<Partial<Note> | null>(null)
 
   const load = () => { fetch('/api/notes').then(r => r.json()).then(setNotes) }
@@ -113,35 +115,37 @@ export default function NotesPanel() {
     setNotes(ns => ns.filter(n => n.id !== id))
   }
 
-  // Opening a note archives it — it drops out of the time buckets into Archive
-  const openNote = (n: Note) => {
-    setSelected(n)
-    if (!n.archived) update(n.id, { archived: true })
-  }
+  // Opening a note no longer archives it — archive is a manual choice only
+  const openNote = (n: Note) => setSelected(n)
 
   const q = search.toLowerCase()
-  const searched = useMemo(() =>
-    notes.filter(n => !q || n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q) || n.tags.some(t => t.toLowerCase().includes(q))),
-  [notes, q])
+  const isChat = (n: Note) => n.tags.includes('conversation')
+  const searched = useMemo(() => {
+    let list = notes.filter(n => !q || n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q) || n.tags.some(t => t.toLowerCase().includes(q)))
+    if (source === 'chats') list = list.filter(isChat)
+    else if (source === 'ideas') list = list.filter(n => !isChat(n))
+    else if (source === 'pinned') list = list.filter(n => n.pinned)
+    return list
+  }, [notes, q, source])
+
+  const stamp = (n: Note) => new Date(sortBy === 'updated' ? (n.updated_at || n.created_at) : n.created_at).getTime()
 
   const counts = useMemo(() => {
     const active = searched.filter(n => !n.archived)
     const c: Record<string, number> = { archive: searched.filter(n => n.archived).length }
     for (const b of BUCKETS) {
-      if (b.maxHours != null) c[b.key] = active.filter(n => hoursSince(n.created_at) <= b.maxHours!).length
+      if (b.maxHours != null) c[b.key] = active.filter(n => hoursSince(sortBy === 'updated' ? (n.updated_at || n.created_at) : n.created_at) <= b.maxHours!).length
     }
     return c
-  }, [searched])
+  }, [searched, sortBy])
 
   const visible = useMemo(() => {
     const b = BUCKETS.find(x => x.key === bucket)!
-    let list = b.key === 'archive'
-      ? searched.filter(n => n.archived)
-      : searched.filter(n => !n.archived && hoursSince(n.created_at) <= (b.maxHours ?? Infinity))
-    // pinned first, then newest
-    list = [...list].sort((a, b2) => (Number(b2.pinned) - Number(a.pinned)) || (new Date(b2.created_at).getTime() - new Date(a.created_at).getTime()))
+    const inWindow = (n: Note) => hoursSince(sortBy === 'updated' ? (n.updated_at || n.created_at) : n.created_at) <= (b.maxHours ?? Infinity)
+    let list = b.key === 'archive' ? searched.filter(n => n.archived) : searched.filter(n => !n.archived && inWindow(n))
+    list = [...list].sort((a, b2) => (Number(b2.pinned) - Number(a.pinned)) || (stamp(b2) - stamp(a)))
     return list
-  }, [searched, bucket])
+  }, [searched, bucket, sortBy])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -160,6 +164,27 @@ export default function NotesPanel() {
         <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search all notes..."
           style={{ width: '100%', padding: '9px 12px 9px 32px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '13px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)', outline: 'none', boxSizing: 'border-box' as const }} />
+      </div>
+
+      {/* Source filter + sort (non-chronological organizers) */}
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {([['all', 'All'], ['ideas', '💡 Ideas'], ['chats', '💬 Chats'], ['pinned', '📌 Pinned']] as const).map(([k, lbl]) => (
+            <button key={k} onClick={() => setSource(k)}
+              style={{ fontSize: '11px', fontWeight: 700, padding: '5px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: source === k ? 'var(--purple)' : 'var(--surface)', color: source === k ? '#fff' : 'var(--text-muted)' }}>
+              {lbl}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+          <span style={{ fontSize: '10px', color: 'var(--text-subtle)', fontWeight: 700 }}>Sort by</span>
+          {([['created', 'Created'], ['updated', 'Updated']] as const).map(([k, lbl]) => (
+            <button key={k} onClick={() => setSortBy(k)}
+              style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '7px', border: `1px solid ${sortBy === k ? 'var(--hot-pink)' : 'var(--border)'}`, cursor: 'pointer', background: sortBy === k ? 'rgba(232,68,138,0.1)' : 'transparent', color: sortBy === k ? 'var(--hot-pink)' : 'var(--text-muted)' }}>
+              {lbl}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Time buckets */}

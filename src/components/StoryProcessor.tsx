@@ -91,6 +91,11 @@ export default function StoryProcessor() {
     if (!freeWrite.trim()) return
     setProcessing(true)
     setResult(null)
+    // Save the raw free write to Notes — your exact words, stored (storage, not the river)
+    fetch('/api/notes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: `✍️ ${(title || freeWrite).slice(0, 50)}`, body: freeWrite, category: 'idea', tags: ['story', 'free-write'] }),
+    }).catch(() => {})
     try {
       const res = await fetch('/api/story', {
         method: 'POST',

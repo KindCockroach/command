@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Loader2, Send, Waves, CheckCheck } from 'lucide-react'
 import { AGENT_META } from '@/lib/agents'
 import type { GPTRole } from '@/lib/agents'
@@ -29,6 +29,7 @@ export default function AssistantsPanel() {
   const [msg, setMsg] = useState('')
   const [history, setHistory] = useState<{ role: 'user' | 'ai'; text: string }[]>([])
   const [loading, setLoading] = useState(false)
+  const convNoteId = useRef<number | null>(null)
   const [riverIdx, setRiverIdx] = useState<number | null>(null)   // message currently being sent
   const [riverDone, setRiverDone] = useState<Record<number, string>>({})
 
@@ -61,12 +62,28 @@ export default function AssistantsPanel() {
     try {
       const res = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'chat', role: active, message: userMsg, history: history.slice(-12).map(h => ({ role: h.role === 'ai' ? 'assistant' : 'user', content: h.text })) }) })
       const data = await res.json()
-      setHistory(h => [...h, { role: 'ai', text: data.result ?? data.error ?? 'No response' }])
+      const reply = data.result ?? data.error ?? 'No response'
+      setHistory(h => { const next = [...h, { role: 'ai' as const, text: reply }]; logConversation(userMsg, next); return next })
     } finally { setLoading(false) }
   }
 
+  // Log this agent conversation to Notes (one growing note per agent session)
+  const logConversation = async (firstUser: string, turns: { role: 'user' | 'ai'; text: string }[]) => {
+    if (!active) return
+    const body = `${AGENT_META[active].label} conversation\n\n` + turns.map(t => `${t.role === 'ai' ? AGENT_META[active].label : 'You'}: ${t.text}`).join('\n\n')
+    try {
+      if (convNoteId.current) {
+        await fetch('/api/notes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: convNoteId.current, body }) })
+      } else {
+        const res = await fetch('/api/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: `💬 ${AGENT_META[active].label}: ${firstUser.slice(0, 40)}`, body, category: 'idea', tags: ['conversation', active] }) })
+        const n = await res.json()
+        convNoteId.current = n.id
+      }
+    } catch { /* best-effort */ }
+  }
+
   const openAgent = (role: GPTRole) => {
-    if (active !== role) { setHistory([]); setMsg('') }
+    if (active !== role) { setHistory([]); setMsg(''); convNoteId.current = null }
     setActive(role)
   }
 

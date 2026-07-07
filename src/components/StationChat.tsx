@@ -37,6 +37,22 @@ export default function StationChat() {
   const [pendingImage, setPendingImage] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
+  const convNoteId = useRef<number | null>(null)
+
+  // Log the whole conversation to Notes (one growing note per session)
+  const logConversation = async (turns: Message[]) => {
+    const body = turns.filter(m => m.text).map(m => `${m.role === 'ai' ? 'RISE' : 'You'}: ${m.text}`).join('\n\n')
+    const first = turns.find(m => m.role === 'user')?.text ?? 'Chat'
+    try {
+      if (convNoteId.current) {
+        await fetch('/api/notes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: convNoteId.current, body }) })
+      } else {
+        const res = await fetch('/api/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: `💬 ${first.slice(0, 50)}`, body, category: 'idea', tags: ['conversation', 'station-chat'] }) })
+        const n = await res.json()
+        convNoteId.current = n.id
+      }
+    } catch { /* logging is best-effort */ }
+  }
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -88,7 +104,8 @@ export default function StationChat() {
         }),
       })
       const data = await res.json()
-      setMessages(m => [...m, { role: 'ai', text: data.result ?? data.error ?? 'Something went wrong — try again.', ts: Date.now() }])
+      const aiMsg = { role: 'ai' as const, text: data.result ?? data.error ?? 'Something went wrong — try again.', ts: Date.now() }
+      setMessages(m => { const next = [...m, aiMsg]; logConversation(next); return next })
     } catch {
       setMessages(m => [...m, { role: 'ai', text: 'Connection issue — check your Railway env variables are set.', ts: Date.now() }])
     } finally {
