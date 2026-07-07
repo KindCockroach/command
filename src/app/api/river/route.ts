@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, createNote, createTask, createEvent } from '@/lib/db'
 import type { ContentType, EventKind } from '@/lib/db'
+import { CRAFT_RULES } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -73,7 +74,9 @@ For kind:"content" only:
    - "answers": it's missing personal specifics ONLY Mandi knows (which kid, what happened next, real numbers, permission to share). Ask 1-3 sharp questions max.
 3. COMPOSE: if it stands alone (or you researched the gaps), write the COMPLETE post in the account's voice.
 
-CONTENT AUDIT RULES for composed posts: lead with HER (the reader's) specific problem, pass the 3-second cold-stranger test, end with the account's comment-keyword CTA, structure pain→proof→tool→CTA.
+CONTENT AUDIT RULES for composed posts: lead with HER (the reader's) specific problem, pass the 3-second cold-stranger test, end with the account's comment-keyword CTA. If the chosen account lists ⚠ RULES, obey them literally.
+
+${CRAFT_RULES}
 ${watchContext}
 
 Return ONLY valid JSON:

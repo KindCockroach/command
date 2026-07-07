@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getAllBrandAccounts, getWatchContext, createNote } from '@/lib/db'
+import { CRAFT_RULES } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -44,7 +45,9 @@ ACCOUNT ROSTER (pick the ONE best fit):
 ${accountList}
 ${getWatchContext()}
 
-CONTENT AUDIT RULES: lead with HER (the reader's) problem or moment, 3-second cold-stranger test, warm/direct/funny-when-natural, comment-keyword CTA matching the chosen account, no links in captions.
+${CRAFT_RULES}
+
+CONTENT AUDIT RULES: lead with HER (the reader's) problem or moment, 3-second cold-stranger test, comment-keyword CTA matching the chosen account, no links in captions.
 
 ON-SCREEN TEXT RULES:
 - For VIDEO: on-screen text is a SEQUENCE of 5-10 short punchy lines that tell the story across ~30 seconds (one line per beat, separated by newlines) — not a single caption line. Time it to the footage you can see in the frames.

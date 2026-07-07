@@ -30,7 +30,7 @@ export async function POST() {
 
 Given upcoming calendar events, active goals, and trend intelligence from tracked winning accounts, produce 6-9 content concepts. Each concept ties an event (or a goal/trend if no event fits) to a specific account.
 
-RULES: lead with HER (the reader's) problem, 3-second cold-stranger test, concrete over abstract. Use trend buzzwords naturally, never forced. Timing matters — a concept for an event should land 1-3 days BEFORE the event.
+RULES: lead with HER (the reader's) problem, 3-second cold-stranger test, concrete over abstract. Use trend buzzwords naturally, never forced. Timing matters — a concept for an event should land 1-3 days BEFORE the event. SHOW don't tell: every headline/hook should dramatize a specific moment and earn an emotional shift, never just describe a topic. Humor from collision of big ideas with ordinary life.
 
 Return ONLY a valid JSON array:
 [{

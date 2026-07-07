@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { createContent, getBrandAccount, getWatchContext } from '@/lib/db'
+import { craftFor } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -232,12 +233,12 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
     if (!promptFn) continue
 
     const basePrompt = promptFn(projectName, projectDescription || '', projectNotes || '', order.qty)
-    const prompt = `${accountContext}\n${getWatchContext()}\n\n${basePrompt}\n${VISUAL_RULE}`
+    const prompt = `${accountContext}\n${getWatchContext()}\n\n${craftFor(accountId)}\n\n${basePrompt}\n${VISUAL_RULE}`
 
     try {
       const response = await client.responses.create({
         model: 'gpt-4o',
-        instructions: 'You are a professional content strategist. Return only valid JSON arrays, no markdown, no explanation.',
+        instructions: 'You are a master storyteller writing scroll-stopping content that makes people FEEL something and see themselves differently. Show, never tell. Earn one emotional shift per piece. Return only valid JSON arrays, no markdown, no explanation.',
         input: prompt,
       })
 

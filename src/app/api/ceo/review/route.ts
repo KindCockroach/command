@@ -32,7 +32,7 @@ For the raw notes below, produce a JSON object:
   "goal_suggestions": ["short suggestion to add/adjust a goal — do NOT restate existing goals"],
   "hooks": [{ "hook": "a scroll-stopping hook mined from her raw words", "account_id": "best-fit account id" }]
 }
-Mine hooks aggressively — her raw voice is the gold (e.g. pull "It says POST but it doesn't know what you know. Till NOW" out of a rant). 3-8 hooks. Keep tasks concrete and few (max 6). Return ONLY the JSON.
+Mine hooks aggressively — her raw voice is the gold (e.g. pull "It says POST but it doesn't know what you know. Till NOW" out of a rant). Hooks must SHOW not tell: a specific scene or collision, an emotional shift, never a topic label. 3-8 hooks. Keep tasks concrete and few (max 6). Return ONLY the JSON.
 
 EXISTING GOALS (don't duplicate): ${goals.join(' | ') || 'none'}
 ACCOUNTS: ${accounts.join(' | ')}`,

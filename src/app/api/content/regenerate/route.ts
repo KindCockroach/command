@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getAllContent, updateContent, getBrandAccount, getWatchContext } from '@/lib/db'
+import { craftFor } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -26,6 +27,8 @@ export async function POST(req: NextRequest) {
 
   const textPart = `${voice}
 ${getWatchContext()}
+
+${craftFor(piece.account_id)}
 
 Rewrite this post. Keep the core idea, but produce a fresh take.
 ${imagePrompt ? `CREATIVE DIRECTION / PROMPT (from Mandi — honor it):\n${imagePrompt}` : ''}

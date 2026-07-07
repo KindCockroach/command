@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getAllContent, createContent, getBrandAccount, getWatchContext } from '@/lib/db'
+import { craftFor } from '@/lib/craft'
 import type { ContentType } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -29,6 +30,8 @@ export async function POST(req: NextRequest) {
     instructions: `Generate ${n} DISTINCT variations of one post — for volume testing (post them all, let engagement pick the winner). Each variation keeps the core idea but changes the angle/hook meaningfully.
 ${voice}
 ${getWatchContext()}
+
+${craftFor(piece.account_id)}
 ${command ? `MANDI'S DIRECTION FOR THE VARIATIONS (follow it exactly): ${command}` : 'Vary the hook mechanic across the set: question, stat, bold claim, reframe, permission-slip, story-open, contrarian.'}
 
 CONTENT AUDIT RULES: lead with HER (reader's) problem, 3-second cold-stranger test, comment-keyword CTA matching the account, no links in captions.

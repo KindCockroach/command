@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getAllContent, updateContent, getBrandAccount, getWatchContext } from '@/lib/db'
+import { craftFor } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -34,6 +35,8 @@ ${account.offer ? `Offer: ${account.offer}` : ''}
 ${account.notes ? `NON-NEGOTIABLE RULES (obey exactly, they override everything): ${account.notes}` : ''}
 ${account.hooks?.length ? `Hook templates to riff on: ${account.hooks.slice(0, 6).join(' | ')}` : ''}
 ${getWatchContext()}
+
+${craftFor(accountId)}
 
 CONTENT AUDIT RULES: lead with HER (reader's) problem, 3-second cold-stranger test, comment-keyword CTA matching this account, no links in captions.
 

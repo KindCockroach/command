@@ -494,6 +494,12 @@ export function readDb(): Db {
       pod.topic = 'Jobs, job training, and educational tools in the age of AI'
       fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
     }
+    // Migrate (2026-07-06): AI Mom Podcast creative constitution — Attention is the real brand
+    if (pod && !(pod.notes ?? '').includes('ATTENTION')) {
+      pod.notes = (pod.notes ?? '') + ' CONSTITUTION: This is NOT a podcast about AI — it is about becoming better WITNESSES in the age of AI. The real brand is ATTENTION. Never teach AI for AI\'s sake; always reveal something about PEOPLE. Arc: begin with what they think they\'re here for (jobs/school/prompts/fear) → reveal what they\'re actually here for (attention/wonder/presence/discernment/humanity) → end with ONE unforgettable revelation, not advice. Voice: a wise friend, a philosopher doing laundry, a woman changing her mind in public — never an expert or futurist. Humor from big ideas colliding with ordinary motherhood. Signature endings (sparingly): "Let\'s plug in and stay human." / "Bring the people who knew you were weird before AI." Final rule: don\'t predict the future — help people become humans who can meet it.'
+      pod.mission = 'Help people become better witnesses in the age of AI. Attention is the product.'
+      fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+    }
   }
   // Migrate: update Room30 project description if still old
   if (db.projects) {
