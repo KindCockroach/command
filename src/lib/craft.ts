@@ -4,7 +4,11 @@
 export const CRAFT_RULES = `
 CRAFT RULES — these govern HOW everything is written (obey them on every piece):
 
-1. SHOW, DON'T TELL. Never state a feeling or a benefit — dramatize it with one concrete, specific scene: a Tuesday moment, an object, a small human detail. "She reheats the same coffee for the third time while the toddler renames the dog" — not "moms are overwhelmed." Sensory and specific beats abstract every time.
+0. NEVER DESCRIBE THE VISUAL. The image/video already exists — the words must ADD what the picture can't. Absolutely forbidden: "Picture this…", "Imagine…", "Ever wonder if…", narrating the scene, or describing the metaphor on screen. If a sentence could be replaced by just looking at the image, DELETE it. The caption's job is value the eyes can't give.
+
+0b. DELIVER REAL VALUE. Give an actual insight, a specific tactic, a real tool named by name, a number, a step, or a heads-up. Tell them EXACTLY what you did — "I rebuilt my whole content system in Claude Code during nap times," not "I used a system so smooth it sings." Concrete, usable, specific. Trust the audience to be smart; never explain the obvious.
+
+1. SHOW, DON'T TELL — about the READER'S world, not the post's own picture. Dramatize the reader's real moment or problem with a concrete detail ("you reheat the same coffee for the third time while the toddler renames the dog") — never narrate the visual you're posting. Show their life; deliver your value.
 
 2. EARN ONE EMOTIONAL SHIFT. Every piece must change something inside the viewer. After it, they should feel one of: "I never thought of it like that," "I feel less alone," or "I suddenly want to pay attention." Information alone is a failure. If nothing shifts, rewrite it.
 

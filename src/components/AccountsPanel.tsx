@@ -332,18 +332,31 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
       onChanged?.()
     } finally { setSavingEdit(false) }
   }
-  // Regenerate the caption/on-screen text — RISE re-reads the attached image + the (edited) prompt
+  const [undoAvail, setUndoAvail] = useState(false)
+  useEffect(() => { setUndoAvail(typeof window !== 'undefined' && !!localStorage.getItem(`undo-${post.id}`)) }, [post.id, post.description])
+
+  // Regenerate — snapshots the current version first so it's always recoverable
   const regenerate = async () => {
     setRegenerating(true)
     try {
-      // Save any pending edits first so the new prompt is what regenerates
+      // Save the current good version for one-click undo
+      localStorage.setItem(`undo-${post.id}`, JSON.stringify({ title: post.title, onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '' }))
       if (editing) await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...form }) })
       const res = await fetch('/api/content/regenerate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contentId: post.id, prompt: editing ? form.image_prompt : post.image_prompt }),
       })
-      if (res.ok) { setEditing(false); onChanged?.() }
+      if (res.ok) { setEditing(false); setUndoAvail(true); onChanged?.() }
     } finally { setRegenerating(false) }
+  }
+
+  const undoRegen = async () => {
+    const raw = localStorage.getItem(`undo-${post.id}`)
+    if (!raw) return
+    await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...JSON.parse(raw) }) })
+    localStorage.removeItem(`undo-${post.id}`)
+    setUndoAvail(false)
+    onChanged?.()
   }
 
   const gallery = post.media_urls?.length ? post.media_urls : (post.media_url ? [post.media_url] : [])
@@ -586,6 +599,16 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
 
       {open && (
         <div style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Undo regeneration — restore the version from before the last regenerate */}
+          {undoAvail && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px 12px', background: 'rgba(242,166,90,0.1)', border: '1px solid rgba(242,166,90,0.35)', borderRadius: '8px' }}>
+              <span style={{ fontSize: '11px', color: '#C47A1A', fontWeight: 600 }}>Regenerated. Prefer the previous version?</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button onClick={undoRegen} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 12px', borderRadius: '7px', border: 'none', background: '#F2A65A', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>↩ Undo</button>
+                <button onClick={() => { localStorage.removeItem(`undo-${post.id}`); setUndoAvail(false) }} style={{ padding: '5px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>Keep new</button>
+              </div>
+            </div>
+          )}
           {/* Open questions — answer here, river finishes the post */}
           {hasQuestions && (
             <div style={{ padding: '12px', background: 'rgba(224,82,82,0.05)', borderRadius: '10px', border: '1px solid rgba(224,82,82,0.25)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
