@@ -41,8 +41,9 @@ type RiverVerdict = {
 // it can stand alone, researches what it can, and composes a complete post-card
 // — or parks it with the exact questions only Mandi can answer.
 export async function POST(req: NextRequest) {
-  const { input, source } = await req.json()
-  if (!input?.trim()) return NextResponse.json({ error: 'input required' }, { status: 400 })
+  const { input, source, mediaUrl, mediaType } = await req.json()
+  if (!input?.trim() && !mediaUrl) return NextResponse.json({ error: 'input or media required' }, { status: 400 })
+  const isStillImage = mediaUrl && (mediaType?.startsWith('image') || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(mediaUrl))
 
   const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted')
   const goals = getAllGoals().filter(g => g.active)
@@ -97,7 +98,13 @@ Return ONLY valid JSON:
   "open_questions": ["question only Mandi can answer", ...],
   "research_topic": "topic you researched and folded in, or null"
 }`,
-    input: `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nRAW INPUT:\n${input}`,
+    input: (isStillImage ? [{
+      type: 'message', role: 'user',
+      content: [
+        { type: 'input_image', image_url: mediaUrl },
+        { type: 'input_text', text: `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nAn IMAGE is attached — Mandi wants this actual image filed under the account it fits. LOOK at it, decide which account it belongs to, and write the post AROUND it (never describe the image; add value the picture can't). It stands alone (media is provided).\n\nHER NOTE:\n${input}` },
+      ],
+    }] : `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nRAW INPUT:\n${input}`) as Parameters<typeof client.responses.create>[0]['input'],
   })
 
   let verdict: RiverVerdict
@@ -160,17 +167,21 @@ Return ONLY valid JSON:
     } catch { /* research note is best-effort */ }
   }
 
-  const complete = verdict.stands_alone && !!verdict.body
+  // With a real image attached, the post stands alone (the visual IS the media)
+  const complete = (verdict.stands_alone && !!verdict.body) || (!!mediaUrl && !!verdict.body)
   const piece = createContent({
     title: verdict.title || 'River capture',
     description: complete ? verdict.body : `RAW: ${input}`,
     status: complete ? 'ready' : 'idea',
-    type: (verdict.content_type as ContentType) || 'post',
+    type: (verdict.content_type as ContentType) || (mediaUrl ? 'image' : 'post'),
     platforms: verdict.account_id ? [accounts.find(a => a.id === verdict.account_id)?.platform.toLowerCase() ?? 'instagram'] : [],
     tags: ['river', source ?? 'capture'],
     notes: verdict.account_reason,
     account_id: verdict.account_id,
-    image_prompt: verdict.image_prompt || '',
+    // Real uploaded media beats a prompt — attach it; only keep a prompt when there's no image
+    media_url: mediaUrl || '',
+    media_urls: mediaUrl ? [mediaUrl] : [],
+    image_prompt: mediaUrl ? '' : (verdict.image_prompt || ''),
     onscreen_text: verdict.onscreen_text || '',
     hashtags: verdict.hashtags || '',
     open_questions: complete ? [] : (verdict.open_questions ?? []),

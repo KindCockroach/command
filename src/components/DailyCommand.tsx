@@ -88,6 +88,8 @@ export default function DailyCommand() {
   const [riverResult, setRiverResult] = useState<RiverResult | null>(null)
   const [riverRunning, setRiverRunning] = useState(false)
   const [pendingImage, setPendingImage] = useState<string | null>(null)
+  const [capturedMediaUrl, setCapturedMediaUrl] = useState('')
+  const [mediaType, setMediaType] = useState('')
   const [dragging, setDragging] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -157,19 +159,21 @@ export default function DailyCommand() {
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
-    // Send capture through the River: sort → compose → file under account
-    if (captured) {
+    // Send capture through the River: sort → compose → file under account.
+    // An image alone is enough — the river files the actual image under the right account.
+    if (captured || capturedMediaUrl) {
       setRiverRunning(true)
       setRiverResult(null)
       try {
         const res = await fetch('/api/river', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: captured, source: 'quick-capture' }),
+          body: JSON.stringify({ input: captured || 'Sort this image to the account it fits and build the post around it.', source: 'quick-capture', mediaUrl: capturedMediaUrl || undefined, mediaType: mediaType || undefined }),
         })
         const result = await res.json()
         if (!result.error) {
           setRiverResult(result)
           setData(d => ({ ...d, notes: '' }))
+          clearImage()
           loadFire()
           if (result.kind === 'task') {
             fetch('/api/tasks?status=today').then(r => r.json()).then(setTasks).catch(() => {})
@@ -212,30 +216,24 @@ export default function DailyCommand() {
     } finally { setBriefingLoading(false) }
   }
 
-  const analyzeImage = async (base64: string) => {
-    setPendingImage(base64)
-    setAnalyzing(true)
-    try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'content_director', image: base64, message: 'Describe this image in 2-3 sentences as a content idea or visual reference. Be specific and actionable.' }),
-      })
-      const d = await res.json()
-      if (d.result) {
-        setData(prev => ({ ...prev, notes: prev.notes ? `${prev.notes}\n\n[Image] ${d.result}` : `[Image] ${d.result}` }))
-      }
-    } finally {
-      setAnalyzing(false)
-      setPendingImage(null)
-    }
-  }
-
+  // Drop an image → upload it and KEEP it; the river files the actual image
+  // under the right account (it doesn't describe it into a prompt anymore).
   const loadImage = (file: File) => {
     const reader = new FileReader()
-    reader.onload = e => { if (e.target?.result) analyzeImage(e.target.result as string) }
+    reader.onload = e => { if (e.target?.result) setPendingImage(e.target.result as string) }
     reader.readAsDataURL(file)
+    setMediaType(file.type)
+    setAnalyzing(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('folder', 'media')
+    fetch('/api/upload', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(d => { if (d.publicUrl) setCapturedMediaUrl(d.publicUrl) })
+      .catch(() => {})
+      .finally(() => setAnalyzing(false))
   }
+  const clearImage = () => { setPendingImage(null); setCapturedMediaUrl(''); setMediaType('') }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -290,13 +288,16 @@ export default function DailyCommand() {
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) loadImage(f); e.target.value = '' }} />
           </div>
         </div>
-        {analyzing && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderRadius: '8px', background: 'var(--bg)', border: '1px solid var(--border)', marginBottom: '10px' }}>
-            {pendingImage && <img src={pendingImage} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--hot-pink)', fontSize: '12px', fontWeight: 600 }}>
-              <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
-              AI is reading your image...
+        {/* Attached image — stays visible until sorted */}
+        {pendingImage && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', background: 'var(--bg)', border: '1px solid var(--border)', marginBottom: '10px' }}>
+            <img src={pendingImage} style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '6px' }} />
+            <div style={{ flex: 1, fontSize: '12px', color: 'var(--text-muted)' }}>
+              {analyzing ? <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--hot-pink)', fontWeight: 600 }}><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Saving image…</span>
+                : capturedMediaUrl ? <span style={{ color: '#3daa7c', fontWeight: 600 }}>✓ Image ready — Let&apos;s Go files it under the right account</span>
+                : <span>Image attached</span>}
             </div>
+            <button onClick={clearImage} title="Remove" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', padding: '2px', display: 'flex' }}><span style={{ fontSize: '16px', lineHeight: 1 }}>×</span></button>
           </div>
         )}
         <div style={{ display: 'flex', gap: '12px' }}>
@@ -308,8 +309,8 @@ export default function DailyCommand() {
             rows={3}
             style={{ flex: 1, padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '13px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'none', outline: 'none', lineHeight: 1.6 }}
           />
-          <button onClick={save} disabled={saving || riverRunning}
-            style={{ padding: '12px 20px', borderRadius: '10px', border: 'none', background: saved ? '#3daa7c' : 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background 0.2s', whiteSpace: 'nowrap' }}>
+          <button onClick={save} disabled={saving || riverRunning || analyzing || (!data.notes.trim() && !capturedMediaUrl)}
+            style={{ padding: '12px 20px', borderRadius: '10px', border: 'none', background: saved ? '#3daa7c' : 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background 0.2s', whiteSpace: 'nowrap', opacity: (saving || riverRunning || analyzing || (!data.notes.trim() && !capturedMediaUrl)) ? 0.6 : 1 }}>
             {riverRunning ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Sorting...</> : saved ? <><CheckCheck size={14} /> Saved</> : saving ? 'Saving...' : "Let's Go"}
           </button>
         </div>
