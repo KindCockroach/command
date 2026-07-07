@@ -26,7 +26,14 @@ export default function AssistantsPanel() {
     }
     return null
   })
-  const [msg, setMsg] = useState('')
+  const [msg, setMsg] = useState(() => {
+    // Handed a repair prompt / question from another tab? Pre-fill it, ready to send.
+    if (typeof window !== 'undefined') {
+      const pre = localStorage.getItem('station-agent-prefill')
+      if (pre) { localStorage.removeItem('station-agent-prefill'); return pre }
+    }
+    return ''
+  })
   const [history, setHistory] = useState<{ role: 'user' | 'ai'; text: string }[]>([])
   const [loading, setLoading] = useState(false)
   const convNoteId = useRef<number | null>(null)

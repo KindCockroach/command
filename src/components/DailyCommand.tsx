@@ -435,13 +435,19 @@ export default function DailyCommand() {
               </div>
               {fireOpen === item.key && (
                 <div style={{ marginTop: '8px', padding: '10px 12px', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginBottom: '4px' }}>Repair prompt — paste to Claude</p>
+                  <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginBottom: '4px' }}>What to do about it</p>
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '8px' }}>{item.repairPrompt}</p>
-                  <button onClick={() => copyRepair(item)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', border: 'none', background: copiedFire === item.key ? '#3daa7c' : '#e05', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
-                    {copiedFire === item.key ? <CheckCheck size={11} /> : <Copy size={11} />}
-                    {copiedFire === item.key ? 'Copied — paste it to Claude' : 'Copy repair prompt'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <button onClick={() => { localStorage.setItem('station-open-agent', 'ceo'); localStorage.setItem('station-agent-prefill', item.repairPrompt); window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'assistants' } })) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', border: 'none', background: '#C9956A', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                      👑 Hand to CEO to fix
+                    </button>
+                    <button onClick={() => copyRepair(item)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: copiedFire === item.key ? '#3daa7c' : 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                      {copiedFire === item.key ? <CheckCheck size={11} /> : <Copy size={11} />}
+                      {copiedFire === item.key ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
