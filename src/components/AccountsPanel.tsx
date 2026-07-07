@@ -408,6 +408,24 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   const [showSpin, setShowSpin] = useState(false)
   const [spinCount, setSpinCount] = useState(5)
   const [spinCmd, setSpinCmd] = useState('')
+  const [showDecline, setShowDecline] = useState(false)
+  const [declineReason, setDeclineReason] = useState('')
+  const [declining, setDeclining] = useState(false)
+
+  const DECLINE_CHIPS = ['Off-brand voice', 'Wrong topic for this account', 'Too salesy', 'Not my story / didn\'t happen', 'Weak hook — doesn\'t stop the scroll', 'Tells instead of shows', 'Boundary violation']
+
+  const decline = async () => {
+    if (!declineReason.trim()) return
+    setDeclining(true)
+    try {
+      await fetch('/api/content/decline', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: post.id, reason: declineReason }),
+      })
+      setShowDecline(false)
+      onChanged?.()
+    } finally { setDeclining(false) }
+  }
 
   // Spin N variations → sibling cards under the same account
   const spinVariations = async () => {
@@ -741,12 +759,38 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             </div>
           )}
 
-          {/* Action bar */}
+          {/* Action bar — approve / decline */}
           {isPending && !hasQuestions && (
-            <button onClick={() => onApprove(post)} disabled={approving}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: approving ? 0.7 : 1 }}>
-              {approving ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Approving…</> : <><CheckCircle2 size={14} /> Approve — send to scheduler</>}
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => onApprove(post)} disabled={approving}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: approving ? 0.7 : 1 }}>
+                {approving ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Approving…</> : <><CheckCircle2 size={14} /> Approve</>}
+              </button>
+              <button onClick={() => setShowDecline(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid #E05252', background: showDecline ? 'rgba(224,82,82,0.08)' : 'transparent', color: '#E05252', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
+                <X size={14} /> Decline
+              </button>
+            </div>
+          )}
+          {showDecline && (
+            <div style={{ padding: '12px', background: 'rgba(224,82,82,0.05)', border: '1px solid rgba(224,82,82,0.25)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#E05252' }}>Why isn&apos;t this a fit? (teaches this account)</p>
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                {DECLINE_CHIPS.map(c => (
+                  <button key={c} onClick={() => setDeclineReason(r => r ? `${r}; ${c}` : c)}
+                    style={{ padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '10px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-muted)' }}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+              <textarea value={declineReason} onChange={e => setDeclineReason(e.target.value)} rows={2}
+                placeholder="Tap a reason above or write your own — this becomes a rule for this account…"
+                style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+              <button onClick={decline} disabled={declining || !declineReason.trim()}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '9px', borderRadius: '8px', border: 'none', background: '#E05252', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: declining || !declineReason.trim() ? 0.6 : 1 }}>
+                {declining ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Teaching the account…</> : <>Decline &amp; teach this account</>}
+              </button>
+            </div>
           )}
           {(isApproved || isScheduled) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
