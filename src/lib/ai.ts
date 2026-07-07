@@ -87,6 +87,18 @@ YOUR JOB:
 4. Guard the parked decisions. She has explicitly parked the RISE pricing/funnel questions — hold context, do not push to resolve unless she reopens them.
 5. Watch her pattern: many exciting ideas at once. Anchor her back to the current revenue priority when new shiny things appear.
 
+YOUR COUNCIL (reason through these lenses in ONE answer — you hold the whole table in your head):
+- 🗺️ Strategist: is this the highest-leverage move right now, in the right sequence?
+- 💰 CFO: does this make or cost money, and is it worth it this week? (cash flow first)
+- ⚙️ Operator: what are the concrete next steps and can she actually execute them?
+- 🔥 Contrarian: where is she fooling herself, chasing shiny, or avoiding the hard thing?
+- 🔮 Future Her: does this serve the 2027 legacy, or just today's dopamine?
+When a decision leans on money, risk, execution, or legacy, briefly voice that lens ("The CFO in me says…", "Contrarian check:…") so she sees the reasoning, then land YOUR synthesized call.
+
+ROUTING: You are the boardroom, but you know when a topic deserves a specialist's full attention. When a conversation would genuinely go deeper with one agent — Strategist, CFO, Operator, Contrarian, Future Her, Content Director, Healing, Client & Offer, or Research — end your message with a single line exactly in this format:
+🔀 Route: <AgentName> — <one-line why>
+Only add it when it truly helps; most answers won't need it.
+
 VOICE: Direct, warm, executive. Short paragraphs. No corporate fluff. You work for her vision, and you say the hard thing kindly.`,
 
   strategist: `${MANDI_BASE}
@@ -352,19 +364,25 @@ export async function callGPT(role: GPTRole, userMessage: string, instructionsOv
   return output
 }
 
-export async function callGPTWithImage(role: GPTRole, userMessage: string, imageBase64: string, instructionsOverride?: string): Promise<string> {
+export async function callGPTWithImage(role: GPTRole, userMessage: string, imageBase64: string, instructionsOverride?: string, history?: ChatTurn[]): Promise<string> {
   const c = client()
-  const baseInstructions = instructionsOverride ?? SYSTEM_PROMPTS[role]
+  let baseInstructions = instructionsOverride ?? SYSTEM_PROMPTS[role]
+  try {
+    const { getMemoryContext } = await import('./db')
+    baseInstructions += getMemoryContext(role)
+  } catch { /* non-fatal */ }
 
   // Extract mime type and data from data URL
   const match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/)
   if (!match) throw new Error('Invalid image format')
   const [, mediaType, data] = match
 
+  const prior = (history ?? []).slice(-12).map(t => ({ type: 'message' as const, role: t.role, content: t.content }))
   const response = await c.responses.create({
     model: 'gpt-4o',
     instructions: baseInstructions,
     input: [
+      ...prior,
       {
         type: 'message',
         role: 'user',

@@ -17,7 +17,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ result: await repurposeContent(title ?? '', description ?? '', notes ?? '', transcript ?? '', platforms ?? []) })
 
       case 'chat':
-        return NextResponse.json({ result: await callGPT(role as GPTRole, message, systemOverride, history) })
+        return NextResponse.json({ result: image
+          ? await callGPTWithImage(role as GPTRole, message ?? '', image, systemOverride, history)
+          : await callGPT(role as GPTRole, message, systemOverride, history) })
 
       case 'route':
         return NextResponse.json({ result: await routeToAgent(message) })
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest) {
         // Allow role+message without explicit action (used by Assistants panel + StationChat)
         if (role && (message || image)) {
           if (image) {
-            return NextResponse.json({ result: await callGPTWithImage(role as GPTRole, message ?? '', image, systemOverride) })
+            return NextResponse.json({ result: await callGPTWithImage(role as GPTRole, message ?? '', image, systemOverride, history) })
           }
           return NextResponse.json({ result: await callGPT(role as GPTRole, message, systemOverride, history) })
         }

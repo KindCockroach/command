@@ -1,8 +1,19 @@
 'use client'
 import { useState, useRef } from 'react'
-import { Loader2, Send, Waves, CheckCheck } from 'lucide-react'
+import { Loader2, Send, Waves, CheckCheck, ImageIcon, X } from 'lucide-react'
 import { AGENT_META } from '@/lib/agents'
 import type { GPTRole } from '@/lib/agents'
+
+// Map a label the CEO might name → role, for the "route to X" button
+const LABEL_TO_ROLE: Record<string, GPTRole> = Object.fromEntries(
+  (Object.keys(AGENT_META) as GPTRole[]).map(r => [AGENT_META[r].label.toLowerCase(), r])
+)
+function parseRoute(text: string): { role: GPTRole; why: string } | null {
+  const m = text.match(/🔀\s*Route:\s*([^\n—-]+)[—-]\s*([^\n]+)/i)
+  if (!m) return null
+  const role = LABEL_TO_ROLE[m[1].trim().toLowerCase()]
+  return role ? { role, why: m[2].trim() } : null
+}
 
 const AGENTS: { role: GPTRole; color: string }[] = [
   { role: 'ceo',              color: '#C9956A' },
@@ -36,7 +47,16 @@ export default function AssistantsPanel() {
   })
   const [history, setHistory] = useState<{ role: 'user' | 'ai'; text: string }[]>([])
   const [loading, setLoading] = useState(false)
+  const [pendingImage, setPendingImage] = useState<string | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   const convNoteId = useRef<number | null>(null)
+
+  const loadImage = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = e => { if (e.target?.result) setPendingImage(e.target.result as string) }
+    reader.readAsDataURL(file)
+  }
   const [riverIdx, setRiverIdx] = useState<number | null>(null)   // message currently being sent
   const [riverDone, setRiverDone] = useState<Record<number, string>>({})
 
@@ -62,12 +82,13 @@ export default function AssistantsPanel() {
   }
 
   const send = async () => {
-    if (!msg.trim() || !active) return
+    if ((!msg.trim() && !pendingImage) || !active) return
     const userMsg = msg.trim(); setMsg('')
-    setHistory(h => [...h, { role: 'user', text: userMsg }])
+    const image = pendingImage; setPendingImage(null)
+    setHistory(h => [...h, { role: 'user', text: userMsg || '(image)' }])
     setLoading(true)
     try {
-      const res = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'chat', role: active, message: userMsg, history: history.slice(-12).map(h => ({ role: h.role === 'ai' ? 'assistant' : 'user', content: h.text })) }) })
+      const res = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'chat', role: active, message: userMsg, image, history: history.slice(-12).map(h => ({ role: h.role === 'ai' ? 'assistant' : 'user', content: h.text })) }) })
       const data = await res.json()
       const reply = data.result ?? data.error ?? 'No response'
       setHistory(h => { const next = [...h, { role: 'ai' as const, text: reply }]; logConversation(userMsg, next); return next })
@@ -137,6 +158,16 @@ export default function AssistantsPanel() {
               <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
                 <div style={{ fontSize: '13px', lineHeight: 1.7, padding: '10px 14px', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px', background: m.role === 'user' ? 'var(--hot-pink)' : 'var(--bg)', color: m.role === 'user' ? '#fff' : 'var(--text)', border: m.role === 'ai' ? '1px solid var(--border)' : 'none', whiteSpace: 'pre-wrap' }}>
                   {m.text}
+                  {/* CEO routing suggestion → one-click switch */}
+                  {m.role === 'ai' && (() => {
+                    const r = parseRoute(m.text)
+                    return r ? (
+                      <button onClick={() => openAgent(r.role)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '8px', padding: '6px 12px', borderRadius: '8px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                        {AGENT_META[r.role].emoji} Continue with {AGENT_META[r.role].label} →
+                      </button>
+                    ) : null
+                  })()}
                 </div>
                 {m.role === 'ai' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
@@ -157,13 +188,32 @@ export default function AssistantsPanel() {
             )}
           </div>
 
-          <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px' }}>
-            <textarea value={msg} onChange={e => setMsg(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-              placeholder={`Ask your ${AGENT_META[active].label}...`} rows={2}
-              style={{ flex: 1, padding: '9px 12px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '13px', resize: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
-            <button onClick={send} disabled={loading || !msg.trim()} style={{ padding: '9px 16px', borderRadius: '10px', border: 'none', background: msg.trim() ? 'var(--hot-pink)' : 'var(--border)', color: '#fff', cursor: msg.trim() ? 'pointer' : 'not-allowed', fontWeight: 700, alignSelf: 'flex-end' }}>
-              <Send size={14} />
-            </button>
+          <div
+            onDragOver={e => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={e => { e.preventDefault(); setDragging(false); const f = Array.from(e.dataTransfer.files).find(x => x.type.startsWith('image/')); if (f) loadImage(f) }}
+            style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: dragging ? 'rgba(107,45,110,0.06)' : 'transparent' }}>
+            {pendingImage && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '8px', padding: '4px 6px', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <img src={pendingImage} alt="" style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '5px' }} />
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>image attached</span>
+                <button onClick={() => setPendingImage(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', padding: '2px', display: 'flex' }}><X size={12} /></button>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => fileRef.current?.click()} title="Attach image" style={{ padding: '9px 10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg)', cursor: 'pointer', color: 'var(--text-muted)', alignSelf: 'flex-end', display: 'flex' }}>
+                <ImageIcon size={14} />
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) loadImage(f); e.target.value = '' }} />
+              <textarea value={msg} onChange={e => setMsg(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+                onPaste={e => { const f = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'))?.getAsFile(); if (f) { e.preventDefault(); loadImage(f) } }}
+                placeholder={`Ask your ${AGENT_META[active].label}... (drop or paste an image)`} rows={2}
+                style={{ flex: 1, padding: '9px 12px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '13px', resize: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
+              <button onClick={send} disabled={loading || (!msg.trim() && !pendingImage)} style={{ padding: '9px 16px', borderRadius: '10px', border: 'none', background: (msg.trim() || pendingImage) ? 'var(--hot-pink)' : 'var(--border)', color: '#fff', cursor: (msg.trim() || pendingImage) ? 'pointer' : 'not-allowed', fontWeight: 700, alignSelf: 'flex-end' }}>
+                <Send size={14} />
+              </button>
+            </div>
           </div>
         </div>
       )}
