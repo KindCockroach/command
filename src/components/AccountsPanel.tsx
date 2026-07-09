@@ -333,6 +333,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
     } finally { setSavingEdit(false) }
   }
   const [undoAvail, setUndoAvail] = useState(false)
+  const [learnedRule, setLearnedRule] = useState('')
   useEffect(() => { setUndoAvail(typeof window !== 'undefined' && !!localStorage.getItem(`undo-${post.id}`)) }, [post.id, post.description])
 
   // Regenerate — snapshots the current version first so it's always recoverable
@@ -344,9 +345,14 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
       if (editing) await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...form }) })
       const res = await fetch('/api/content/regenerate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contentId: post.id, prompt: editing ? form.image_prompt : post.image_prompt }),
+        // previousOnscreen = the machine's version; if Mandi's edit differs, the API locks her hook and learns from the diff
+        body: JSON.stringify({ contentId: post.id, prompt: editing ? form.image_prompt : post.image_prompt, previousOnscreen: post.onscreen_text ?? '' }),
       })
-      if (res.ok) { setEditing(false); setUndoAvail(true); onChanged?.() }
+      if (res.ok) {
+        const d = await res.json().catch(() => ({}))
+        if (d.learned_rule) setLearnedRule(d.learned_rule)
+        setEditing(false); setUndoAvail(true); onChanged?.()
+      }
     } finally { setRegenerating(false) }
   }
 
@@ -706,6 +712,15 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             </div>
           ) : (
             <>
+              {learnedRule && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '7px', padding: '9px 11px', borderRadius: '9px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.25)', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '13px' }}>🧠</span>
+                  <div style={{ fontSize: '11px', lineHeight: 1.5, color: 'var(--text)' }}>
+                    <strong>RISE learned from your rewrite:</strong> {learnedRule}
+                    <button onClick={() => setLearnedRule('')} style={{ marginLeft: '8px', border: 'none', background: 'transparent', color: 'var(--text-subtle)', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>dismiss</button>
+                  </div>
+                </div>
+              )}
               {post.onscreen_text && <Section label="On-Screen Text / Hook" text={post.onscreen_text} bold />}
               <Section label="Body / Caption / Script" text={post.description} />
               {post.hashtags && (

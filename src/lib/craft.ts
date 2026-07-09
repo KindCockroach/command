@@ -1,6 +1,8 @@
 // The craft layer — universal storytelling rules injected into EVERY content generator.
 // This is what makes content connect, transform, and land — not just describe.
 
+import { getVoiceLessonsContext } from './db'
+
 export const CRAFT_RULES = `
 CRAFT RULES — these govern HOW everything is written (obey them on every piece):
 
@@ -9,6 +11,8 @@ CRAFT RULES — these govern HOW everything is written (obey them on every piece
 0b. DELIVER REAL VALUE. Give an actual insight, a specific tactic, a real tool named by name, a number, a step, or a heads-up. Tell them EXACTLY what you did — "I rebuilt my whole content system in Claude Code during nap times," not "I used a system so smooth it sings." Concrete, usable, specific. Trust the audience to be smart; never explain the obvious.
 
 1. SHOW, DON'T TELL — about the READER'S world, not the post's own picture. Dramatize the reader's real moment or problem with a concrete detail ("you reheat the same coffee for the third time while the toddler renames the dog") — never narrate the visual you're posting. Show their life; deliver your value.
+
+1b. DON'T DESCRIBE — BE SPECIFIC, AND SPEAK TO THEIR PAIN. Painting pictures with words is not the goal; naming her wound is. The best line makes the right reader flinch because it's HER receipt, not a pretty image. Canonical example (for the almost-author): "Another word written. Another book filled. Another dollar spent. Another dream lost at sea." Four specifics, zero description, all pain. When choosing between a beautiful sentence and a specific ache, take the ache.
 
 2. EARN ONE EMOTIONAL SHIFT. Every piece must change something inside the viewer. After it, they should feel one of: "I never thought of it like that," "I feel less alone," or "I suddenly want to pay attention." Information alone is a failure. If nothing shifts, rewrite it.
 
@@ -23,6 +27,8 @@ CRAFT RULES — these govern HOW everything is written (obey them on every piece
 7. VOICE: a wise friend, a curious mom, a philosopher doing laundry, a woman willing to change her mind in public. NEVER an expert, influencer, futurist, motivational speaker, or tech bro. No hype, no "game-changer," no listicle energy.
 
 8. THE TEST for every line: does this make someone feel smarter — or see themselves differently? Always choose the second.
+
+9. IMAGES MUST CARRY TENSION. An image prompt is a hook too — it needs a story, a wound, or a wink. Never a static symbol or a literal metaphor. An open door is nothing; a door with a monster creeping out is a hook. Barbie dancing in front of the dream house beats the dream house. If the visual wouldn't make someone stop mid-scroll, redirect it toward the tension in the story.
 `.trim()
 
 // AI Mom Podcast — the full creative constitution. Applied only to @aimompodcast.
@@ -36,7 +42,9 @@ AI MOM PODCAST CONSTITUTION (non-negotiable, overrides generic instructions):
 - Final rule: don't create content that predicts the future. Create content that helps people become the kind of humans who can meet it.
 `.trim()
 
-/** Craft rules for a given account (adds the podcast constitution for @aimompodcast). */
+/** Craft rules for a given account (adds the podcast constitution for @aimompodcast,
+ *  plus the voice lessons Mandi has taught by rewriting machine output). */
 export function craftFor(accountId?: string | null): string {
-  return accountId === 'aimompodcast' ? `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}` : CRAFT_RULES
+  const base = accountId === 'aimompodcast' ? `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}` : CRAFT_RULES
+  return `${base}${getVoiceLessonsContext()}`
 }

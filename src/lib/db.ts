@@ -603,6 +603,29 @@ export function createMemory(data: Omit<Memory, 'id' | 'created_at' | 'updated_a
   return mem
 }
 
+// ── Voice lessons ─────────────────────────────────────────────────────────────
+// When Mandi rewrites machine output (e.g. edits on-screen text before a
+// regenerate), the diff gets distilled into a durable craft rule and stored as
+// a 'voice' memory. craftFor() injects these into every generator — the
+// station literally learns her taste from her edits.
+
+export function addVoiceLesson(rule: string, before: string, after: string, accountId?: string | null): Memory {
+  return createMemory({
+    category: 'voice',
+    title: rule,
+    body: `Machine wrote: "${before}" → Mandi rewrote: "${after}"${accountId ? ` (on ${accountId})` : ''}`,
+    agent_tags: ['craft'],
+  })
+}
+
+export function getVoiceLessonsContext(limit = 15): string {
+  const lessons = getAllMemories('voice').slice(-limit)
+  if (!lessons.length) return ''
+  return `
+VOICE LESSONS — Mandi has rewritten machine output before. Each rule is law; each diff shows her taste. Write like her rewrites, never like the originals:
+${lessons.map(l => `• ${l.title}${l.body ? ` [${l.body}]` : ''}`).join('\n')}`
+}
+
 export function updateMemory(id: number, updates: Partial<Memory>): Memory | null {
   const db = readDb()
   if (!db.memories) return null
