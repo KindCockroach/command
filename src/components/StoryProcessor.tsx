@@ -62,6 +62,7 @@ export default function StoryProcessor() {
   const [result, setResult] = useState<StoryResult | null>(null)
   const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done'>('idle')
   const [riverMsg, setRiverMsg] = useState('')
+  const [answerTarget, setAnswerTarget] = useState('')
 
   const sendToRiver = async () => {
     if (!result) return
@@ -77,6 +78,7 @@ export default function StoryProcessor() {
         setRiverMsg(`✓ Complete post filed under ${d.account.emoji} ${d.account.handle} — flip its card in Accounts to approve.`)
       } else if (d.account) {
         setRiverMsg(`Filed under ${d.account.handle} — it needs: ${(d.open_questions ?? []).join(' · ') || (d.needs ?? []).join(', ')}`)
+        setAnswerTarget(d.account.id)
       } else {
         setRiverMsg(d.error ? `River error: ${d.error}` : 'Filed to the pipeline.')
       }
@@ -159,6 +161,12 @@ export default function StoryProcessor() {
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: 'none', background: riverStatus === 'done' ? '#3daa7c' : 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
               {riverStatus === 'sending' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Sorting…</> : riverStatus === 'done' ? <><CheckCheck size={13} /> Filed</> : <><Sparkles size={13} /> Compose & File</>}
             </button>
+            {answerTarget && (
+              <button onClick={() => { localStorage.setItem('station-flip-account', answerTarget); window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'accounts' } })) }}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 14px', borderRadius: '10px', border: 'none', background: '#F2A65A', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
+                ❓ Answer on her card →
+              </button>
+            )}
           </div>
           {/* Summary + bullets always visible */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>

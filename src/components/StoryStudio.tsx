@@ -12,6 +12,8 @@ type Story = {
   missing?: string[]
   strength: number
   why_it_matters?: string
+  the_lesson?: string
+  the_funny?: string | null
   what_improved?: string
   coach_questions: string[]
   mic_drop_candidate: string
@@ -105,6 +107,24 @@ function StoryCard({ initial }: { initial: Story }) {
               })}
             </div>
           </div>
+
+          {/* The value: lesson + humor */}
+          {(story.the_lesson || story.the_funny) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {story.the_lesson && (
+                <div style={{ padding: '10px 14px', background: 'rgba(61,170,124,0.07)', borderRadius: '10px', borderLeft: '3px solid #3DAA7C' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: '#3DAA7C', marginBottom: '3px' }}>The lesson — what a stranger takes home</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text)', lineHeight: 1.5 }}>{story.the_lesson}</p>
+                </div>
+              )}
+              {story.the_funny && (
+                <div style={{ padding: '10px 14px', background: 'rgba(242,166,90,0.08)', borderRadius: '10px', borderLeft: '3px solid #F2A65A' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: '#C47A1A', marginBottom: '3px' }}>Where the humor lives</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text)', lineHeight: 1.5 }}>{story.the_funny}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Mic drop */}
           {story.mic_drop_candidate && (

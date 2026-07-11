@@ -34,6 +34,8 @@ Return ONLY valid JSON:
   "beats": { "hook": "...", "reveal": "...", "truth": "...", "human_moment": "...", "mic_drop": "..." },
   "strength": 1-5,
   "what_improved": "one line: what her answers unlocked",
+  "the_lesson": "the transferable insight a stranger walks away with",
+  "the_funny": "where the humor lives, or null",
   "coach_questions": ["0-2 remaining questions ONLY if something still blocks a 5"],
   "mic_drop_candidate": "the closing line"
 }`,

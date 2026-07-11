@@ -42,6 +42,8 @@ Return ONLY valid JSON:
     "missing": ["which beats/elements are missing"],
     "strength": 1-5,
     "why_it_matters": "one line: what this story could do for a reader",
+    "the_lesson": "the transferable insight a stranger walks away with — the value, stated plainly",
+    "the_funny": "where the humor lives (a collision of big idea + ordinary life) or null if none",
     "coach_questions": ["2-3 sharp editor questions"],
     "mic_drop_candidate": "one unforgettable line drafted from her material"
   }]
