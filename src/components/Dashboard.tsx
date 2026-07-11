@@ -171,7 +171,13 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'audit'      && <AuditPanel />}
         {view === 'goals'      && <GoalsPanel />}
         {view === 'avatars'    && <AvatarsPanel />}
-        {view === 'podcast'    && <PodcastEngine />}
+        {view === 'podcast'    && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <PodcastEngine />
+            <InstantCompose />
+            <StoryProcessor />
+          </div>
+        )}
         {view === 'story'      && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <StoryStudio />

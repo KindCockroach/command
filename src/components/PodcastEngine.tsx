@@ -81,6 +81,32 @@ export default function PodcastEngine() {
   const [error, setError] = useState<string | null>(null)
   const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done'>('idle')
   const [riverMsg, setRiverMsg] = useState('')
+  const [audioState, setAudioState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
+  const [audioMsg, setAudioMsg] = useState('')
+  const [audioDrag, setAudioDrag] = useState(false)
+
+  // Drop episode audio → stored to Media library + transcribed → transcript box fills itself
+  const handleAudio = async (file: File) => {
+    setAudioState('working')
+    setAudioMsg(`Uploading & transcribing ${file.name} (${(file.size / 1048576).toFixed(1)}MB)…`)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/transcribe', { method: 'POST', body: fd })
+      const d = await res.json()
+      if (d.transcript) {
+        setTranscript(d.transcript)
+        setAudioState('done')
+        setAudioMsg(`✓ Transcribed (${d.transcript.split(/\s+/).length.toLocaleString()} words)${d.publicUrl ? ' · audio saved to Media library' : ''} — hit Generate Everything below.`)
+      } else {
+        setAudioState('error')
+        setAudioMsg(d.error || 'Transcription failed — paste the transcript manually.')
+      }
+    } catch {
+      setAudioState('error')
+      setAudioMsg('Upload failed — try again or paste the transcript manually.')
+    }
+  }
 
   const fileUnderAccounts = async () => {
     if (!result) return
@@ -192,6 +218,26 @@ export default function PodcastEngine() {
             <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Leave blank for solo episode"
               style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px' }} />
           </div>
+        </div>
+
+        {/* Audio dropbox — episode file in, transcript out */}
+        <div
+          onDragOver={e => { e.preventDefault(); setAudioDrag(true) }}
+          onDragLeave={() => setAudioDrag(false)}
+          onDrop={e => { e.preventDefault(); setAudioDrag(false); const f = Array.from(e.dataTransfer.files).find(x => x.type.startsWith('audio/') || /\.(mp3|m4a|wav|aac|ogg)$/i.test(x.name)); if (f) handleAudio(f) }}>
+          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '18px', borderRadius: '12px', border: `2px dashed ${audioDrag ? 'var(--purple)' : 'var(--border)'}`, cursor: audioState === 'working' ? 'default' : 'pointer', background: audioDrag ? 'rgba(107,45,110,0.05)' : 'var(--surface-raised)', transition: 'all 0.15s' }}>
+            {audioState === 'working'
+              ? <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--purple)' }}><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> {audioMsg}</span>
+              : <>
+                  <Mic size={20} style={{ color: audioDrag ? 'var(--purple)' : 'var(--text-subtle)' }} />
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>Drop your episode audio here</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>MP3/M4A/WAV up to 25MB — saves to Media + transcribes automatically</span>
+                </>}
+            <input type="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg" style={{ display: 'none' }} disabled={audioState === 'working'} onChange={e => { const f = e.target.files?.[0]; if (f) handleAudio(f); e.target.value = '' }} />
+          </label>
+          {audioState !== 'idle' && audioState !== 'working' && (
+            <p style={{ fontSize: '12px', marginTop: '6px', fontWeight: 600, color: audioState === 'done' ? '#3DAA7C' : '#E05252' }}>{audioMsg}</p>
+          )}
         </div>
 
         <div>
