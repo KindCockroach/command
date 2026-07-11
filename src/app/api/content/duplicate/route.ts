@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getAllContent, createContent, getBrandAccount, getWatchContext } from '@/lib/db'
+import { getAllContent, createContent, getBrandAccount, getWatchContext, getAudienceContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
 import type { ContentType } from '@/lib/db'
 
@@ -46,6 +46,8 @@ ${account.notes ? `NON-NEGOTIABLE RULES (obey exactly): ${account.notes}` : ''}
 ${getWatchContext()}
 
 ${craftFor(accountId)}
+
+${getAudienceContext(account?.audience_id)}
 CONTENT AUDIT RULES: lead with HER (reader's) problem, 3-second cold-stranger test, comment-keyword CTA for this account, no links in captions.
 Return ONLY valid JSON: { "title": "...", "onscreen_text": "...", "caption": "full caption with CTA", "hashtags": "15-25 hashtags space-separated", "image_prompt": "visual prompt fitting the new account" }`,
       input: `ORIGINAL:\nTitle: ${piece.title}\nOn-screen: ${piece.onscreen_text}\nCaption: ${piece.description}\nHashtags: ${piece.hashtags}\nImage prompt: ${piece.image_prompt}`,

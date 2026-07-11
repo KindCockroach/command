@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getAllBrandAccounts, getWatchContext, createNote } from '@/lib/db'
+import { getAllBrandAccounts, getWatchContext, createNote, audienceLine } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted')
   const accountList = accounts.map(a =>
-    `- id:"${a.id}" ${a.handle} — ${a.topic}. Tone: ${a.tone}. CTA style: ${a.notes?.includes('Comment') ? a.notes.slice(0, 120) : 'comment-keyword CTA'}`
+    `- id:"${a.id}" ${a.handle} — ${a.topic}. Tone: ${a.tone}. CTA style: ${a.notes?.includes('Comment') ? a.notes.slice(0, 120) : 'comment-keyword CTA'}${audienceLine(a.audience_id) ? ` 👤 ${audienceLine(a.audience_id)}` : ''}`
   ).join('\n')
 
   const isImage = mediaType?.startsWith('image') && mediaUrl

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getAllEvents, getAllGoals, getAllBrandAccounts, getWatchContext } from '@/lib/db'
+import { getAllEvents, getAllGoals, getAllBrandAccounts, getWatchContext, audienceLine } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -42,7 +42,7 @@ Return ONLY a valid JSON array:
   "concept": "2-3 sentences: the full content concept — format, angle, what happens",
   "urgency": "high | medium | low"
 }]`,
-    input: `UPCOMING EVENTS (next 21 days):\n${eventList}\n\nACTIVE GOALS:\n${goals.map(g => `- ${g.title}${g.account_id ? ` [${g.account_id}]` : ''} (${g.target_per_week}/wk${g.deadline ? `, deadline ${g.deadline}` : ''})`).join('\n') || 'none'}\n\nACCOUNT ROSTER:\n${accounts.map(a => `- id:"${a.id}" ${a.handle} — ${a.topic}. ${a.offer ? `Offer: ${a.offer}` : ''}`).join('\n')}\n${watchContext}`,
+    input: `UPCOMING EVENTS (next 21 days):\n${eventList}\n\nACTIVE GOALS:\n${goals.map(g => `- ${g.title}${g.account_id ? ` [${g.account_id}]` : ''} (${g.target_per_week}/wk${g.deadline ? `, deadline ${g.deadline}` : ''})`).join('\n') || 'none'}\n\nACCOUNT ROSTER:\n${accounts.map(a => `- id:"${a.id}" ${a.handle} — ${a.topic}. ${a.offer ? `Offer: ${a.offer}` : ''}${audienceLine(a.audience_id) ? ` 👤 ${audienceLine(a.audience_id)}` : ''}`).join('\n')}\n${watchContext}`,
   })
 
   try {

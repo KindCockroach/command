@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getAllContent, createContent, getBrandAccount, getWatchContext } from '@/lib/db'
+import { getAllContent, createContent, getBrandAccount, getWatchContext, getAudienceContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
 import type { ContentType } from '@/lib/db'
 
@@ -32,6 +32,8 @@ ${voice}
 ${getWatchContext()}
 
 ${craftFor(piece.account_id)}
+
+${getAudienceContext(account?.audience_id)}
 ${command ? `MANDI'S DIRECTION FOR THE VARIATIONS (follow it exactly): ${command}` : 'Vary the hook mechanic across the set: question, stat, bold claim, reframe, permission-slip, story-open, contrarian.'}
 
 CONTENT AUDIT RULES: lead with HER (reader's) problem, 3-second cold-stranger test, comment-keyword CTA matching the account, no links in captions.

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { createContent, getBrandAccount, getWatchContext } from '@/lib/db'
+import { createContent, getBrandAccount, getWatchContext, getAudienceContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
@@ -220,6 +220,7 @@ Beliefs: ${account.beliefs.join('; ')}
 ${account.hooks.length ? `Pre-written hooks to riff on: ${account.hooks.join(' | ')}` : ''}
 ${account.offer ? `Offer: ${account.offer} (${account.offer_price})` : ''}
 ${account.notes ? `NON-NEGOTIABLE ACCOUNT RULES (override everything else): ${account.notes}` : ''}
+${getAudienceContext(account.audience_id)}
 Write ALL content in this account's voice, not generic Mandi Beck voice.
 ` : `VOICE: Mandi Beck — AI Mom educator. Direct, warm, no fluff. Speaks to exhausted moms done doing it all alone.`
 

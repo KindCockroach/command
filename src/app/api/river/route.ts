@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, createNote, createTask, createEvent } from '@/lib/db'
+import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, createNote, createTask, createEvent, audienceLine } from '@/lib/db'
 import type { ContentType, EventKind } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   const watchContext = getWatchContext()
 
   const accountList = accounts.map(a =>
-    `- id:"${a.id}" ${a.handle} (${a.platform}) — ${a.topic}. Mission: ${a.mission}. Tone: ${a.tone}. ${a.offer ? `Offer: ${a.offer} (${a.offer_price})` : ''}${a.notes ? ` ⚠ RULES: ${a.notes}` : ''}`
+    `- id:"${a.id}" ${a.handle} (${a.platform}) — ${a.topic}. Mission: ${a.mission}. Tone: ${a.tone}. ${a.offer ? `Offer: ${a.offer} (${a.offer_price})` : ''}${a.notes ? ` ⚠ RULES: ${a.notes}` : ''}${audienceLine(a.audience_id) ? ` 👤 ${audienceLine(a.audience_id)}` : ''}`
   ).join('\n')
 
   const goalList = goals.map(g =>

@@ -152,6 +152,8 @@ export type BrandAccount = {
   offer_price?: string
   url?: string
   notes?: string
+  audience_id?: string | null   // THE one audience this account serves
+  avatar_id?: string | null     // THE one avatar who speaks on this account
 }
 
 export type AvatarRecord = {
@@ -207,6 +209,28 @@ export type WatchAccount = {
   updated_at: string
 }
 
+// A full buyer persona — one named woman the content is written TO.
+export type Audience = {
+  id: string                       // slug
+  name: string                     // e.g. "Overwhelmed Dana"
+  emoji: string
+  snapshot: string                 // one-line who she is
+  life_stage: string               // age range, kids, work situation
+  tuesday_reality: string          // her actual 9pm Tuesday, in scene detail
+  pains: string[]                  // what she'd say out loud
+  pain_side_effects: string[]      // what the pain COSTS her (sleep, marriage, confidence)
+  desires: string[]                // what she secretly wants
+  exact_language: string[]         // words/phrases SHE uses (mirror these)
+  trending_phrases: string[]       // current phrases this audience relates to
+  objections: string[]             // why she hesitates to buy/follow
+  buying_triggers: string[]        // what actually moves her
+  watering_holes: string[]         // where she scrolls/hangs out
+  tried_already: string[]          // solutions that failed her
+  notes: string
+  created_at: string
+  updated_at: string
+}
+
 export type EventKind = 'launch' | 'promo' | 'holiday' | 'personal' | 'trend' | 'other'
 
 export type CalendarEvent = {
@@ -235,6 +259,7 @@ type Db = {
   goals: Goal[]
   watch_accounts: WatchAccount[]
   events: CalendarEvent[]
+  audiences: Audience[]
   next_goal_id: number
   next_watch_id: number
   next_event_id: number
@@ -314,6 +339,7 @@ function defaultDb(): Db {
     watch_accounts: [],
     next_event_id: 1,
     events: [],
+    audiences: [],
     avatars: [
       { id: 'mandi', name: 'Mandi (AI Mom)', emoji: '🎈', tagline: 'AI works for moms who do everything', niche: 'AI tools for busy moms', personality: 'Warm, bold, direct, plain English, real mom of 4 energy. Never corporate. Never jargon. Always honest.', voiceStyle: 'Conversational, encouraging, occasionally funny, always real', targetAudience: 'Moms 28-45 who want to use AI to save time and create income', instagramHandle: '@aimomatwork', primaryPlatform: 'Instagram', accentColor: '#6B2D6E', bgColor: '#F3E8F4', systemPrompt: 'You are Mandi Beck — AI Mom. You teach busy moms to use AI tools to save time and build income.\nVoice: warm, bold, direct, plain English, real mom of 4. Never corporate speak. Never jargon.\nAlways start with the specific result before explaining the how.\nYour offer is aiworksforyou.co', hookFormulas: ["I did [specific thing] in [specific time] using AI — here's exactly how", "You shouldn't have to choose between [thing A] and [thing B] — this tool changes that", "I'm a mom of 4 with no tech background and I just [impressive result] in [time]", 'Stop spending [time] on [task]. This AI tool does it in [faster time].'], ctaTemplate: "Comment AI and I'll send you the exact tool + how I use it as a mom of 4.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
       { id: 'gator', name: 'Gator', emoji: '🐊', tagline: 'The swamp creature who makes AI simple.', niche: 'AI for entrepreneurs and small business owners — no excuses, just results', personality: 'Bold, no-nonsense, Southern drawl, zero tolerance for excuses. Terrifying gator appearance + genuinely helpful AI content.', voiceStyle: 'Short sentences. Max 12 words per sentence. No hype words. Facts + results only. One swamp reference per piece max.', targetAudience: 'Small business owners, entrepreneurs, side hustlers 30-55 who know they\'re behind on AI', instagramHandle: '@gatorai', primaryPlatform: 'TikTok + Instagram', accentColor: '#2D6E3E', bgColor: '#E8F4EB', systemPrompt: "You are Gator — an AI influencer with a gator head and a business mind. Southern energy. Zero tolerance for excuses. Genuinely helpful.\nPersonality contradiction: looks terrifying, teaches AI tools with patience.\nVoice rules: short sentences (max 12 words), no hype words, facts + results only, one swamp reference per piece max.\nYour offer funnels to aiworksforyou.co.\nCTA always ends with: \"Comment GATOR. I'll handle the rest.\"", hookFormulas: ['Your competitor just automated [task] with AI. You still doing it by hand?', 'Most business owners are leaving $[amount] on the table. One AI tool fixes it.', 'Stop [doing task manually]. AI does it in [time]. Here\'s the exact setup.', '[Business result] in [time]. No team. No agency. Just this AI tool.'], ctaTemplate: "Comment GATOR. I'll handle the rest.", heygen_photo_id: '', elevenlabs_voice_id: '', created_at: now, updated_at: now },
@@ -397,6 +423,10 @@ export function readDb(): Db {
   if (!db.events) {
     db.events = []
     db.next_event_id = 1
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
+  if (!db.audiences) {
+    db.audiences = []
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
   }
   // Migrate: backfill account_id from "Account: @handle" in notes / account tag
@@ -651,9 +681,14 @@ export function getMemoryContext(agentRole?: string): string {
   const mems = (db.memories ?? []).filter(m =>
     !agentRole || m.agent_tags.length === 0 || m.agent_tags.includes(agentRole)
   )
-  if (!mems.length) return ''
-  return '\n\nMANDI\'S MEMORY (facts, decisions, patterns you must know):\n' +
-    mems.map(m => `[${m.category.toUpperCase()}] ${m.title}: ${m.body}`).join('\n')
+  const audiences = getAllAudiences()
+  const audienceBlock = audiences.length
+    ? '\n\nAUDIENCE LIBRARY (who each account serves — advise with her in mind):\n' +
+      audiences.map(a => `${a.emoji} ${a.name}: ${a.snapshot}. Pains: ${a.pains.slice(0, 3).join('; ')}. Wants: ${a.desires.slice(0, 2).join('; ')}`).join('\n')
+    : ''
+  if (!mems.length && !audienceBlock) return ''
+  return (mems.length ? '\n\nMANDI\'S MEMORY (facts, decisions, patterns you must know):\n' +
+    mems.map(m => `[${m.category.toUpperCase()}] ${m.title}: ${m.body}`).join('\n') : '') + audienceBlock
 }
 
 // Keep parseRow as a no-op for API compatibility
@@ -998,6 +1033,76 @@ export function deleteEvent(id: number): boolean {
   db.events = db.events.filter(e => e.id !== id)
   writeDb(db)
   return db.events.length < before
+}
+
+// ── Audiences CRUD ────────────────────────────────────────────────────────────
+
+export function getAllAudiences(): Audience[] {
+  const db = readDb()
+  return db.audiences ?? []
+}
+
+export function upsertAudience(data: Partial<Audience> & { id: string }): Audience {
+  const db = readDb()
+  if (!db.audiences) db.audiences = []
+  const now = new Date().toISOString()
+  const idx = db.audiences.findIndex(a => a.id === data.id)
+  if (idx >= 0) {
+    db.audiences[idx] = { ...db.audiences[idx], ...data, updated_at: now }
+    writeDb(db)
+    return db.audiences[idx]
+  }
+  const a: Audience = {
+    id: data.id, name: data.name ?? 'Unnamed', emoji: data.emoji ?? '👤', snapshot: data.snapshot ?? '',
+    life_stage: data.life_stage ?? '', tuesday_reality: data.tuesday_reality ?? '',
+    pains: data.pains ?? [], pain_side_effects: data.pain_side_effects ?? [], desires: data.desires ?? [],
+    exact_language: data.exact_language ?? [], trending_phrases: data.trending_phrases ?? [],
+    objections: data.objections ?? [], buying_triggers: data.buying_triggers ?? [],
+    watering_holes: data.watering_holes ?? [], tried_already: data.tried_already ?? [],
+    notes: data.notes ?? '', created_at: now, updated_at: now,
+  }
+  db.audiences.push(a)
+  writeDb(db)
+  return a
+}
+
+export function deleteAudience(id: string): boolean {
+  const db = readDb()
+  if (!db.audiences) return false
+  const before = db.audiences.length
+  db.audiences = db.audiences.filter(a => a.id !== id)
+  // unlink any accounts pointing at it
+  db.brand_accounts?.forEach(acc => { if (acc.audience_id === id) acc.audience_id = null })
+  writeDb(db)
+  return db.audiences.length < before
+}
+
+/** Full persona context for an account's linked audience — write TO her. */
+export function getAudienceContext(audienceId?: string | null): string {
+  if (!audienceId) return ''
+  const a = getAllAudiences().find(x => x.id === audienceId)
+  if (!a) return ''
+  return `
+THE AUDIENCE — write directly TO this one woman (${a.emoji} ${a.name}):
+${a.snapshot}${a.life_stage ? ` · ${a.life_stage}` : ''}
+Her Tuesday reality: ${a.tuesday_reality}
+Her pains (her words): ${a.pains.join('; ')}
+What the pain COSTS her: ${a.pain_side_effects.join('; ')}
+What she secretly wants: ${a.desires.join('; ')}
+HER exact language — mirror these words: ${a.exact_language.join(' · ')}
+Phrases trending with her right now: ${a.trending_phrases.join(' · ')}
+Her objections: ${a.objections.join('; ')}
+What actually moves her to act: ${a.buying_triggers.join('; ')}
+She's already tried (and it failed her): ${a.tried_already.join('; ')}
+If ${a.name} wouldn't stop scrolling for it, it fails.`.trim()
+}
+
+/** One-line audience summary per account — for compact roster listings. */
+export function audienceLine(audienceId?: string | null): string {
+  if (!audienceId) return ''
+  const a = getAllAudiences().find(x => x.id === audienceId)
+  if (!a) return ''
+  return `Audience: ${a.name} — ${a.snapshot}. Top pains: ${a.pains.slice(0, 2).join('; ')}`
 }
 
 /** Aggregated trend context from watched external accounts — injected into generators */

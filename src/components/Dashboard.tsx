@@ -22,13 +22,14 @@ import PodcastEngine from './PodcastEngine'
 import PitchStudio from './PitchStudio'
 import StoryProcessor from './StoryProcessor'
 import AuditPanel from './AuditPanel'
+import AudiencePanel from './AudiencePanel'
 import GoalsPanel from './GoalsPanel'
 import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals'
+type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals'
 
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
@@ -78,6 +79,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'vision',     label: 'Vision',        icon: <Star size={12} /> },
     { id: 'notes',      label: 'Notes',         icon: <BookOpen size={12} /> },
     { id: 'accounts',   label: 'Accounts',      icon: <Users size={12} /> },
+    { id: 'audience',   label: 'Audience',      icon: <span style={{fontSize:'12px'}}>👤</span> },
     { id: 'audit',      label: 'Trends',        icon: <Radar size={12} /> },
     { id: 'avatars',    label: 'Avatars',       icon: <span style={{fontSize:'12px'}}>🎭</span> },
     { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
@@ -171,6 +173,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'vision'     && <VisionPanel />}
         {view === 'notes'      && <NotesPanel />}
         {view === 'accounts'   && <AccountsPanel />}
+        {view === 'audience'   && <AudiencePanel />}
         {view === 'audit'      && <AuditPanel />}
         {view === 'goals'      && <GoalsPanel />}
         {view === 'avatars'    && <AvatarsPanel />}

@@ -166,6 +166,12 @@ const BLANK_ACCOUNT: Partial<BrandAccount> = {
 function AccountEditorModal({ account, onSave, onDelete, onClose }: { account: Partial<BrandAccount>; onSave: (a: BrandAccount) => void; onDelete?: (id: string) => void; onClose: () => void }) {
   const [form, setForm] = useState<Partial<BrandAccount>>({ ...BLANK_ACCOUNT, ...account })
   const [saving, setSaving] = useState(false)
+  const [audienceOpts, setAudienceOpts] = useState<{ id: string; name: string; emoji: string }[]>([])
+  const [avatarOpts, setAvatarOpts] = useState<{ id: string; name: string; emoji: string }[]>([])
+  useEffect(() => {
+    fetch('/api/audiences').then(r => r.json()).then(setAudienceOpts).catch(() => {})
+    fetch('/api/avatars').then(r => r.json()).then(setAvatarOpts).catch(() => {})
+  }, [])
   const isNew = !account.id
   const set = (k: keyof BrandAccount, v: unknown) => setForm(f => ({ ...f, [k]: v }))
 
@@ -218,6 +224,41 @@ function AccountEditorModal({ account, onSave, onDelete, onClose }: { account: P
               <div style={{ display: 'flex', gap: '6px' }}>
                 <input type="color" value={form.color ?? '#E8448A'} onChange={e => set('color', e.target.value)} style={{ width: '38px', height: '38px', borderRadius: '6px', border: '1px solid var(--border)', cursor: 'pointer', padding: '2px' }} />
                 <input value={form.color ?? ''} onChange={e => set('color', e.target.value)} style={{ ...fld, fontSize: '11px' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* The trinity: account ↔ audience ↔ avatar (single-select each) */}
+          <div style={{ padding: '12px', background: 'var(--bg)', borderRadius: '10px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div>
+              {lbl('👤 The ONE audience this account serves')}
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                <button onClick={() => set('audience_id', null)}
+                  style={{ padding: '5px 11px', borderRadius: '20px', border: `2px solid ${!form.audience_id ? 'var(--text-muted)' : 'var(--border)'}`, background: 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: !form.audience_id ? 'var(--text)' : 'var(--text-subtle)', fontFamily: 'inherit' }}>
+                  None
+                </button>
+                {audienceOpts.map(a => (
+                  <button key={a.id} onClick={() => set('audience_id', form.audience_id === a.id ? null : a.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '20px', border: `2px solid ${form.audience_id === a.id ? 'var(--hot-pink)' : 'var(--border)'}`, background: form.audience_id === a.id ? 'rgba(232,68,138,0.1)' : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: form.audience_id === a.id ? 'var(--hot-pink)' : 'var(--text-muted)', fontFamily: 'inherit' }}>
+                    {form.audience_id === a.id && <CheckCircle2 size={11} />}{a.emoji} {a.name}
+                  </button>
+                ))}
+                {audienceOpts.length === 0 && <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>No audiences yet — build one in the Audience tab first.</span>}
+              </div>
+            </div>
+            <div>
+              {lbl('🎭 The ONE avatar who speaks here')}
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                <button onClick={() => set('avatar_id', null)}
+                  style={{ padding: '5px 11px', borderRadius: '20px', border: `2px solid ${!form.avatar_id ? 'var(--text-muted)' : 'var(--border)'}`, background: 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: !form.avatar_id ? 'var(--text)' : 'var(--text-subtle)', fontFamily: 'inherit' }}>
+                  None / Mandi herself
+                </button>
+                {avatarOpts.map(a => (
+                  <button key={a.id} onClick={() => set('avatar_id', form.avatar_id === a.id ? null : a.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '20px', border: `2px solid ${form.avatar_id === a.id ? 'var(--purple)' : 'var(--border)'}`, background: form.avatar_id === a.id ? 'rgba(107,45,110,0.1)' : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: form.avatar_id === a.id ? 'var(--purple)' : 'var(--text-muted)', fontFamily: 'inherit' }}>
+                    {form.avatar_id === a.id && <CheckCircle2 size={11} />}{a.emoji} {a.name}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

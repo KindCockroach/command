@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getAllContent, updateContent, getBrandAccount, getWatchContext, addVoiceLesson } from '@/lib/db'
+import { getAllContent, updateContent, getBrandAccount, getWatchContext, addVoiceLesson, getAudienceContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
@@ -69,6 +69,8 @@ Return ONLY valid JSON: { "title": "...", "onscreen_text": "...", "caption": "fu
 ${getWatchContext()}
 
 ${craftFor(piece.account_id)}
+
+${getAudienceContext(account?.audience_id)}
 
 ${imagePrompt ? `CREATIVE DIRECTION / PROMPT (from Mandi — honor it):\n${imagePrompt}\n` : ''}
 ${onscreenEdited ? lockedBlock : freshBlock}
