@@ -15,16 +15,16 @@ type Story = {
   the_lesson?: string
   the_funny?: string | null
   what_improved?: string
-  coach_questions: string[]
+  coach_questions: (string | { question: string; inferred?: string })[]
   mic_drop_candidate: string
 }
 
-const BEAT_META: { key: keyof Beats; label: string }[] = [
-  { key: 'hook', label: 'Hook' },
-  { key: 'reveal', label: 'Reveal' },
-  { key: 'truth', label: 'Truth' },
-  { key: 'human_moment', label: 'Human moment' },
-  { key: 'mic_drop', label: 'Mic drop' },
+const BEAT_META: { key: keyof Beats; label: string; def: string }[] = [
+  { key: 'hook', label: 'Headline', def: "The line you say BEFORE telling the story — so people know where you're going. An orientation, not a trick." },
+  { key: 'reveal', label: 'Reveal', def: 'The turn — the moment an assumption breaks or the story changes direction.' },
+  { key: 'truth', label: 'Truth', def: 'What the story is really about, underneath the events.' },
+  { key: 'human_moment', label: 'Human moment', def: 'The concrete scene we can see — a person, a place, a thing said or done.' },
+  { key: 'mic_drop', label: 'Mic drop', def: 'The last line. A revelation that lands — never advice.' },
 ]
 
 function StrengthMeter({ n }: { n: number }) {
@@ -50,7 +50,10 @@ function StoryCard({ initial }: { initial: Story }) {
   const strengthen = async () => {
     setWorking(true)
     try {
-      const qa = story.coach_questions.map((q, i) => answers[i]?.trim() ? `Q: ${q}\nA: ${answers[i].trim()}` : '').filter(Boolean).join('\n\n')
+      const qa = story.coach_questions.map((q, i) => {
+        const question = typeof q === 'string' ? q : q.question
+        return answers[i]?.trim() ? `Q: ${question}\nA: ${answers[i].trim()}` : ''
+      }).filter(Boolean).join('\n\n')
       const res = await fetch('/api/story/strengthen', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ story, answers: qa || undefined }),
@@ -100,7 +103,7 @@ function StoryCard({ initial }: { initial: Story }) {
                 const missing = !v || story.missing?.some(m => m.toLowerCase().includes(b.key.replace('_', ' ')))
                 return (
                   <div key={b.key} style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 800, minWidth: '96px', color: missing ? '#E05252' : '#3DAA7C' }}>{missing ? '○' : '●'} {b.label}</span>
+                    <span title={b.def} style={{ fontSize: '10px', fontWeight: 800, minWidth: '96px', color: missing ? '#E05252' : '#3DAA7C', cursor: 'help', textDecoration: 'underline dotted', textUnderlineOffset: '3px', textDecorationColor: 'rgba(148,163,184,0.5)' }}>{missing ? '○' : '●'} {b.label}</span>
                     <span style={{ fontSize: '11px', color: missing ? 'var(--text-subtle)' : 'var(--text-muted)', fontStyle: missing ? 'italic' : 'normal', lineHeight: 1.4 }}>{v || 'missing — this is where it leaks'}</span>
                   </div>
                 )
@@ -137,14 +140,27 @@ function StoryCard({ initial }: { initial: Story }) {
           {/* Editor's questions → strengthen */}
           {story.coach_questions?.length > 0 && (
             <div style={{ padding: '12px', background: 'rgba(232,68,138,0.05)', border: '1px solid rgba(232,68,138,0.2)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--hot-pink)' }}>Your editor asks — answer any, then strengthen</p>
-              {story.coach_questions.map((q, i) => (
-                <div key={i}>
-                  <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>{q}</p>
-                  <textarea value={answers[i] ?? ''} onChange={e => setAnswers(a => { const n = [...a]; n[i] = e.target.value; return n })} rows={2}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
-                </div>
-              ))}
+              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--hot-pink)' }}>Your editor asks — she read your tone and took a guess. Accept, edit, or say it your way.</p>
+              {story.coach_questions.map((q, i) => {
+                const question = typeof q === 'string' ? q : q.question
+                const inferred = typeof q === 'string' ? '' : (q.inferred ?? '')
+                return (
+                  <div key={i}>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>{question}</p>
+                    {inferred && (
+                      <button onClick={() => setAnswers(a => { const n = [...a]; n[i] = n[i]?.trim() ? n[i] : inferred; return n })}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px', marginBottom: '6px', borderRadius: '8px', border: '1px dashed var(--hot-pink)', background: 'rgba(232,68,138,0.04)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--hot-pink)' }}>I see you — is this it? </span>
+                        <span style={{ fontSize: '12px', color: 'var(--text)', fontStyle: 'italic' }}>“{inferred}”</span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-subtle)', display: 'block', marginTop: '2px' }}>tap to accept, then add on below</span>
+                      </button>
+                    )}
+                    <textarea value={answers[i] ?? ''} onChange={e => setAnswers(a => { const n = [...a]; n[i] = e.target.value; return n })} rows={2}
+                      placeholder={inferred ? 'Your words — or tap her guess above and build on it' : 'Your answer…'}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                )
+              })}
             </div>
           )}
 
@@ -195,7 +211,7 @@ export default function StoryStudio() {
           <span style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--purple)' }}>Story Studio</span>
         </div>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px', lineHeight: 1.5 }}>
-          Dump everything — all the tangled stories at once. Your editor separates them, maps each one&apos;s shape, scores it, and asks the questions that make it land. Each story banks to Notes automatically.
+          Story shaping — not content shaping. Dump everything tangled; your editor separates the stories, maps each shape, and helps you say what you actually mean. Nothing becomes a post until YOU send it to the river.
         </p>
         <textarea value={dump} onChange={e => setDump(e.target.value)} rows={8}
           placeholder="Brain-dump your update — every story, in any order, however tangled. The studio will untangle it…"
