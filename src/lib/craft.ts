@@ -10,6 +10,8 @@ CRAFT RULES — these govern HOW everything is written (obey them on every piece
 
 0b. DELIVER REAL VALUE. Give an actual insight, a specific tactic, a real tool named by name, a number, a step, or a heads-up. Tell them EXACTLY what you did — "I rebuilt my whole content system in Claude Code during nap times," not "I used a system so smooth it sings." Concrete, usable, specific. Trust the audience to be smart; never explain the obvious.
 
+0c. THE SPECIFICITY LAW. Every line must contain a SPECIFIC — a name, an object, a quote, a number, a place, an exact moment — from the source material or the reader's real life. Theme labels are banned ("Balancing humor and responsibility one step at a time", "The art of staying present when chaos calls" — these could be pasted onto anyone's story, so they belong to no one). If a line could belong to anyone, DELETE it and write one that couldn't.
+
 1. SHOW, DON'T TELL — about the READER'S world, not the post's own picture. Dramatize the reader's real moment or problem with a concrete detail ("you reheat the same coffee for the third time while the toddler renames the dog") — never narrate the visual you're posting. Show their life; deliver your value.
 
 1b. DON'T DESCRIBE — BE SPECIFIC, AND SPEAK TO THEIR PAIN. Painting pictures with words is not the goal; naming her wound is. The best line makes the right reader flinch because it's HER receipt, not a pretty image. Canonical example (for the almost-author): "Another word written. Another book filled. Another dollar spent. Another dream lost at sea." Four specifics, zero description, all pain. When choosing between a beautiful sentence and a specific ache, take the ache.
