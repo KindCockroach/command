@@ -21,6 +21,7 @@ import StationChat from './StationChat'
 import PodcastEngine from './PodcastEngine'
 import PitchStudio from './PitchStudio'
 import StoryProcessor from './StoryProcessor'
+import StoryStudio from './StoryStudio'
 import AuditPanel from './AuditPanel'
 import AudiencePanel from './AudiencePanel'
 import GoalsPanel from './GoalsPanel'
@@ -180,6 +181,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'podcast'    && <PodcastEngine />}
         {view === 'story'      && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <StoryStudio />
             <InstantCompose />
             <StoryProcessor />
           </div>
