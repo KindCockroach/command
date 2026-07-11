@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { ContentPiece } from '@/lib/db'
 import KanbanBoard from './board/KanbanBoard'
-import IntakeBar from './board/IntakeBar'
 import AccountsPanel from './AccountsPanel'
 import DailyBriefingPanel from './DailyBriefing'
 import PipelineEngine from './PipelineEngine'
@@ -63,11 +62,6 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     ready: c.filter(x => x.status === 'ready').length,
     totalActive: c.length,
   })
-
-  const handleIntake = (p: ContentPiece) => {
-    const next = [p, ...content]
-    setContent(next); setStats(recalc(next))
-  }
 
   const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode; accent?: boolean }[] = [
     { id: 'command',    label: 'Daily Command', icon: <Zap size={12} />, accent: true },
@@ -162,7 +156,6 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
             </div>
             <DailyBriefingPanel content={content} />
             <PipelineEngine />
-            <IntakeBar onIntake={handleIntake} />
             <KanbanBoard initialContent={content} />
           </>
         )}
