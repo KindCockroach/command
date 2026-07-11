@@ -117,10 +117,10 @@ export default function StoryProcessor() {
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: '3px solid var(--hot-pink)', borderRadius: '16px', padding: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
           <BookOpen size={15} color="var(--hot-pink)" />
-          <span style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>Instant Caption</span>
+          <span style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>🚀 Full Send</span>
         </div>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
-          Paste a free write or personal story → get summary, captions, carousel, stand-up bit, Medium article, TikTok hook, Substack subject, and more. The pipeline you built in the spreadsheet, now automated.
+          One story, everything at once: captions, carousel, Medium article, newsletter, TikTok hook, stand-up bit, Threads post. One click — full send.
         </p>
 
         {/* Preset stories from the spreadsheet */}
