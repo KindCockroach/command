@@ -471,6 +471,38 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   const [showDecline, setShowDecline] = useState(false)
   const [declineReason, setDeclineReason] = useState('')
   const [declining, setDeclining] = useState(false)
+  const [genImg, setGenImg] = useState(false)
+  const [videoState, setVideoState] = useState<'idle' | 'starting' | 'rendering' | 'error'>(post.heygen_video_id && !post.heygen_video_url ? 'rendering' : 'idle')
+  const [videoErr, setVideoErr] = useState('')
+
+  // 🎨 Generate the actual image from the prompt and attach it
+  const generateImage = async () => {
+    setGenImg(true)
+    try {
+      const res = await fetch('/api/image/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id }) })
+      const d = await res.json()
+      if (d.generated) onChanged?.()
+      else setUploadErr(d.error || 'generation failed')
+    } finally { setGenImg(false) }
+  }
+
+  // 🎬 Full loop: start the HeyGen render, poll until done, attach the MP4
+  const pollVideo = async () => {
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 15000))
+      const d = await fetch('/api/heygen/attach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id, action: 'check' }) }).then(r => r.json()).catch(() => null)
+      if (d?.status === 'attached' || d?.status === 'completed_external') { setVideoState('idle'); onChanged?.(); return }
+      if (d?.status === 'failed') { setVideoState('error'); setVideoErr(d.error || 'render failed'); return }
+    }
+    setVideoState('error'); setVideoErr('Render is taking unusually long — check HeyGen, or retry later.')
+  }
+
+  const makeVideo = async () => {
+    setVideoState('starting'); setVideoErr('')
+    const d = await fetch('/api/heygen/attach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id, action: 'start' }) }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+    if (d.started) { setVideoState('rendering'); pollVideo() }
+    else { setVideoState('error'); setVideoErr(d.error || 'could not start render') }
+  }
 
   const DECLINE_CHIPS = ['Off-brand voice', 'Wrong topic for this account', 'Too salesy', 'Not my story / didn\'t happen', 'Weak hook — doesn\'t stop the scroll', 'Tells instead of shows', 'Boundary violation']
 
@@ -715,13 +747,32 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
           ) : (
             <>
               {post.image_prompt && <Section label="🎨 Image / Video Prompt" text={post.image_prompt} />}
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '12px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: uploading ? 'default' : 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
-                {uploading ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>📎 Attach photo(s) / video — pick several for a carousel</>}
-                <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
-              </label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {post.image_prompt && (
+                  <button onClick={generateImage} disabled={genImg}
+                    style={{ flex: 1, minWidth: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: genImg ? 0.7 : 1 }}>
+                    {genImg ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Painting…</> : <>🎨 Generate image</>}
+                  </button>
+                )}
+                <label style={{ flex: 1, minWidth: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: uploading ? 'default' : 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
+                  {uploading ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>📎 Attach your own</>}
+                  <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
+                </label>
+              </div>
               {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
             </>
           )}
+
+          {/* 🎬 Avatar video: story → HeyGen render → MP4 lands back on this card */}
+          <div>
+            <button onClick={makeVideo} disabled={videoState === 'starting' || videoState === 'rendering'}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: videoState === 'rendering' ? 'rgba(90,79,207,0.08)' : 'var(--surface)', color: videoState === 'rendering' ? '#5a4fcf' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+              {videoState === 'starting' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Launching render…</>
+                : videoState === 'rendering' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Avatar is filming… (2-6 min, video attaches here automatically)</>
+                : <>🎬 Make avatar video from this script</>}
+            </button>
+            {videoState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {videoErr} <button onClick={makeVideo} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
+          </div>
 
           {editing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: 'var(--bg)', borderRadius: '10px', border: `1px solid ${accentColor}` }}>
