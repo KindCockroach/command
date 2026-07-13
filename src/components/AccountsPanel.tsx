@@ -732,8 +732,9 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
                         <span style={{ position: 'absolute', top: '4px', left: '4px', zIndex: 2, background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '10px' }}>{i + 1}</span>
                       )}
                       {isVid
-                        ? <video src={url} controls style={{ width: '100%', height: gallery.length > 1 ? '90px' : 'auto', maxHeight: '260px', objectFit: 'cover', background: '#000', display: 'block' }} />
-                        : <img src={url} alt={`slide ${i + 1}`} style={{ width: '100%', height: gallery.length > 1 ? '90px' : 'auto', maxHeight: gallery.length > 1 ? '90px' : '260px', objectFit: 'cover', display: 'block' }} />}
+                        ? <video src={url} controls style={{ width: '100%', height: gallery.length > 1 ? '90px' : '160px', objectFit: 'cover', background: '#000', display: 'block' }} />
+                        : <img src={url} alt={`slide ${i + 1}`} onClick={() => window.open(url, '_blank')} title="Click to view full size"
+                            style={{ width: '100%', height: gallery.length > 1 ? '90px' : '160px', objectFit: 'cover', display: 'block', cursor: 'zoom-in' }} />}
                       {/* Slide controls */}
                       <div style={{ position: 'absolute', bottom: '3px', right: '3px', display: 'flex', gap: '2px', zIndex: 2 }}>
                         {gallery.length > 1 && (
