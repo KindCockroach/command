@@ -73,7 +73,7 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
               <input value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} style={inputSt} placeholder="Project name" />
               <textarea value={draft.description} onChange={e => setDraft(d => ({ ...d, description: e.target.value }))} rows={2} style={{ ...inputSt, resize: 'vertical' }} placeholder="Description" />
               <input value={draft.next_action} onChange={e => setDraft(d => ({ ...d, next_action: e.target.value }))} style={inputSt} placeholder="Next action" />
-              <textarea value={draft.notes} onChange={e => setDraft(d => ({ ...d, notes: e.target.value }))} rows={2} style={{ ...inputSt, resize: 'vertical' }} placeholder="Notes" />
+              <textarea value={draft.notes} onChange={e => setDraft(d => ({ ...d, notes: e.target.value }))} rows={8} style={{ ...inputSt, resize: 'vertical', lineHeight: 1.6 }} placeholder="Notes / source material — paste long text here; the generator reads all of it" />
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <select value={draft.status} onChange={e => setDraft(d => ({ ...d, status: e.target.value as ProjectStatus }))} style={inputSt}>
                   {(['active', 'paused', 'complete', 'archived'] as ProjectStatus[]).map(s => <option key={s} value={s}>{s}</option>)}
@@ -177,7 +177,7 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
 export default function ProjectsPanel() {
   const [projects, setProjects] = useState<Project[]>([])
   const [adding, setAdding] = useState(false)
-  const [newProject, setNewProject] = useState({ name: '', description: '', next_action: '', priority: 'medium' as ProjectPriority, assistant: 'strategist' })
+  const [newProject, setNewProject] = useState({ name: '', description: '', next_action: '', priority: 'medium' as ProjectPriority, assistant: 'strategist', notes: '' })
 
   useEffect(() => { fetch('/api/projects').then(r => r.json()).then(setProjects) }, [])
 
@@ -186,7 +186,7 @@ export default function ProjectsPanel() {
     const res = await fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newProject) })
     const p = await res.json()
     setProjects(ps => [p, ...ps])
-    setNewProject({ name: '', description: '', next_action: '', priority: 'medium', assistant: 'strategist' })
+    setNewProject({ name: '', description: '', next_action: '', priority: 'medium', assistant: 'strategist', notes: '' })
     setAdding(false)
   }
 
@@ -218,6 +218,9 @@ export default function ProjectsPanel() {
           <input value={newProject.name} onChange={e => setNewProject(d => ({ ...d, name: e.target.value }))} placeholder="Project name *" style={inputSt} autoFocus />
           <input value={newProject.description} onChange={e => setNewProject(d => ({ ...d, description: e.target.value }))} placeholder="Short description" style={inputSt} />
           <input value={newProject.next_action} onChange={e => setNewProject(d => ({ ...d, next_action: e.target.value }))} placeholder="First next action" style={inputSt} />
+          <textarea value={newProject.notes} onChange={e => setNewProject(d => ({ ...d, notes: e.target.value }))} rows={8}
+            placeholder="Source material — paste anything long here (emails, frameworks, transcripts). The content generator reads every word of this when you order posts from this project."
+            style={{ ...inputSt, resize: 'vertical', lineHeight: 1.6 }} />
           <div style={{ display: 'flex', gap: '8px' }}>
             <select value={newProject.priority} onChange={e => setNewProject(d => ({ ...d, priority: e.target.value as ProjectPriority }))} style={inputSt}>
               {(['urgent', 'high', 'medium', 'low'] as ProjectPriority[]).map(p => <option key={p} value={p}>{p}</option>)}
