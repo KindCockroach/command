@@ -135,7 +135,8 @@ export default function DailyCommand() {
           repairPrompt: `The account ${a.handle} is restricted. Review its recent content strategy, propose a 2-week value-first recovery plan (give > ask), and generate the first 5 posts of that plan.`,
         })
       })
-      setFire(items)
+      const dismissed: string[] = JSON.parse(localStorage.getItem('fire-dismissed') ?? '[]')
+      setFire(items.filter(it => !dismissed.includes(it.key)))
     } catch { /* fire board is best-effort */ }
   }
 
@@ -191,6 +192,13 @@ export default function DailyCommand() {
     if (next) {
       await fetch('/api/tasks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, status: 'done' }) }).catch(() => {})
     }
+  }
+
+  const dismissFire = (item: FireItem) => {
+    const dismissed: string[] = JSON.parse(localStorage.getItem('fire-dismissed') ?? '[]')
+    if (!dismissed.includes(item.key)) dismissed.push(item.key)
+    localStorage.setItem('fire-dismissed', JSON.stringify(dismissed))
+    setFire(prev => prev.filter(f => f.key !== item.key))
   }
 
   const copyRepair = (item: FireItem) => {
@@ -447,6 +455,10 @@ export default function DailyCommand() {
                       style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: copiedFire === item.key ? '#3daa7c' : 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
                       {copiedFire === item.key ? <CheckCheck size={11} /> : <Copy size={11} />}
                       {copiedFire === item.key ? 'Copied' : 'Copy'}
+                    </button>
+                    <button onClick={() => dismissFire(item)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(61,170,124,0.5)', background: 'rgba(61,170,124,0.06)', color: '#3daa7c', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                      ✓ This isn&apos;t a problem anymore
                     </button>
                   </div>
                 </div>
