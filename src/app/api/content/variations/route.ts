@@ -58,8 +58,7 @@ Return ONLY a valid JSON array of exactly ${n} items:
       onscreen_text: v.onscreen_text ?? '',
       hashtags: v.hashtags ?? piece.hashtags,
       image_prompt: piece.image_prompt,
-      media_urls: piece.media_urls,
-      media_url: piece.media_url,
+      // no media copy — each variation deserves its own visual (generate or attach per card)
       river_source: 'variations',
     }))
     return NextResponse.json({ created: created.length, variations: created })

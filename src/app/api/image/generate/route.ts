@@ -22,8 +22,10 @@ export async function POST(req: NextRequest) {
     model,
     prompt: `${imagePrompt}\n\nStyle: warm, human, editorial-quality social media visual. Vertical 2:3 friendly composition. No text unless the prompt demands it.`,
     n: 1,
-    size: '1024x1536',
-    ...(model === 'gpt-image-1' ? {} : { response_format: 'b64_json' as const }),
+    size: model === 'gpt-image-1' ? '1024x1536' : '1024x1792',
+    ...(model === 'gpt-image-1'
+      ? { quality: 'medium', output_format: 'jpeg', output_compression: 80 }
+      : { response_format: 'b64_json' as const }),
   } as never) as Promise<{ data?: Array<{ b64_json?: string; url?: string }> }>
 
   try {
@@ -37,8 +39,8 @@ export async function POST(req: NextRequest) {
     else if (item?.url) bytes = Buffer.from(await (await fetch(item.url)).arrayBuffer())
     if (!bytes) throw new Error('no image returned')
 
-    const key = `post-media/${randomUUID()}.png`
-    const ok = await putObject(key, bytes, 'image/png')
+    const key = `post-media/${randomUUID()}.jpg`
+    const ok = await putObject(key, bytes, 'image/jpeg')
     if (!ok) throw new Error('storage failed')
     const publicUrl = getPublicUrl(key)
     const urls = [...(piece.media_urls ?? []), publicUrl]
