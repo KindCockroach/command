@@ -1106,6 +1106,32 @@ export function audienceLine(audienceId?: string | null): string {
   return `Audience: ${a.name} — ${a.snapshot}. Top pains: ${a.pains.slice(0, 2).join('; ')}`
 }
 
+/** Lore recall: her most relevant past stories/captures for a given topic.
+ *  Injected into authorship generators so content can weave in real references
+ *  from her life — the difference between on-brand and authentically HERS.
+ *  Private (processing/growth) notes are never surfaced. */
+export function getLoreContext(input: string, limit = 3): string {
+  if (!input?.trim()) return ''
+  const notes = getAllNotes().filter(n =>
+    !(n.tags ?? []).includes('private') &&
+    !(n.tags ?? []).includes('conversation') &&
+    ((n.tags ?? []).some(t => ['story', 'raw-capture', 'media-story', 'free-write'].includes(t)))
+  )
+  if (!notes.length) return ''
+  const stop = new Set(['the', 'and', 'for', 'that', 'this', 'with', 'you', 'your', 'she', 'her', 'his', 'was', 'are', 'have', 'has', 'not', 'but', 'its', 'about', 'from', 'when', 'what', 'how', 'why', 'into', 'out', 'all', 'can', 'will', 'just', 'like', 'one', 'get', 'them', 'they'])
+  const words = [...new Set(String(input).toLowerCase().match(/[a-z]{3,}/g) ?? [])].filter(w => !stop.has(w))
+  if (!words.length) return ''
+  const scored = notes.map(n => {
+    const hay = `${n.title} ${n.body}`.toLowerCase()
+    const score = words.reduce((s2, w) => s2 + (hay.includes(w) ? 1 : 0), 0)
+    return { n, score }
+  }).filter(x => x.score >= 2).sort((a, b) => b.score - a.score).slice(0, limit)
+  if (!scored.length) return ''
+  return `
+HER PAST STORIES (real moments from her life relevant to this topic — you MAY weave a one-line reference in when it makes the piece more human and specific; NEVER force it, never retell the whole thing):
+${scored.map(({ n }) => `- ${n.title.replace(/^[^a-zA-Z0-9]*\s*/, '')}: ${n.body.slice(0, 220).replace(/\n+/g, ' ')}`).join('\n')}`.trim()
+}
+
 /** Aggregated trend context from watched external accounts — injected into generators */
 export function getWatchContext(): string {
   const watched = getAllWatchAccounts()

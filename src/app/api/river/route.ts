@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, createNote, createTask, createEvent, audienceLine } from '@/lib/db'
+import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, createNote, createTask, createEvent, audienceLine, getLoreContext } from '@/lib/db'
 import type { ContentType, EventKind } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 
@@ -78,6 +78,7 @@ For kind:"content" only:
 CONTENT AUDIT RULES for composed posts: lead with HER (the reader's) specific problem, pass the 3-second cold-stranger test, end with the account's comment-keyword CTA. If the chosen account lists ⚠ RULES, obey them literally.
 
 ${CRAFT_RULES}
+${getLoreContext(String(input))}
 ${watchContext}
 
 Return ONLY valid JSON:

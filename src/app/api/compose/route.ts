@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getAllBrandAccounts, getWatchContext, createNote, audienceLine } from '@/lib/db'
+import { getAllBrandAccounts, getWatchContext, createNote, audienceLine, getLoreContext } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
 ACCOUNT ROSTER (pick the ONE best fit):
 ${accountList}
 ${getWatchContext()}
+
+${getLoreContext(String(context ?? ''))}
 
 ${CRAFT_RULES}
 

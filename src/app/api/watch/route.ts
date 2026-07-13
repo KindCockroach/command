@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getAllWatchAccounts, createWatchAccount, updateWatchAccount, deleteWatchAccount } from '@/lib/db'
+import { getAllWatchAccounts, createWatchAccount, updateWatchAccount, deleteWatchAccount, createNote } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -18,6 +18,17 @@ export async function POST(req: NextRequest) {
   if (data.action === 'analyze') {
     const existing = data.id ? getAllWatchAccounts().find(w => w.id === Number(data.id)) : null
     const subject = existing ?? data
+    // Keep the raw source material — pasted hooks/captions are reference gold
+    if (data.pastedContent?.trim()) {
+      try {
+        createNote({
+          title: `📡 Trends source: ${subject.handle ?? 'unknown'}`,
+          body: data.pastedContent,
+          category: 'idea',
+          tags: ['trends-source', String(subject.handle ?? '').replace('@', '')],
+        })
+      } catch { /* best-effort */ }
+    }
     const res = await client.responses.create({
       model: 'gpt-4o',
       instructions: `You are a social media competitive analyst. Given a creator account, produce the patterns worth mimicking (formatting, not content). Return ONLY valid JSON:
