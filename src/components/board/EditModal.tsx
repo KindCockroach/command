@@ -452,6 +452,8 @@ interface Props {
 export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
   const [form, setForm] = useState<Partial<ContentPiece>>({})
   const [saving, setSaving] = useState(false)
+  const [accounts, setAccounts] = useState<{ id: string; handle: string; emoji: string; color: string; avatar_id?: string | null }[]>([])
+  useEffect(() => { fetch('/api/accounts').then(r => r.json()).then(setAccounts).catch(() => {}) }, [])
   const [tagInput, setTagInput] = useState('')
   const [tab, setTab] = useState<'edit' | 'preview' | 'expand' | 'voice' | 'media'>('edit')
   const [expanding, setExpanding] = useState(false)
@@ -589,6 +591,29 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
               <div>{lbl('Type')}<select value={form.type ?? 'post'} onChange={e => set('type', e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>{TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}</select></div>
               <div>{lbl('Status')}<select value={form.status ?? 'idea'} onChange={e => set('status', e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>{STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
             </div>
+            <div>
+              {lbl('Account — who publishes this (sets voice, audience & avatar)')}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                <button onClick={() => set('account_id', null)} style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '20px', border: `1px solid ${!form.account_id ? 'var(--text-muted)' : 'var(--border)'}`, background: 'var(--surface)', color: !form.account_id ? 'var(--text)' : 'var(--text-subtle)', cursor: 'pointer', fontWeight: 700 }}>Unassigned</button>
+                {accounts.map(a => (
+                  <button key={a.id} onClick={() => set('account_id', form.account_id === a.id ? null : a.id)}
+                    style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '20px', border: `1px solid ${form.account_id === a.id ? a.color : 'var(--border)'}`, background: form.account_id === a.id ? `${a.color}15` : 'var(--surface)', color: form.account_id === a.id ? a.color : 'var(--text-muted)', cursor: 'pointer', fontWeight: 700 }}>
+                    {a.emoji} {a.handle}{a.avatar_id ? ' 🎭' : ''}
+                  </button>
+                ))}
+              </div>
+              {form.account_id && !accounts.find(a => a.id === form.account_id)?.avatar_id && (
+                <p style={{ fontSize: '10px', color: 'var(--text-subtle)', marginTop: '4px' }}>This account has no avatar linked — 🎬 avatar video won&apos;t be available until you set one (Accounts → ✏️ → 🎭).</p>
+              )}
+            </div>
+
+            {form.status === 'ready' && !form.media_url && !(form.media_urls?.length) && !form.image_prompt && !form.frame_plan && (
+              <div style={{ padding: '10px 12px', background: 'rgba(242,166,90,0.1)', border: '1px solid rgba(242,166,90,0.4)', borderRadius: '10px' }}>
+                <p style={{ fontSize: '11px', color: '#C47A1A', fontWeight: 700 }}>⚠ Not actually ready: no image, no video, and no visual plan.</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Attach media on its account card, generate an image, or run a 🎞 Frame plan — or set status back to In Progress.</p>
+              </div>
+            )}
+
             <div>
               {lbl('Platforms')}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>

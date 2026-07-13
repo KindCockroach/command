@@ -1,7 +1,8 @@
 // Client-safe agent metadata — no server imports here
-export type GPTRole = 'ceo' | 'strategist' | 'cfo' | 'operator' | 'contrarian' | 'content_director' | 'future_her' | 'healing' | 'client_offer' | 'research'
+export type GPTRole = 'anchor' | 'ceo' | 'strategist' | 'cfo' | 'operator' | 'contrarian' | 'content_director' | 'future_her' | 'healing' | 'client_offer' | 'research'
 
 export const AGENT_META: Record<GPTRole, { label: string; emoji: string; desc: string; route_when: string }> = {
+  anchor:           { label: 'Anchor', emoji: '🎙️', desc: 'Your news editor. Headlines, story separation, which desk each story belongs to.', route_when: 'I have stories tangled in my head and need to know what leads' },
   ceo:              { label: 'CEO',               emoji: '👑', desc: 'The whole business, one brain. Decides, connects, turns insight into content.', route_when: "I'm uncovering something big and it touches everything" },
   strategist:       { label: 'Strategist',       emoji: '🗺️', desc: 'Big picture & sequencing',                    route_when: "I don't know what to do next" },
   cfo:              { label: 'CFO',               emoji: '💰', desc: 'Money, ROI, cash flow',                       route_when: "About to spend or need to know if it's worth it" },

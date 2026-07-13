@@ -16,6 +16,7 @@ function parseRoute(text: string): { role: GPTRole; why: string } | null {
 }
 
 const AGENTS: { role: GPTRole; color: string }[] = [
+  { role: 'anchor',           color: '#E05252' },
   { role: 'ceo',              color: '#C9956A' },
   { role: 'future_her',       color: '#7c3aed' },
   { role: 'strategist',       color: '#e8448a' },

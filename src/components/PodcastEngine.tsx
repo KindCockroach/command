@@ -84,6 +84,25 @@ export default function PodcastEngine() {
   const [audioState, setAudioState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
   const [audioMsg, setAudioMsg] = useState('')
   const [audioDrag, setAudioDrag] = useState(false)
+  const [packState, setPackState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
+  const [packMsg, setPackMsg] = useState('')
+
+  // One transcript → faceless + avatar clip + trending (with DIY to-do)
+  const threePack = async () => {
+    if (!transcript.trim()) return
+    setPackState('working')
+    try {
+      const res = await fetch('/api/podcast/threepack', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript, episodeTitle: episodeNumber ? `Episode ${episodeNumber}` : undefined }),
+      })
+      const d = await res.json()
+      if (d.created) {
+        setPackState('done')
+        setPackMsg(`✓ ${d.created.map((c: { kind: string; account: string }) => `${c.kind} → ${c.account}`).join(' · ')} — review on the account cards. The trending post's to-do is on your task list.`)
+      } else { setPackState('error'); setPackMsg(d.error || 'Failed — try again') }
+    } catch { setPackState('error'); setPackMsg('Connection failed') }
+  }
 
   // Drop episode audio → stored to Media library + transcribed → transcript box fills itself
   const handleAudio = async (file: File) => {
@@ -252,6 +271,13 @@ export default function PodcastEngine() {
           style={{ padding: '12px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: !transcript.trim() ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
           {loading ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating all deliverables...</> : <><Zap size={15} /> Generate Everything</>}
         </button>
+        <button onClick={threePack} disabled={packState === 'working' || !transcript.trim()}
+          style={{ padding: '12px', background: 'transparent', color: 'var(--purple)', border: '2px solid var(--purple)', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: packState === 'working' ? 'not-allowed' : 'pointer', opacity: !transcript.trim() ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          {packState === 'working' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Building the 3-pack…</> : <>🎁 3-Post Pack — faceless · avatar clip · trending + to-do</>}
+        </button>
+        {packState !== 'idle' && packState !== 'working' && (
+          <p style={{ fontSize: '12px', fontWeight: 600, color: packState === 'done' ? '#3DAA7C' : '#E05252' }}>{packMsg}</p>
+        )}
       </div>
 
       {error && <div style={{ padding: '14px', background: '#FEF5EA', borderRadius: '10px', fontSize: '13px', color: '#F2A65A', fontWeight: 600 }}>⚠ {error}</div>}

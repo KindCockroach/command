@@ -36,6 +36,7 @@ export type ContentPiece = {
   // GoHighLevel scheduling
   ghl_post_id?: string | null      // GHL social planner post id once pushed
   scheduled_at?: string | null     // when GHL is set to publish it
+  frame_plan?: string              // frame-by-frame trend-aware production plan
   // River (sorting hat) fields
   open_questions?: string[]        // questions only Mandi can answer before this post is complete
   river_source?: string            // which stream fed this in (capture, story, podcast, vision...)

@@ -57,6 +57,20 @@ function StoryCard({ initial }: { initial: Story }) {
   const [working, setWorking] = useState(false)
   const [riverMsg, setRiverMsg] = useState('')
   const [filed, setFiled] = useState(false)
+  const [framing, setFraming] = useState<{ framing: string; trend_refs?: string[]; frames?: { t: string; visual: string; onscreen: string; note?: string }[]; sound?: string; diy_todo?: string | null } | null>(null)
+  const [framingBusy, setFramingBusy] = useState(false)
+
+  const trendFrame = async () => {
+    setFramingBusy(true)
+    try {
+      const res = await fetch('/api/story/trendframe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ story }),
+      })
+      const d = await res.json()
+      if (!d.error) setFraming(d)
+    } finally { setFramingBusy(false) }
+  }
 
   const text = story.story ?? story.raw ?? ''
 
@@ -80,7 +94,7 @@ function StoryCard({ initial }: { initial: Story }) {
     setRiverMsg('')
     const res = await fetch('/api/river', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input: `POLISHED STORY — "${story.title}" (transformation: ${story.transformation}, mic drop: "${story.mic_drop_candidate}"):\n\n${text}`, source: 'story' }),
+      body: JSON.stringify({ input: `POLISHED STORY — "${story.title}" (transformation: ${story.transformation}, mic drop: "${story.mic_drop_candidate}"):\n\n${text}${framing ? `\n\nTREND FRAMING (use this): ${framing.framing}\nFRAMES: ${(framing.frames ?? []).map(f => `[${f.t}] ${f.visual} — "${f.onscreen}"`).join(' · ')}` : ''}`, source: 'story' }),
     }).then(r => r.json()).catch(() => ({ error: true }))
     if (res.account) { setRiverMsg(`✓ Filed under ${res.account.emoji} ${res.account.handle}`); setFiled(true) }
     else setRiverMsg(res.error ? 'River error — try again' : '✓ Filed to pipeline')
@@ -199,6 +213,25 @@ function StoryCard({ initial }: { initial: Story }) {
             </div>
           )}
 
+          {/* Trend framing result */}
+          {framing && (
+            <div style={{ padding: '12px 14px', background: 'rgba(76,201,240,0.06)', border: '1px solid rgba(76,201,240,0.3)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: '#2B9CC4' }}>📡 Trend framing — how it rides what's winning</p>
+              <p style={{ fontSize: '12px', color: 'var(--text)', lineHeight: 1.5 }}>{framing.framing}</p>
+              {framing.trend_refs && framing.trend_refs.length > 0 && <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>Borrowing: {framing.trend_refs.join(' · ')}</p>}
+              {(framing.frames ?? []).map((f, i) => (
+                <div key={i} style={{ padding: '7px 10px', background: 'var(--bg)', borderRadius: '7px', borderLeft: '3px solid #4CC9F0' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 800, color: '#2B9CC4' }}>{f.t}</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text)', lineHeight: 1.4 }}>SEE: {f.visual}</p>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4 }}>TEXT: {f.onscreen}</p>
+                  {f.note && <p style={{ fontSize: '10px', color: 'var(--text-subtle)', lineHeight: 1.4 }}>{f.note}</p>}
+                </div>
+              ))}
+              {framing.sound && <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>🔊 {framing.sound}</p>}
+              {framing.diy_todo && <p style={{ fontSize: '11px', fontWeight: 700, color: '#C47A1A', padding: '8px 10px', background: 'rgba(242,166,90,0.1)', borderRadius: '7px' }}>🎬 Your to-do: {framing.diy_todo}</p>}
+            </div>
+          )}
+
           {/* Actions — the desk decides the emphasis */}
           {(story.desk === 'processing' || story.desk === 'growth') ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -221,6 +254,10 @@ function StoryCard({ initial }: { initial: Story }) {
               <button onClick={strengthen} disabled={working}
                 style={{ flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: 'none', background: 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: working ? 0.7 : 1 }}>
                 {working ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Rebuilding…</> : <><Sparkles size={13} /> Strengthen this story</>}
+              </button>
+              <button onClick={trendFrame} disabled={framingBusy}
+                style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(76,201,240,0.5)', background: 'rgba(76,201,240,0.06)', color: '#2B9CC4', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: framingBusy ? 0.7 : 1 }}>
+                {framingBusy ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : '📡'} Trend-frame
               </button>
               <button onClick={sendToRiver} disabled={filed}
                 style={{ flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: filed ? 'none' : story.desk === 'lead' ? 'none' : '1px solid var(--border)', background: filed ? '#E8F7F1' : story.desk === 'lead' ? '#E05252' : 'var(--surface)', color: filed ? '#3DAA7C' : story.desk === 'lead' ? '#fff' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: filed ? 'default' : 'pointer' }}>

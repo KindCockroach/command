@@ -472,6 +472,16 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   const [declineReason, setDeclineReason] = useState('')
   const [declining, setDeclining] = useState(false)
   const [genImg, setGenImg] = useState(false)
+  const [framing, setFraming] = useState(false)
+
+  // 🎞 Frame-by-frame trend plan — saved onto the card
+  const framePlan = async () => {
+    setFraming(true)
+    try {
+      const res = await fetch('/api/story/trendframe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id }) })
+      if (res.ok) onChanged?.()
+    } finally { setFraming(false) }
+  }
   const [videoState, setVideoState] = useState<'idle' | 'starting' | 'rendering' | 'error'>(post.heygen_video_id && !post.heygen_video_url ? 'rendering' : 'idle')
   const [videoErr, setVideoErr] = useState('')
 
@@ -761,6 +771,22 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
               </div>
               {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
             </>
+          )}
+
+          {/* 🎞 Frame plan: trend-aware, frame-by-frame production direction */}
+          {post.frame_plan ? (
+            <div style={{ background: 'rgba(76,201,240,0.06)', border: '1px solid rgba(76,201,240,0.3)', borderRadius: '10px', padding: '10px 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#2B9CC4' }}>🎞 Frame plan — what it looks like, frame by frame</p>
+                <button onClick={framePlan} disabled={framing} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '10px', fontWeight: 700, textDecoration: 'underline' }}>{framing ? 'reframing…' : 'refresh'}</button>
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{post.frame_plan}</p>
+            </div>
+          ) : (
+            <button onClick={framePlan} disabled={framing}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid rgba(76,201,240,0.5)', background: 'rgba(76,201,240,0.05)', color: '#2B9CC4', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: framing ? 0.7 : 1 }}>
+              {framing ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Reading the trends…</> : <>🎞 Frame plan — trend-check what this should look like</>}
+            </button>
           )}
 
           {/* 🎬 Avatar video: story → HeyGen render → MP4 lands back on this card */}
