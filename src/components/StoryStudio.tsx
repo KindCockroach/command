@@ -3,10 +3,23 @@ import { useState } from 'react'
 import { PenLine, Loader2, Sparkles, CheckCheck, Waves, ChevronDown, ChevronUp } from 'lucide-react'
 
 type Beats = { hook: string | null; reveal: string | null; truth: string | null; human_moment: string | null; mic_drop: string | null }
+type Desk = 'processing' | 'growth' | 'relatable' | 'lead'
+const DESK_META: Record<Desk, { label: string; emoji: string; color: string; blurb: string }> = {
+  lead:       { label: 'Lead story',   emoji: '🔴', color: '#E05252', blurb: 'Drop-everything. Only you can tell this — shape it and broadcast.' },
+  relatable:  { label: 'Broadcast',    emoji: '📖', color: '#3DAA7C', blurb: 'A stranger would feel this and take something home. Worth sharing.' },
+  growth:     { label: 'For your growth', emoji: '🌱', color: '#5A4FCF', blurb: 'This one is a mirror, not a megaphone. Explore it privately.' },
+  processing: { label: 'Just processing', emoji: '🫧', color: '#9B8FA6', blurb: 'You wrote it to metabolize it. That IS the point. No audience needed.' },
+}
+const deskMeta = (d?: string) => DESK_META[(d as Desk) ?? 'relatable'] ?? DESK_META.relatable
+
 type Story = {
   title: string
   raw?: string
   story?: string
+  desk?: string
+  desk_reason?: string
+  journal_prompt?: string | null
+  privacy_flag?: string | null
   transformation: string
   beats: Beats
   missing?: string[]
@@ -59,7 +72,7 @@ function StoryCard({ initial }: { initial: Story }) {
         body: JSON.stringify({ story, answers: qa || undefined }),
       })
       const d = await res.json()
-      if (!d.error) { setStory({ ...d, raw: story.raw }); setAnswers([]) }
+      if (!d.error) { setStory({ ...d, raw: story.raw, desk: story.desk, desk_reason: story.desk_reason, journal_prompt: story.journal_prompt, privacy_flag: story.privacy_flag }); setAnswers([]) }
     } finally { setWorking(false) }
   }
 
@@ -78,7 +91,12 @@ function StoryCard({ initial }: { initial: Story }) {
       {/* Header */}
       <div onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '14px 16px', cursor: 'pointer' }}>
         <div style={{ minWidth: 0 }}>
-          <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{story.title}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{story.title}</p>
+            <span title={deskMeta(story.desk).blurb} style={{ fontSize: '10px', fontWeight: 800, padding: '3px 9px', borderRadius: '12px', background: `${deskMeta(story.desk).color}16`, color: deskMeta(story.desk).color, cursor: 'help', whiteSpace: 'nowrap' }}>
+              {deskMeta(story.desk).emoji} {deskMeta(story.desk).label}
+            </span>
+          </div>
           <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{story.transformation}{story.why_it_matters ? ` · ${story.why_it_matters}` : ''}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
@@ -89,6 +107,23 @@ function StoryCard({ initial }: { initial: Story }) {
 
       {open && (
         <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* The anchor's verdict */}
+          {story.desk_reason && (
+            <p style={{ fontSize: '12px', color: deskMeta(story.desk).color, fontWeight: 600, padding: '8px 12px', background: `${deskMeta(story.desk).color}0d`, borderRadius: '8px', lineHeight: 1.5 }}>
+              🎙 Anchor&apos;s call: {story.desk_reason}
+            </p>
+          )}
+          {story.privacy_flag && (
+            <p style={{ fontSize: '11px', color: '#C47A1A', padding: '8px 12px', background: 'rgba(242,166,90,0.1)', borderRadius: '8px', lineHeight: 1.5 }}>
+              🔒 Before sharing: {story.privacy_flag}
+            </p>
+          )}
+          {story.journal_prompt && (story.desk === 'processing' || story.desk === 'growth') && (
+            <div style={{ padding: '10px 14px', background: 'rgba(90,79,207,0.06)', borderRadius: '10px', borderLeft: '3px solid #5A4FCF' }}>
+              <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: '#5A4FCF', marginBottom: '3px' }}>Take it deeper — for you, not the feed</p>
+              <p style={{ fontSize: '13px', color: 'var(--text)', fontStyle: 'italic', lineHeight: 1.5 }}>{story.journal_prompt}</p>
+            </div>
+          )}
           {story.what_improved && <p style={{ fontSize: '11px', color: '#3DAA7C', fontWeight: 600 }}>✦ {story.what_improved}</p>}
 
           {/* The story itself */}
@@ -164,17 +199,35 @@ function StoryCard({ initial }: { initial: Story }) {
             </div>
           )}
 
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={strengthen} disabled={working}
-              style={{ flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: 'none', background: 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: working ? 0.7 : 1 }}>
-              {working ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Rebuilding…</> : <><Sparkles size={13} /> Strengthen this story</>}
-            </button>
-            <button onClick={sendToRiver} disabled={filed}
-              style={{ flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: filed ? 'none' : '1px solid var(--border)', background: filed ? '#E8F7F1' : 'var(--surface)', color: filed ? '#3DAA7C' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: filed ? 'default' : 'pointer' }}>
-              {filed ? <><CheckCheck size={13} /> {riverMsg}</> : <><Waves size={13} /> Ready — send to River</>}
-            </button>
-          </div>
+          {/* Actions — the desk decides the emphasis */}
+          {(story.desk === 'processing' || story.desk === 'growth') ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-subtle)', textAlign: 'center' }}>
+                Banked to your private journal ({deskMeta(story.desk).emoji} tagged {story.desk}) — the CEO won&apos;t mine it for content.
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button onClick={strengthen} disabled={working}
+                  style={{ flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: working ? 0.7 : 1 }}>
+                  {working ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Rebuilding…</> : <><Sparkles size={13} /> Shape it anyway (for you)</>}
+                </button>
+                <button onClick={sendToRiver} disabled={filed}
+                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '5px', padding: '10px 14px', borderRadius: '10px', border: 'none', background: 'transparent', color: filed ? '#3DAA7C' : 'var(--text-subtle)', fontWeight: 600, fontSize: '11px', cursor: filed ? 'default' : 'pointer', textDecoration: filed ? 'none' : 'underline', textUnderlineOffset: '3px' }}>
+                  {filed ? <><CheckCheck size={12} /> {riverMsg}</> : 'Override the anchor — share it anyway'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button onClick={strengthen} disabled={working}
+                style={{ flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: 'none', background: 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: working ? 0.7 : 1 }}>
+                {working ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Rebuilding…</> : <><Sparkles size={13} /> Strengthen this story</>}
+              </button>
+              <button onClick={sendToRiver} disabled={filed}
+                style={{ flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: filed ? 'none' : story.desk === 'lead' ? 'none' : '1px solid var(--border)', background: filed ? '#E8F7F1' : story.desk === 'lead' ? '#E05252' : 'var(--surface)', color: filed ? '#3DAA7C' : story.desk === 'lead' ? '#fff' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: filed ? 'default' : 'pointer' }}>
+                {filed ? <><CheckCheck size={13} /> {riverMsg}</> : <><Waves size={13} /> {story.desk === 'lead' ? 'Lead story — broadcast it' : 'Ready — send to River'}</>}
+              </button>
+            </div>
+          )}
           {riverMsg && !filed && <p style={{ fontSize: '11px', color: '#E05252' }}>{riverMsg}</p>}
         </div>
       )}
@@ -198,7 +251,11 @@ export default function StoryStudio() {
         body: JSON.stringify({ dump }),
       })
       const d = await res.json()
-      if (d.stories) { setStories(d.stories); setDump('') }
+      if (d.stories) {
+        const rank: Record<string, number> = { lead: 0, relatable: 1, growth: 2, processing: 3 }
+        setStories([...d.stories].sort((a: Story, b: Story) => (rank[a.desk ?? 'relatable'] ?? 1) - (rank[b.desk ?? 'relatable'] ?? 1)))
+        setDump('')
+      }
       else setError(d.error || 'Could not separate the stories.')
     } finally { setSplitting(false) }
   }
