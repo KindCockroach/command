@@ -774,6 +774,27 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             </>
           )}
 
+          {/* ⬇ Canva Bulk Create export — slide lines as CSV (carousels only) */}
+          {(() => {
+            const slideLines = (post.onscreen_text ?? '').split('\n').map(l => l.replace(/^\s*Slide\s*\d+\s*[:.\-–]\s*/i, '').trim()).filter(Boolean)
+            if (slideLines.length < 2) return null
+            const exportCsv = () => {
+              const esc = (v: string) => `"${v.replace(/"/g, '""')}"`
+              const csv = ['slide,text', ...slideLines.map((l, idx) => `${idx + 1},${esc(l)}`)].join('\n')
+              const a = document.createElement('a')
+              a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+              a.download = `${post.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40)}-slides.csv`
+              a.click()
+              URL.revokeObjectURL(a.href)
+            }
+            return (
+              <button onClick={exportCsv} title="Download slide lines as CSV, then use Bulk Create in Canva"
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                ⬇ Export slides for Canva ({slideLines.length} slides)
+              </button>
+            )
+          })()}
+
           {/* 🎞 Frame plan: trend-aware, frame-by-frame production direction */}
           {post.frame_plan ? (
             <div style={{ background: 'rgba(76,201,240,0.06)', border: '1px solid rgba(76,201,240,0.3)', borderRadius: '10px', padding: '10px 12px' }}>

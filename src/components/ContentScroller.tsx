@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink, ArrowRight, Trash2 } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink, ArrowRight, Trash2, Download } from 'lucide-react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
 
 // One-by-one review scroller for a pipeline lane — arrows, full content view.
@@ -72,6 +72,20 @@ export default function ContentScroller({ status, label, onClose }: { status: st
     localStorage.setItem('station-flip-account', p.account_id)
     window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'accounts' } }))
     onClose()
+  }
+
+  // Slide lines for Canva Bulk Create — parse numbered "Slide N: ..." lines (fallback: any multi-line onscreen text)
+  const slideLines = (p?.onscreen_text ?? '').split('\n').map(l => l.replace(/^\s*Slide\s*\d+\s*[:.\-–]\s*/i, '').trim()).filter(Boolean)
+
+  const exportCanvaCsv = () => {
+    if (!p || slideLines.length < 2) return
+    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`
+    const csv = ['slide,text', ...slideLines.map((l, idx) => `${idx + 1},${esc(l)}`)].join('\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    a.download = `${p.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40)}-slides.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
   }
 
   const copyAll = () => {
@@ -155,6 +169,12 @@ export default function ContentScroller({ status, label, onClose }: { status: st
             <button onClick={copyAll} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: copied ? '#3DAA7C' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
               {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />} {copied ? 'Copied' : 'Copy'}
             </button>
+            {slideLines.length >= 2 && (
+              <button onClick={exportCanvaCsv} title="Download slide lines as CSV for Canva Bulk Create"
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                <Download size={13} /> Canva CSV
+              </button>
+            )}
             {p.account_id && (
               <button onClick={openOnAccount} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
                 <ExternalLink size={13} /> Full card
