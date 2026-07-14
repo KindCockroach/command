@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Sparkles, Loader2, Plus, Minus, CheckCircle2 } from 'lucide-react'
+import { Sparkles, Loader2, Plus, Minus, CheckCircle2, Image as ImageIcon, X } from 'lucide-react'
 
 type ContentOrder = { type: string; qty: number }
 type BrandAccount = { id: string; handle: string; brand_name: string; emoji: string; color: string; status: string; topic: string }
@@ -11,7 +11,7 @@ const CONTENT_TYPES = [
     label: 'Instagram Post',
     icon: '📸',
     color: '#E1306C',
-    components: ['Caption body', '20–30 hashtags', 'Alt text', 'Angle/hook'],
+    components: ['Caption body', 'Up to 5 hashtags', 'Alt text', 'Angle/hook', 'Carousel option'],
   },
   {
     id: 'instagram_reel',
@@ -94,6 +94,23 @@ export default function ContentOrderForm({ projectName, projectDescription, proj
   const [accounts, setAccounts] = useState<BrandAccount[]>([])
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
   const [holdInProject, setHoldInProject] = useState(!!projectId)
+  const [carousel, setCarousel] = useState(false)
+  const [mediaUrl, setMediaUrl] = useState('')
+  const [mediaPreview, setMediaPreview] = useState('')
+  const [uploading, setUploading] = useState(false)
+
+  const uploadMedia = (file: File) => {
+    setMediaPreview(URL.createObjectURL(file))
+    setUploading(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    fetch('/api/upload', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(d => { if (d.publicUrl) setMediaUrl(d.publicUrl) })
+      .catch(() => {})
+      .finally(() => setUploading(false))
+  }
+  const clearMedia = () => { setMediaUrl(''); setMediaPreview(''); }
 
   useEffect(() => {
     fetch('/api/accounts').then(r => r.json()).then((data: BrandAccount[]) => {
@@ -131,7 +148,7 @@ export default function ContentOrderForm({ projectName, projectDescription, proj
       const res = await fetch('/api/generate/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectName, projectDescription, projectNotes, orders: contentOrders, accountId: selectedAccountId || undefined, projectId, holdInProject }),
+        body: JSON.stringify({ projectName, projectDescription, projectNotes, orders: contentOrders, accountId: selectedAccountId || undefined, projectId, holdInProject, carousel, mediaUrl: mediaUrl || undefined }),
       })
       const data = await res.json()
       setResult({ created: data.created ?? 0 })
@@ -227,6 +244,39 @@ export default function ContentOrderForm({ projectName, projectDescription, proj
             </div>
           )
         })}
+      </div>
+
+      {/* Carousel option — only relevant when an Instagram post is selected */}
+      {orders['instagram_post'] !== undefined && (
+        <button onClick={() => setCarousel(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', border: `2px solid ${carousel ? '#E1306C' : 'var(--border)'}`, background: carousel ? 'rgba(225,48,108,0.06)' : 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+          <div style={{ width: '16px', height: '16px', borderRadius: '4px', border: `2px solid ${carousel ? '#E1306C' : 'var(--border)'}`, background: carousel ? '#E1306C' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {carousel && <span style={{ color: '#fff', fontSize: '10px', fontWeight: 900 }}>✓</span>}
+          </div>
+          <div>
+            <p style={{ fontSize: '12px', fontWeight: 700, color: carousel ? '#E1306C' : 'var(--text)', lineHeight: 1 }}>Make it a carousel</p>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.3 }}>{carousel ? '5–8 numbered slide lines you build in Canva, last slide is the mic drop' : 'Single caption + one visual'}</p>
+          </div>
+        </button>
+      )}
+
+      {/* Drop your own media (optional) */}
+      <div>
+        <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '6px' }}>Your media (optional)</p>
+        {mediaPreview ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', background: 'var(--bg)', border: '1px solid var(--border)' }}>
+            <img src={mediaPreview} style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '6px' }} />
+            <div style={{ flex: 1, fontSize: '12px', color: 'var(--text-muted)' }}>
+              {uploading ? <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--hot-pink)', fontWeight: 600 }}><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</span>
+                : <span style={{ color: '#3daa7c', fontWeight: 600 }}>✓ Attached — the generated post(s) will use this</span>}
+            </div>
+            <button onClick={clearMedia} title="Remove" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', padding: '2px', display: 'flex' }}><X size={15} /></button>
+          </div>
+        ) : (
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', border: '1px dashed var(--border)', background: 'var(--bg)', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600 }}>
+            <ImageIcon size={14} /> Drop or choose an image/video to attach
+            <input type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadMedia(f); e.target.value = '' }} />
+          </label>
+        )}
       </div>
 
       {/* Hold toggle */}

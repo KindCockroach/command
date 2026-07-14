@@ -28,7 +28,7 @@ CONTENT AUDIT RULES — every post must pass all of these:
 
 Each post must have:
 - "body": full caption with line breaks, emoji, and CTA ending in "Comment WISH"
-- "hashtags": string of 20–30 relevant hashtags (space-separated, include niche + broad)
+- "hashtags": string of NO MORE THAN 5 hashtags (space-separated — the 5 most relevant, niche over broad)
 - "alt_text": 1-sentence image description for accessibility
 - "angle": hook angle used (question / stat / reframe / permission slip / objection buster)
 
@@ -171,6 +171,14 @@ ADDITIONALLY every item must include:
 - "image_prompt": a detailed, ready-to-paste AI image or video generation prompt for this post's visual (subject, setting, mood, style, aspect ratio). Make it specific to the post's hook.
 - "onscreen_text": the exact text overlay (or opening on-screen line for video) shown on the visual — short, bold, scroll-stopping.`
 
+// House rule: never more than 5 hashtags on anything, no matter what the model returns
+function capHashtags(raw: string): string {
+  const tags = String(raw || '').split(/\s+/).filter(t => t.startsWith('#'))
+  const rest = String(raw || '').split(/\s+/).filter(t => t && !t.startsWith('#'))
+  const source = tags.length ? tags : rest.map(t => `#${t.replace(/[^A-Za-z0-9]/g, '')}`).filter(t => t.length > 1)
+  return source.slice(0, 5).join(' ')
+}
+
 function buildDescription(item: Record<string, string>): string {
   const parts = []
   if (item.body) parts.push(item.body)
@@ -200,7 +208,7 @@ function buildNotes(item: Record<string, string>, type: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { projectName, projectDescription, projectNotes, orders, count, accountId, projectId, holdInProject } = await req.json()
+  const { projectName, projectDescription, projectNotes, orders, count, accountId, projectId, holdInProject, carousel, mediaUrl } = await req.json()
   if (!projectName) return NextResponse.json({ error: 'projectName required' }, { status: 400 })
 
   // Load account brand DNA if specified
@@ -233,8 +241,13 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
     const promptFn = TYPE_PROMPTS[order.type]
     if (!promptFn) continue
 
+    // Carousel is only meaningful for Instagram posts; force the numbered-slide format
+    const wantCarousel = carousel && order.type === 'instagram_post'
+    const carouselRule = wantCarousel ? `
+CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 numbered slide lines, each on its own line ("Slide 1: ...", "Slide 2: ..."), each slide pulling to the next, the last slide a mic drop + Comment WISH CTA. These lines are the skeleton Mandi builds in Canva.` : ''
+
     const basePrompt = promptFn(projectName, projectDescription || '', projectNotes || '', order.qty)
-    const prompt = `${accountContext}\n${getWatchContext()}\n\n${craftFor(accountId)}\n\n${basePrompt}\n${VISUAL_RULE}`
+    const prompt = `${accountContext}\n${getWatchContext()}\n\n${craftFor(accountId)}\n\n${basePrompt}\n${VISUAL_RULE}${carouselRule}\n\nHARD RULE: never output more than 5 hashtags on any item.`
 
     try {
       const response = await client.responses.create({
@@ -252,7 +265,7 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
           title: item.title || `${order.type} — ${projectName}`,
           description: buildDescription(item),
           status: holdInProject ? 'held' : 'ready',
-          type: order.type as import('@/lib/db').ContentType,
+          type: (wantCarousel ? 'carousel' : order.type) as import('@/lib/db').ContentType,
           platforms: [item.platform || order.type],
           tags: ['generated', projectName.toLowerCase().replace(/\s+/g, '-'), order.type, accountTag],
           notes: buildNotes(item, order.type) + (account ? ` | Account: ${account.handle}` : ''),
@@ -260,7 +273,8 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
           account_id: account ? account.id : null,
           image_prompt: item.image_prompt || item.thumbnail_concept || item.image_concept || '',
           onscreen_text: item.onscreen_text || item.hook || '',
-          hashtags: String(item.hashtags || item.tags || item.keywords || ''),
+          hashtags: capHashtags(String(item.hashtags || item.tags || item.keywords || '')),
+          media_url: mediaUrl || '',
         })
       )
       allCreated.push(...created)

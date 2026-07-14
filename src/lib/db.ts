@@ -6,7 +6,7 @@ const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'db.json
 const DB_DIR = path.dirname(DB_PATH)
 
 export type ContentStatus = 'idea' | 'in_progress' | 'ready' | 'approved' | 'scheduled' | 'published' | 'archived' | 'held'
-export type ContentType = 'video' | 'podcast' | 'post' | 'image' | 'workshop' | 'other'
+export type ContentType = 'video' | 'podcast' | 'post' | 'image' | 'carousel' | 'workshop' | 'other'
 
 export type ContentPiece = {
   id: number
