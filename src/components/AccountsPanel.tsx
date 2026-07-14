@@ -37,7 +37,7 @@ function cleanHashtags(post: ContentPiece): string {
 const pasteReady = (post: ContentPiece) => [cleanCaption(post), cleanHashtags(post)].filter(Boolean).join('\n\n')
 
 // ── Platform preview: what the post will look like in the wild ───────────────
-function PlatformPreviewModal({ post, account, onClose }: { post: ContentPiece; account: BrandAccount; onClose: () => void }) {
+export function PlatformPreviewModal({ post, account, onClose }: { post: ContentPiece; account: BrandAccount; onClose: () => void }) {
   const theme = themeFor(account.platform)
   const caption = cleanCaption(post)
   const hashtags = cleanHashtags(post)

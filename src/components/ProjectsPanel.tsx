@@ -139,7 +139,7 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
                     </div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button onClick={releaseAll} style={{ ...btnSt, background: '#f2a65a', color: '#fff', fontSize: '10px', padding: '5px 10px' }}>
-                        <Send size={11} /> Release All to Kanban
+                        <Send size={11} /> Release all to Ready
                       </button>
                       <button onClick={() => setShowHeld(v => !v)} style={{ ...btnSt, background: 'var(--border)', color: 'var(--text)', fontSize: '10px', padding: '5px 10px' }}>
                         {showHeld ? 'Hide' : 'View'}

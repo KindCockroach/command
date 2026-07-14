@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink, ArrowRight, Trash2, Download, Pause, FolderPlus } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink, ArrowRight, Trash2, Download, Pause, FolderPlus, Eye } from 'lucide-react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
+import { PlatformPreviewModal } from './AccountsPanel'
 
 // One-by-one review scroller for a pipeline lane — arrows, full content view.
 export default function ContentScroller({ status, label, onClose }: { status: string; label: string; onClose: () => void }) {
@@ -11,6 +12,7 @@ export default function ContentScroller({ status, label, onClose }: { status: st
   const [loading, setLoading] = useState(true)
   const [approving, setApproving] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [preview, setPreview] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -183,6 +185,12 @@ export default function ContentScroller({ status, label, onClose }: { status: st
                 {approving ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <CheckCircle2 size={14} />} Approve
               </button>
             )}
+            {acct && (
+              <button onClick={() => setPreview(true)} title="Preview as it will look on the feed"
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                <Eye size={13} /> Preview
+              </button>
+            )}
             <button onClick={copyAll} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: copied ? '#3DAA7C' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
               {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />} {copied ? 'Copied' : 'Copy'}
             </button>
@@ -218,6 +226,7 @@ export default function ContentScroller({ status, label, onClose }: { status: st
         style={{ position: 'relative', zIndex: 2, width: '46px', height: '46px', borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.92)', cursor: i >= items.length - 1 ? 'default' : 'pointer', opacity: i >= items.length - 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '12px', flexShrink: 0, boxShadow: '0 4px 16px rgba(0,0,0,0.25)' }}>
         <ChevronRight size={22} color="#1C1F3B" />
       </button>
+      {preview && p && acct && <PlatformPreviewModal post={p} account={acct} onClose={() => setPreview(false)} />}
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </div>
   )
