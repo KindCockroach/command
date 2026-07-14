@@ -1,10 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { ContentPiece } from '@/lib/db'
-import KanbanBoard from './board/KanbanBoard'
 import AccountsPanel from './AccountsPanel'
 import DailyBriefingPanel from './DailyBriefing'
-import PipelineEngine from './PipelineEngine'
 import DailyCommand from './DailyCommand'
 import ProjectsPanel from './ProjectsPanel'
 import VisionPanel from './VisionPanel'
@@ -162,8 +160,6 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
             </div>
             {scroller && <ContentScroller status={scroller.status} label={scroller.label} onClose={() => setScroller(null)} />}
             <DailyBriefingPanel content={content} onReview={() => setScroller({ status: 'ready', label: 'Ready to Publish' })} />
-            <PipelineEngine />
-            <KanbanBoard initialContent={content} />
           </>
         )}
 
