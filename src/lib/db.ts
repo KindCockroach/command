@@ -402,6 +402,20 @@ export function readDb(): Db {
     const riseLite = def.projects.find(p => p.name === 'RISE Lite')
     if (riseLite) { db.projects.push({ ...riseLite, id: Math.max(...db.projects.map(p => p.id), 0) + 1 }); fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2)) }
   }
+  // Repair: de-duplicate colliding project ids (a seed counter bug gave user
+  // projects the same id as a seeded one, so React hid one behind the other).
+  if (db.projects && db.projects.length > 0) {
+    const seen = new Set<number>()
+    let maxId = Math.max(...db.projects.map(p => p.id), 0)
+    let changed = false
+    for (const p of db.projects) {
+      if (seen.has(p.id)) { p.id = ++maxId; changed = true }
+      seen.add(p.id)
+    }
+    const wantNext = maxId + 1
+    if (changed || (db.next_project_id ?? 0) <= maxId) { db.next_project_id = wantNext; changed = true }
+    if (changed) fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
   // Migrate: seed avatars if missing
   if (!db.avatars || db.avatars.length === 0) {
     db.avatars = defaultDb().avatars
