@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink, ArrowRight, Trash2, Download } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink, ArrowRight, Trash2, Download, Pause, FolderPlus } from 'lucide-react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
 
 // One-by-one review scroller for a pipeline lane — arrows, full content view.
@@ -57,6 +57,23 @@ export default function ContentScroller({ status, label, onClose }: { status: st
     if (!p) return
     const nextStatus = status === 'idea' ? 'in_progress' : 'ready'
     await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id, status: nextStatus }) })
+    dropCurrent()
+  }
+
+  // Pause — park the card in the 'held' lane (same idea as pausing a goal)
+  const pause = async () => {
+    if (!p) return
+    await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id, status: 'held' }) })
+    dropCurrent()
+  }
+
+  // Promote a seed into a full Project, then remove it from the content lane
+  const toProject = async () => {
+    if (!p) return
+    if (!confirm(`Turn "${p.title}" into a Project? It leaves the content pipeline and becomes a project you can build out.`)) return
+    const body = [p.description, p.onscreen_text, p.hashtags].filter(Boolean).join('\n\n')
+    await fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: p.title, description: p.description ?? '', notes: body, status: 'active', priority: 'medium' }) })
+    await fetch(`/api/content?id=${p.id}`, { method: 'DELETE' })
     dropCurrent()
   }
 
@@ -180,6 +197,14 @@ export default function ContentScroller({ status, label, onClose }: { status: st
                 <ExternalLink size={13} /> Full card
               </button>
             )}
+            <button onClick={toProject} title="Turn this into a Project"
+              style={{ display: 'flex', alignItems: 'center', padding: '11px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <FolderPlus size={13} />
+            </button>
+            <button onClick={pause} title="Pause — park in Held"
+              style={{ display: 'flex', alignItems: 'center', padding: '11px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <Pause size={13} />
+            </button>
             <button onClick={remove} title="Delete this card"
               style={{ display: 'flex', alignItems: 'center', padding: '11px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: '#d05', cursor: 'pointer' }}>
               <Trash2 size={13} />
