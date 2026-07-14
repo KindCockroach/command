@@ -161,7 +161,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
               ))}
             </div>
             {scroller && <ContentScroller status={scroller.status} label={scroller.label} onClose={() => setScroller(null)} />}
-            <DailyBriefingPanel content={content} />
+            <DailyBriefingPanel content={content} onReview={() => setScroller({ status: 'ready', label: 'Ready to Publish' })} />
             <PipelineEngine />
             <KanbanBoard initialContent={content} />
           </>

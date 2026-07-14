@@ -4,7 +4,7 @@ import { Sparkles, Loader2, RefreshCw, Target, AlertCircle, CheckCircle2, Star }
 import type { ContentPiece } from '@/lib/db'
 import type { DailyBriefing } from '@/lib/ai'
 
-export default function DailyBriefingPanel({ content }: { content: ContentPiece[] }) {
+export default function DailyBriefingPanel({ content, onReview }: { content: ContentPiece[]; onReview?: () => void }) {
   const [briefing, setBriefing] = useState<DailyBriefing | null>(null)
   const [loading, setLoading] = useState(false)
   const [lastRun, setLastRun] = useState<string | null>(null)
@@ -45,17 +45,10 @@ export default function DailyBriefingPanel({ content }: { content: ContentPiece[
   // Auto-run once on mount
   useEffect(() => { generate() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Jump to the Accounts tab, flipped open to the account whose post this is
-  const goToApprovals = (itemText?: string) => {
-    let accountId = ''
-    if (itemText) {
-      const lower = itemText.toLowerCase()
-      const match = content.find(c => c.status === 'ready' && c.title && lower.includes(c.title.toLowerCase().slice(0, 24)))
-        ?? content.find(c => c.status === 'ready' && c.title && c.title.toLowerCase().split(' ').slice(0, 3).every(w => lower.includes(w)))
-      accountId = match?.account_id ?? ''
-    }
-    localStorage.setItem('station-flip-account', accountId)
-    window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'accounts' } }))
+  // Open the ready-lane review scroller right here — no cross-tab handoff to break
+  const goToApprovals = (_itemText?: string) => {
+    if (onReview) { onReview(); return }
+    window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'pipeline' } }))
   }
 
   return (
