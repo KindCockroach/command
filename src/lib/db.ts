@@ -62,6 +62,7 @@ export type Memory = {
 
 export type ProjectStatus = 'active' | 'paused' | 'complete' | 'archived'
 export type ProjectPriority = 'urgent' | 'high' | 'medium' | 'low'
+export type ProjectLabel = 'series' | 'biz_dev' | 'new_account' | 'launch' | 'general'
 
 export type Project = {
   id: number
@@ -69,6 +70,7 @@ export type Project = {
   description: string
   status: ProjectStatus
   priority: ProjectPriority
+  label: ProjectLabel
   deadline: string | null
   next_action: string
   notes: string
@@ -303,10 +305,10 @@ function defaultDb(): Db {
       { id: 'gettriggered', handle: '@gettriggered', platform: 'Instagram', status: 'planned', priority: 'low', color: '#E07A5F', emoji: '⚡', brand_name: 'Get Triggered', topic: 'Triggers as doorways to healing', bio: 'The benefits of getting triggered', mission: 'Reframe triggers as activation, not attack.', content_format: 'Short philosophy, personal shares, breath work prompts', underlying_message: 'Triggers are a doorway to healing.', problem_message: 'Being triggered is bad.', solution_message: 'Let it activate you.', transformation: 'From angry to curious — one breath at a time', the_how: 'One breath at a time', tone: 'Compassionate — "Sucks, but you can do this."', beliefs: [], hooks: [] },
     ],
     projects: [
-      { id: 1, name: 'Reset Button Workshop', description: '$10 workshop — 60 guided minutes for moms. Drive sales daily.', status: 'active', priority: 'urgent', deadline: null, next_action: 'Post 3 promo pieces this week (Come Cranky angle)', notes: 'Luma event page live. Need caption strategy + daily promo.', assistant: 'content_director', progress: 40, created_at: now, updated_at: now },
-      { id: 2, name: 'Room30.ai Affiliate Push', description: 'Primary $30k revenue driver. Portugal retreat = $10k per referral. Need 3 referrals by Aug 3.', status: 'active', priority: 'urgent', deadline: '2026-08-03', next_action: 'Post first carousel using Room30 templates across @aimomatwork + @content4queens', notes: 'Affiliate link: https://room30.ai/sep2026?fpr=l04zhc — 70% commission. Target: women who want to learn AI influencer business.', assistant: 'strategist', progress: 5, created_at: now, updated_at: now },
-      { id: 3, name: 'AI Mom Podcast', description: 'Launch July 1. School and Work After AI. Episodes recorded.', status: 'active', priority: 'high', deadline: '2026-07-01', next_action: 'Confirm platform + publish Ep 1 + launch captions', notes: 'Episodes in Downloads folder. Cover art done. Intro written.', assistant: 'operator', progress: 70, created_at: now, updated_at: now },
-      { id: 4, name: 'RISE Lite', description: 'Standalone sellable version of the Vision + Daily Command + Story Processor flow. A woman\'s personal productivity journal with content-to-platform pipeline built in.', status: 'active', priority: 'medium', deadline: '2027-01-01', next_action: 'Define MVP feature set: Vision board + Daily Command + Story → Content pipeline', notes: 'Core insight: Vision tab is the hook. Free write → Story Processor → instant content output is the WOW. Strip down RISE Station to the personal transformation + content OS and sell as RISE Lite. Price point TBD ($47/mo or one-time $197).', assistant: 'strategist', progress: 5, created_at: now, updated_at: now },
+      { id: 1, name: 'Reset Button Workshop', description: '$10 workshop — 60 guided minutes for moms. Drive sales daily.', status: 'active', priority: 'urgent', label: 'launch', deadline: null, next_action: 'Post 3 promo pieces this week (Come Cranky angle)', notes: 'Luma event page live. Need caption strategy + daily promo.', assistant: 'content_director', progress: 40, created_at: now, updated_at: now },
+      { id: 2, name: 'Room30.ai Affiliate Push', description: 'Primary $30k revenue driver. Portugal retreat = $10k per referral. Need 3 referrals by Aug 3.', status: 'active', priority: 'urgent', label: 'biz_dev', deadline: '2026-08-03', next_action: 'Post first carousel using Room30 templates across @aimomatwork + @content4queens', notes: 'Affiliate link: https://room30.ai/sep2026?fpr=l04zhc — 70% commission. Target: women who want to learn AI influencer business.', assistant: 'strategist', progress: 5, created_at: now, updated_at: now },
+      { id: 3, name: 'AI Mom Podcast', description: 'Launch July 1. School and Work After AI. Episodes recorded.', status: 'active', priority: 'high', label: 'series', deadline: '2026-07-01', next_action: 'Confirm platform + publish Ep 1 + launch captions', notes: 'Episodes in Downloads folder. Cover art done. Intro written.', assistant: 'operator', progress: 70, created_at: now, updated_at: now },
+      { id: 4, name: 'RISE Lite', description: 'Standalone sellable version of the Vision + Daily Command + Story Processor flow. A woman\'s personal productivity journal with content-to-platform pipeline built in.', status: 'active', priority: 'medium', label: 'launch', deadline: '2027-01-01', next_action: 'Define MVP feature set: Vision board + Daily Command + Story → Content pipeline', notes: 'Core insight: Vision tab is the hook. Free write → Story Processor → instant content output is the WOW. Strip down RISE Station to the personal transformation + content OS and sell as RISE Lite. Price point TBD ($47/mo or one-time $197).', assistant: 'strategist', progress: 5, created_at: now, updated_at: now },
     ],
     tasks: [
       { id: 1, title: 'Generate Reset Button Workshop posts in Projects tab', notes: 'Projects → Reset Button Workshop → open card → Generate Posts → 20 posts → check Content Pipeline', status: 'today', priority: 'urgent', energy: 'low', project_id: 1, recurring: false, due_date: null, created_at: now, updated_at: now },
@@ -715,6 +717,7 @@ export function createProject(data: Partial<Project>): Project {
     description: data.description ?? '',
     status: data.status ?? 'active',
     priority: data.priority ?? 'medium',
+    label: data.label ?? 'general',
     deadline: data.deadline ?? null,
     next_action: data.next_action ?? '',
     notes: data.notes ?? '',

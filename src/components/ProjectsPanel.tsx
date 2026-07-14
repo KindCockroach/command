@@ -1,8 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Plus, ChevronDown, ChevronUp, Trash2, Edit3, CheckCheck, X, Inbox, Send } from 'lucide-react'
-import type { Project, ProjectStatus, ProjectPriority, ContentPiece } from '@/lib/db'
+import type { Project, ProjectStatus, ProjectPriority, ProjectLabel, ContentPiece } from '@/lib/db'
 import ContentOrderForm from './ContentOrderForm'
+
+const LABEL_META: Record<ProjectLabel, { name: string; color: string }> = {
+  series: { name: 'Series', color: '#5a4fcf' },
+  biz_dev: { name: 'Biz Dev', color: '#3daa7c' },
+  new_account: { name: 'New Account', color: '#e8448a' },
+  launch: { name: 'Launch', color: '#f2a65a' },
+  general: { name: 'General', color: '#94a3b8' },
+}
+const LABELS = Object.keys(LABEL_META) as ProjectLabel[]
 
 const STATUS_COLORS: Record<ProjectStatus, string> = {
   active: '#3daa7c', paused: '#f2a65a', complete: '#5a4fcf', archived: '#94a3b8'
@@ -57,6 +66,7 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
             <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>{project.name}</span>
             <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: `${STATUS_COLORS[project.status]}20`, color: STATUS_COLORS[project.status], textTransform: 'uppercase', letterSpacing: '0.06em' }}>{project.status}</span>
             <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: `${PRIORITY_COLORS[project.priority]}18`, color: PRIORITY_COLORS[project.priority], textTransform: 'uppercase', letterSpacing: '0.06em' }}>{project.priority}</span>
+            {(() => { const l = LABEL_META[project.label ?? 'general']; return <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: `${l.color}18`, color: l.color, letterSpacing: '0.04em' }}>{l.name}</span> })()}
           </div>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{project.description}</p>
           <div style={{ marginTop: '10px' }}>
@@ -80,6 +90,9 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
                 </select>
                 <select value={draft.priority} onChange={e => setDraft(d => ({ ...d, priority: e.target.value as ProjectPriority }))} style={inputSt}>
                   {(['urgent', 'high', 'medium', 'low'] as ProjectPriority[]).map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <select value={draft.label ?? 'general'} onChange={e => setDraft(d => ({ ...d, label: e.target.value as ProjectLabel }))} style={inputSt}>
+                  {LABELS.map(l => <option key={l} value={l}>{LABEL_META[l].name}</option>)}
                 </select>
                 <select value={draft.assistant} onChange={e => setDraft(d => ({ ...d, assistant: e.target.value }))} style={inputSt}>
                   {ASSISTANTS.map(a => <option key={a} value={a}>{a}</option>)}
@@ -177,7 +190,7 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
 export default function ProjectsPanel() {
   const [projects, setProjects] = useState<Project[]>([])
   const [adding, setAdding] = useState(false)
-  const [newProject, setNewProject] = useState({ name: '', description: '', next_action: '', priority: 'medium' as ProjectPriority, assistant: 'strategist', notes: '' })
+  const [newProject, setNewProject] = useState({ name: '', description: '', next_action: '', priority: 'medium' as ProjectPriority, label: 'general' as ProjectLabel, assistant: 'strategist', notes: '' })
 
   useEffect(() => { fetch('/api/projects').then(r => r.json()).then(setProjects) }, [])
 
@@ -186,7 +199,7 @@ export default function ProjectsPanel() {
     const res = await fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newProject) })
     const p = await res.json()
     setProjects(ps => [p, ...ps])
-    setNewProject({ name: '', description: '', next_action: '', priority: 'medium', assistant: 'strategist', notes: '' })
+    setNewProject({ name: '', description: '', next_action: '', priority: 'medium', label: 'general', assistant: 'strategist', notes: '' })
     setAdding(false)
   }
 
@@ -224,6 +237,9 @@ export default function ProjectsPanel() {
           <div style={{ display: 'flex', gap: '8px' }}>
             <select value={newProject.priority} onChange={e => setNewProject(d => ({ ...d, priority: e.target.value as ProjectPriority }))} style={inputSt}>
               {(['urgent', 'high', 'medium', 'low'] as ProjectPriority[]).map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <select value={newProject.label} onChange={e => setNewProject(d => ({ ...d, label: e.target.value as ProjectLabel }))} style={inputSt}>
+              {LABELS.map(l => <option key={l} value={l}>{LABEL_META[l].name}</option>)}
             </select>
             <select value={newProject.assistant} onChange={e => setNewProject(d => ({ ...d, assistant: e.target.value }))} style={inputSt}>
               {ASSISTANTS.map(a => <option key={a} value={a}>{a}</option>)}
