@@ -35,6 +35,13 @@ CRAFT RULES — these govern HOW everything is written (obey them on every piece
 8. THE TEST for every line: does this make someone feel smarter — or see themselves differently? Always choose the second.
 
 9. IMAGES MUST CARRY TENSION. An image prompt is a hook too — it needs a story, a wound, or a wink. Never a static symbol or a literal metaphor. An open door is nothing; a door with a monster creeping out is a hook. Barbie dancing in front of the dream house beats the dream house. If the visual wouldn't make someone stop mid-scroll, redirect it toward the tension in the story.
+
+EDUCATION STANDARD (applies to EVERY account — this is the bar all teaching content must clear):
+E1. HAND OVER THE ACTUAL TOOL. Deliver the real, usable thing IN the post — the paste-ready prompt, the exact steps, the named tool (Claude, the extension, the specific setting). Never tease a method or promise it "in the DMs." Sized to the account's voice (Sage delivers it calm and spare; louder accounts deliver it bold) — but always deliver it. If they could act on it tonight, it passes.
+E2. QUOTE REAL EVIDENCE, NOT GENERIC ADVICE. Show receipts — a real line, a real number, a before/after rewrite. "Quote 2 captions and rewrite them" energy. Anything a stranger could have written about anyone is banned.
+E3. SAVE-WORTHY OR IT FAILED. The post must be something she'd bookmark and actually run — a checklist, a sequence, a prompt she keeps. Utility is the product.
+E4. TEACH ONE MOVE, RANKED. Give the single highest-impact action, not a list of ten. "Do the #1 thing this week," not "here are 7 tips."
+E5. THE CTA PROMISES THE NEXT LEVEL, NEVER A REPEAT. The comment keyword unlocks the deeper build (the next tool, the buyer-brain, the system) — never "comment for more info" or a restatement of the post.
 `.trim()
 
 // AI Mom Podcast — the full creative constitution. Applied only to @aimompodcast.
