@@ -24,6 +24,7 @@ import StoryStudio from './StoryStudio'
 import AuditPanel from './AuditPanel'
 import AudiencePanel from './AudiencePanel'
 import GoalsPanel from './GoalsPanel'
+import ContentScroller from './ContentScroller'
 import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target } from 'lucide-react'
 import Link from 'next/link'
 
@@ -36,6 +37,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
   const [stats, setStats] = useState(initialStats)
   const [view, setView] = useState<View>('command')
   const [dark, setDark] = useState(false)
+  const [scroller, setScroller] = useState<{ status: string; label: string } | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem('cc-theme')
@@ -145,15 +147,20 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
                 { key: 'inProgress' as const, label: 'In Progress',      sub: 'Being built',    color: 'var(--progress-color)', bg: 'var(--progress-bg)', icon: <Loader2 size={16} /> },
                 { key: 'ready' as const,       label: 'Ready to Publish', sub: 'Needs your ✓',  color: 'var(--ready-color)',    bg: 'var(--ready-bg)',    icon: <CheckCircle2 size={16} /> },
               ].map(s => (
-                <div key={s.key} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', borderTop: `4px solid ${s.color}` }}>
+                <button key={s.key}
+                  onClick={() => setScroller({ status: s.key === 'ideas' ? 'idea' : s.key === 'inProgress' ? 'in_progress' : 'ready', label: s.label })}
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', borderTop: `4px solid ${s.color}`, cursor: 'pointer', textAlign: 'left', transition: 'transform 0.12s, box-shadow 0.12s', fontFamily: 'inherit' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}>
                   <div style={{ width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: s.bg, color: s.color, flexShrink: 0 }}>{s.icon}</div>
                   <div>
                     <p style={{ fontSize: '26px', fontWeight: 800, color: 'var(--navy)', lineHeight: 1 }}>{stats[s.key]}</p>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.sub}</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.sub} · click to review →</p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
+            {scroller && <ContentScroller status={scroller.status} label={scroller.label} onClose={() => setScroller(null)} />}
             <DailyBriefingPanel content={content} />
             <PipelineEngine />
             <KanbanBoard initialContent={content} />
