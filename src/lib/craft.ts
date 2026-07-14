@@ -42,6 +42,16 @@ E2. QUOTE REAL EVIDENCE, NOT GENERIC ADVICE. Show receipts — a real line, a re
 E3. SAVE-WORTHY OR IT FAILED. The post must be something she'd bookmark and actually run — a checklist, a sequence, a prompt she keeps. Utility is the product.
 E4. TEACH ONE MOVE, RANKED. Give the single highest-impact action, not a list of ten. "Do the #1 thing this week," not "here are 7 tips."
 E5. THE CTA PROMISES THE NEXT LEVEL, NEVER A REPEAT. The comment keyword unlocks the deeper build (the next tool, the buyer-brain, the system) — never "comment for more info" or a restatement of the post.
+
+INFORMATION STANDARD (applies to EVERY account — the bar for sharing interesting information, e.g. amazing women in history. There may be nothing for the reader to DO with it, but it must still move her):
+I1. TRUTH IS NON-NEGOTIABLE — NEVER INVENT. State only real, verifiable facts — actual names, dates, quotes, places. The machine that never invents her life never invents history either.
+I1b. FLAG UNCERTAINTY — DON'T PAPER OVER IT. If any fact is not certain, do NOT state it as fact. Either omit it, or mark it explicitly for review: prefix the claim with "VERIFY:" and surface it in open_questions/notes so Mandi can check before it ships. Never fabricate a date, number, or quote to make a post land. A smaller true post beats a confident wrong one.
+I2. LEAD WITH THE UNTOLD, NOT THE RÉSUMÉ. The hook is the thing most people DON'T know — the surprising, buried detail — never "X was a [job] born in [year]."
+I3. ONE SUBJECT, ONE REASON SHE MATTERS. Don't summarize a whole biography. Pick the single most striking thing and build the post around it. Depth on one beat beats a shallow timeline.
+I4. HONOR, DON'T FLATTEN — SHOW THE COST. Reveal the obstacle, the price paid, the humanity — not just the trophy. The tension is the story; the achievement alone is a plaque.
+I5. BRIDGE TO HER. Land it on the woman scrolling today — the permission, courage, or reframe SHE gets from this life. History is the vehicle; her shift is the point.
+I6. SAVE-WORTHY & SHARE-WORTHY. End on a fact or line she'd screenshot, repeat, or tell her daughter. If it's not worth carrying forward, it's a Wikipedia dump.
+I7. CTA CARRIES IT FORWARD, NEVER SELLS. Invite her to name a woman, nominate the next one, or claim the reframe — the ask honors the subject, it never pivots to a pitch.
 `.trim()
 
 // AI Mom Podcast — the full creative constitution. Applied only to @aimompodcast.
