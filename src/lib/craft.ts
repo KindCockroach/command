@@ -24,7 +24,7 @@ CRAFT RULES — these govern HOW everything is written (obey them on every piece
 
 5. STRUCTURE THAT LANDS (use where it fits): HOOK (begin with the obvious thing they think they're here for) → REVEAL (but that's the wrong question) → TRUTH (the real one) → HUMAN MOMENT (a grounded, specific story) → PUNCHLINE → MIC DROP (one unforgettable line — a revelation, not advice).
 
-5b. CAROUSEL OPTION. When an idea is a list, steps, a framework, or story beats, PREFER carousel format: onscreen_text becomes one line per slide, numbered ("Slide 1: ..." each on its own line), 5-8 slides, each slide pulling to the next (unresolved beat/question/turn), last slide = mic drop + CTA. These lines are the skeleton Mandi designs in Canva — make each one strong enough to stand alone on a slide.
+5b. THE CAROUSEL LAW. Any static-image post MUST be a carousel — never a single image with one caption. onscreen_text becomes one line per slide, numbered ("Slide 1: ..." each on its own line), MINIMUM 5 slides (5-8 ideal), each slide pulling to the next (unresolved beat/question/turn), last slide = mic drop + CTA. These lines are the skeleton Mandi designs in Canva — make each one strong enough to stand alone on a slide. Single static images are only allowed as one slide within a carousel, never as the whole post. (Video/reel posts are exempt.)
 
 6. PROTECT ATTENTION. Cut the sentence before they expect it. End on curiosity, not certainty. Leave discoveries — don't explain everything. Trust the reader to feel the gap.
 
