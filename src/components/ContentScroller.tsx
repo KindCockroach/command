@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink, ArrowRight, Trash2 } from 'lucide-react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
 
 // One-by-one review scroller for a pipeline lane — arrows, full content view.
@@ -44,6 +44,27 @@ export default function ContentScroller({ status, label, onClose }: { status: st
       setItems(prev2 => prev2.filter(x => x.id !== p.id))
       setI(x => Math.min(x, Math.max(items.length - 2, 0)))
     } finally { setApproving(false) }
+  }
+
+  // Remove the current card from the local list and keep the index valid
+  const dropCurrent = () => {
+    if (!p) return
+    setItems(prev2 => prev2.filter(x => x.id !== p.id))
+    setI(x => Math.min(x, Math.max(items.length - 2, 0)))
+  }
+
+  const moveForward = async () => {
+    if (!p) return
+    const nextStatus = status === 'idea' ? 'in_progress' : 'ready'
+    await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id, status: nextStatus }) })
+    dropCurrent()
+  }
+
+  const remove = async () => {
+    if (!p) return
+    if (!confirm(`Delete "${p.title}"? This can't be undone.`)) return
+    await fetch(`/api/content?id=${p.id}`, { method: 'DELETE' })
+    dropCurrent()
   }
 
   const openOnAccount = () => {
@@ -119,6 +140,12 @@ export default function ContentScroller({ status, label, onClose }: { status: st
 
         {p && (
           <div style={{ display: 'flex', gap: '8px', padding: '12px 18px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+            {status !== 'ready' && (
+              <button onClick={moveForward}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: acct?.color ?? 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>
+                <ArrowRight size={14} /> {status === 'idea' ? 'Start building' : 'Mark ready ✓'}
+              </button>
+            )}
             {status === 'ready' && (
               <button onClick={approve} disabled={approving}
                 style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: acct?.color ?? 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: approving ? 0.7 : 1 }}>
@@ -133,6 +160,10 @@ export default function ContentScroller({ status, label, onClose }: { status: st
                 <ExternalLink size={13} /> Full card
               </button>
             )}
+            <button onClick={remove} title="Delete this card"
+              style={{ display: 'flex', alignItems: 'center', padding: '11px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: '#d05', cursor: 'pointer' }}>
+              <Trash2 size={13} />
+            </button>
           </div>
         )}
       </div>
