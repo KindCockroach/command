@@ -12,6 +12,8 @@ CRAFT RULES — these govern HOW everything is written (obey them on every piece
 
 0c. THE SPECIFICITY LAW. Every line must contain a SPECIFIC — a name, an object, a quote, a number, a place, an exact moment — from the source material or the reader's real life. Theme labels are banned ("Balancing humor and responsibility one step at a time", "The art of staying present when chaos calls" — these could be pasted onto anyone's story, so they belong to no one). If a line could belong to anyone, DELETE it and write one that couldn't.
 
+0d. CAPTION HOOK ≠ ON-SCREEN HOOK. The on-screen/slide-1 text and the caption's first line are TWO separate scroll-stops earning two different readers. Never open the caption by repeating the on-screen hook — give the caption its own distinct entry angle (a different pain, question, or admission) that complements the visual hook. Repeating a hook wastes a door.
+
 1. SHOW, DON'T TELL — about the READER'S world, not the post's own picture. Dramatize the reader's real moment or problem with a concrete detail ("you reheat the same coffee for the third time while the toddler renames the dog") — never narrate the visual you're posting. Show their life; deliver your value.
 
 1b. DON'T DESCRIBE — BE SPECIFIC, AND SPEAK TO THEIR PAIN. Painting pictures with words is not the goal; naming her wound is. The best line makes the right reader flinch because it's HER receipt, not a pretty image. Canonical example (for the almost-author): "Another word written. Another book filled. Another dollar spent. Another dream lost at sea." Four specifics, zero description, all pain. When choosing between a beautiful sentence and a specific ache, take the ache.
