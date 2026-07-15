@@ -20,9 +20,9 @@ export async function POST(req: NextRequest) {
 
   const generate = async (model: string) => client.images.generate({
     model,
-    prompt: `${imagePrompt}\n\nStyle: warm, human, editorial-quality social media visual. Vertical 2:3 friendly composition. No text unless the prompt demands it.`,
+    prompt: `${imagePrompt}\n\nStyle: warm, human, editorial-quality social media visual. Square 1:1 composition, centered so nothing important is near the edges. No text unless the prompt demands it.`,
     n: 1,
-    size: model === 'gpt-image-1' ? '1024x1536' : '1024x1792',
+    size: '1024x1024',
     ...(model === 'gpt-image-1'
       ? { quality: 'medium', output_format: 'jpeg', output_compression: 80 }
       : { response_format: 'b64_json' as const }),
