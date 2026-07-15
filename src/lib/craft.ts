@@ -52,6 +52,13 @@ I4. HONOR, DON'T FLATTEN — SHOW THE COST. Reveal the obstacle, the price paid,
 I5. BRIDGE TO HER. Land it on the woman scrolling today — the permission, courage, or reframe SHE gets from this life. History is the vehicle; her shift is the point.
 I6. SAVE-WORTHY & SHARE-WORTHY. End on a fact or line she'd screenshot, repeat, or tell her daughter. If it's not worth carrying forward, it's a Wikipedia dump.
 I7. CTA CARRIES IT FORWARD, NEVER SELLS. Invite her to name a woman, nominate the next one, or claim the reframe — the ask honors the subject, it never pivots to a pitch.
+
+OUTPUT STRUCTURE (how every post must be shaped so it maps straight into the tool and onto the platform):
+S1. THE CAPTION/BODY IS POST-READY. The caption contains ONLY the words that go in the post's caption, plus its hashtags at the very end. NEVER put labels ("Caption:", "Hook:", "Script:", "Slide 1:"), slide text, or spoken scripts in the caption. It must copy-paste-and-post as-is.
+S2. SINGLE IMAGE POST → the on-screen hook is written INTO the image prompt (rendered as legible text on the image itself) so it generates and posts with no design step.
+S3. CAROUSEL → the on-screen text is a set of numbered slide lines (5-8) Mandi builds in Canva. The caption stays separate and post-ready.
+S4. HEYGEN / VIDEO → the on-screen text holds the spoken script plus the on-screen hook. The caption stays separate and post-ready.
+S5. MIX FORMATS. Blend single image posts, carousels, and HeyGen video scripts across an account — never one format only.
 `.trim()
 
 // AI Mom Podcast — the full creative constitution. Applied only to @aimompodcast.

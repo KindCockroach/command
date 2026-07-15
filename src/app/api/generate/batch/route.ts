@@ -260,23 +260,38 @@ CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 n
       const items: Array<Record<string, string>> = JSON.parse(raw)
 
       const accountTag = account ? account.handle.replace('@', '') : 'generic'
-      const created = items.map(item =>
-        createContent({
+      const isVideo = order.type === 'instagram_reel' || order.type === 'tiktok'
+      const created = items.map(item => {
+        const hashtags = capHashtags(String(item.hashtags || item.tags || item.keywords || ''))
+        // BODY = post-ready caption + hashtags ONLY. No labels, no slides, no scripts.
+        const caption = String(item.body || item.caption || item.description || item.title || '').trim()
+        const description = [caption, hashtags].filter(Boolean).join('\n\n')
+        const hook = String(item.onscreen_text || item.hook || '').trim()
+        const baseImg = item.image_prompt || item.thumbnail_concept || item.image_concept || ''
+        // ON-SCREEN = slides (carousel) / hook + spoken script (video) / hook (single)
+        let onscreen_text = hook
+        if (wantCarousel) onscreen_text = String(item.onscreen_text || hook)
+        else if (isVideo) onscreen_text = [item.hook, item.script].filter(Boolean).join('\n\n') || hook
+        // SINGLE IMAGE POST → bake the hook text into the image prompt so it generates and posts as-is
+        const image_prompt = (!wantCarousel && !isVideo && hook)
+          ? `${baseImg}${baseImg ? '. ' : ''}On the image, render the exact headline text "${hook}" in bold, clean, legible sans-serif type with strong contrast, centered — Instagram-ready 1:1 square.`
+          : baseImg
+        return createContent({
           title: item.title || `${order.type} — ${projectName}`,
-          description: buildDescription(item),
+          description,
           status: holdInProject ? 'held' : 'ready',
-          type: (wantCarousel ? 'carousel' : order.type) as import('@/lib/db').ContentType,
+          type: (wantCarousel ? 'carousel' : (isVideo ? 'video' : order.type)) as import('@/lib/db').ContentType,
           platforms: [item.platform || order.type],
           tags: ['generated', projectName.toLowerCase().replace(/\s+/g, '-'), order.type, accountTag],
           notes: buildNotes(item, order.type) + (account ? ` | Account: ${account.handle}` : ''),
           project_id: holdInProject && projectId ? projectId : null,
           account_id: account ? account.id : null,
-          image_prompt: item.image_prompt || item.thumbnail_concept || item.image_concept || '',
-          onscreen_text: item.onscreen_text || item.hook || '',
-          hashtags: capHashtags(String(item.hashtags || item.tags || item.keywords || '')),
+          image_prompt,
+          onscreen_text,
+          hashtags,
           media_url: mediaUrl || '',
         })
-      )
+      })
       allCreated.push(...created)
     } catch (e) {
       console.error(`Failed generating ${order.type}:`, e)
