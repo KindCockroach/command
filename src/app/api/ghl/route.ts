@@ -21,6 +21,37 @@ function ghlHeaders(token: string) {
 
 type GhlSocialAccount = { id?: string; _id?: string; oauthId?: string; platform?: string; type?: string; name?: string; username?: string }
 
+// Auto-schedule: 5 posting slots per day, per account, in America/Chicago (Central)
+const SLOT_TIMES: Array<[number, number]> = [[7, 0], [10, 0], [12, 0], [16, 0], [19, 0]]
+
+// Given a Chicago wall-clock time, return the correct UTC ISO (handles CST/CDT automatically)
+function chicagoIso(y: number, moZero: number, d: number, hh: number, mm: number): string {
+  const guess = Date.UTC(y, moZero, d, hh, mm)
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(guess))
+  const m: Record<string, string> = {}
+  parts.forEach(p => { m[p.type] = p.value })
+  const asChicago = Date.UTC(+m.year, +m.month - 1, +m.day, +m.hour === 24 ? 0 : +m.hour, +m.minute)
+  return new Date(guess - (asChicago - guess)).toISOString()
+}
+
+// Next open 5/day slot for this account that isn't already taken and is in the future
+function nextScheduleSlot(accountId: string | null | undefined): string {
+  const taken = new Set(getAllContent().filter(c => c.account_id === accountId && c.scheduled_at).map(c => c.scheduled_at as string))
+  const now = Date.now()
+  for (let dOff = 0; dOff < 120; dOff++) {
+    const day = new Date(now + dOff * 86400000)
+    const cd: Record<string, string> = {}
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(day).forEach(p => { cd[p.type] = p.value })
+    for (const [hh, mm] of SLOT_TIMES) {
+      const iso = chicagoIso(+cd.year, +cd.month - 1, +cd.day, hh, mm)
+      if (new Date(iso).getTime() <= now) continue
+      if (taken.has(iso)) continue
+      return iso
+    }
+  }
+  return new Date(now + 3600000).toISOString()
+}
+
 // Connected Social Planner accounts — GHL has shuffled this path across versions, so try known variants
 async function fetchGhlAccounts(token: string, locationId: string): Promise<{ accounts: GhlSocialAccount[]; raw: unknown; path: string }> {
   const paths = [
@@ -103,7 +134,7 @@ export async function GET(req: NextRequest) {
 
 // POST: push an approved content piece to the GHL social planner
 export async function POST(req: NextRequest) {
-  const { contentId, scheduleAt, accountIds } = await req.json()
+  const { contentId, scheduleAt, accountIds, autoSchedule } = await req.json()
   if (!contentId) return NextResponse.json({ error: 'contentId required' }, { status: 400 })
 
   const { token, locationId, configured } = ghlConfig()
@@ -141,7 +172,10 @@ export async function POST(req: NextRequest) {
     }
 
     const { userId } = await fetchGhlUserId(token!, locationId!)
-    const summary = [piece.description, piece.hashtags].filter(Boolean).join('\n\n')
+    // Body is now post-ready (caption + hashtags inline); only append the hashtags field if the body lacks them
+    const summary = (piece.description ?? '').includes('#') ? (piece.description ?? '') : [piece.description, piece.hashtags].filter(Boolean).join('\n\n')
+    // Auto-schedule into the next open 5/day slot unless an explicit time was passed
+    const effectiveSchedule = scheduleAt || (autoSchedule ? nextScheduleSlot(piece.account_id) : null)
     const res = await fetch(`${GHL_BASE}/social-media-posting/${locationId}/posts`, {
       method: 'POST',
       headers: ghlHeaders(token!),
@@ -150,8 +184,8 @@ export async function POST(req: NextRequest) {
         ...(userId ? { userId } : {}),
         summary,
         media: piece.media_url ? [{ url: piece.media_url }] : [],
-        status: scheduleAt ? 'scheduled' : 'draft',
-        scheduleDate: scheduleAt ?? undefined,
+        status: effectiveSchedule ? 'scheduled' : 'draft',
+        scheduleDate: effectiveSchedule ?? undefined,
         type: 'post',
       }),
     })
@@ -163,9 +197,9 @@ export async function POST(req: NextRequest) {
     const updated = updateContent(piece.id, {
       status: 'scheduled',
       ghl_post_id: ghlPostId,
-      scheduled_at: scheduleAt ?? null,
+      scheduled_at: effectiveSchedule ?? null,
     })
-    return NextResponse.json({ configured: true, scheduled: true, ghl_post_id: ghlPostId, content: updated })
+    return NextResponse.json({ configured: true, scheduled: true, scheduledAt: effectiveSchedule, ghl_post_id: ghlPostId, content: updated })
   } catch (e) {
     return NextResponse.json({ error: `GHL request failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
   }

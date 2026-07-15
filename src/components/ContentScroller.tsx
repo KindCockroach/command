@@ -42,7 +42,7 @@ export default function ContentScroller({ status, label, onClose }: { status: st
     if (!p) return
     setApproving(true)
     try {
-      await fetch('/api/ghl', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: p.id }) })
+      await fetch('/api/ghl', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: p.id, autoSchedule: true }) })
       setItems(prev2 => prev2.filter(x => x.id !== p.id))
       setI(x => Math.min(x, Math.max(items.length - 2, 0)))
     } finally { setApproving(false) }
