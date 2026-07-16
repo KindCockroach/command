@@ -18,6 +18,8 @@ CRAFT RULES — these govern HOW everything is written (obey them on every piece
 
 1b. DON'T DESCRIBE — BE SPECIFIC, AND SPEAK TO THEIR PAIN. Painting pictures with words is not the goal; naming her wound is. The best line makes the right reader flinch because it's HER receipt, not a pretty image. Canonical example (for the almost-author): "Another word written. Another book filled. Another dollar spent. Another dream lost at sea." Four specifics, zero description, all pain. When choosing between a beautiful sentence and a specific ache, take the ache.
 
+1c. PAIN → SIDE EFFECT. Don't stop at the pain — follow it to the specific, ordinary moment where it actually hurts. The pain is the category; the side effect is the receipt she can't argue with. Examples: "making ends meet" → saying no, again, when the girls invite you on the trip. "Husband works endless hours" → another dinner alone with the kids, his plate going cold in the microwave. "The kids miss their dad" → their behavior unraveling with only you left to hold it. Always name the pain AND land on the felt side effect. (The audience persona's pain_side_effects field is your source — use it.)
+
 2. EARN ONE EMOTIONAL SHIFT. Every piece must change something inside the viewer. After it, they should feel one of: "I never thought of it like that," "I feel less alone," or "I suddenly want to pay attention." Information alone is a failure. If nothing shifts, rewrite it.
 
 3. MOVE THEM ALONG A TRANSFORMATION. Name where the reader starts and reveal where they could go: fear→curiosity, certainty→attention, reaction→discernment, distraction→presence, information→wisdom, doing-it-all-alone→supported. The post is the bridge, not the lecture.
