@@ -179,19 +179,6 @@ function capHashtags(raw: string): string {
   return source.slice(0, 5).join(' ')
 }
 
-function buildDescription(item: Record<string, string>): string {
-  const parts = []
-  if (item.body) parts.push(item.body)
-  if (item.caption) parts.push(`\n\nCaption: ${item.caption}`)
-  if (item.hook) parts.push(`\n\nHook: ${item.hook}`)
-  if (item.script) parts.push(`\n\nScript: ${item.script}`)
-  if (item.headline) parts.push(`\n\nHeadline: ${item.headline}`)
-  if (item.description) parts.push(`\n\nDescription: ${item.description}`)
-  if (item.subject_line) parts.push(`\n\nSubject: ${item.subject_line}`)
-  if (item.preview_text) parts.push(`\n\nPreview: ${item.preview_text}`)
-  return parts.join('') || item.title || 'Generated content'
-}
-
 function buildNotes(item: Record<string, string>, type: string): string {
   const extras: string[] = [`Type: ${type}`]
   if (item.hashtags) extras.push(`Hashtags: ${item.hashtags}`)
