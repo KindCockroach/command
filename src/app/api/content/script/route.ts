@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   try {
     const res = await client.responses.create({
       model: 'gpt-4o',
-      instructions: `${craftFor(piece.account_id)}\n\nWrite a natural SPOKEN script for a creator/avatar to say straight to camera — first person, conversational, exactly how a real person actually talks. NOT a caption read aloud, NOT written prose. 20–35 seconds (roughly 60–95 words). Open with a spoken hook that stops the scroll, deliver one clear idea, end on a line that lands. No hashtags, no "link in bio," no stage directions or scene notes — only the words she says out loud.\n\n${voice}`,
+      instructions: `${craftFor(piece.account_id)}\n\nWrite a natural SPOKEN script for a creator/avatar to say straight to camera — first person, conversational, exactly how a real person actually talks. NOT a caption read aloud, NOT written prose. 20–35 seconds (roughly 60–95 words). Open with a spoken hook that stops the scroll, deliver one clear idea, end on a line that lands. No hashtags, no emojis, no "link in bio," no stage directions or scene notes — only the words she says out loud (the avatar reads this literally).\n\n${voice}`,
       input: `Turn this post idea into that spoken script:\n\n${source}`,
     })
     const script = ((res as { output_text?: string }).output_text ?? '').trim()

@@ -59,7 +59,7 @@ OUTPUT STRUCTURE (how every post must be shaped so it maps straight into the too
 S1. THE CAPTION/BODY IS POST-READY. The caption contains ONLY the words that go in the post's caption, plus its hashtags at the very end. NEVER put labels ("Caption:", "Hook:", "Script:", "Slide 1:"), slide text, or spoken scripts in the caption. It must copy-paste-and-post as-is.
 S2. SINGLE IMAGE POST → the on-screen hook is written INTO the image prompt (rendered as legible text on the image itself) so it generates and posts with no design step.
 S3. CAROUSEL → the on-screen text is a set of numbered slide lines (5-8) Mandi builds in Canva. The caption stays separate and post-ready.
-S4. HEYGEN / VIDEO → the on-screen text holds the spoken script plus the on-screen hook. The caption stays separate and post-ready.
+S4. HEYGEN / VIDEO → the SPOKEN SCRIPT goes in the script field — natural spoken words ONLY. NEVER put emojis, labels, stage directions, or "👇 / save this" cues in the script (the avatar would read them aloud). The on-screen hook/overlay goes in the on-screen text field (emojis are fine there). Caption stays separate and post-ready.
 S5. MIX FORMATS. Blend single image posts, carousels, and HeyGen video scripts across an account — never one format only.
 `.trim()
 
