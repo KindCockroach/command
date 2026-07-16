@@ -827,9 +827,9 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
               {([
                 ['title', 'Title', 1],
                 ['image_prompt', '🎨 Image / Video Prompt (paste your updated prompt here)', 3],
-                ['onscreen_text', 'On-Screen Text / Hook', 3],
-                ['description', 'Body / Caption / Script', 5],
-                ['hashtags', 'Hashtags / Metadata', 2],
+                ['onscreen_text', '🎬 Script / Slides / On-Screen (for building — does NOT post)', 4],
+                ['description', '✅ Caption — THIS is what posts (+ hashtags)', 5],
+                ['hashtags', 'Hashtags (also kept in the caption above)', 2],
               ] as const).map(([key, label, rows]) => (
                 <div key={key}>
                   <label style={{ display: 'block', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)', marginBottom: '4px' }}>{label}</label>
@@ -861,8 +861,8 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
                   </div>
                 </div>
               )}
-              {post.onscreen_text && <Section label="On-Screen Text / Hook" text={post.onscreen_text} bold />}
-              <Section label="Body / Caption / Script" text={post.description} />
+              {post.onscreen_text && <Section label="🎬 Script / Slides / On-Screen (build — does not post)" text={post.onscreen_text} bold />}
+              <Section label="✅ Caption — this is what posts" text={post.description} />
               {post.hashtags && (
                 <Section label="Hashtags / Metadata" text={post.hashtags}>
                   <p style={{ fontSize: '11px', color: accentColor, lineHeight: 1.6, wordBreak: 'break-word' }}>{post.hashtags}</p>
