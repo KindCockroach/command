@@ -514,6 +514,15 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
     else { setVideoState('error'); setVideoErr(d.error || 'could not start render') }
   }
 
+  const [writingScript, setWritingScript] = useState(false)
+  const writeScript = async () => {
+    setWritingScript(true)
+    try {
+      const r = await fetch('/api/content/script', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id }) }).then(r => r.json()).catch(() => ({ error: 'failed' }))
+      if (r.script) { setOpen(true); onChanged?.() }
+    } finally { setWritingScript(false) }
+  }
+
   const DECLINE_CHIPS = ['Off-brand voice', 'Wrong topic for this account', 'Too salesy', 'Not my story / didn\'t happen', 'Weak hook — doesn\'t stop the scroll', 'Tells instead of shows', 'Boundary violation']
 
   const decline = async () => {
@@ -811,13 +820,21 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             </button>
           )}
 
-          {/* 🎬 Avatar video: story → HeyGen render → MP4 lands back on this card */}
+          {/* ✍️ Write a spoken script for the avatar — turns this post into words to say to camera */}
+          <button onClick={writeScript} disabled={writingScript}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid rgba(90,79,207,0.4)', background: 'rgba(90,79,207,0.05)', color: '#5a4fcf', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: writingScript ? 0.7 : 1 }}>
+            {writingScript ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Writing a spoken script…</> : <>✍️ {post.script ? 'Rewrite the spoken script' : 'Write me a spoken script'}</>}
+          </button>
+
+          {/* 🎬 Avatar video: needs a script first, then HeyGen render → MP4 lands back on this card */}
           <div>
-            <button onClick={makeVideo} disabled={videoState === 'starting' || videoState === 'rendering'}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: videoState === 'rendering' ? 'rgba(90,79,207,0.08)' : 'var(--surface)', color: videoState === 'rendering' ? '#5a4fcf' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+            <button onClick={makeVideo} disabled={videoState === 'starting' || videoState === 'rendering' || !post.script}
+              title={!post.script ? 'Write a spoken script first' : undefined}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: videoState === 'rendering' ? 'rgba(90,79,207,0.08)' : 'var(--surface)', color: videoState === 'rendering' ? '#5a4fcf' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: post.script ? 'pointer' : 'not-allowed', opacity: post.script ? 1 : 0.5 }}>
               {videoState === 'starting' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Launching render…</>
                 : videoState === 'rendering' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Avatar is filming… (2-6 min, video attaches here automatically)</>
-                : <>🎬 Make avatar video from this script</>}
+                : !post.script ? <>🎬 Make avatar video (write a script first ↑)</>
+                : <>🎬 Make avatar video from the script</>}
             </button>
             {videoState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {videoErr} <button onClick={makeVideo} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
           </div>
