@@ -29,7 +29,7 @@ export type ContentPiece = {
   // Account linkage + structured post anatomy
   account_id?: string | null       // brand_accounts id this post belongs to
   image_prompt?: string            // AI image/video generation prompt for the visual
-  onscreen_text?: string           // text overlay or spoken script shown on screen
+  onscreen_text?: string           // text overlay (video) or slide lines (carousel) — can differ from script
   hashtags?: string                // hashtags/metadata string
   media_url?: string               // primary visual (first slide) — kept for scheduling/preview compat
   media_urls?: string[]            // full carousel: ordered list of image/video URLs
@@ -589,6 +589,7 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     project_id: data.project_id ?? null,
     account_id: data.account_id ?? null,
     image_prompt: data.image_prompt ?? '',
+    script: data.script ?? '',
     onscreen_text: data.onscreen_text ?? '',
     hashtags: data.hashtags ?? '',
     media_url: data.media_url ?? '',

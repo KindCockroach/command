@@ -358,11 +358,11 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   const [savingEdit, setSavingEdit] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const [form, setForm] = useState({
-    title: post.title, onscreen_text: post.onscreen_text ?? '', description: post.description ?? '',
+    title: post.title, script: post.script ?? '', onscreen_text: post.onscreen_text ?? '', description: post.description ?? '',
     hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '',
   })
   const startEdit = () => {
-    setForm({ title: post.title, onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '' })
+    setForm({ title: post.title, script: post.script ?? '', onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '' })
     setEditing(true); setOpen(true)
   }
   const saveEdit = async () => {
@@ -826,10 +826,10 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: 'var(--bg)', borderRadius: '10px', border: `1px solid ${accentColor}` }}>
               {([
                 ['title', 'Title', 1],
-                ['image_prompt', '🎨 Image / Video Prompt (paste your updated prompt here)', 3],
-                ['onscreen_text', '🎬 Script / Slides / On-Screen (for building — does NOT post)', 4],
-                ['description', '✅ Caption — THIS is what posts (+ hashtags)', 5],
-                ['hashtags', 'Hashtags (also kept in the caption above)', 2],
+                ['image_prompt', '🎨 Image / Video Prompt', 3],
+                ['script', '🎬 Script (spoken — for HeyGen/voiceover)', 4],
+                ['onscreen_text', '📱 On-Screen Text / Slides (overlays — can differ from script)', 4],
+                ['description', '✅ Caption — THIS is what posts (hashtags included)', 5],
               ] as const).map(([key, label, rows]) => (
                 <div key={key}>
                   <label style={{ display: 'block', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)', marginBottom: '4px' }}>{label}</label>
@@ -861,13 +861,9 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
                   </div>
                 </div>
               )}
-              {post.onscreen_text && <Section label="🎬 Script / Slides / On-Screen (build — does not post)" text={post.onscreen_text} bold />}
+              {post.script && <Section label="🎬 Script (spoken — build, does not post)" text={post.script} bold />}
+              {post.onscreen_text && <Section label="📱 On-Screen Text / Slides (build, does not post)" text={post.onscreen_text} bold />}
               <Section label="✅ Caption — this is what posts" text={post.description} />
-              {post.hashtags && (
-                <Section label="Hashtags / Metadata" text={post.hashtags}>
-                  <p style={{ fontSize: '11px', color: accentColor, lineHeight: 1.6, wordBreak: 'break-word' }}>{post.hashtags}</p>
-                </Section>
-              )}
             </>
           )}
 

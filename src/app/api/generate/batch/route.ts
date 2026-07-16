@@ -268,10 +268,11 @@ CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 n
         const description = [caption, hashtags].filter(Boolean).join('\n\n')
         const hook = String(item.onscreen_text || item.hook || '').trim()
         const baseImg = item.image_prompt || item.thumbnail_concept || item.image_concept || ''
-        // ON-SCREEN = slides (carousel) / hook + spoken script (video) / hook (single)
+        // SCRIPT (spoken) is its own field for videos; ON-SCREEN is slides/overlays and can differ
+        const script = isVideo ? String(item.script || '').trim() : ''
         let onscreen_text = hook
         if (wantCarousel) onscreen_text = String(item.onscreen_text || hook)
-        else if (isVideo) onscreen_text = [item.hook, item.script].filter(Boolean).join('\n\n') || hook
+        else if (isVideo) onscreen_text = String(item.hook || '').trim() // on-screen hook/overlay; script lives in its own field
         // SINGLE IMAGE POST → bake the hook text into the image prompt so it generates and posts as-is
         const image_prompt = (!wantCarousel && !isVideo && hook)
           ? `${baseImg}${baseImg ? '. ' : ''}On the image, render the exact headline text "${hook}" in bold, clean, legible sans-serif type with strong contrast, centered — Instagram-ready 1:1 square.`
@@ -287,6 +288,7 @@ CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 n
           project_id: holdInProject && projectId ? projectId : null,
           account_id: account ? account.id : null,
           image_prompt,
+          script,
           onscreen_text,
           hashtags,
           media_url: mediaUrl || '',

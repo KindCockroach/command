@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     // Script: prefer an explicit Script section, else on-screen beats, else the caption
     const scriptMatch = (piece.description ?? '').match(/Script:\s*([\s\S]*?)(?=\n\n[A-Z][a-z]+:|$)/)
-    const script = (scriptMatch?.[1] ?? piece.onscreen_text ?? piece.description ?? '').trim().slice(0, 1200)
+    const script = (piece.script || scriptMatch?.[1] || piece.onscreen_text || piece.description || '').trim().slice(0, 1200)
     if (!script) return NextResponse.json({ error: 'No script text on this post' }, { status: 400 })
 
     const voiceId = avatar.heygen_voice_id || avatar.elevenlabs_voice_id || process.env.HEYGEN_VOICE_DEFAULT
