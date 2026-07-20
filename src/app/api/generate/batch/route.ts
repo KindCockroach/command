@@ -212,6 +212,7 @@ Tone: ${account.tone}
 Beliefs: ${account.beliefs.join('; ')}
 ${account.hooks.length ? `Pre-written hooks to riff on: ${account.hooks.join(' | ')}` : ''}
 ${account.offer ? `Offer: ${account.offer} (${account.offer_price})` : ''}
+${account.pushing ? `CURRENTLY PUSHING (the business → product every CTA ultimately serves): ${account.pushing}` : ''}
 ${account.notes ? `NON-NEGOTIABLE ACCOUNT RULES (override everything else): ${account.notes}` : ''}
 ${getAudienceContext(account.audience_id)}
 Write ALL content in this account's voice, not generic Mandi Beck voice.

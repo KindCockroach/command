@@ -294,6 +294,9 @@ function AccountEditorModal({ account, onSave, onDelete, onClose }: { account: P
             <div>{lbl('Offer')}<input value={form.offer ?? ''} onChange={e => set('offer', e.target.value)} style={fld} /></div>
             <div>{lbl('Offer price')}<input value={form.offer_price ?? ''} onChange={e => set('offer_price', e.target.value)} style={fld} /></div>
           </div>
+          <div>{lbl('💰 Currently pushing — which business → product this account markets right now')}
+            <input value={form.pushing ?? ''} onChange={e => set('pushing', e.target.value)} placeholder='e.g. "Room30 → Reset Button Workshop" or "RISE → River Lite $27" or "Pure give — no offer yet"' style={fld} />
+          </div>
           <div>{lbl('Profile URL')}<input value={form.url ?? ''} onChange={e => set('url', e.target.value)} placeholder="https://instagram.com/..." style={fld} /></div>
           <div>{lbl('Non-negotiable rules / notes (the generator obeys these)')}<textarea value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} rows={3} style={area} /></div>
         </div>
@@ -1039,6 +1042,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
 export default function AccountsPanel() {
   const [filter, setFilter] = useState<AccountStatus | 'all'>('all')
   const [accounts, setAccounts] = useState<BrandAccount[]>([])
+  const [audienceNames, setAudienceNames] = useState<Record<string, string>>({})
   const [content, setContent] = useState<ContentPiece[]>([])
   const [flipped, setFlipped] = useState<string | null>(null)
   const [approvingId, setApprovingId] = useState<number | null>(null)
@@ -1113,6 +1117,11 @@ export default function AccountsPanel() {
       if (handoff) { setFlipped(handoff); setQueueFilter('all') }
     }
     fetch('/api/accounts').then(r => r.json()).then(setAccounts).catch(() => {})
+    fetch('/api/audiences').then(r => r.json()).then((list: { id: string; name: string; emoji: string }[]) => {
+      const map: Record<string, string> = {}
+      for (const a of (Array.isArray(list) ? list : [])) map[a.id] = `${a.emoji} ${a.name}`
+      setAudienceNames(map)
+    }).catch(() => {})
     loadContent()
     // GHL sync: check connection + auto-archive anything GHL has posted
     fetch('/api/ghl').then(r => r.json()).then(d => {
@@ -1365,6 +1374,22 @@ export default function AccountsPanel() {
               <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                 {acct.mission || acct.topic}
               </p>
+
+              {/* At-a-glance focus: what this account is pushing + who it speaks to */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 rounded-lg px-2 py-1.5" style={{ background: acct.pushing ? 'rgba(242,166,90,0.1)' : 'var(--surface-raised, var(--nebula-light))' }}>
+                  <span className="text-[11px]">💰</span>
+                  <p className="text-[10px] font-bold leading-tight" style={{ color: acct.pushing ? '#C97B2C' : 'var(--text-subtle)' }}>
+                    {acct.pushing || (acct.offer ? `${acct.offer}${acct.offer_price ? ` (${acct.offer_price})` : ''}` : 'Nothing set — pure give (click ✏️ to set what this pushes)')}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 rounded-lg px-2 py-1.5" style={{ background: 'var(--surface-raised, var(--nebula-light))' }}>
+                  <span className="text-[11px]">👤</span>
+                  <p className="text-[10px] font-bold leading-tight" style={{ color: acct.audience_id ? 'var(--text-muted)' : 'var(--text-subtle)' }}>
+                    {acct.audience_id ? (audienceNames[acct.audience_id] ?? acct.audience_id) : 'No audience linked yet'}
+                  </p>
+                </div>
+              </div>
 
               {/* Station stats */}
               <div className="grid grid-cols-4 gap-1.5">
