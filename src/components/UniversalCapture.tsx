@@ -2,10 +2,16 @@
 import { useState, useRef } from 'react'
 import { Sparkles, Loader2, Upload, X, ArrowRight, CheckCircle2, FileText, Video, Music, Image, Link, Brain } from 'lucide-react'
 
+interface PlannedAction {
+  action: 'create_account' | 'create_audience' | 'create_task'
+  payload: Record<string, unknown>
+}
+
 interface Classification {
   received?: string
   understood?: boolean
   questions?: string[]
+  actions?: PlannedAction[]
   type: string
   title: string
   summary: string
@@ -44,6 +50,28 @@ export default function UniversalCapture() {
   const [savedRoute, setSavedRoute] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState<string | null>(null)   // what RISE received (formatted echo)
   const [answers, setAnswers] = useState<Record<number, string>>({})
+  const [executing, setExecuting] = useState(false)
+  const [executedResults, setExecutedResults] = useState<string[] | null>(null)
+
+  // "You do it." — the CEO executes its own plan and leaves a review task
+  const youDoIt = async () => {
+    if (!result?.actions?.length) return
+    setExecuting(true)
+    try {
+      const res = await fetch('/api/intake/smart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ executeActions: result.actions, originalInput: input.trim() }),
+      })
+      const d = await res.json()
+      if (d.executed) setExecutedResults(d.results ?? [])
+      else setError(d.error || 'Execution failed')
+    } catch {
+      setError('Execution failed. Try again.')
+    } finally {
+      setExecuting(false)
+    }
+  }
   const fileRef = useRef<HTMLInputElement>(null)
   const dropRef = useRef<HTMLDivElement>(null)
 
@@ -75,6 +103,7 @@ export default function UniversalCapture() {
     setResult(null)
     setError(null)
     setSavedRoute(null)
+    setExecutedResults(null)
 
     const composed = extraContext ? `${base}\n\nMORE CONTEXT FROM MANDI:\n${extraContext}` : base
 
@@ -312,6 +341,51 @@ export default function UniversalCapture() {
                 {result.tags.map((tag, i) => (
                   <span key={i} style={{ fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '20px', background: 'var(--surface-raised)', color: 'var(--text-subtle)' }}>#{tag}</span>
                 ))}
+              </div>
+            )}
+
+            {/* 🏗️ THE CEO'S PLAN — what RISE will build if she says the word */}
+            {(result.actions?.length ?? 0) > 0 && !executedResults && (
+              <div style={{ border: '1px solid var(--purple)', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ padding: '9px 12px', background: 'var(--purple-light)', fontSize: '11px', fontWeight: 800, color: 'var(--purple)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  🏗️ Ready to build ({result.actions!.length})
+                </div>
+                <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {result.actions!.map((a, i) => {
+                    const p = a.payload as Record<string, string>
+                    return (
+                      <div key={i} style={{ padding: '8px 10px', background: 'var(--surface-raised)', borderRadius: '8px', borderLeft: `3px solid ${a.action === 'create_account' ? (p.color || 'var(--purple)') : 'var(--purple)'}` }}>
+                        <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>
+                          {a.action === 'create_account' ? `📱 Account: ${p.handle ?? p.id}` : a.action === 'create_audience' ? `👤 Audience: ${p.name ?? p.id}` : `✅ Task: ${p.title}`}
+                        </p>
+                        <p style={{ fontSize: '11px', color: 'var(--text-subtle)', lineHeight: 1.5 }}>
+                          {a.action === 'create_account' ? [p.topic, p.tone && `Tone: ${p.tone}`, p.content_format && `Format: ${p.content_format}`].filter(Boolean).join(' · ')
+                            : a.action === 'create_audience' ? p.snapshot
+                            : p.notes}
+                        </p>
+                      </div>
+                    )
+                  })}
+                  <button onClick={youDoIt} disabled={executing}
+                    style={{ width: '100%', padding: '11px', background: '#1E1B2E', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    {executing ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Building it all…</> : <>🚀 You do it.</>}
+                  </button>
+                  <p style={{ fontSize: '10px', color: 'var(--text-subtle)', textAlign: 'center' }}>RISE builds everything above and leaves you a review task — nothing goes live until you approve.</p>
+                </div>
+              </div>
+            )}
+
+            {/* ✅ Executed — the receipt of what RISE built */}
+            {executedResults && (
+              <div style={{ border: '1px solid #3DAA7C', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ padding: '9px 12px', background: '#EAF7F0', fontSize: '11px', fontWeight: 800, color: '#2E8B60', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  ✅ Done — here&apos;s what I built
+                </div>
+                <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  {executedResults.map((r, i) => (
+                    <p key={i} style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{r}</p>
+                  ))}
+                </div>
               </div>
             )}
 
