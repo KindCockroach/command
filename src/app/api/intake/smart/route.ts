@@ -25,6 +25,7 @@ type PlannedAction =
   | { action: 'create_event'; payload: { title: string; date: string; time?: string; kind?: string; account_id?: string | null } }
   | { action: 'create_note'; payload: { title: string; body: string; tags?: string[] } }
   | { action: 'research_dig'; payload: { topic: string; account_id?: string | null } }
+  | { action: 'create_task'; payload: { title: string; notes?: string; priority?: 'urgent' | 'high' | 'medium' | 'low'; due_date?: string | null } }
 
 function executeActions(actions: PlannedAction[], origin: string) {
   const results: string[] = []
