@@ -250,6 +250,26 @@ export type CalendarEvent = {
   updated_at: string
 }
 
+// One researched article/finding in a daily brief or account dig
+export type ResearchItem = {
+  headline: string
+  source: string                   // publication / site name
+  url: string
+  why_it_matters: string           // why Mandi should care
+  talk_track: string               // the angle if she speaks to it on the podcast
+}
+
+export type ResearchBrief = {
+  id: number
+  date: string                     // YYYY-MM-DD
+  kind: 'daily' | 'dig'
+  topic: string                    // 'daily brief' or the dug topic
+  account_id: string | null
+  items: ResearchItem[]
+  summary: string                  // the researcher's one-paragraph read of the landscape
+  created_at: string
+}
+
 type Db = {
   content: ContentPiece[]
   intake_log: { id: number; raw_input: string; created_at: string }[]
@@ -265,6 +285,8 @@ type Db = {
   watch_accounts: WatchAccount[]
   events: CalendarEvent[]
   audiences: Audience[]
+  research_briefs?: ResearchBrief[]
+  next_research_id?: number
   next_goal_id: number
   next_watch_id: number
   next_event_id: number
@@ -1250,4 +1272,30 @@ export function deleteAvatar(id: string): boolean {
   db.avatars = (db.avatars ?? []).filter(a => a.id !== id)
   if (db.avatars.length !== before) { writeDb(db); return true }
   return false
+}
+
+// ── Research briefs (daily must-reads + per-account digs) ─────────────────────
+
+export function getResearchBriefs(kind?: 'daily' | 'dig', limit = 20): ResearchBrief[] {
+  const db = readDb()
+  const all = (db.research_briefs ?? []).filter(b => !kind || b.kind === kind)
+  return all.sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, limit)
+}
+
+export function getTodaysBrief(): ResearchBrief | null {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' })
+  return getResearchBriefs('daily', 5).find(b => b.date === today) ?? null
+}
+
+export function saveResearchBrief(data: Omit<ResearchBrief, 'id' | 'created_at'>): ResearchBrief {
+  const db = readDb()
+  if (!db.research_briefs) db.research_briefs = []
+  const id = db.next_research_id ?? 1
+  db.next_research_id = id + 1
+  const brief: ResearchBrief = { ...data, id, created_at: new Date().toISOString() }
+  db.research_briefs.push(brief)
+  // keep the archive lean — last 60 briefs is plenty
+  if (db.research_briefs.length > 60) db.research_briefs = db.research_briefs.slice(-60)
+  writeDb(db)
+  return brief
 }

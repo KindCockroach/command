@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { Zap, Battery, BatteryLow, BatteryMedium, BatteryFull, Flame, CheckCheck, Sparkles, Loader2, ImageIcon, Target, Copy, Plus, HelpCircle, Crown, Waves } from 'lucide-react'
+import ResearchBrief from './ResearchBrief'
 
 type DailyData = {
   date: string
@@ -86,6 +87,7 @@ export default function DailyCommand() {
     setFiledHook(prev => ({ ...prev, [i]: true }))
   }
   const [riverResult, setRiverResult] = useState<RiverResult | null>(null)
+  const [lastCapture, setLastCapture] = useState('')
   const [riverRunning, setRiverRunning] = useState(false)
   const [pendingImage, setPendingImage] = useState<string | null>(null)
   const [capturedMediaUrl, setCapturedMediaUrl] = useState('')
@@ -405,6 +407,9 @@ export default function DailyCommand() {
           )}
         </div>
       )}
+
+      {/* 🔬 Today's must-reads — full width, above tasks and what's on fire */}
+      <ResearchBrief />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
 

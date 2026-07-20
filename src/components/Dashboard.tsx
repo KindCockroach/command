@@ -13,6 +13,7 @@ import AssistantsPanel from './AssistantsPanel'
 import AvatarsPanel from './AvatarsPanel'
 import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
+import ResearchPanel from './ResearchPanel'
 import InstantCompose from './InstantCompose'
 import StationChat from './StationChat'
 import PodcastEngine from './PodcastEngine'
@@ -28,7 +29,7 @@ import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals'
+type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
 
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
@@ -76,6 +77,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'accounts',   label: 'Accounts',      icon: <Users size={12} /> },
     { id: 'audience',   label: 'Audience',      icon: <span style={{fontSize:'12px'}}>👤</span> },
     { id: 'audit',      label: 'Trends',        icon: <Radar size={12} /> },
+    { id: 'research',   label: 'Research',      icon: <span style={{fontSize:'12px'}}>🔬</span> },
     { id: 'avatars',    label: 'Avatars',       icon: <span style={{fontSize:'12px'}}>🎭</span> },
     { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
     { id: 'podcast',    label: 'Podcast',       icon: <Mic size={12} /> },
@@ -172,6 +174,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'accounts'   && <AccountsPanel />}
         {view === 'audience'   && <AudiencePanel />}
         {view === 'audit'      && <AuditPanel />}
+        {view === 'research'   && <ResearchPanel />}
         {view === 'goals'      && <GoalsPanel />}
         {view === 'avatars'    && <AvatarsPanel />}
         {view === 'podcast'    && (

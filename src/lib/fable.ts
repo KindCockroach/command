@@ -79,3 +79,58 @@ export async function fableText(opts: {
     .join('')
     .trim()
 }
+
+// ── The Researcher — live web search with a heavyweight thinker ───────────────
+// Uses Claude Opus 4.8 + the server-side web_search tool (Fable doesn't carry
+// the search tool; Opus 4.8 is the intelligent reader/curator this job needs).
+// Handles pause_turn (server tool loop limit) by resuming until done.
+export async function researchWithWeb(opts: {
+  instructions: string
+  input: string
+  maxTokens?: number
+  maxSearches?: number
+}): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    throw new Error('ANTHROPIC_API_KEY is not set — add it in Railway → Variables so the researcher can work.')
+  }
+
+  const headers = {
+    'content-type': 'application/json',
+    'x-api-key': apiKey,
+    'anthropic-version': ANTHROPIC_VERSION,
+  }
+
+  let messages: Array<Record<string, unknown>> = [{ role: 'user', content: opts.input }]
+  let final: AnthropicResponse | null = null
+
+  // Resume across pause_turn up to 5 times (server-side search loop limit)
+  for (let i = 0; i < 5; i++) {
+    const res = await fetch(ANTHROPIC_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'claude-opus-4-8',
+        max_tokens: opts.maxTokens ?? 8000,
+        system: opts.instructions,
+        thinking: { type: 'adaptive' },
+        tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: opts.maxSearches ?? 8 }],
+        messages,
+      }),
+    })
+    const data = (await res.json()) as AnthropicResponse & { content?: Array<Record<string, unknown>> }
+    if (!res.ok) {
+      throw new Error(`Researcher API error (${res.status}): ${(data as AnthropicResponse)?.error?.message ?? 'unknown error'}`)
+    }
+    final = data as AnthropicResponse
+    if (data.stop_reason !== 'pause_turn') break
+    // Paused mid-search — echo the assistant turn back and let it resume
+    messages = [...messages, { role: 'assistant', content: data.content }]
+  }
+
+  return ((final?.content ?? []) as TextBlock[])
+    .filter(b => b.type === 'text' && typeof b.text === 'string')
+    .map(b => b.text as string)
+    .join('')
+    .trim()
+}
