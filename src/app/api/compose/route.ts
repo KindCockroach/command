@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { getAllBrandAccounts, getWatchContext, createNote, audienceLine, getLoreContext } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
+import { fableText } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
-
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 // Instant compose: Mandi's own media + her context → 3 complete post variations.
 // - images: the model sees the image itself
@@ -25,20 +23,20 @@ export async function POST(req: NextRequest) {
   const isImage = mediaType?.startsWith('image') && mediaUrl
   const videoFrames: string[] = Array.isArray(frames) ? frames.slice(0, 12) : []
 
-  const contentParts: Array<Record<string, unknown>> = [{
-    type: 'input_text',
-    text: [
-      `MANDI'S CONTEXT ABOUT THIS MEDIA:\n${context}`,
-      videoFrames.length ? `\nThe ${videoFrames.length} images attached are FRAMES SAMPLED FROM HER VIDEO, evenly spaced IN ORDER from start to finish (~1 per 3 seconds). Read them as an evolving story — track how scenes change frame to frame, who appears, what happens, the arc — and time your on-screen beats to that progression. Blend the visual story with her words; her summary tells you what matters most.` : '',
-      previous ? `\nPREVIOUS VARIATIONS YOU WROTE:\n${JSON.stringify(previous)}` : '',
-      feedback ? `\nMANDI'S FEEDBACK — THIS OVERRIDES EVERYTHING, FOLLOW IT EXACTLY:\n${feedback}` : '',
-    ].filter(Boolean).join('\n'),
-  }]
-  if (isImage) contentParts.push({ type: 'input_image', image_url: mediaUrl })
-  for (const f of videoFrames) contentParts.push({ type: 'input_image', image_url: f })
+  const composeInput = [
+    `MANDI'S CONTEXT ABOUT THIS MEDIA:\n${context}`,
+    videoFrames.length ? `\nThe ${videoFrames.length} images attached are FRAMES SAMPLED FROM HER VIDEO, evenly spaced IN ORDER from start to finish (~1 per 3 seconds). Read them as an evolving story — track how scenes change frame to frame, who appears, what happens, the arc — and time your on-screen beats to that progression. Blend the visual story with her words; her summary tells you what matters most.` : '',
+    previous ? `\nPREVIOUS VARIATIONS YOU WROTE:\n${JSON.stringify(previous)}` : '',
+    feedback ? `\nMANDI'S FEEDBACK — THIS OVERRIDES EVERYTHING, FOLLOW IT EXACTLY:\n${feedback}` : '',
+  ].filter(Boolean).join('\n')
 
-  const res = await client.responses.create({
-    model: 'gpt-4o',
+  const composeImages = [...(isImage ? [mediaUrl] : []), ...videoFrames]
+
+  const output = await fableText({
+    maxTokens: 6000,
+    effort: 'medium',
+    imageUrls: composeImages,
+    input: composeInput,
     instructions: `You compose Instagram-ready posts from Mandi Beck's own photos/videos plus her context.
 
 ACCOUNT ROSTER (pick the ONE best fit):
@@ -67,11 +65,10 @@ Produce THREE meaningfully different variations (different angles — e.g. relat
     { ... }, { ... }
   ]
 }`,
-    input: [{ role: 'user', content: contentParts }] as never,
   })
 
   try {
-    const parsed = JSON.parse(res.output_text.match(/\{[\s\S]*\}/)![0])
+    const parsed = JSON.parse(output.match(/\{[\s\S]*\}/)![0])
     // Archive the story/context to Notes — future content fuel (skip re-archiving on refinements)
     if (!previous) {
       try {
@@ -86,6 +83,6 @@ Produce THREE meaningfully different variations (different angles — e.g. relat
 
     return NextResponse.json({ ...parsed, account: accounts.find(a => a.id === parsed.account_id) ?? null })
   } catch {
-    return NextResponse.json({ error: 'Could not compose from this input', raw: res.output_text }, { status: 502 })
+    return NextResponse.json({ error: 'Could not compose from this input', raw: output }, { status: 502 })
   }
 }

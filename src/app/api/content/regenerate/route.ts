@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { getAllContent, updateContent, getBrandAccount, getWatchContext, addVoiceLesson, getAudienceContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
+import { fableText } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
-
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 // Regenerate a post from its (edited) prompt and on-screen text.
 // If Mandi hand-edited the on-screen text, her words are LAW: only the title,
@@ -34,12 +32,13 @@ export async function POST(req: NextRequest) {
   let learnedRule = ''
   if (onscreenEdited) {
     try {
-      const res = await client.responses.create({
-        model: 'gpt-4o',
+      const out = await fableText({
         instructions: `Mandi threw out the machine's on-screen hook and wrote her own. Study the two versions and distill WHY hers is better into ONE durable craft rule (under 25 words, imperative voice) that a content generator can obey forever. Look for the deep pattern — specificity over description, pain over pictures, tension over symbols — not surface details. Return just the rule.`,
         input: `MACHINE WROTE: ${previousOnscreen}\n\nMANDI REWROTE IT TO: ${piece.onscreen_text}\n\nPOST CONTEXT: ${piece.title} — ${imagePrompt || piece.description?.slice(0, 160)}`,
+        maxTokens: 400,
+        effort: 'low',
       })
-      learnedRule = (res.output_text ?? '').trim().replace(/^["']|["']$/g, '')
+      learnedRule = out.trim().replace(/^["']|["']$/g, '')
       if (learnedRule) addVoiceLesson(learnedRule, previousOnscreen, piece.onscreen_text ?? '', piece.account_id)
     } catch { /* lesson capture is best-effort — never block the regenerate */ }
   }
@@ -78,16 +77,15 @@ ${isStillImage ? '\nAn ACTUAL IMAGE Mandi uploaded is attached — look at it an
 
 CONTENT AUDIT RULES: lead with HER (reader's) problem/moment, 3-second cold-stranger test, comment-keyword CTA matching the account, no links in captions.`
 
-  const content: Array<Record<string, unknown>> = [{ type: 'input_text', text: textPart }]
-  if (isStillImage) content.push({ type: 'input_image', image_url: piece.media_url })
-
   try {
-    const res = await client.responses.create({
-      model: 'gpt-4o',
+    const output = await fableText({
       instructions: 'You are a professional content strategist. Return only valid JSON.',
-      input: [{ role: 'user', content }] as never,
+      input: textPart,
+      imageUrl: isStillImage ? piece.media_url : undefined,
+      maxTokens: 4000,
+      effort: 'medium',
     })
-    const parsed = JSON.parse(res.output_text.match(/\{[\s\S]*\}/)![0])
+    const parsed = JSON.parse(output.match(/\{[\s\S]*\}/)![0])
     const updated = updateContent(piece.id, {
       title: parsed.title || piece.title,
       // Her hook is untouchable when she wrote it; otherwise accept the fresh take

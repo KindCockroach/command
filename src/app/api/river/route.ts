@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, createNote, createTask, createEvent, audienceLine, getLoreContext } from '@/lib/db'
 import type { ContentType, EventKind } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
+import { fableText } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
-
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 type RiverVerdict = {
   kind: 'content' | 'task' | 'event'
@@ -57,8 +55,10 @@ export async function POST(req: NextRequest) {
     `- "${g.title}"${g.account_id ? ` [account: ${g.account_id}]` : ' [station-wide]'} — ${g.target_per_week}/week${g.deadline ? `, deadline ${g.deadline}` : ''}`
   ).join('\n')
 
-  const triage = await client.responses.create({
-    model: 'gpt-4o',
+  const triage = await fableText({
+    maxTokens: 4000,
+    effort: 'medium',
+    imageUrl: isStillImage ? mediaUrl : undefined,
     instructions: `You are the RIVER — the sorting-hat brain of Mandi Beck's content command center. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
 Raw ideas, stories, fragments, tasks, and images flow in from every tab. Your job:
 
@@ -99,21 +99,17 @@ Return ONLY valid JSON:
   "open_questions": ["question only Mandi can answer", ...],
   "research_topic": "topic you researched and folded in, or null"
 }`,
-    input: (isStillImage ? [{
-      type: 'message', role: 'user',
-      content: [
-        { type: 'input_image', image_url: mediaUrl },
-        { type: 'input_text', text: `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nAn IMAGE is attached — Mandi wants this actual image filed under the account it fits. LOOK at it, decide which account it belongs to, and write the post AROUND it (never describe the image; add value the picture can't). It stands alone (media is provided).\n\nHER NOTE:\n${input}` },
-      ],
-    }] : `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nRAW INPUT:\n${input}`) as Parameters<typeof client.responses.create>[0]['input'],
+    input: isStillImage
+      ? `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nAn IMAGE is attached — Mandi wants this actual image filed under the account it fits. LOOK at it, decide which account it belongs to, and write the post AROUND it (never describe the image; add value the picture can't). It stands alone (media is provided).\n\nHER NOTE:\n${input}`
+      : `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nRAW INPUT:\n${input}`,
   })
 
   let verdict: RiverVerdict
   try {
-    const match = triage.output_text.match(/\{[\s\S]*\}/)
+    const match = triage.match(/\{[\s\S]*\}/)
     verdict = JSON.parse(match![0])
   } catch {
-    return NextResponse.json({ error: 'River could not parse this input', raw: triage.output_text }, { status: 502 })
+    return NextResponse.json({ error: 'River could not parse this input', raw: triage }, { status: 502 })
   }
 
   // Task capture: "remind me to..." → straight to the Tasks panel

@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { createContent, getBrandAccount, getWatchContext, getAudienceContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
+import { fableText } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
-
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export type ContentOrder = {
   type: string
@@ -237,13 +235,14 @@ CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 n
     const prompt = `${accountContext}\n${getWatchContext()}\n\n${craftFor(accountId)}\n\n${basePrompt}\n${VISUAL_RULE}${carouselRule}\n\nHARD RULE: never output more than 5 hashtags on any item.`
 
     try {
-      const response = await client.responses.create({
-        model: 'gpt-4o',
+      const output = await fableText({
         instructions: 'You are a master storyteller writing scroll-stopping content that makes people FEEL something and see themselves differently. Show, never tell. Earn one emotional shift per piece. Return only valid JSON arrays, no markdown, no explanation.',
         input: prompt,
+        maxTokens: 16000,
+        effort: 'medium',
       })
 
-      const raw = response.output_text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
+      const raw = output.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
       const items: Array<Record<string, string>> = JSON.parse(raw)
 
       const accountTag = account ? account.handle.replace('@', '') : 'generic'
