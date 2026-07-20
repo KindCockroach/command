@@ -484,6 +484,8 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   }
   const [videoState, setVideoState] = useState<'idle' | 'starting' | 'rendering' | 'error'>(post.heygen_video_id && !post.heygen_video_url ? 'rendering' : 'idle')
   const [videoErr, setVideoErr] = useState('')
+  const [scState, setScState] = useState<'idle' | 'starting' | 'rendering' | 'error'>(post.higgsfield_request_id && !post.higgsfield_url ? 'rendering' : 'idle')
+  const [scErr, setScErr] = useState('')
 
   // 🎨 Generate the actual image from the prompt and attach it
   const generateImage = async () => {
@@ -512,6 +514,24 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
     const d = await fetch('/api/heygen/attach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id, action: 'start' }) }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
     if (d.started) { setVideoState('rendering'); pollVideo() }
     else { setVideoState('error'); setVideoErr(d.error || 'could not start render') }
+  }
+
+  // 🖥️ Full loop: start the Higgsfield Supercomputer render, poll, attach the frame
+  const pollSupercomputer = async () => {
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 12000))
+      const d = await fetch('/api/higgsfield', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id, action: 'check' }) }).then(r => r.json()).catch(() => null)
+      if (d?.status === 'attached' || d?.status === 'completed_external') { setScState('idle'); onChanged?.(); return }
+      if (d?.status === 'failed') { setScState('error'); setScErr(d.error || 'render failed'); return }
+    }
+    setScState('error'); setScErr('Taking unusually long — check Higgsfield, or retry later.')
+  }
+
+  const sendToSupercomputer = async () => {
+    setScState('starting'); setScErr('')
+    const d = await fetch('/api/higgsfield', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id, action: 'start' }) }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+    if (d.started) { setScState('rendering'); pollSupercomputer() }
+    else { setScState('error'); setScErr(d.error || 'could not start render') }
   }
 
   const [writingScript, setWritingScript] = useState(false)
@@ -837,6 +857,19 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
                 : <>🎬 Make avatar video from the script</>}
             </button>
             {videoState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {videoErr} <button onClick={makeVideo} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
+          </div>
+
+          {/* 🖥️ Higgsfield Supercomputer: cinematic frame from the image prompt → lands back on this card */}
+          <div>
+            <button onClick={sendToSupercomputer} disabled={scState === 'starting' || scState === 'rendering' || !post.image_prompt}
+              title={!post.image_prompt ? 'This post has no image prompt to render' : undefined}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: scState === 'rendering' ? 'rgba(90,79,207,0.08)' : 'var(--surface)', color: scState === 'rendering' ? '#5a4fcf' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: post.image_prompt ? 'pointer' : 'not-allowed', opacity: post.image_prompt ? 1 : 0.5 }}>
+              {scState === 'starting' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Sending to Supercomputer…</>
+                : scState === 'rendering' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Supercomputer is rendering… (attaches here automatically)</>
+                : !post.image_prompt ? <>🖥️ Send to Supercomputer (needs an image prompt ↑)</>
+                : <>🖥️ Send to Supercomputer</>}
+            </button>
+            {scState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {scErr} <button onClick={sendToSupercomputer} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
           </div>
 
           {editing ? (

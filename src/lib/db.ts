@@ -46,6 +46,8 @@ export type ContentPiece = {
   repurpose_output?: Record<string, unknown>
   heygen_video_id?: string
   heygen_video_url?: string
+  higgsfield_request_id?: string
+  higgsfield_url?: string
 }
 
 export type ContentPieceRow = ContentPiece
