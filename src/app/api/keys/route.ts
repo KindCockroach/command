@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   const e = process.env
   return NextResponse.json({
+    anthropic:           { configured: !!e.ANTHROPIC_API_KEY && e.ANTHROPIC_API_KEY.startsWith('sk-ant'), label: 'Claude Fable 5 (the writer)' },
     openai:              { configured: !!e.OPENAI_API_KEY && !e.OPENAI_API_KEY.includes('your-key'), label: 'OpenAI (GPT-4o + Responses API)' },
     elevenlabs:          { configured: !!e.ELEVENLABS_API_KEY && !e.ELEVENLABS_API_KEY.includes('your-'), label: 'ElevenLabs (Mandi at Kitchen Table Clone)' },
     elevenlabs_voice:    { configured: !!e.ELEVENLABS_VOICE_ID && !e.ELEVENLABS_VOICE_ID.includes('your_'), label: 'ElevenLabs Voice ID' },

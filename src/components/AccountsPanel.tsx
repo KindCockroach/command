@@ -376,6 +376,28 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
       onChanged?.()
     } finally { setSavingEdit(false) }
   }
+
+  // Revise — Fable integrates Mandi's edits (her words win) and re-aligns the rest to the Craft Laws
+  const [revising, setRevising] = useState(false)
+  const [reviseErr, setReviseErr] = useState('')
+  const revise = async () => {
+    setRevising(true)
+    setReviseErr('')
+    try {
+      // Snapshot for one-click undo, same as regenerate
+      localStorage.setItem(`undo-${post.id}`, JSON.stringify({ title: post.title, onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '' }))
+      const res = await fetch('/api/content/revise', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: post.id, edits: form }),
+      })
+      if (res.ok) {
+        setEditing(false); setUndoAvail(true); onChanged?.()
+      } else {
+        const d = await res.json().catch(() => ({}))
+        setReviseErr(d.error || `revise failed (${res.status})`)
+      }
+    } finally { setRevising(false) }
+  }
   const [undoAvail, setUndoAvail] = useState(false)
   const [learnedRule, setLearnedRule] = useState('')
   useEffect(() => { setUndoAvail(typeof window !== 'undefined' && !!localStorage.getItem(`undo-${post.id}`)) }, [post.id, post.description])
@@ -895,6 +917,11 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 16px', borderRadius: '9px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}>
                   {savingEdit ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={12} />} Save edits
                 </button>
+                <button onClick={revise} disabled={revising}
+                  title="Fable keeps every edit you made and re-aligns the rest of the post to the Craft Laws around your words"
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 16px', borderRadius: '9px', border: '1px solid rgba(124,58,237,0.4)', background: 'rgba(124,58,237,0.06)', color: '#7C3AED', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: revising ? 0.7 : 1 }}>
+                  {revising ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Fable is weaving your edits in…</> : <>✨ Revise — keep my edits, restore the form</>}
+                </button>
                 <button onClick={regenerate} disabled={regenerating}
                   title={post.media_url ? 'RISE re-reads your attached image and rewrites the caption' : 'Rewrites from your updated prompt'}
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 16px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
@@ -902,6 +929,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
                 </button>
                 <button onClick={() => setEditing(false)} style={{ padding: '9px 14px', borderRadius: '9px', border: 'none', background: 'transparent', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
               </div>
+              {reviseErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {reviseErr}</p>}
             </div>
           ) : (
             <>
