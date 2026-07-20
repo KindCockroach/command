@@ -3,6 +3,9 @@ import { useState, useRef } from 'react'
 import { Sparkles, Loader2, Upload, X, ArrowRight, CheckCircle2, FileText, Video, Music, Image, Link, Brain } from 'lucide-react'
 
 interface Classification {
+  received?: string
+  understood?: boolean
+  questions?: string[]
   type: string
   title: string
   summary: string
@@ -39,6 +42,8 @@ export default function UniversalCapture() {
   const [result, setResult] = useState<Classification | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [savedRoute, setSavedRoute] = useState<string | null>(null)
+  const [submitted, setSubmitted] = useState<string | null>(null)   // what RISE received (formatted echo)
+  const [answers, setAnswers] = useState<Record<number, string>>({})
   const fileRef = useRef<HTMLInputElement>(null)
   const dropRef = useRef<HTMLDivElement>(null)
 
@@ -60,12 +65,18 @@ export default function UniversalCapture() {
     }
   }
 
-  const classify = async () => {
-    if (!input.trim() && !file) return
+  const classify = async (extraContext?: string) => {
+    const base = input.trim()
+    if (!base && !file) return
+    // Instant "received" feedback — show what she gave, formatted, the moment she submits
+    const echo = [base, file ? `📎 ${file.name}` : ''].filter(Boolean).join('\n')
+    setSubmitted(echo)
     setLoading(true)
     setResult(null)
     setError(null)
     setSavedRoute(null)
+
+    const composed = extraContext ? `${base}\n\nMORE CONTEXT FROM MANDI:\n${extraContext}` : base
 
     try {
       let fileData: { publicUrl: string; fileType: string; fileName: string } | null = null
@@ -75,20 +86,27 @@ export default function UniversalCapture() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          input: input.trim(),
+          input: composed,
           fileUrl: fileData?.publicUrl,
           fileType: fileData?.fileType,
           fileName: fileData?.fileName,
         }),
       })
       const data = await res.json()
-      if (data.classification) setResult(data.classification)
-      else setError('Could not classify — try adding more context')
+      if (data.classification) { setResult(data.classification); setAnswers({}) }
+      else setError('Could not read that — try adding a bit more context')
     } catch {
       setError('Something went wrong. Try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  // Mandi answered RISE's clarifying questions → re-run the sort with her answers folded in
+  const sendAnswers = () => {
+    const qs = result?.questions ?? []
+    const extra = qs.map((q, i) => `${q} → ${answers[i] ?? ''}`).filter(a => a.split('→')[1]?.trim()).join('\n')
+    classify(extra)
   }
 
   const saveToRoute = async () => {
@@ -121,6 +139,8 @@ export default function UniversalCapture() {
       setInput('')
       setFile(null)
       setSavedRoute(null)
+      setSubmitted(null)
+      setAnswers({})
     }, 2500)
   }
 
@@ -182,7 +202,7 @@ export default function UniversalCapture() {
       />
 
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        <button onClick={classify} disabled={loading || uploading || (!input.trim() && !file)}
+        <button onClick={() => classify()} disabled={loading || uploading || (!input.trim() && !file)}
           style={{ flex: 1, padding: '11px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: (!input.trim() && !file) ? 0.5 : 1 }}>
           {loading || uploading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> {uploading ? 'Uploading...' : 'Analyzing...'}</> : <><Sparkles size={14} /> Let the station decide</>}
         </button>
@@ -195,9 +215,58 @@ export default function UniversalCapture() {
         </div>
       )}
 
-      {/* Classification result */}
-      {result && (
+      {/* 📥 RECEIVED — instant proof RISE has what she gave it, formatted & separated */}
+      {submitted && (
+        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--surface-raised)', overflow: 'hidden' }}>
+          <div style={{ padding: '8px 12px', background: 'var(--bg)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '13px' }}>📥</span>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>RISE received this</span>
+            {loading && <Loader2 size={12} style={{ animation: 'spin 1s linear infinite', color: 'var(--purple)', marginLeft: 'auto' }} />}
+          </div>
+          <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {submitted.split('\n').filter(l => l.trim()).map((line, i) => (
+              <p key={i} style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, paddingLeft: '10px', borderLeft: '2px solid var(--purple)' }}>{line}</p>
+            ))}
+          </div>
+          {result?.received && (
+            <div style={{ padding: '10px 12px', background: 'var(--purple-light)', borderTop: '1px solid var(--border)', fontSize: '13px', color: 'var(--purple)', fontWeight: 600 }}>
+              {result.received}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 🤔 NEEDS CONTEXT — RISE asks before it sorts */}
+      {result && result.understood === false && (result.questions?.length ?? 0) > 0 && (
+        <div style={{ border: '1px solid #F2A65A', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ padding: '12px 14px', background: '#FEF5EA', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '15px' }}>🤔</span>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#C97B2C' }}>A couple things so I sort this right</span>
+          </div>
+          <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {(result.questions ?? []).map((q, i) => (
+              <div key={i}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '5px' }}>{q}</p>
+                <input value={answers[i] ?? ''} onChange={e => setAnswers(a => ({ ...a, [i]: e.target.value }))}
+                  placeholder="Your answer…"
+                  style={{ width: '100%', padding: '9px 11px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px', fontFamily: 'inherit' }} />
+              </div>
+            ))}
+            <button onClick={sendAnswers} disabled={loading}
+              style={{ width: '100%', padding: '11px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              {loading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Re-sorting…</> : <><ArrowRight size={14} /> Send answers — sort it now</>}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Classification result — only once RISE understands the assignment */}
+      {result && result.understood !== false && (
         <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ padding: '10px 14px', background: '#EAF7F0', borderBottom: '1px solid #CDEBDB', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={16} style={{ color: '#3DAA7C' }} />
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#2E8B60' }}>RISE Command Center understands the assignment</span>
+          </div>
           <div style={{ padding: '14px 16px', background: 'var(--purple)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ color: '#fff' }}>{TYPE_ICONS[result.type] ?? <Sparkles size={14} />}</span>
