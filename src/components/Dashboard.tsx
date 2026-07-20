@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react'
 import { ContentPiece } from '@/lib/db'
 import AccountsPanel from './AccountsPanel'
 import DailyBriefingPanel from './DailyBriefing'
-import DailyCommand from './DailyCommand'
 import ProjectsPanel from './ProjectsPanel'
 import VisionPanel from './VisionPanel'
 import TasksPanel from './TasksPanel'
@@ -14,6 +13,7 @@ import AvatarsPanel from './AvatarsPanel'
 import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
 import ResearchPanel from './ResearchPanel'
+import HomeScreen from './HomeScreen'
 import InstantCompose from './InstantCompose'
 import StationChat from './StationChat'
 import PodcastEngine from './PodcastEngine'
@@ -130,7 +130,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
 
       <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-        {view === 'command' && <DailyCommand />}
+        {view === 'command' && <HomeScreen />}
 
         {view === 'pipeline' && (
           <>
