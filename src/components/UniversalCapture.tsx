@@ -3,8 +3,22 @@ import { useState, useRef } from 'react'
 import { Sparkles, Loader2, Upload, X, ArrowRight, CheckCircle2, FileText, Video, Music, Image, Link, Brain } from 'lucide-react'
 
 interface PlannedAction {
-  action: 'create_account' | 'create_audience' | 'create_task'
+  action: 'create_account' | 'create_audience' | 'create_avatar' | 'create_goal' | 'create_watch' | 'create_project' | 'create_event' | 'create_note' | 'research_dig' | 'create_task'
   payload: Record<string, unknown>
+}
+
+// How each planned action renders in the "Ready to build" list
+const ACTION_CARD: Record<PlannedAction['action'], (p: Record<string, string>) => { title: string; sub: string }> = {
+  create_account:  p => ({ title: `📱 Account: ${p.handle ?? p.id}`, sub: [p.topic, p.tone && `Tone: ${p.tone}`, p.content_format && `Format: ${p.content_format}`].filter(Boolean).join(' · ') }),
+  create_audience: p => ({ title: `👤 Audience: ${p.name ?? p.id}`, sub: p.snapshot ?? '' }),
+  create_avatar:   p => ({ title: `🎭 Avatar: ${p.name ?? p.id}`, sub: [p.tagline, p.voiceStyle && `Voice: ${p.voiceStyle}`].filter(Boolean).join(' · ') }),
+  create_goal:     p => ({ title: `🎯 Goal: ${p.title}`, sub: `${p.target_per_week ?? 5}/week${p.deadline ? ` · until ${p.deadline}` : ''}` }),
+  create_watch:    p => ({ title: `📡 Watch: ${p.handle}`, sub: p.why_watching ?? p.niche ?? '' }),
+  create_project:  p => ({ title: `📁 Project: ${p.name}`, sub: p.description ?? '' }),
+  create_event:    p => ({ title: `📅 Event: ${p.title}`, sub: `${p.date}${p.time ? ` at ${p.time}` : ''}` }),
+  create_note:     p => ({ title: `📝 Archive brief: ${p.title}`, sub: 'Saved to Notes as lore the River can reference' }),
+  research_dig:    p => ({ title: `🔬 Research: ${p.topic}`, sub: 'Runs the research desk — real sources land in Research + Notes' }),
+  create_task:     p => ({ title: `✅ Task: ${p.title}`, sub: p.notes ?? '' }),
 }
 
 interface Classification {
@@ -353,16 +367,11 @@ export default function UniversalCapture() {
                 <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {result.actions!.map((a, i) => {
                     const p = a.payload as Record<string, string>
+                    const card = (ACTION_CARD[a.action] ?? ((x: Record<string, string>) => ({ title: a.action, sub: JSON.stringify(x).slice(0, 100) })))(p)
                     return (
-                      <div key={i} style={{ padding: '8px 10px', background: 'var(--surface-raised)', borderRadius: '8px', borderLeft: `3px solid ${a.action === 'create_account' ? (p.color || 'var(--purple)') : 'var(--purple)'}` }}>
-                        <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>
-                          {a.action === 'create_account' ? `📱 Account: ${p.handle ?? p.id}` : a.action === 'create_audience' ? `👤 Audience: ${p.name ?? p.id}` : `✅ Task: ${p.title}`}
-                        </p>
-                        <p style={{ fontSize: '11px', color: 'var(--text-subtle)', lineHeight: 1.5 }}>
-                          {a.action === 'create_account' ? [p.topic, p.tone && `Tone: ${p.tone}`, p.content_format && `Format: ${p.content_format}`].filter(Boolean).join(' · ')
-                            : a.action === 'create_audience' ? p.snapshot
-                            : p.notes}
-                        </p>
+                      <div key={i} style={{ padding: '8px 10px', background: 'var(--surface-raised)', borderRadius: '8px', borderLeft: `3px solid ${p.color || p.accentColor || 'var(--purple)'}` }}>
+                        <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>{card.title}</p>
+                        {card.sub && <p style={{ fontSize: '11px', color: 'var(--text-subtle)', lineHeight: 1.5 }}>{card.sub}</p>}
                       </div>
                     )
                   })}
