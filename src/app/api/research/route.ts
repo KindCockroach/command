@@ -20,18 +20,64 @@ function parseItems(raw: string): { items: ResearchItem[]; summary: string } {
   }
 }
 
-// GET → today's daily brief (or latest) + recent digs
+// The dig itself, callable from multiple actions
+async function runDig(topic: string, accountId?: string | null, save?: boolean) {
+  const account = accountId ? getBrandAccount(accountId) : null
+  const accountCtx = account
+    ? `\nThis research feeds the account ${account.handle} (${account.brand_name}) — ${account.topic}. Mission: ${account.mission}. ${getAudienceContext(account.audience_id)}\nPrioritize findings that become CONTENT for this account: real names, real numbers, real studies — never invent, and note anything uncertain with "VERIFY:".`
+    : ''
+
+  const raw = await researchWithWeb({
+    maxSearches: 10,
+    instructions: `You are RISE's research desk — a rigorous, intelligent researcher for Mandi Beck. Search the live web deeply on the topic given. Prefer primary sources: peer-reviewed research, .gov/.edu, established journalism — over blogs and content farms. Real facts only; flag anything uncertain with "VERIFY:".${accountCtx}
+
+Return ONLY valid JSON: { "summary": "one-paragraph synthesis of what you found", "items": [ ...3 to 6 of the strongest findings/articles... ] }
+${ITEM_SHAPE}`,
+    input: `Dig into: ${topic}`,
+  })
+  const { items, summary } = parseItems(raw)
+  if (!items.length) return null
+  const brief = saveResearchBrief({
+    date: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }),
+    kind: 'dig', topic: topic.trim(), account_id: account?.id ?? null, items, summary,
+  })
+  if (save) {
+    try {
+      createNote({
+        title: `🔬 Research: ${topic.trim().slice(0, 60)}`,
+        body: `${summary}\n\n${items.map(i => `• ${i.headline} (${i.source})\n  ${i.url}\n  Why: ${i.why_it_matters}\n  Angle: ${i.talk_track}`).join('\n\n')}`,
+        category: 'idea',
+        tags: ['research', account?.id ?? 'general'],
+      })
+    } catch { /* best-effort */ }
+  }
+  return brief
+}
+
+// GET → today's daily brief (or latest) + recent digs + suggested searches
 export async function GET() {
+  const recent = getResearchBriefs(undefined, 12)
+  // Suggested searches: recent dig topics + strongest headlines from recent briefs
+  const suggestions: string[] = []
+  for (const b of recent) {
+    if (b.kind === 'dig' && b.topic && !suggestions.includes(b.topic)) suggestions.push(`Deeper: ${b.topic}`)
+    for (const it of b.items.slice(0, 2)) {
+      if (it.talk_track && suggestions.length < 12) suggestions.push(it.talk_track)
+    }
+    if (suggestions.length >= 12) break
+  }
   return NextResponse.json({
     today: getTodaysBrief(),
-    recent: getResearchBriefs(undefined, 12),
+    recent,
+    suggestions: suggestions.slice(0, 8),
   })
 }
 
 // POST { action: 'brief' } → generate today's 3-5 must-reads
 // POST { action: 'dig', topic, accountId?, save? } → deep-dig a topic (optionally for an account)
 export async function POST(req: NextRequest) {
-  const { action, topic, accountId, save } = await req.json()
+  const body = await req.json()
+  const { action, topic, accountId, save } = body
 
   try {
     if (action === 'brief') {
@@ -59,37 +105,27 @@ ${ITEM_SHAPE}`,
 
     if (action === 'dig') {
       if (!topic?.trim()) return NextResponse.json({ error: 'topic required' }, { status: 400 })
-      const account = accountId ? getBrandAccount(accountId) : null
-      const accountCtx = account
-        ? `\nThis research feeds the account ${account.handle} (${account.brand_name}) — ${account.topic}. Mission: ${account.mission}. ${getAudienceContext(account.audience_id)}\nPrioritize findings that become CONTENT for this account: real names, real numbers, real studies — never invent, and note anything uncertain with "VERIFY:".`
-        : ''
-
-      const raw = await researchWithWeb({
-        maxSearches: 10,
-        instructions: `You are RISE's research desk — a rigorous, intelligent researcher for Mandi Beck. Search the live web deeply on the topic given. Prefer primary sources: peer-reviewed research, .gov/.edu, established journalism — over blogs and content farms. Real facts only; flag anything uncertain with "VERIFY:".${accountCtx}
-
-Return ONLY valid JSON: { "summary": "one-paragraph synthesis of what you found", "items": [ ...3 to 6 of the strongest findings/articles... ] }
-${ITEM_SHAPE}`,
-        input: `Dig into: ${topic}`,
-      })
-      const { items, summary } = parseItems(raw)
-      if (!items.length) return NextResponse.json({ error: 'Nothing solid found — try rewording the topic', raw }, { status: 502 })
-      const brief = saveResearchBrief({
-        date: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }),
-        kind: 'dig', topic: topic.trim(), account_id: account?.id ?? null, items, summary,
-      })
-      // Optionally archive to Notes so it's fuel for the River
-      if (save) {
-        try {
-          createNote({
-            title: `🔬 Research: ${topic.trim().slice(0, 60)}`,
-            body: `${summary}\n\n${items.map(i => `• ${i.headline} (${i.source})\n  ${i.url}\n  Why: ${i.why_it_matters}\n  Angle: ${i.talk_track}`).join('\n\n')}`,
-            category: 'idea',
-            tags: ['research', account?.id ?? 'general'],
-          })
-        } catch { /* best-effort */ }
-      }
+      const brief = await runDig(topic, accountId, save)
+      if (!brief) return NextResponse.json({ error: 'Nothing solid found — try rewording the topic' }, { status: 502 })
       return NextResponse.json({ brief })
+    }
+
+    // Every episode deepens the next: extract the ONE topic worth researching
+    // from a transcript, then dig it — findings land in Research + Notes.
+    if (action === 'from_transcript') {
+      const transcript = String(body.transcript ?? '').trim()
+      if (!transcript) return NextResponse.json({ error: 'transcript required' }, { status: 400 })
+      const { fableText } = await import('@/lib/fable')
+      const topicRaw = await fableText({
+        maxTokens: 300,
+        effort: 'low',
+        instructions: 'From this podcast transcript, name the SINGLE topic most worth researching to deepen the next episode — the claim that needs evidence, the thread left dangling, or the question the audience will ask next. Return only the research topic as one plain sentence (a searchable phrase, not a title).',
+        input: transcript.slice(0, 8000),
+      })
+      const extracted = topicRaw.replace(/^["']|["']$/g, '').trim()
+      if (!extracted) return NextResponse.json({ error: 'could not extract a topic' }, { status: 502 })
+      const brief = await runDig(extracted, accountId ?? 'aimompodcast', true)
+      return NextResponse.json({ brief, topic: extracted })
     }
 
     return NextResponse.json({ error: 'unknown action' }, { status: 400 })
