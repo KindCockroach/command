@@ -92,6 +92,8 @@ export default function DailyCommand() {
   const [pendingImage, setPendingImage] = useState<string | null>(null)
   const [capturedMediaUrl, setCapturedMediaUrl] = useState('')
   const [mediaType, setMediaType] = useState('')
+  const [capturedTranscript, setCapturedTranscript] = useState('')
+  const [transcribeNote, setTranscribeNote] = useState('')
   const [dragging, setDragging] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -167,10 +169,14 @@ export default function DailyCommand() {
     if (captured || capturedMediaUrl) {
       setRiverRunning(true)
       setRiverResult(null)
+      // A video's transcript IS its content — hand it to the river so it sorts by what's said
+      const transcriptCtx = capturedTranscript ? `\n\nTRANSCRIPT OF THE ATTACHED VIDEO:\n${capturedTranscript}` : ''
+      const riverInput = (captured + transcriptCtx).trim()
+        || (mediaType.startsWith('video') ? 'Sort this video to the account it fits and build the post around it.' : 'Sort this image to the account it fits and build the post around it.')
       try {
         const res = await fetch('/api/river', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: captured || 'Sort this image to the account it fits and build the post around it.', source: 'quick-capture', mediaUrl: capturedMediaUrl || undefined, mediaType: mediaType || undefined }),
+          body: JSON.stringify({ input: riverInput, source: 'quick-capture', mediaUrl: capturedMediaUrl || undefined, mediaType: mediaType || undefined }),
         })
         const result = await res.json()
         if (!result.error) {
@@ -226,14 +232,34 @@ export default function DailyCommand() {
     } finally { setBriefingLoading(false) }
   }
 
-  // Drop an image → upload it and KEEP it; the river files the actual image
-  // under the right account (it doesn't describe it into a prompt anymore).
-  const loadImage = (file: File) => {
+  // Drop an image OR video → upload and KEEP it; the river files the actual
+  // media under the right account. Videos are also transcribed (Whisper) so the
+  // river understands what's said and can sort/compose from the content.
+  const loadMedia = (file: File) => {
+    const isVideo = file.type.startsWith('video')
+    setMediaType(file.type)
+    setAnalyzing(true)
+    setCapturedTranscript('')
+    setTranscribeNote('')
+    if (isVideo) {
+      setPendingImage('video')  // sentinel: preview shows a video chip, not an <img>
+      const fd = new FormData()
+      fd.append('file', file)
+      // /api/transcribe stores the file AND returns a Whisper transcript
+      fetch('/api/transcribe', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+          if (d.publicUrl) setCapturedMediaUrl(d.publicUrl)
+          if (d.transcript) setCapturedTranscript(d.transcript)
+          if (d.error && !d.transcript) setTranscribeNote(d.error)
+        })
+        .catch(() => setTranscribeNote('Could not transcribe the video — it will still be filed.'))
+        .finally(() => setAnalyzing(false))
+      return
+    }
     const reader = new FileReader()
     reader.onload = e => { if (e.target?.result) setPendingImage(e.target.result as string) }
     reader.readAsDataURL(file)
-    setMediaType(file.type)
-    setAnalyzing(true)
     const fd = new FormData()
     fd.append('file', file)
     fd.append('folder', 'media')
@@ -243,18 +269,18 @@ export default function DailyCommand() {
       .catch(() => {})
       .finally(() => setAnalyzing(false))
   }
-  const clearImage = () => { setPendingImage(null); setCapturedMediaUrl(''); setMediaType('') }
+  const clearImage = () => { setPendingImage(null); setCapturedMediaUrl(''); setMediaType(''); setCapturedTranscript(''); setTranscribeNote('') }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragging(false)
-    const file = Array.from(e.dataTransfer.files).find(f => f.type.startsWith('image/'))
-    if (file) loadImage(file)
+    const file = Array.from(e.dataTransfer.files).find(f => f.type.startsWith('image/') || f.type.startsWith('video/'))
+    if (file) loadMedia(file)
   }
 
   const handlePaste = (e: React.ClipboardEvent) => {
     const file = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'))?.getAsFile()
-    if (file) { e.preventDefault(); loadImage(file) }
+    if (file) { e.preventDefault(); loadMedia(file) }
   }
 
   const EnergyIcon = ENERGY_OPTIONS.find(e => e.value === data.energy)?.icon ?? Battery
@@ -291,21 +317,29 @@ export default function DailyCommand() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>Quick Capture → The River</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ideas · stories · images — sorted to an account, composed into a post</span>
-            <button onClick={() => fileInputRef.current?.click()} title="Attach image" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', padding: '2px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ideas · stories · images · videos — sorted to an account, composed into a post</span>
+            <button onClick={() => fileInputRef.current?.click()} title="Attach image or video" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', padding: '2px' }}>
               <ImageIcon size={13} />
             </button>
-            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) loadImage(f); e.target.value = '' }} />
+            <input ref={fileInputRef} type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) loadMedia(f); e.target.value = '' }} />
           </div>
         </div>
         {/* Attached image — stays visible until sorted */}
         {pendingImage && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', background: 'var(--bg)', border: '1px solid var(--border)', marginBottom: '10px' }}>
-            <img src={pendingImage} style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '6px' }} />
+            {mediaType.startsWith('video')
+              ? <div style={{ width: '44px', height: '44px', borderRadius: '6px', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🎬</div>
+              : <img src={pendingImage} style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '6px' }} />}
             <div style={{ flex: 1, fontSize: '12px', color: 'var(--text-muted)' }}>
-              {analyzing ? <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--hot-pink)', fontWeight: 600 }}><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Saving image…</span>
-                : capturedMediaUrl ? <span style={{ color: '#3daa7c', fontWeight: 600 }}>✓ Image ready — Let&apos;s Go files it under the right account</span>
-                : <span>Image attached</span>}
+              {mediaType.startsWith('video')
+                ? (analyzing ? <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--hot-pink)', fontWeight: 600 }}><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Transcribing video…</span>
+                    : capturedTranscript ? <span style={{ color: '#3daa7c', fontWeight: 600 }}>✓ Video transcribed — Let&apos;s Go sorts it by what&apos;s said</span>
+                    : transcribeNote ? <span style={{ color: '#f2a65a' }}>⚠ {transcribeNote}</span>
+                    : capturedMediaUrl ? <span style={{ color: '#3daa7c', fontWeight: 600 }}>✓ Video ready</span>
+                    : <span>Video attached</span>)
+                : (analyzing ? <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--hot-pink)', fontWeight: 600 }}><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Saving image…</span>
+                    : capturedMediaUrl ? <span style={{ color: '#3daa7c', fontWeight: 600 }}>✓ Image ready — Let&apos;s Go files it under the right account</span>
+                    : <span>Image attached</span>)}
             </div>
             <button onClick={clearImage} title="Remove" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', padding: '2px', display: 'flex' }}><span style={{ fontSize: '16px', lineHeight: 1 }}>×</span></button>
           </div>

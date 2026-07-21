@@ -841,19 +841,33 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
           {(() => {
             const slideLines = (post.onscreen_text ?? '').split('\n').map(l => l.replace(/^\s*Slide\s*\d+\s*[:.\-–]\s*/i, '').trim()).filter(Boolean)
             if (slideLines.length < 2) return null
-            const exportCsv = () => {
+            const exportCsv = async () => {
+              const base = post.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40)
               const esc = (v: string) => `"${v.replace(/"/g, '""')}"`
               const csv = ['slide,text', ...slideLines.map((l, idx) => `${idx + 1},${esc(l)}`)].join('\n')
               const a = document.createElement('a')
               a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-              a.download = `${post.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40)}-slides.csv`
+              a.download = `${base}-slides.csv`
               a.click()
               URL.revokeObjectURL(a.href)
+              // Also pull down any generated image(s) as JPG so she has the slide art in hand
+              const imgs = (post.media_urls?.length ? post.media_urls : (post.media_url ? [post.media_url] : []))
+                .filter(u => !/\.(mp4|mov|webm|m4v)(\?|$)/i.test(u))
+              for (let i = 0; i < imgs.length; i++) {
+                try {
+                  const blob = await (await fetch(imgs[i])).blob()
+                  const link = document.createElement('a')
+                  link.href = URL.createObjectURL(blob)
+                  link.download = imgs.length > 1 ? `${base}-${i + 1}.jpg` : `${base}.jpg`
+                  link.click()
+                  URL.revokeObjectURL(link.href)
+                } catch { /* skip an image that won't fetch */ }
+              }
             }
             return (
-              <button onClick={exportCsv} title="Download slide lines as CSV, then use Bulk Create in Canva"
+              <button onClick={exportCsv} title="Downloads the slide lines (CSV) AND the generated image(s) as JPG, ready for Canva Bulk Create"
                 style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
-                ⬇ Export slides for Canva ({slideLines.length} slides)
+                ⬇ Export for Canva ({slideLines.length} slides{(post.media_urls?.length || post.media_url) ? ' + image' : ''})
               </button>
             )
           })()}
