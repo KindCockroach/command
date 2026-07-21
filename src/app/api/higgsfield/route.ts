@@ -28,7 +28,17 @@ export async function POST(req: NextRequest) {
     const prompt = (piece.image_prompt ?? '').trim()
     if (!prompt) return NextResponse.json({ error: 'No image prompt on this post to send to Supercomputer' }, { status: 400 })
 
-    const size = ratio === 'square' ? 'square_1536x1536' : 'portrait_1536x2048'
+    // Aspect ratio follows the format: image → 1:1, reel/tiktok → 9:16, youtube → 16:9.
+    // Higgsfield's Soul API takes raw WIDTHxHEIGHT strings (its enum names were retired).
+    const isVideo = piece.type === 'video' || piece.type === 'podcast'
+    const plats = (piece.platforms ?? []).join(' ').toLowerCase()
+    const size =
+      ratio === 'square' ? '1536x1536'
+      : ratio === 'portrait' ? '1152x2048'
+      : ratio === 'landscape' ? '2048x1152'
+      : !isVideo ? '1536x1536'                         // images / carousels → 1:1
+      : plats.includes('youtube') ? '2048x1152'        // YouTube video → 16:9
+      : '1152x2048'                                     // reels / tiktok / ig → 9:16
     const res = await fetch(`${BASE}/v1/text2image/soul`, {
       method: 'POST',
       headers: authHeaders,
