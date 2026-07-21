@@ -370,10 +370,16 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   }
   const saveEdit = async () => {
     setSavingEdit(true)
+    // Capture what she changed so RISE can learn her taste from it
+    const before = { onscreen_text: post.onscreen_text ?? '', script: post.script ?? '', description: post.description ?? '' }
+    const after = { onscreen_text: form.onscreen_text, script: form.script, description: form.description }
     try {
       await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...form }) })
       setEditing(false)
       onChanged?.()
+      // Learn from the edit — best-effort, non-blocking; surfaces what RISE picked up
+      fetch('/api/content/learn', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id, before, after }) })
+        .then(r => r.json()).then(d => { if (Array.isArray(d.learned) && d.learned.length) setLearnedRule(d.learned.join(' · ')) }).catch(() => {})
     } finally { setSavingEdit(false) }
   }
 
@@ -391,6 +397,8 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
         body: JSON.stringify({ contentId: post.id, edits: form }),
       })
       if (res.ok) {
+        const d = await res.json().catch(() => ({}))
+        if (Array.isArray(d.learned) && d.learned.length) setLearnedRule(d.learned.join(' · '))
         setEditing(false); setUndoAvail(true); onChanged?.()
       } else {
         const d = await res.json().catch(() => ({}))
@@ -915,17 +923,17 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <button onClick={saveEdit} disabled={savingEdit}
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 16px', borderRadius: '9px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}>
-                  {savingEdit ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={12} />} Save edits
+                  {savingEdit ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={12} />} Save Changes
                 </button>
                 <button onClick={revise} disabled={revising}
-                  title="Fable keeps every edit you made and re-aligns the rest of the post to the Craft Laws around your words"
+                  title="Saves your edits, then Fable re-aligns the rest of the post to the Craft Laws around your words — and learns your taste from what you changed"
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 16px', borderRadius: '9px', border: '1px solid rgba(124,58,237,0.4)', background: 'rgba(124,58,237,0.06)', color: '#7C3AED', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: revising ? 0.7 : 1 }}>
-                  {revising ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Fable is weaving your edits in…</> : <>✨ Revise — keep my edits, restore the form</>}
+                  {revising ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Fable is weaving your edits in…</> : <>✨ Save Changes &amp; Adjust</>}
                 </button>
                 <button onClick={regenerate} disabled={regenerating}
-                  title={post.media_url ? 'RISE re-reads your attached image and rewrites the caption' : 'Rewrites from your updated prompt'}
+                  title={post.media_url ? 'Throws out this version and writes a fresh one from your attached image' : 'Throws out this version and writes a fresh one from the image prompt'}
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 16px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
-                  {regenerating ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Regenerating…</> : <>🔄 Save &amp; regenerate {post.media_url ? 'from image' : 'from prompt'}</>}
+                  {regenerating ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Trying again…</> : <>🔄 Try Again</>}
                 </button>
                 <button onClick={() => setEditing(false)} style={{ padding: '9px 14px', borderRadius: '9px', border: 'none', background: 'transparent', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
               </div>

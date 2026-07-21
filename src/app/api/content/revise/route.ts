@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAllContent, updateContent, getBrandAccount, getAudienceContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
+import { learnFromEdits } from '@/lib/learn'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -60,7 +61,14 @@ Return ONLY valid JSON: { "title": "...", "onscreen_text": "...", "script": "...
       hashtags: parsed.hashtags ?? edits.hashtags ?? piece.hashtags,
       image_prompt: edits.image_prompt ?? piece.image_prompt,
     })
-    return NextResponse.json({ revised: true, content: updated })
+    // Learn from HER edits (the machine's original vs what she changed) — best-effort
+    const learned = await learnFromEdits({
+      title: piece.title,
+      accountId: piece.account_id,
+      before: { onscreen_text: piece.onscreen_text, script: piece.script, description: piece.description },
+      after: { onscreen_text: edits.onscreen_text, script: edits.script, description: edits.description },
+    }).catch(() => [])
+    return NextResponse.json({ revised: true, content: updated, learned })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'revise failed' }, { status: 502 })
   }
