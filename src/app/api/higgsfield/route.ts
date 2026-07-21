@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
         params: {
           prompt: `${prompt}\n\nStyle: cinematic, photorealistic, warm natural light, editorial-quality, shallow depth of field.`,
           width_and_height: size,
-          quality: 'hd',
-          batch_size: 'single',
+          quality: '1080p',
+          batch_size: 1,
         },
       }),
     })
