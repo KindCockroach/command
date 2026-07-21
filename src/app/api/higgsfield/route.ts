@@ -32,11 +32,14 @@ export async function POST(req: NextRequest) {
     const res = await fetch(`${BASE}/v1/text2image/soul`, {
       method: 'POST',
       headers: authHeaders,
+      // Higgsfield's Soul API requires all generation params nested under `params`
       body: JSON.stringify({
-        prompt: `${prompt}\n\nStyle: cinematic, photorealistic, warm natural light, editorial-quality, shallow depth of field.`,
-        width_and_height: size,
-        quality: 'hd',
-        batch_size: 'single',
+        params: {
+          prompt: `${prompt}\n\nStyle: cinematic, photorealistic, warm natural light, editorial-quality, shallow depth of field.`,
+          width_and_height: size,
+          quality: 'hd',
+          batch_size: 'single',
+        },
       }),
     })
     const data = await res.json().catch(() => ({}))
