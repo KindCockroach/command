@@ -54,7 +54,12 @@ export async function POST(req: NextRequest) {
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      return NextResponse.json({ error: data?.error?.message ?? data?.message ?? `Supercomputer rejected the request (${res.status})`, raw: data }, { status: 502 })
+      // Higgsfield puts the real reason in `detail` — a plain string ("Not enough credits")
+      // or a validation array. Surface it so the card shows something actionable.
+      const detailMsg = typeof data?.detail === 'string'
+        ? data.detail
+        : Array.isArray(data?.detail) ? data.detail[0]?.msg : undefined
+      return NextResponse.json({ error: detailMsg ?? data?.error?.message ?? data?.message ?? `Supercomputer rejected the request (${res.status})`, raw: data }, { status: 502 })
     }
     const requestId = data?.request_id ?? data?.id
     if (!requestId) return NextResponse.json({ error: 'Supercomputer did not return a request id', raw: data }, { status: 502 })

@@ -364,6 +364,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
     title: post.title, script: post.script ?? '', onscreen_text: post.onscreen_text ?? '', description: post.description ?? '',
     hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '',
   })
+  const isVideoPost = post.type === 'video' || post.type === 'podcast'
   const startEdit = () => {
     setForm({ title: post.title, script: post.script ?? '', onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '' })
     setEditing(true); setOpen(true)
@@ -819,7 +820,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             </div>
           ) : (
             <>
-              {post.image_prompt && <Section label="🎨 Image / Video Prompt" text={post.image_prompt} />}
+              {post.image_prompt && <Section label={isVideoPost ? '🎬 Video Prompt (motion & scene · no text on frame)' : '🎨 Image Prompt (1:1 · hook on image)'} text={post.image_prompt} />}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {post.image_prompt && (
                   <button onClick={generateImage} disabled={genImg}
@@ -907,13 +908,17 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
 
           {editing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: 'var(--bg)', borderRadius: '10px', border: `1px solid ${accentColor}` }}>
-              {([
+              {(([
                 ['title', 'Title', 1],
-                ['image_prompt', '🎨 Image / Video Prompt', 3],
+                ['image_prompt', isVideoPost
+                  ? '🎬 Video Prompt — motion & scene · 9:16 reel/TikTok · 16:9 YouTube · NO text baked into the frame (captions are always added)'
+                  : '🎨 Image Prompt — 1:1 square · the hook text renders ON the image', 3],
                 ['script', '🎬 Script (spoken — for HeyGen/voiceover)', 4],
-                ['onscreen_text', '📱 On-Screen Text / Slides (overlays — can differ from script)', 4],
+                ['onscreen_text', isVideoPost
+                  ? '📱 On-Screen Hook — ONE line (the scroll-stopping overlay)'
+                  : '📱 On-Screen Text / Slides (overlays — can differ from script)', 4],
                 ['description', '✅ Caption — THIS is what posts (hashtags included)', 5],
-              ] as const).map(([key, label, rows]) => (
+              ]) as [keyof typeof form, string, number][]).map(([key, label, rows]) => (
                 <div key={key}>
                   <label style={{ display: 'block', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)', marginBottom: '4px' }}>{label}</label>
                   <textarea value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} rows={rows}

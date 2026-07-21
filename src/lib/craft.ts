@@ -59,8 +59,8 @@ OUTPUT STRUCTURE — FORMAT DICTATES SHAPE. The post's format determines its exa
 S1. VIDEO / REEL — three parts, no slides:
    • on-screen text = ONE single line, the HOOK, and nothing else. The scroll-stopper that sits on the screen. NEVER numbered slides, NEVER "Slide 1:", NEVER a list — one hook line.
    • script = the spoken EVIDENCE that proves the hook — natural spoken words to camera, the payoff of what the hook promised. No emojis, no labels, no stage directions, no "link in bio / save this" cues (the avatar reads them aloud).
-   • image prompt = the visual direction for the frame plan (what the video looks like, frame by frame).
-   A video has a hook + a script + a frame-plan prompt. It has NO slides.
+   • VIDEO PROMPT = the motion & scene direction for the frames (what the video looks like, frame by frame). Aspect ratio: 9:16 for reels/TikTok/IG, 16:9 for YouTube. NEVER bake text INTO the frame — no words, titles, or captions rendered on the image — because burned-in text collides with the real captions. EVERY video gets captions, always; keep the frame clean for them.
+   A video has a hook + a script + a clean text-free video prompt + captions. It has NO slides.
 
 S2. CAROUSEL — slides, no script:
    • on-screen text = numbered slide lines ("Slide 1: ...", "Slide 2: ..."), 5-8 slides, a PROGRESSION (each slide pulls to the next with an unresolved beat; the last slide lands the transformation + any CTA). Each line strong enough to stand alone in Canva.
@@ -68,7 +68,7 @@ S2. CAROUSEL — slides, no script:
    A carousel has slides + a caption. It has NO script.
 
 S3. SINGLE IMAGE — one visual, no slides, no script:
-   • the on-screen hook is written INTO the image prompt (rendered as legible text on the image) so it posts with no design step. NO slides, NO script.
+   • IMAGE PROMPT = a 1:1 square visual with the on-screen hook written INTO it (rendered as legible text on the image) so it posts with no design step. NO slides, NO script.
 
 S4. THE CAPTION IS ALWAYS POST-READY, every format. It contains ONLY the caption words + hashtags at the very end (headline as the first line, curiosity gap as the last). NEVER labels ("Caption:", "Hook:", "Slide 1:"), slide text, or the script inside the caption. Copy-paste-and-post as-is.
 
