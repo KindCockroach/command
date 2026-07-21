@@ -39,6 +39,26 @@ export async function POST(req: NextRequest) {
       ? `ACCOUNT: ${account.handle} (${account.brand_name}) — ${account.topic}. Tone: ${account.tone}. ${account.offer ? `Offer: ${account.offer}.` : ''}\n${account.notes ? `NON-NEGOTIABLE RULES (obey exactly): ${account.notes}` : ''}`
       : 'VOICE: Mandi Beck — warm, direct, no fluff.'
 
+    // FORMAT DICTATES SHAPE — video = single hook + script (no slides);
+    // carousel = numbered slides (no script); single image = hook in prompt.
+    const isVideo = piece.type === 'video' || piece.type === 'podcast'
+    const isCarousel = piece.type === 'carousel'
+    const shapeSpec = isVideo
+      ? `FORMAT: VIDEO/REEL. Obey this shape exactly:
+- "onscreen_text": ONE single line, the HOOK only. NO slides, NO "Slide 1:", NO numbered lines.
+- "script": the spoken EVIDENCE that proves the hook — natural spoken words to camera, no emojis, no labels, no stage directions, no "link in bio/save this" cues.
+- "caption": post-ready (headline first line, curiosity gap last line).
+Return JSON: { "title", "onscreen_text", "script", "caption", "hashtags" }`
+      : isCarousel
+      ? `FORMAT: CAROUSEL. Obey this shape exactly:
+- "onscreen_text": numbered slide lines ("Slide 1: ...", "Slide 2: ..."), 5-8 slides, a progression — each slide pulls to the next, last slide lands the transformation + CTA. NO script.
+- "caption": post-ready (headline first line, curiosity gap last line).
+Return JSON: { "title", "onscreen_text", "caption", "hashtags" }`
+      : `FORMAT: SINGLE IMAGE. Obey this shape exactly:
+- "onscreen_text": the single on-screen hook line (no slides).
+- "caption": post-ready (headline first line, curiosity gap last line).
+Return JSON: { "title", "onscreen_text", "caption", "hashtags" }`
+
     const prompt = `${voice}
 ${getWatchContext()}
 
@@ -46,18 +66,19 @@ ${craftFor(piece.account_id)}
 
 ${getAudienceContext(account?.audience_id)}
 
-Re-write this existing post under the Craft Laws. Keep the same core idea, format, and intent, but make it land harder — obey the priority order: side-effect specificity first, then hook/headline/curiosity-gap alignment, then resume-the-conversation. Do NOT invent facts about Mandi's life.
+Re-write this existing post under the Craft Laws. Keep the same core idea and intent, but make it land harder — obey the priority order: side-effect specificity first, then hook/headline/curiosity-gap alignment, then resume-the-conversation. Do NOT invent facts about Mandi's life.
+
+${shapeSpec}
 
 ORIGINAL:
 Title: ${piece.title}
 On-screen: ${piece.onscreen_text ?? ''}
-Caption: ${piece.description ?? ''}
-
-Return ONLY valid JSON: { "title": "...", "onscreen_text": "...", "caption": "full ready-to-post caption (headline first line, curiosity gap last line)", "hashtags": "up to 5 hashtags space-separated" }`
+Script: ${piece.script ?? ''}
+Caption: ${piece.description ?? ''}`
 
     try {
       const output = await fableText({
-        instructions: 'You are a master storyteller re-writing content to make people FEEL something. Show, never tell. Return only valid JSON.',
+        instructions: 'You are a master storyteller re-writing content to make people FEEL something. Show, never tell. Obey the FORMAT shape exactly. Return only valid JSON.',
         input: prompt,
         maxTokens: 3000,
         effort,
@@ -67,6 +88,8 @@ Return ONLY valid JSON: { "title": "...", "onscreen_text": "...", "caption": "fu
       updateContent(piece.id, {
         title: parsed.title || piece.title,
         onscreen_text: parsed.onscreen_text ?? piece.onscreen_text,
+        // video keeps/writes a script; carousel & single image have NONE
+        script: isVideo ? (parsed.script ?? piece.script ?? '') : '',
         description: parsed.caption ?? piece.description,
         hashtags: parsed.hashtags ?? piece.hashtags,
         tags: [...cleanTags, 'fable'],

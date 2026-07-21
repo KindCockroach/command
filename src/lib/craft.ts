@@ -52,12 +52,25 @@ I5. BRIDGE TO HER. Land it on the woman scrolling today — the permission, cour
 I6. SAVE-WORTHY & SHARE-WORTHY. End on a fact or line she'd screenshot, repeat, or tell her daughter. If it's not worth carrying forward, it's a Wikipedia dump.
 I7. CTA CARRIES IT FORWARD, NEVER SELLS. Invite her to name a woman, nominate the next one, or claim the reframe — the ask honors the subject, it never pivots to a pitch.
 
-OUTPUT STRUCTURE (how every post must be shaped so it maps straight into the tool and onto the platform):
-S1. THE CAPTION/BODY IS POST-READY. The caption contains ONLY the words that go in the post's caption, plus its hashtags at the very end. NEVER put labels ("Caption:", "Hook:", "Script:", "Slide 1:"), slide text, or spoken scripts in the caption. It must copy-paste-and-post as-is.
-S2. SINGLE IMAGE POST → the on-screen hook is written INTO the image prompt (rendered as legible text on the image itself) so it generates and posts with no design step.
-S3. CAROUSEL → the on-screen text is a set of numbered slide lines (5-8) Mandi builds in Canva. The caption stays separate and post-ready.
-S4. HEYGEN / VIDEO → the SPOKEN SCRIPT goes in the script field — natural spoken words ONLY. NEVER put emojis, labels, stage directions, or "👇 / save this" cues in the script (the avatar would read them aloud). The on-screen hook/overlay goes in the on-screen text field (emojis are fine there). Caption stays separate and post-ready.
-S5. MIX FORMATS. Blend single image posts, carousels, and HeyGen video scripts across an account — never one format only.
+OUTPUT STRUCTURE — FORMAT DICTATES SHAPE. The post's format determines its exact anatomy. These shapes are mutually exclusive — NEVER mix them. A video never has slides; a carousel never has a script.
+
+S1. VIDEO / REEL — three parts, no slides:
+   • on-screen text = ONE single line, the HOOK, and nothing else. The scroll-stopper that sits on the screen. NEVER numbered slides, NEVER "Slide 1:", NEVER a list — one hook line.
+   • script = the spoken EVIDENCE that proves the hook — natural spoken words to camera, the payoff of what the hook promised. No emojis, no labels, no stage directions, no "link in bio / save this" cues (the avatar reads them aloud).
+   • image prompt = the visual direction for the frame plan (what the video looks like, frame by frame).
+   A video has a hook + a script + a frame-plan prompt. It has NO slides.
+
+S2. CAROUSEL — slides, no script:
+   • on-screen text = numbered slide lines ("Slide 1: ...", "Slide 2: ..."), 5-8 slides, a PROGRESSION (each slide pulls to the next with an unresolved beat; the last slide lands the transformation + any CTA). Each line strong enough to stand alone in Canva.
+   • NO script — a carousel is never spoken.
+   A carousel has slides + a caption. It has NO script.
+
+S3. SINGLE IMAGE — one visual, no slides, no script:
+   • the on-screen hook is written INTO the image prompt (rendered as legible text on the image) so it posts with no design step. NO slides, NO script.
+
+S4. THE CAPTION IS ALWAYS POST-READY, every format. It contains ONLY the caption words + hashtags at the very end (headline as the first line, curiosity gap as the last). NEVER labels ("Caption:", "Hook:", "Slide 1:"), slide text, or the script inside the caption. Copy-paste-and-post as-is.
+
+S5. MIX FORMATS across an account — blend videos, carousels, and single images; never one format only. But each individual post obeys exactly ONE shape above.
 `.trim()
 
 // AI Mom Podcast — the full creative constitution. Applied only to @aimompodcast.
