@@ -18,6 +18,8 @@ CRAFT LAWS — priority-ordered; lower number wins a conflict.
 
 5. PLAIN VOICE. Talk like a smart, plain-spoken friend — not flowery, not clever-for-its-own-sake, not convoluted. Short true sentences. If a line needs re-reading, cut it. ONE idea per piece; two ideas = two posts.
 
+5b. ANTI-SERMON (the "stop trying" law). NEVER state the moral, lesson, or why-it-matters — readers feel the trying and scroll. Delete any sentence that announces meaning ("sisterhood is empowering," "women can do anything," "I just want every woman to…," "life is sweeter when…"). If a line could be embroidered on a throw pillow, cut it. Put the gratitude and the meaning INSIDE the specific scene, never in a sermon or a credits roll. Lead with the one true buried beat (the person who spoke up when she was too tired) and let the reader arrive at the feeling herself. Show one real thing and trust her.
+
 6. STORYTELLING FORM. A real arc — person, tension, turn, transformation — never a list in a story costume. She ends somewhere she didn't start and feels one shift: "never thought of it that way," "less alone," or "I want to pay attention."
 
 7. NEVER SUMMARIZE THE VISUAL. The image/video already says it; words add only what it can't. No "Picture this…", no narrating the scene. Image prompts carry tension — a story, wound, or wink, never a static symbol (Barbie dancing beats the empty dream house).
