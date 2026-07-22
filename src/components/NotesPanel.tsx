@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Plus, Search, Pin, PinOff, Trash2, X, BookOpen, Archive, Send, Sparkles } from 'lucide-react'
 import type { Note } from '@/lib/db'
+import CommanderModal from './CommanderModal'
 
 type Acct = { id: string; handle: string; emoji: string; color: string; status: string }
 type SendResult = { ok: boolean; msg: string }
@@ -17,13 +18,14 @@ const BUCKETS: { key: string; label: string; maxHours: number | null }[] = [
 
 const hoursSince = (iso: string) => (Date.now() - new Date(iso).getTime()) / 3600000
 
-function NoteCard({ note, accounts, onUpdate, onDelete, onSelect, onSendToAccount, onExpand }: {
+function NoteCard({ note, accounts, onUpdate, onDelete, onSelect, onSendToAccount, onExpand, onShred }: {
   note: Note; accounts: Acct[];
   onUpdate: (id: number, u: Partial<Note>) => void;
   onDelete: (id: number) => void;
   onSelect: (n: Note) => void;
   onSendToAccount: (n: Note, accountId: string) => Promise<SendResult>;
   onExpand: (n: Note) => Promise<SendResult>;
+  onShred: (n: Note) => void;
 }) {
   const h = hoursSince(note.created_at)
   const age = h < 48 ? `${Math.max(1, Math.round(h))}h ago` : h < 24 * 30 ? `${Math.round(h / 24)}d ago` : new Date(note.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -61,6 +63,9 @@ function NoteCard({ note, accounts, onUpdate, onDelete, onSelect, onSendToAccoun
                   </button>
                 ))}
                 <div style={{ borderTop: '1px solid var(--border)', margin: '6px 4px' }} />
+                <button onClick={() => { setMenu(false); onShred(note) }} style={{ ...item, fontWeight: 700, color: 'var(--purple)' }} onMouseEnter={hov(true)} onMouseLeave={hov(false)}>
+                  🔱 Shred &amp; Compose (across accounts)
+                </button>
                 <button onClick={() => run(() => onExpand(note))} style={{ ...item, fontWeight: 700, color: 'var(--hot-pink)' }} onMouseEnter={hov(true)} onMouseLeave={hov(false)}>
                   <Sparkles size={12} /> Expand 1→30 stream
                 </button>
@@ -131,6 +136,7 @@ export default function NotesPanel() {
   const [source, setSource] = useState<'all' | 'ideas' | 'chats' | 'pinned'>('all')
   const [selected, setSelected] = useState<Partial<Note> | null>(null)
   const [accounts, setAccounts] = useState<Acct[]>([])
+  const [shredNote, setShredNote] = useState<Note | null>(null)
 
   const load = () => { fetch('/api/notes').then(r => r.json()).then(setNotes) }
   useEffect(() => { load() }, [])
@@ -291,7 +297,7 @@ export default function NotesPanel() {
       {/* Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
         {visible.map(n => (
-          <NoteCard key={n.id} note={n} accounts={accounts} onUpdate={update} onDelete={remove} onSelect={openNote} onSendToAccount={sendToAccount} onExpand={expandNote} />
+          <NoteCard key={n.id} note={n} accounts={accounts} onUpdate={update} onDelete={remove} onSelect={openNote} onSendToAccount={sendToAccount} onExpand={expandNote} onShred={setShredNote} />
         ))}
         {visible.length === 0 && (
           <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--text-muted)', padding: '40px', opacity: 0.5 }}>
@@ -301,6 +307,7 @@ export default function NotesPanel() {
       </div>
 
       {selected && <NoteModal note={selected} onSave={save} onClose={() => setSelected(null)} />}
+      {shredNote && <CommanderModal input={`${shredNote.title}\n\n${shredNote.body}`} onClose={() => setShredNote(null)} />}
     </div>
   )
 }
