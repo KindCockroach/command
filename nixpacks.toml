@@ -1,3 +1,7 @@
+# ffmpeg lets the server auto-compress/chunk oversized podcast audio before Whisper
+[phases.setup]
+aptPkgs = ["ffmpeg"]
+
 [phases.build]
 cmds = ["npm run build"]
 
