@@ -138,7 +138,8 @@ export default function PodcastEngine() {
         const input = `PODCAST EPISODE${episodeNumber ? ` ${episodeNumber}` : ''}: ${result.title}\n\nREEL SCRIPT (${s.platform}):\nHOOK: ${s.hook}\nBODY: ${s.body}\nCTA: ${s.cta}\n\nEPISODE CONTEXT: ${result.seo_description}\nPULL QUOTE: ${result.pull_quotes?.[i] ?? result.pull_quotes?.[0] ?? ''}`
         const res = await fetch('/api/river', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input, source: 'podcast' }),
+          // podcast reels belong to the podcast — don't let the sorter scatter them
+          body: JSON.stringify({ input, source: 'podcast', accountId: 'aimompodcast' }),
         })
         const d = await res.json()
         if (d.account) filed.push(`${d.account.emoji} ${d.account.handle}`)

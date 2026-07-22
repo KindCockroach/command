@@ -39,6 +39,12 @@ Everything you write stays in MANDI'S OWN VOICE (this is her show, she is the ho
 
 ${CRAFT_RULES}
 
+HOOK DOCTRINE (governs the title, subtitle, EVERY headline, and EVERY reel hook — this is the bar):
+A hook must STOP A THUMB — make a scroller think "wait, WHAT?" It is a bold claim, a strange specific, a scene, or a provocation she cannot walk past. It is NOT an SEO/informational headline.
+BANNED — never produce these lazy defaults: "AI's rapid growth", "Are you prepared?", "The future of X", "Why X matters", "Everything you need to know about…", "5 ways to…", "How AI is changing…". If a headline could open a corporate blog post, DELETE it and write a real hook.
+NORTH STAR (write at this level): "We generated a new species. Follow this podcast to follow the evolution and our newfound understanding of consciousness." — a claim that reframes reality and makes her NEED to know more.
+Every headline and reel hook must be that specific and that alive. Reel hooks = ONE line at this bar.
+
 Return ONLY valid JSON. No markdown. No explanation.`,
     input: `${context}
 
@@ -63,7 +69,7 @@ Generate ALL podcast deliverables. Return this exact JSON structure:
   "pull_quotes": ["quote 1", "quote 2", "quote 3", "quote 4", "quote 5"],
   "reels_scripts": [
     {
-      "hook": "first 3 seconds",
+      "hook": "ONE-line scroll-stopping hook at the HOOK DOCTRINE bar — a claim/scene/provocation, never an SEO headline",
       "body": "15-30 second middle",
       "cta": "comment trigger CTA",
       "platform": "Instagram Reels"

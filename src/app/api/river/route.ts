@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   const watchContext = getWatchContext()
 
   const accountList = accounts.map(a =>
-    `- id:"${a.id}" ${a.handle} (${a.platform}) — ${a.topic}. Mission: ${a.mission}. Tone: ${a.tone}. ${a.offer ? `Offer: ${a.offer} (${a.offer_price})` : ''}${a.notes ? ` ⚠ RULES: ${a.notes}` : ''}${audienceLine(a.audience_id) ? ` 👤 ${audienceLine(a.audience_id)}` : ''}`
+    `- id:"${a.id}" ${a.handle} (${a.platform}) — ${a.topic}. Mission: ${a.mission}. Tone: ${a.tone}.${a.content_format ? ` Format: ${a.content_format}.` : ''} ${a.offer ? `Offer: ${a.offer} (${a.offer_price})` : ''}${a.notes ? ` ⚠ RULES: ${a.notes}` : ''}${audienceLine(a.audience_id) ? ` 👤 ${audienceLine(a.audience_id)}` : ''}`
   ).join('\n')
 
   const goalList = goals.map(g =>
@@ -119,7 +119,7 @@ Return ONLY valid JSON:
   "onscreen_text": "text overlay / opening on-screen line",
   "image_prompt": "detailed AI image/video prompt for the visual",
   "hashtags": "15-25 hashtags space-separated",
-  "content_type": "post | video | image | podcast | workshop | other",
+  "content_type": "MATCH the chosen account's Format: video-first accounts (reels, talking-to-camera, personal shares) → 'video'; carousel/static-image accounts → 'image'; only use 'post' when the account is genuinely text-first. Never default everything to 'post'.",
   "needs": ["media" | "answers"],
   "open_questions": ["question only Mandi can answer", ...],
   "research_topic": "topic you researched and folded in, or null"
