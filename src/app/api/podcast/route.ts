@@ -98,9 +98,9 @@ Generate ALL podcast deliverables. Return this exact JSON structure:
   "spotify_description": "short Spotify episode description under 200 chars",
   "apple_description": "Apple Podcasts description under 255 chars",
   "ad_reads": {
-    "pre_roll": "15-second ad read in Mandi's voice for aiworksforyou.co",
-    "mid_roll": "30-second mid-roll ad read for aiworksforyou.co",
-    "post_roll": "10-second outro ad for aiworksforyou.co"
+    "pre_roll": "15-second SPOKEN invitation in Mandi's voice to follow the AI Mom Podcast — warm, pure-give (never a sales pitch). Tell them to follow AI Mom on Apple Podcasts, Spotify, or YouTube. Spoken words only — NEVER read a URL aloud, never mention aiworksforyou.co.",
+    "mid_roll": "30-second SPOKEN mid-roll in Mandi's voice inviting listeners to follow/subscribe to the AI Mom Podcast so they don't miss an episode — on Apple, Spotify, or YouTube. Pure-give energy, no sales ask. Spoken only, no URLs, no aiworksforyou.co.",
+    "post_roll": "10-second SPOKEN outro in Mandi's voice — invite them to follow AI Mom on Apple, Spotify, or YouTube and end on a signature line. Spoken only, no URLs, no aiworksforyou.co."
   },
   "guest_share_kit": {
     "dm_message": "message to send guest asking them to share (if applicable, else empty string)",
