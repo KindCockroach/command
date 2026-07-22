@@ -242,7 +242,7 @@ export default function UniversalCapture() {
 
       {/* Text input */}
       <textarea value={input} onChange={e => setInput(e.target.value)}
-        placeholder="Or type/paste anything — a URL, raw idea, voice memo transcript, social post you want to remake, podcast topic, task, question..."
+        placeholder="Tell me what to do — 'store this to notes', 'what account does this belong to?', 'build an account for X', 'remind me to…', or ask me anything. Your CEO partner: say it, I'll act on it."
         style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px', resize: 'vertical', minHeight: '80px', fontFamily: 'inherit', lineHeight: 1.6 }}
         onKeyDown={e => { if (e.key === 'Enter' && e.metaKey) classify() }}
       />
