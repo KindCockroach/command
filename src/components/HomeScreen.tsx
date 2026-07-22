@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Settings2, X, ChevronUp, ChevronDown, Check } from 'lucide-react'
 import DailyCommand from './DailyCommand'
+import CommanderChat from './CommanderChat'
 import ResearchBrief from './ResearchBrief'
 import GoalsPanel from './GoalsPanel'
 import TasksPanel from './TasksPanel'
@@ -17,6 +18,7 @@ import StoryStudio from './StoryStudio'
 // ── The widget registry — every tab available as a homescreen widget ──────────
 // DailyCommand stays the anchor widget (quick capture + brief + tasks + fire).
 const WIDGETS: { id: string; label: string; emoji: string; render: () => React.ReactNode }[] = [
+  { id: 'commander',  label: 'The Commander',   emoji: '⚡', render: () => <CommanderChat /> },
   { id: 'command',    label: 'Daily Command',   emoji: '⚡', render: () => <DailyCommand /> },
   { id: 'research',   label: 'Must-Reads',      emoji: '🔬', render: () => <ResearchBrief /> },
   { id: 'goals',      label: 'Goals',           emoji: '🎯', render: () => <GoalsPanel /> },
@@ -32,7 +34,7 @@ const WIDGETS: { id: string; label: string; emoji: string; render: () => React.R
 ]
 
 const STORAGE_KEY = 'rise-home-widgets-v1'
-const DEFAULT_LAYOUT = ['command']   // today's homescreen, unchanged
+const DEFAULT_LAYOUT = ['commander', 'command']   // the Commander chat leads the home screen
 
 // The customizable homescreen: pick which widgets show and in what order,
 // so Daily Command bends to the current focus (launch mode, research season…).
@@ -46,7 +48,16 @@ export default function HomeScreen() {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length) setLayout(parsed.filter((id: string) => WIDGETS.some(w => w.id === id)))
+        if (Array.isArray(parsed) && parsed.length) {
+          let ids = parsed.filter((id: string) => WIDGETS.some(w => w.id === id))
+          // one-time: surface the new Commander at the top of an existing homescreen
+          if (!localStorage.getItem('rise-home-commander-added')) {
+            if (!ids.includes('commander')) ids = ['commander', ...ids]
+            localStorage.setItem('rise-home-commander-added', '1')
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
+          }
+          setLayout(ids)
+        }
       }
     } catch { /* fall back to default */ }
     setLoaded(true)

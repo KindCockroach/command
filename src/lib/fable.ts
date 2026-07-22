@@ -12,6 +12,7 @@ import OpenAI from 'openai'
 export const WRITER_MODEL = 'gpt-4o'
 export const CHEAP_MODEL = 'gpt-4o-mini'
 export const FABLE_MODEL = WRITER_MODEL // back-compat alias for older imports
+export const COMMANDER_MODEL = 'claude-fable-5' // the Commander's reasoning brain — worth the premium
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
@@ -66,6 +67,22 @@ export async function fableText(opts: {
   })
 
   return (res.choices[0]?.message?.content ?? '').trim()
+}
+
+// ── The Commander — Mandi's conversational partner, on Claude Fable 5 ─────────
+// A real back-and-forth thinker. Content generation stays on cheap 4o; THIS is the
+// high-value reasoning surface, so it gets the most capable model.
+export async function commanderChat(system: string, messages: { role: 'user' | 'assistant'; content: string }[], maxTokens = 1600): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — add it in Railway so the Commander can think.')
+  const res = await fetch(ANTHROPIC_URL, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
+    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, system, messages }),
+  })
+  const data = (await res.json()) as AnthropicResponse
+  if (!res.ok) throw new Error(`Commander API error (${res.status}): ${data?.error?.message ?? 'unknown error'}`)
+  return (data.content ?? []).filter(b => b.type === 'text' && typeof b.text === 'string').map(b => b.text as string).join('').trim()
 }
 
 // ── The Researcher — live web search with a heavyweight thinker ───────────────
