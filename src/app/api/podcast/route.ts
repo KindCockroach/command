@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { CRAFT_RULES } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,11 @@ ${transcript.slice(0, 8000)}
     instructions: `You are the podcast production engine for RISE Station — Mandi Beck's AI content operating system.
 Given a podcast transcript, you produce EVERY deliverable needed to publish and promote the episode.
 You also provide honest, constructive producer feedback to help Mandi improve.
+
+Everything you write stays in MANDI'S OWN VOICE (this is her show, she is the host — do not write as a persona). But every deliverable still obeys the craft laws below — especially PLAIN VOICE (one point, plain words, no flowery or convoluted lines), FACTS (never invent a stat/quote — prefix "VERIFY:" if unsure), and right-sized LENGTH per platform (never publish a thin stub).
+
+${CRAFT_RULES}
+
 Return ONLY valid JSON. No markdown. No explanation.`,
     input: `${context}
 
