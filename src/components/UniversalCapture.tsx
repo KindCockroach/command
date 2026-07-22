@@ -66,6 +66,7 @@ export default function UniversalCapture() {
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [executing, setExecuting] = useState(false)
   const [executedResults, setExecutedResults] = useState<string[] | null>(null)
+  const [uploadedFile, setUploadedFile] = useState<{ url: string; type: string } | null>(null)
 
   // "You do it." — the CEO executes its own plan and leaves a review task
   const youDoIt = async () => {
@@ -75,7 +76,8 @@ export default function UniversalCapture() {
       const res = await fetch('/api/intake/smart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ executeActions: result.actions, originalInput: input.trim() }),
+        // pass the dropped file through so a video/image lands ON its post-card
+        body: JSON.stringify({ executeActions: result.actions, originalInput: input.trim(), fileUrl: uploadedFile?.url, fileType: uploadedFile?.type }),
       })
       const d = await res.json()
       if (d.executed) setExecutedResults(d.results ?? [])
@@ -124,6 +126,7 @@ export default function UniversalCapture() {
     try {
       let fileData: { publicUrl: string; fileType: string; fileName: string } | null = null
       if (file) fileData = await uploadFile(file)
+      setUploadedFile(fileData ? { url: fileData.publicUrl, type: fileData.fileType } : null)
 
       const res = await fetch('/api/intake/smart', {
         method: 'POST',
@@ -385,18 +388,35 @@ export default function UniversalCapture() {
             )}
 
             {/* ✅ Executed — the receipt of what RISE built */}
-            {executedResults && (
-              <div style={{ border: '1px solid #3DAA7C', borderRadius: '10px', overflow: 'hidden' }}>
-                <div style={{ padding: '9px 12px', background: '#EAF7F0', fontSize: '11px', fontWeight: 800, color: '#2E8B60', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  ✅ Done — here&apos;s what I built
+            {executedResults && (() => {
+              const go = (view: string) => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view } }))
+              const dests: { label: string; view: string }[] = []
+              if (executedResults.some(r => r.startsWith('🎬') || r.includes('Post-card') || r.includes('Account created') || r.includes('📱'))) dests.push({ label: 'See it in Accounts →', view: 'accounts' })
+              if (executedResults.some(r => r.includes('Task') || r.startsWith('✅') || r.startsWith('📋'))) dests.push({ label: 'Open Tasks →', view: 'tasks' })
+              if (executedResults.some(r => r.startsWith('📝') || r.includes('Notes'))) dests.push({ label: 'Open Notes →', view: 'notes' })
+              return (
+                <div style={{ border: '1px solid #3DAA7C', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ padding: '9px 12px', background: '#EAF7F0', fontSize: '11px', fontWeight: 800, color: '#2E8B60', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    ✅ Done, Mandi — here&apos;s what I built and where it lives
+                  </div>
+                  <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    {executedResults.map((r, i) => (
+                      <p key={i} style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{r}</p>
+                    ))}
+                  </div>
+                  {dests.length > 0 && (
+                    <div style={{ padding: '0 12px 12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {dests.map(d => (
+                        <button key={d.view} onClick={() => go(d.view)}
+                          style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid #3DAA7C', background: 'transparent', color: '#2E8B60', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  {executedResults.map((r, i) => (
-                    <p key={i} style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{r}</p>
-                  ))}
-                </div>
-              </div>
-            )}
+              )
+            })()}
 
             <button onClick={saveToRoute}
               style={{ width: '100%', padding: '11px', background: savedRoute ? '#3DAA7C' : 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'background 0.2s' }}>

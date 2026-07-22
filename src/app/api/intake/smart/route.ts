@@ -4,9 +4,9 @@ import {
   upsertBrandAccount, upsertAudience, createTask,
   getAllBrandAccounts, getAllAudiences, audienceLine,
   upsertAvatar, getAllAvatars, createGoal, createWatchAccount,
-  createProject, createEvent, createNote,
+  createProject, createEvent, createNote, createContent,
 } from '@/lib/db'
-import type { BrandAccount, Audience, AvatarRecord, EventKind } from '@/lib/db'
+import type { BrandAccount, Audience, AvatarRecord, EventKind, ContentType, ContentStatus } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -26,8 +26,9 @@ type PlannedAction =
   | { action: 'create_note'; payload: { title: string; body: string; tags?: string[] } }
   | { action: 'research_dig'; payload: { topic: string; account_id?: string | null } }
   | { action: 'create_task'; payload: { title: string; notes?: string; priority?: 'urgent' | 'high' | 'medium' | 'low'; due_date?: string | null } }
+  | { action: 'create_content'; payload: { account_id: string; title?: string; onscreen_text?: string; caption?: string; hashtags?: string; image_prompt?: string; content_type?: string; media_url?: string; status?: string } }
 
-function executeActions(actions: PlannedAction[], origin: string) {
+function executeActions(actions: PlannedAction[], origin: string, media?: { url?: string; type?: string }) {
   const results: string[] = []
   let createdAccounts = 0
   for (const a of actions) {
@@ -81,6 +82,30 @@ function executeActions(actions: PlannedAction[], origin: string) {
       } else if (a.action === 'create_task') {
         const t = createTask({ title: a.payload.title, notes: a.payload.notes ?? '', priority: a.payload.priority ?? 'medium', due_date: a.payload.due_date ?? null })
         results.push(`✅ Task created: ${t.title}`)
+      } else if (a.action === 'create_content') {
+        // A dropped video/image or a briefed post becomes a REAL, approvable post-card —
+        // with the media attached. Never let media fall back to just a task.
+        const acct = getAllBrandAccounts().find(x => x.id === a.payload.account_id)
+        const mediaUrl = a.payload.media_url || media?.url || ''
+        const isVideo = /\.(mp4|mov|webm|m4v)(\?|$)/i.test(mediaUrl)
+        const c = createContent({
+          title: a.payload.title || a.payload.onscreen_text?.slice(0, 60) || 'Quick Capture post',
+          description: a.payload.caption || '',
+          status: (a.payload.status as ContentStatus) || 'ready',
+          type: (a.payload.content_type as ContentType) || (isVideo ? 'video' : mediaUrl ? 'image' : 'post'),
+          platforms: [acct?.platform?.toLowerCase() ?? 'instagram'],
+          tags: ['quick-capture'],
+          notes: 'Filed by Quick Capture "You do it".',
+          account_id: a.payload.account_id ?? null,
+          media_url: mediaUrl,
+          media_urls: mediaUrl ? [mediaUrl] : [],
+          image_prompt: mediaUrl ? '' : (a.payload.image_prompt || ''),
+          onscreen_text: a.payload.onscreen_text || '',
+          hashtags: a.payload.hashtags || '',
+          open_questions: [],
+          river_source: 'quick-capture',
+        })
+        results.push(`🎬 Post-card filed under ${acct?.handle ?? a.payload.account_id}${mediaUrl ? ' (with your media attached)' : ''} — approve it in Accounts (card "${c.title}")`)
       }
     } catch (e) {
       results.push(`⚠ Failed ${a.action}: ${e instanceof Error ? e.message : 'unknown error'}`)
@@ -103,7 +128,11 @@ export async function POST(req: NextRequest) {
 
   // ── EXECUTE MODE: Mandi said "You do it" ────────────────────────────────────
   if (Array.isArray(body.executeActions)) {
-    const results = executeActions(body.executeActions as PlannedAction[], new URL(req.url).origin)
+    const results = executeActions(
+      body.executeActions as PlannedAction[],
+      new URL(req.url).origin,
+      body.fileUrl ? { url: body.fileUrl, type: body.fileType } : undefined,
+    )
     // Teach the station what was decided (best-effort)
     try {
       const { rememberConversation } = await import('@/lib/memory')
@@ -153,6 +182,9 @@ CEO POWERS — "actions": when the input calls for building things, propose a co
 - create_note: archive the ORIGINAL BRIEF as lore — { "action": "create_note", "payload": { title ("📋 Brief: ..."), body (her brief verbatim + your read of it), tags: ["brief", account id] } }
 - research_dig: for fact-based accounts (history, science, news) — { "action": "research_dig", "payload": { topic (what to research first), account_id } } — runs the research desk so content starts from real sources.
 - create_task: { "action": "create_task", "payload": { title, notes, priority, due_date (YYYY-MM-DD or null) } }
+- create_content: { "action": "create_content", "payload": { account_id (existing account), title, onscreen_text, caption, hashtags, image_prompt, content_type ("video"|"image"|"post"), media_url, status: "ready" } } — makes a REAL, approvable post-card.
+
+MEDIA & READY POSTS — NON-NEGOTIABLE: when she drops a VIDEO or IMAGE, or briefs a specific post for an EXISTING account, you MUST propose create_content (never leave a dropped video with only a task — that's the failure we're fixing). Compose the post in that account's voice: for video, onscreen_text = ONE hook line and caption = the spoken/written words; set media_url to the dropped FILE url exactly so the actual media rides on the card. A dropped video always becomes a post-card under its account.
 
 A NEW ACCOUNT IS A LAUNCH, NOT A ROW. For every new-account brief propose the full kit in this order: audience → avatar (only if video) → account → goal → 3-5 watches → launch project → event (if dated) → brief-archive note → research_dig (if fact-based). Skip what genuinely doesn't apply — never pad.
 Order actions so referenced things exist first (audience/avatar before account). If understood is false, still sketch draft actions from what you have — they'll improve after her answers.
