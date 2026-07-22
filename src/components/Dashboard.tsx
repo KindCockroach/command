@@ -37,6 +37,8 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
   const [view, setView] = useState<View>('command')
   const [dark, setDark] = useState(false)
   const [scroller, setScroller] = useState<{ status: string; label: string } | null>(null)
+  const [navOrder, setNavOrder] = useState<View[]>([])
+  const [dragId, setDragId] = useState<View | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem('cc-theme')
@@ -85,6 +87,39 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'pitch',      label: 'Travel Pitch',  icon: <Globe size={12} /> },
   ]
 
+  // Draggable, per-device tab order (falls back to the default order until loaded).
+  const NAV_IDS = NAV_ITEMS.map(i => i.id)
+  const navById: Record<string, typeof NAV_ITEMS[number]> = {}
+  for (const it of NAV_ITEMS) navById[it.id] = it
+  const order: View[] = navOrder.length ? navOrder : NAV_IDS
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('rise-nav-order-v1')
+      if (saved) {
+        const parsed = JSON.parse(saved) as View[]
+        const known = parsed.filter(id => NAV_IDS.includes(id))
+        // append any tabs added since she last saved, drop any that no longer exist
+        setNavOrder([...known, ...NAV_IDS.filter(id => !known.includes(id))])
+        return
+      }
+    } catch { /* fall back to default order */ }
+    setNavOrder(NAV_IDS)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (navOrder.length) { try { localStorage.setItem('rise-nav-order-v1', JSON.stringify(navOrder)) } catch { /* non-fatal */ } }
+  }, [navOrder])
+
+  const reorderNav = (fromId: View, toId: View) => setNavOrder(cur => {
+    const base = cur.length ? cur : NAV_IDS
+    const from = base.indexOf(fromId), to = base.indexOf(toId)
+    if (from < 0 || to < 0 || from === to) return base
+    const next = [...base]; next.splice(from, 1); next.splice(to, 0, fromId)
+    return next
+  })
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
 
@@ -100,15 +135,24 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
           {/* Nav — scrollable on small windows */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: '2px', overflowX: 'auto', flex: 1, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             className="hide-scrollbar">
-            {NAV_ITEMS.map(item => (
+            {order.map(id => {
+              const item = navById[id]
+              if (!item) return null
+              return (
               <button key={item.id} onClick={() => setView(item.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', border: item.accent && view !== item.id ? '1px solid rgba(107,45,110,0.6)' : 'none', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+                draggable
+                onDragStart={() => setDragId(item.id)}
+                onDragOver={e => { e.preventDefault(); if (dragId && dragId !== item.id) reorderNav(dragId, item.id) }}
+                onDragEnd={() => setDragId(null)}
+                title="Click to open · drag to reorder"
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', border: item.accent && view !== item.id ? '1px solid rgba(107,45,110,0.6)' : 'none', cursor: dragId === item.id ? 'grabbing' : 'pointer', transition: 'all 0.15s', flexShrink: 0, opacity: dragId === item.id ? 0.4 : 1,
                   background: view === item.id ? 'var(--purple)' : 'transparent',
                   color: view === item.id ? '#fff' : item.accent ? 'rgba(180,130,183,1)' : 'rgba(255,255,255,0.55)',
                 }}>
                 {item.icon} {item.label}
               </button>
-            ))}
+              )
+            })}
             <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.12)', margin: '0 4px', flexShrink: 0 }} />
             <Link href="/archive" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', flexShrink: 0 }}>
               <Archive size={13} /> Archive
