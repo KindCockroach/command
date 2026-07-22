@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, createNote, createTask, createEvent, audienceLine, getLoreContext } from '@/lib/db'
-import type { ContentType, EventKind } from '@/lib/db'
+import type { ContentType, EventKind, BrandAccount } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
+
+// If the user explicitly names an account in the input ("for @mandij0y",
+// "For Mandij0y", "account sage"), that is LAW — the River must route there and
+// never re-sort. Returns the matched account id, or null.
+function detectNamedAccount(input: string, accounts: BrandAccount[]): string | null {
+  const text = ` ${input.toLowerCase()} `
+  for (const a of accounts) {
+    const tokens = [a.handle.replace(/^@/, ''), a.id, a.brand_name ?? '']
+      .map(t => t.toLowerCase().trim())
+      .filter(t => t.length >= 3)
+    for (const tok of tokens) {
+      if (text.includes('@' + tok) || text.includes('for ' + tok) || text.includes('account ' + tok)) return a.id
+    }
+  }
+  return null
+}
 
 type RiverVerdict = {
   kind: 'content' | 'task' | 'event'
@@ -55,6 +71,12 @@ export async function POST(req: NextRequest) {
     `- "${g.title}"${g.account_id ? ` [account: ${g.account_id}]` : ' [station-wide]'} — ${g.target_per_week}/week${g.deadline ? `, deadline ${g.deadline}` : ''}`
   ).join('\n')
 
+  // Did she name an account? That overrides all sorting.
+  const namedAccount = input ? detectNamedAccount(String(input), accounts) : null
+  const directive = namedAccount
+    ? `\n\n⚠ USER-DIRECTED ACCOUNT (LAW): the user explicitly routed this to "${namedAccount}". For kind:content you MUST set account_id to "${namedAccount}" and write in THAT account's voice. Do NOT choose any other account, no matter how well another fits.`
+    : ''
+
   const triage = await fableText({
     maxTokens: 4000,
     effort: 'medium',
@@ -100,8 +122,8 @@ Return ONLY valid JSON:
   "research_topic": "topic you researched and folded in, or null"
 }`,
     input: isStillImage
-      ? `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nAn IMAGE is attached — Mandi wants this actual image filed under the account it fits. LOOK at it, decide which account it belongs to, and write the post AROUND it (never describe the image; add value the picture can't). It stands alone (media is provided).\n\nHER NOTE:\n${input}`
-      : `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nRAW INPUT:\n${input}`,
+      ? `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nAn IMAGE is attached — Mandi wants this actual image filed under the account it fits. LOOK at it, decide which account it belongs to, and write the post AROUND it (never describe the image; add value the picture can't). It stands alone (media is provided).${directive}\n\nHER NOTE:\n${input}`
+      : `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}${directive}\n\nRAW INPUT:\n${input}`,
   })
 
   let verdict: RiverVerdict
@@ -110,6 +132,12 @@ Return ONLY valid JSON:
     verdict = JSON.parse(match![0])
   } catch {
     return NextResponse.json({ error: 'River could not parse this input', raw: triage }, { status: 502 })
+  }
+
+  // Safety net: if she named an account, force it — never let the sort override her.
+  if (verdict.kind === 'content' && namedAccount && verdict.account_id !== namedAccount) {
+    verdict.account_id = namedAccount
+    verdict.account_reason = `You named ${namedAccount}, so it's routed there. (Your stated account is law.)`
   }
 
   // Task capture: "remind me to..." → straight to the Tasks panel
