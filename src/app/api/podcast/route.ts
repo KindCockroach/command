@@ -6,6 +6,15 @@ export const dynamic = 'force-dynamic'
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
+// Where every episode CTA sends people: the SHOW, on the platforms it lives on.
+// Not aiworksforyou.co. Replace the three URLs below with the real show links.
+const SHOW_LINKS = {
+  apple: '[Apple Podcasts — paste show URL]',
+  spotify: '[Spotify — paste show URL]',
+  youtube: '[YouTube — paste show/channel URL]',
+}
+const SHOW_LINKS_BLOCK = `Listen & follow the AI Mom Podcast — 🎧 Apple Podcasts: ${SHOW_LINKS.apple} · 🟢 Spotify: ${SHOW_LINKS.spotify} · ▶️ YouTube: ${SHOW_LINKS.youtube}`
+
 export async function POST(req: NextRequest) {
   const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast' } = await req.json()
 
@@ -77,10 +86,10 @@ Generate ALL podcast deliverables. Return this exact JSON structure:
   "medium_article": {
     "title": "Medium-optimized article title with keywords (SEO-friendly, curiosity-driven)",
     "subtitle": "one-sentence deck under the title",
-    "body": "Full 600-900 word Medium article in Mandi's voice. Structure: opening hook paragraph, 3-4 substantive sections with bold subheadings, closing call to action pointing to aiworksforyou.co. Use conversational tone, short paragraphs, real examples from the episode. No fluff."
+    "body": "Full 600-900 word Medium article in Mandi's voice. Structure: opening hook paragraph, 3-4 substantive sections with bold subheadings, and a closing call to action inviting the reader to FOLLOW THE PODCAST — end the article with this exact line, links included verbatim: '${SHOW_LINKS_BLOCK}'. NEVER point to aiworksforyou.co. Conversational tone, short paragraphs, real examples from the episode. No fluff."
   },
   "youtube_title": "YouTube-optimized title with keywords",
-  "youtube_description": "YouTube description with timestamps, links placeholder, and hashtags",
+  "youtube_description": "YouTube description with timestamps, hashtags, and this exact show-links line included verbatim: '${SHOW_LINKS_BLOCK}'",
   "youtube_tags": ["tag1", "tag2", "tag3"],
   "pinterest_pins": [
     {"title": "pin title", "description": "pin description with keywords"},
