@@ -68,6 +68,41 @@ export default function UniversalCapture() {
   const [executedResults, setExecutedResults] = useState<string[] | null>(null)
   const [uploadedFile, setUploadedFile] = useState<{ url: string; type: string } | null>(null)
 
+  // ── The Commander: shred one drop into points, route across accounts, compose ──
+  type CmderPlacement = { account_id: string; angle: string; format: string; handle: string; emoji: string; color: string; named: boolean }
+  type CmderShred = { point: string; source_quote?: string; placements: CmderPlacement[] }
+  type CmderPlan = { shreds: CmderShred[]; summary: { points: number; posts: number } }
+  const [cmdPlan, setCmdPlan] = useState<CmderPlan | null>(null)
+  const [cmdLoading, setCmdLoading] = useState(false)
+  const [cmdComposing, setCmdComposing] = useState(false)
+  const [cmdCreated, setCmdCreated] = useState<{ id: number; handle: string; title: string }[] | null>(null)
+
+  const runShred = async () => {
+    if (!input.trim()) return
+    setCmdLoading(true); setCmdPlan(null); setCmdCreated(null); setError(null)
+    try {
+      const res = await fetch('/api/commander', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'plan', input: input.trim() }) })
+      const d = await res.json()
+      if (d.shreds) setCmdPlan({ shreds: d.shreds, summary: d.summary })
+      else setError(d.error || 'Could not shred this input')
+    } catch { setError('Shred failed — try again') } finally { setCmdLoading(false) }
+  }
+  const dropPlacement = (si: number, pi: number) => setCmdPlan(pl => {
+    if (!pl) return pl
+    const shreds = pl.shreds.map((s, i) => i !== si ? s : { ...s, placements: s.placements.filter((_, j) => j !== pi) }).filter(s => s.placements.length > 0)
+    return { shreds, summary: { points: shreds.length, posts: shreds.reduce((n, s) => n + s.placements.length, 0) } }
+  })
+  const runCompose = async () => {
+    if (!cmdPlan) return
+    setCmdComposing(true)
+    try {
+      const res = await fetch('/api/commander', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'compose', shreds: cmdPlan.shreds }) })
+      const d = await res.json()
+      setCmdCreated(d.created ?? [])
+      setCmdPlan(null)
+    } catch { setError('Compose failed — try again') } finally { setCmdComposing(false) }
+  }
+
   // "You do it." — the CEO executes its own plan and leaves a review task
   const youDoIt = async () => {
     if (!result?.actions?.length) return
@@ -252,8 +287,57 @@ export default function UniversalCapture() {
           style={{ flex: 1, padding: '11px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: (!input.trim() && !file) ? 0.5 : 1 }}>
           {loading || uploading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> {uploading ? 'Uploading...' : 'Analyzing...'}</> : <><Sparkles size={14} /> Let the station decide</>}
         </button>
-        <p style={{ fontSize: '11px', color: 'var(--text-subtle)', whiteSpace: 'nowrap' }}>⌘ + Enter</p>
+        <button onClick={runShred} disabled={cmdLoading || !input.trim()}
+          title="Shred this into every distinct point and fan finished posts across the accounts each one serves"
+          style={{ padding: '11px 14px', background: 'transparent', color: 'var(--purple)', border: '2px solid var(--purple)', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', opacity: !input.trim() ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+          {cmdLoading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Shredding…</> : <>🔱 Shred &amp; Compose</>}
+        </button>
       </div>
+
+      {/* 🔱 THE COMMANDER — shred plan preview (approve before it composes) */}
+      {cmdPlan && (
+        <div style={{ border: '1px solid var(--purple)', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ padding: '10px 12px', background: 'var(--purple-light)' }}>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--purple)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>🔱 Shred plan — {cmdPlan.summary.points} points → {cmdPlan.summary.posts} posts</span>
+          </div>
+          <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '340px', overflow: 'auto' }}>
+            {cmdPlan.shreds.map((s, si) => (
+              <div key={si} style={{ background: 'var(--surface-raised)', borderRadius: '8px', padding: '8px 10px' }}>
+                <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)', marginBottom: '6px' }}>{s.point}</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {s.placements.map((p, pi) => (
+                    <span key={pi} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 700, padding: '4px 8px', borderRadius: '20px', background: 'var(--surface)', border: `1px solid ${p.color}`, color: 'var(--text)' }}>
+                      {p.emoji} {p.handle}{p.named ? '' : ' ✨'} · {p.format}
+                      <button onClick={() => dropPlacement(si, pi)} title="remove this placement" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, marginLeft: '2px', fontSize: '12px', lineHeight: 1 }}>✕</button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ padding: '10px 12px' }}>
+            <button onClick={runCompose} disabled={cmdComposing || cmdPlan.summary.posts === 0}
+              style={{ width: '100%', padding: '11px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              {cmdComposing ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Composing {cmdPlan.summary.posts} posts…</> : <>✍️ Compose all {cmdPlan.summary.posts} posts</>}
+            </button>
+            <p style={{ fontSize: '10px', color: 'var(--text-subtle)', textAlign: 'center', marginTop: '6px' }}>✨ = RISE added an account you didn&apos;t name, because the point reinforces it. Remove any ✕ you don&apos;t want. All land as ready cards to approve in Accounts.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Commander receipt */}
+      {cmdCreated && (() => {
+        const go = (view: string) => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view } }))
+        return (
+          <div style={{ border: '1px solid #3DAA7C', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ padding: '9px 12px', background: '#EAF7F0', fontSize: '11px', fontWeight: 800, color: '#2E8B60', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✅ Composed {cmdCreated.length} posts, Mandi — all filed in Accounts</div>
+            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {cmdCreated.map((c, i) => <p key={i} style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{c.handle} — {c.title}</p>)}
+              <button onClick={() => go('accounts')} style={{ marginTop: '6px', padding: '8px 13px', borderRadius: '8px', border: '1px solid #3DAA7C', background: 'transparent', color: '#2E8B60', fontWeight: 700, fontSize: '12px', cursor: 'pointer', alignSelf: 'flex-start' }}>See them in Accounts →</button>
+            </div>
+          </div>
+        )
+      })()}
 
       {error && (
         <div style={{ padding: '12px', background: '#FEF5EA', borderRadius: '10px', fontSize: '13px', color: '#F2A65A', fontWeight: 600 }}>
