@@ -55,7 +55,7 @@ type RiverVerdict = {
 // it can stand alone, researches what it can, and composes a complete post-card
 // — or parks it with the exact questions only Mandi can answer.
 export async function POST(req: NextRequest) {
-  const { input, source, mediaUrl, mediaType } = await req.json()
+  const { input, source, mediaUrl, mediaType, accountId } = await req.json()
   if (!input?.trim() && !mediaUrl) return NextResponse.json({ error: 'input or media required' }, { status: 400 })
   const isStillImage = mediaUrl && (mediaType?.startsWith('image') || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(mediaUrl))
 
@@ -71,8 +71,11 @@ export async function POST(req: NextRequest) {
     `- "${g.title}"${g.account_id ? ` [account: ${g.account_id}]` : ' [station-wide]'} — ${g.target_per_week}/week${g.deadline ? `, deadline ${g.deadline}` : ''}`
   ).join('\n')
 
-  // Did she name an account? That overrides all sorting.
-  const namedAccount = input ? detectNamedAccount(String(input), accounts) : null
+  // An account passed in directly (e.g. Notes "Send To") wins; otherwise detect one
+  // she named in the text. Either way it overrides all sorting.
+  const namedAccount = (typeof accountId === 'string' && accountId.trim())
+    ? accountId.trim()
+    : (input ? detectNamedAccount(String(input), accounts) : null)
   const directive = namedAccount
     ? `\n\n⚠ USER-DIRECTED ACCOUNT (LAW): the user explicitly routed this to "${namedAccount}". For kind:content you MUST set account_id to "${namedAccount}" and write in THAT account's voice. Do NOT choose any other account, no matter how well another fits.`
     : ''

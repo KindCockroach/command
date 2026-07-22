@@ -1,7 +1,10 @@
 'use client'
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { Plus, Search, Pin, PinOff, Trash2, X, BookOpen, Archive } from 'lucide-react'
+import { Plus, Search, Pin, PinOff, Trash2, X, BookOpen, Archive, Send, Sparkles } from 'lucide-react'
 import type { Note } from '@/lib/db'
+
+type Acct = { id: string; handle: string; emoji: string; color: string; status: string }
+type SendResult = { ok: boolean; msg: string }
 
 // Time buckets (relative to now, recomputed every render/load)
 const BUCKETS: { key: string; label: string; maxHours: number | null }[] = [
@@ -14,9 +17,29 @@ const BUCKETS: { key: string; label: string; maxHours: number | null }[] = [
 
 const hoursSince = (iso: string) => (Date.now() - new Date(iso).getTime()) / 3600000
 
-function NoteCard({ note, onUpdate, onDelete, onSelect }: { note: Note; onUpdate: (id: number, u: Partial<Note>) => void; onDelete: (id: number) => void; onSelect: (n: Note) => void }) {
+function NoteCard({ note, accounts, onUpdate, onDelete, onSelect, onSendToAccount, onExpand }: {
+  note: Note; accounts: Acct[];
+  onUpdate: (id: number, u: Partial<Note>) => void;
+  onDelete: (id: number) => void;
+  onSelect: (n: Note) => void;
+  onSendToAccount: (n: Note, accountId: string) => Promise<SendResult>;
+  onExpand: (n: Note) => Promise<SendResult>;
+}) {
   const h = hoursSince(note.created_at)
   const age = h < 48 ? `${Math.max(1, Math.round(h))}h ago` : h < 24 * 30 ? `${Math.round(h / 24)}d ago` : new Date(note.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const [menu, setMenu] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  const run = async (fn: () => Promise<SendResult>) => {
+    setMenu(false); setBusy(true); setMsg('')
+    try { const r = await fn(); setMsg(r.msg) } catch { setMsg('Send failed — try again') }
+    setBusy(false)
+    setTimeout(() => setMsg(''), 7000)
+  }
+  const item = { display: 'flex', alignItems: 'center', gap: '7px', width: '100%', textAlign: 'left' as const, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', borderRadius: '7px', fontSize: '12px', color: 'var(--text)' }
+  const hov = (on: boolean) => (e: React.MouseEvent) => ((e.currentTarget as HTMLButtonElement).style.background = on ? 'var(--bg)' : 'none')
+
   return (
     <div onClick={() => onSelect(note)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--hot-pink)', borderRadius: '10px', padding: '14px', cursor: 'pointer', transition: 'box-shadow 0.15s', opacity: note.archived ? 0.7 : 1 }}
       onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-sm)'}
@@ -24,6 +47,26 @@ function NoteCard({ note, onUpdate, onDelete, onSelect }: { note: Note; onUpdate
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
         <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{note.title}</p>
         <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+          <div style={{ position: 'relative' }}>
+            <button title="Send to…" disabled={busy} onClick={e => { e.stopPropagation(); setMenu(m => !m) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: menu ? 'var(--hot-pink)' : 'var(--text-muted)', padding: '2px', opacity: busy ? 0.4 : 0.7 }}>
+              <Send size={12} />
+            </button>
+            {menu && (
+              <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 0, top: '22px', zIndex: 30, width: '218px', maxHeight: '280px', overflow: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.22)', padding: '6px' }}>
+                <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-subtle)', padding: '4px 8px' }}>Compose a post for</p>
+                {accounts.length === 0 && <p style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '4px 8px' }}>No accounts loaded.</p>}
+                {accounts.map(a => (
+                  <button key={a.id} onClick={() => run(() => onSendToAccount(note, a.id))} style={item} onMouseEnter={hov(true)} onMouseLeave={hov(false)}>
+                    <span>{a.emoji}</span> {a.handle}
+                  </button>
+                ))}
+                <div style={{ borderTop: '1px solid var(--border)', margin: '6px 4px' }} />
+                <button onClick={() => run(() => onExpand(note))} style={{ ...item, fontWeight: 700, color: 'var(--hot-pink)' }} onMouseEnter={hov(true)} onMouseLeave={hov(false)}>
+                  <Sparkles size={12} /> Expand 1→30 stream
+                </button>
+              </div>
+            )}
+          </div>
           <button onClick={e => { e.stopPropagation(); onUpdate(note.id, { pinned: !note.pinned }) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: note.pinned ? 'var(--hot-pink)' : 'var(--text-muted)', padding: '2px', opacity: 0.6 }}>
             {note.pinned ? <Pin size={12} /> : <PinOff size={12} />}
           </button>
@@ -33,10 +76,11 @@ function NoteCard({ note, onUpdate, onDelete, onSelect }: { note: Note; onUpdate
         </div>
       </div>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const }}>{note.body}</p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '10px', color: 'var(--text-subtle)', fontWeight: 600 }}>{age}</span>
         {note.archived && <span style={{ fontSize: '9px', color: 'var(--text-subtle)', display: 'flex', alignItems: 'center', gap: '3px' }}><Archive size={9} /> archived</span>}
         {note.tags.slice(0, 3).map(t => <span key={t} style={{ fontSize: '10px', color: 'var(--text-muted)' }}>#{t}</span>)}
+        {(busy || msg) && <span style={{ fontSize: '10px', fontWeight: 700, marginLeft: 'auto', color: busy ? 'var(--text-muted)' : msg.startsWith('✓') ? '#2C9E6B' : 'var(--hot-pink)' }}>{busy ? 'sending…' : msg}</span>}
       </div>
     </div>
   )
@@ -86,9 +130,49 @@ export default function NotesPanel() {
   const [sortBy, setSortBy] = useState<'created' | 'updated'>('created')
   const [source, setSource] = useState<'all' | 'ideas' | 'chats' | 'pinned'>('all')
   const [selected, setSelected] = useState<Partial<Note> | null>(null)
+  const [accounts, setAccounts] = useState<Acct[]>([])
 
   const load = () => { fetch('/api/notes').then(r => r.json()).then(setNotes) }
   useEffect(() => { load() }, [])
+  useEffect(() => {
+    fetch('/api/accounts').then(r => r.json())
+      .then((d: Acct[]) => setAccounts(d.filter(a => a.status === 'active' || a.status === 'restricted')))
+      .catch(() => {})
+  }, [])
+
+  // Send a note to the River to compose a post for a specific account (account is LAW there).
+  const sendToAccount = async (note: Note, accountId: string): Promise<SendResult> => {
+    try {
+      const res = await fetch('/api/river', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: `${note.title}\n\n${note.body}`, source: 'notes', accountId }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok && d.piece) return { ok: true, msg: `✓ Composed for ${d.account?.handle ?? accountId} — approve in Accounts` }
+      return { ok: false, msg: d.error || 'Send failed' }
+    } catch { return { ok: false, msg: 'Connection failed' } }
+  }
+
+  // Send a note to the 1→30 Content Developer; save the expansion back as a new note.
+  const expandNote = async (note: Note): Promise<SendResult> => {
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'expand', title: note.title, notes: note.body }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok && d.result) {
+        const cr = await fetch('/api/notes', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: `${note.title} — 1→30`, body: d.result, category: 'script', tags: ['1-30', ...(note.tags ?? []).slice(0, 2)] }),
+        })
+        const created = await cr.json().catch(() => null)
+        if (created?.id) setNotes(ns => [created, ...ns])
+        return { ok: true, msg: '✓ Expanded to 30 — saved as a new note' }
+      }
+      return { ok: false, msg: d.error || 'Expand failed' }
+    } catch { return { ok: false, msg: 'Connection failed' } }
+  }
 
   const save = async (draft: Partial<Note>) => {
     if (!draft.title?.trim()) return
@@ -207,7 +291,7 @@ export default function NotesPanel() {
       {/* Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
         {visible.map(n => (
-          <NoteCard key={n.id} note={n} onUpdate={update} onDelete={remove} onSelect={openNote} />
+          <NoteCard key={n.id} note={n} accounts={accounts} onUpdate={update} onDelete={remove} onSelect={openNote} onSendToAccount={sendToAccount} onExpand={expandNote} />
         ))}
         {visible.length === 0 && (
           <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--text-muted)', padding: '40px', opacity: 0.5 }}>
