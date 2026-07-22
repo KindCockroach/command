@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Settings2, X, ChevronUp, ChevronDown, Check } from 'lucide-react'
 import DailyCommand from './DailyCommand'
 import CommanderChat from './CommanderChat'
+import GoalsPace from './GoalsPace'
 import ResearchBrief from './ResearchBrief'
 import GoalsPanel from './GoalsPanel'
 import TasksPanel from './TasksPanel'
@@ -19,8 +20,9 @@ import StoryStudio from './StoryStudio'
 // DailyCommand stays the anchor widget (quick capture + brief + tasks + fire).
 const WIDGETS: { id: string; label: string; emoji: string; render: () => React.ReactNode }[] = [
   { id: 'commander',  label: 'The Commander',   emoji: '⚡', render: () => <CommanderChat /> },
+  { id: 'research',   label: 'Daily Briefing',  emoji: '🔬', render: () => <ResearchBrief /> },
+  { id: 'goalspace',  label: 'Goals & Pace',    emoji: '🎯', render: () => <GoalsPace /> },
   { id: 'command',    label: 'Daily Command',   emoji: '⚡', render: () => <DailyCommand /> },
-  { id: 'research',   label: 'Must-Reads',      emoji: '🔬', render: () => <ResearchBrief /> },
   { id: 'goals',      label: 'Goals',           emoji: '🎯', render: () => <GoalsPanel /> },
   { id: 'tasks',      label: 'Tasks',           emoji: '✅', render: () => <TasksPanel /> },
   { id: 'projects',   label: 'Projects',        emoji: '📁', render: () => <ProjectsPanel /> },
@@ -34,7 +36,7 @@ const WIDGETS: { id: string; label: string; emoji: string; render: () => React.R
 ]
 
 const STORAGE_KEY = 'rise-home-widgets-v1'
-const DEFAULT_LAYOUT = ['commander', 'command']   // the Commander chat leads the home screen
+const DEFAULT_LAYOUT = ['commander', 'research', 'goalspace']   // Commander, Daily Briefing, Goals & Pace
 
 // The customizable homescreen: pick which widgets show and in what order,
 // so Daily Command bends to the current focus (launch mode, research season…).
@@ -50,10 +52,13 @@ export default function HomeScreen() {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length) {
           let ids = parsed.filter((id: string) => WIDGETS.some(w => w.id === id))
-          // one-time: surface the new Commander at the top of an existing homescreen
-          if (!localStorage.getItem('rise-home-commander-added')) {
-            if (!ids.includes('commander')) ids = ['commander', ...ids]
-            localStorage.setItem('rise-home-commander-added', '1')
+          // one-time v2: the new home — Commander, Daily Briefing, Goals & Pace —
+          // and retire the old Daily Command widget (on-fire) she no longer wants.
+          if (!localStorage.getItem('rise-home-v2')) {
+            const want = ['commander', 'research', 'goalspace']
+            const extras = ids.filter(id => id !== 'command' && !want.includes(id))
+            ids = [...want, ...extras]
+            localStorage.setItem('rise-home-v2', '1')
             localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
           }
           setLayout(ids)
