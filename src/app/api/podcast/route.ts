@@ -9,9 +9,9 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 // Where every episode CTA sends people: the SHOW, on the platforms it lives on.
 // Not aiworksforyou.co. Replace the three URLs below with the real show links.
 const SHOW_LINKS = {
-  apple: '[Apple Podcasts — paste show URL]',
-  spotify: '[Spotify — paste show URL]',
-  youtube: '[YouTube — paste show/channel URL]',
+  apple: 'https://podcasts.apple.com/us/podcast/ai-mom/id6786440414',
+  spotify: 'https://open.spotify.com/show/033I8hRPjXiKlCHhaq5YYc',
+  youtube: 'https://youtube.com/playlist?list=PLZ5DeAJ0I0WI',
 }
 const SHOW_LINKS_BLOCK = `Listen & follow the AI Mom Podcast — 🎧 Apple Podcasts: ${SHOW_LINKS.apple} · 🟢 Spotify: ${SHOW_LINKS.spotify} · ▶️ YouTube: ${SHOW_LINKS.youtube}`
 
