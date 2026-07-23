@@ -202,6 +202,7 @@ export default function PodcastEngine() {
   }
 
   const [kitSaved, setKitSaved] = useState(false)
+  const [transcriptSaved, setTranscriptSaved] = useState(false)
 
   // The full episode kit persists to Notes (storage) so nothing is lost on click-away
   const saveKitToNotes = async (d: Deliverables) => {
@@ -331,7 +332,18 @@ export default function PodcastEngine() {
           <textarea value={transcript} onChange={e => setTranscript(e.target.value)}
             placeholder="Paste your full episode transcript here. The station will generate show notes, SEO, 3 Reels scripts, newsletter, YouTube description, Pinterest pins, ad reads, ManyChat funnel, and more."
             style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px', resize: 'vertical', minHeight: '180px', fontFamily: 'inherit', lineHeight: 1.6 }} />
-          <p style={{ fontSize: '11px', color: 'var(--text-subtle)', marginTop: '4px' }}>{transcript.length.toLocaleString()} characters · AI reads first ~8,000</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+            <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{transcript.length.toLocaleString()} characters · AI reads first ~8,000</p>
+            {transcript.trim() && (
+              <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
+                <CopyBtn text={transcript} label="Copy transcript" />
+                <button onClick={async () => { await saveTranscriptToNotes(`Episode ${episodeNumber || ''}`.trim()); setTranscriptSaved(true); setTimeout(() => setTranscriptSaved(false), 2500) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: transcriptSaved ? '#EAF7F0' : 'var(--surface-raised)', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: transcriptSaved ? '#3DAA7C' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                  {transcriptSaved ? <><CheckCircle2 size={11} /> Saved to Notes</> : <><Mic size={11} /> Save transcript</>}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <button onClick={generate} disabled={loading || !transcript.trim()}
