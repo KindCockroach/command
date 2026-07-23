@@ -118,9 +118,11 @@ export async function POST(req: NextRequest) {
 
   const bytes = Buffer.from(await file.arrayBuffer())
 
-  // Store the original permanently (best-effort)
+  // Save the raw original only when we need to (small files, or a compression
+  // fallback). Your master lives in Riverside, so we don't archive big WAVs here.
   let publicUrl = ''
-  if (isR2Configured()) {
+  const saveOriginal = async () => {
+    if (!isR2Configured() || publicUrl) return
     try {
       const ext = (file.name.split('.').pop() ?? 'mp3').toLowerCase()
       const key = `audio/${randomUUID()}.${ext}`
@@ -128,8 +130,9 @@ export async function POST(req: NextRequest) {
     } catch { /* storage best-effort */ }
   }
 
-  // Small enough → send straight to Whisper (no processing needed)
+  // Small enough → keep it (it IS the copy, and it's small) and transcribe
   if (bytes.length <= LIMIT) {
+    await saveOriginal()
     try {
       const transcription = await client.audio.transcriptions.create({ model: 'whisper-1', file })
       return NextResponse.json({ publicUrl, transcript: transcription.text })
@@ -138,11 +141,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Oversized → compress (keeping the compressed MP3 in Media) and transcribe
+  // Oversized → keep ONLY the compressed MP3 in Media (not the giant original)
   try {
     const { transcript, compressedUrl } = await compressAndTranscribe(bytes, file.name)
-    return NextResponse.json({ publicUrl, compressedUrl, transcript, compressed: true })
+    return NextResponse.json({ compressedUrl, transcript, compressed: true })
   } catch (e) {
+    // Compression failed → fall back to keeping the raw original so nothing is lost
+    await saveOriginal()
     if (e instanceof Error && e.message === 'ffmpeg-unavailable') {
       return NextResponse.json({
         publicUrl,
