@@ -61,7 +61,7 @@ Be the calm, smart partner behind the whole beast. Keep her pointed at what matt
   })
 
   try {
-    const raw = await commanderChat(system, apiMessages, 1600)
+    const raw = await commanderChat(system, apiMessages, 4000)
     // Split the reply from the optional actions block.
     let reply = raw
     let actions: unknown[] = []
