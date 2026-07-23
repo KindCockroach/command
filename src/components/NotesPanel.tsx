@@ -173,8 +173,8 @@ export default function NotesPanel() {
           body: JSON.stringify({ title: `${note.title} — 1→30`, body: d.result, category: 'script', tags: ['1-30', ...(note.tags ?? []).slice(0, 2)] }),
         })
         const created = await cr.json().catch(() => null)
-        if (created?.id) setNotes(ns => [created, ...ns])
-        return { ok: true, msg: '✓ Expanded to 30 — saved as a new note' }
+        if (created?.id) { setNotes(ns => [created, ...ns]); setSelected(created) }
+        return { ok: true, msg: '✓ Expanded — opened the new note' }
       }
       return { ok: false, msg: d.error || 'Expand failed' }
     } catch { return { ok: false, msg: 'Connection failed' } }
