@@ -5,28 +5,29 @@ import { Loader2, Copy, CheckCircle2, ChevronDown, ChevronUp, Mic, Zap } from 'l
 interface Deliverables {
   title: string
   subtitle: string
+  questions?: string[]
   headlines: string[]
   description: string
   seo_description: string
   keywords: string[]
-  chapters: { time: string; title: string }[]
   pull_quotes: string[]
   reels_scripts: { hook: string; body: string; cta: string; platform: string }[]
-  newsletter_angle: string
   newsletter_subject: string
-  medium_article: { title: string; subtitle: string; body: string }
+  newsletter_body?: string
+  medium_article: { title: string; subtitle: string; sections?: { heading: string; body: string }[]; closing?: string; body?: string }
   youtube_title: string
-  youtube_description: string
   youtube_tags: string[]
-  pinterest_pins: { title: string; description: string }[]
-  spotify_description: string
-  apple_description: string
+  episode_description?: string
+  pinterest_pins: { title: string; description: string; image_prompt?: string }[]
   ad_reads: { pre_roll: string; mid_roll: string; post_roll: string }
-  guest_share_kit: { dm_message: string; suggested_caption: string; quote_graphic_text: string }
   manychat_trigger: string
   manychat_dm: string
+  resources?: { name: string; url: string; note: string }[]
+  show_links?: { apple: string; spotify: string; youtube: string }
+  opt_in?: string
   producer_feedback: {
     overall_grade: string
+    verdict?: string
     strengths: string[]
     topic_drift: string
     depth_gaps: string
@@ -34,6 +35,53 @@ interface Deliverables {
     biggest_win: string
     next_episode_suggestion: string
   }
+}
+
+// The copy-paste share block — rate/review CTA + where to find the show.
+// Rendered at the top (before scroll) and again at the bottom.
+const SHOW_LINKS = {
+  apple: 'https://podcasts.apple.com/us/podcast/ai-mom/id6786440414',
+  spotify: 'https://open.spotify.com/show/033I8hRPjXiKlCHhaq5YYc',
+  youtube: 'https://youtube.com/playlist?list=PLZ5DeAJ0I0WI',
+}
+function shareBlock(links = SHOW_LINKS): string {
+  return `⭐ If this episode gave you something, take 10 seconds to rate & review — it's how more moms find the show. Loved it? Share it. Didn't? Comment and tell me why. Either way, join the conversation. 💛
+
+🎧 Listen & follow the AI Mom Podcast:
+Apple: ${links.apple}
+Spotify: ${links.spotify}
+YouTube: ${links.youtube}`
+}
+// Flatten the structured Medium article into clean copy-ready text (no raw ### symbols).
+function mediumBody(m: { sections?: { heading: string; body: string }[]; closing?: string; body?: string }): string {
+  if (m.sections?.length) {
+    const secs = m.sections.map(s => `${s.heading}\n\n${s.body}`).join('\n\n')
+    return m.closing ? `${secs}\n\n${m.closing}` : secs
+  }
+  return m.body ?? ''
+}
+
+// Where people connect with Mandi — shown at the bottom of Episode Identity.
+const CONNECT_LINKS: { label: string; url: string }[] = [
+  { label: 'Instagram — @mandij0y', url: 'https://instagram.com/mandij0y' },
+  { label: 'AI Mom at Work — @aimomatwork', url: 'https://instagram.com/aimomatwork' },
+  { label: 'Join the list — aimomeducation.com', url: 'https://aimomeducation.com' },
+]
+function connectBlock(): string {
+  return `💛 Connect with Mandi:\n${CONNECT_LINKS.map(l => `${l.label}: ${l.url}`).join('\n')}`
+}
+
+function ShareCard({ links }: { links?: { apple: string; spotify: string; youtube: string } }) {
+  const text = shareBlock(links ?? SHOW_LINKS)
+  return (
+    <div style={{ border: '1px solid var(--purple)', borderRadius: '12px', overflow: 'hidden' }}>
+      <div style={{ padding: '10px 14px', background: 'var(--purple-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--purple)' }}>⭐ Rate, review & share — paste this everywhere</span>
+        <CopyBtn text={text} />
+      </div>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, padding: '14px', whiteSpace: 'pre-wrap' }}>{text}</p>
+    </div>
+  )
 }
 
 function CopyBtn({ text, label }: { text: string; label?: string }) {
@@ -76,6 +124,7 @@ export default function PodcastEngine() {
   const [transcript, setTranscript] = useState('')
   const [episodeNumber, setEpisodeNumber] = useState('')
   const [guestName, setGuestName] = useState('')
+  const [timestamps, setTimestamps] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<Deliverables | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -163,19 +212,17 @@ export default function PodcastEngine() {
       `\n## SEO Description\n${d.seo_description}`,
       `\n## Keywords\n${(d.keywords ?? []).join(', ')}`,
       `\n## Show Notes\n${d.description}`,
-      `\n## Chapters\n${(d.chapters ?? []).map(c => `${c.time} — ${c.title}`).join('\n')}`,
+      d.questions?.length ? `\n## Questions we explore\n${d.questions.map(q => `- ${q}`).join('\n')}` : '',
       `\n## Pull Quotes\n${(d.pull_quotes ?? []).map(q => `> "${q}"`).join('\n')}`,
       `\n## Reels Scripts\n${(d.reels_scripts ?? []).map((s, i) => `### Reel ${i + 1} (${s.platform})\nHOOK: ${s.hook}\nBODY: ${s.body}\nCTA: ${s.cta}`).join('\n\n')}`,
-      `\n## Newsletter\nSubject: ${d.newsletter_subject}\n${d.newsletter_angle}`,
-      d.medium_article ? `\n## Medium Article\n# ${d.medium_article.title}\n*${d.medium_article.subtitle}*\n\n${d.medium_article.body}` : '',
-      `\n## YouTube\nTitle: ${d.youtube_title}\n\n${d.youtube_description}\n\nTags: ${(d.youtube_tags ?? []).join(', ')}`,
-      `\n## Spotify Description\n${d.spotify_description}`,
-      `\n## Apple Description\n${d.apple_description}`,
+      `\n## Newsletter (Substack)\nSubject: ${d.newsletter_subject}\n\n${d.newsletter_body ?? ''}`,
+      d.medium_article ? `\n## Medium Article\n# ${d.medium_article.title}\n*${d.medium_article.subtitle}*\n\n${mediumBody(d.medium_article)}` : '',
+      `\n## Episode description (YouTube / Spotify / Apple — same everywhere)\n${d.episode_description ?? ''}`,
+      d.youtube_title ? `\n## YouTube title + tags\n${d.youtube_title}\nTags: ${(d.youtube_tags ?? []).join(', ')}` : '',
       d.ad_reads ? `\n## Ad Reads\nPRE-ROLL: ${d.ad_reads.pre_roll}\n\nMID-ROLL: ${d.ad_reads.mid_roll}\n\nPOST-ROLL: ${d.ad_reads.post_roll}` : '',
       `\n## Pinterest Pins\n${(d.pinterest_pins ?? []).map(p => `- ${p.title}: ${p.description}`).join('\n')}`,
       d.manychat_trigger ? `\n## ManyChat\nTrigger: ${d.manychat_trigger}\nDM: ${d.manychat_dm}` : '',
-      d.guest_share_kit?.dm_message ? `\n## Guest Share Kit\nDM: ${d.guest_share_kit.dm_message}\nCaption: ${d.guest_share_kit.suggested_caption}\nQuote graphic: ${d.guest_share_kit.quote_graphic_text}` : '',
-      d.producer_feedback ? `\n## Producer Feedback\nGrade: ${d.producer_feedback.overall_grade}\nStrengths: ${(d.producer_feedback.strengths ?? []).join('; ')}\nTopic drift: ${d.producer_feedback.topic_drift}\nDepth gaps: ${d.producer_feedback.depth_gaps}\nBiggest win: ${d.producer_feedback.biggest_win}\nNext episode: ${d.producer_feedback.next_episode_suggestion}` : '',
+      d.producer_feedback ? `\n## Producer Feedback\nGrade: ${d.producer_feedback.overall_grade}${d.producer_feedback.verdict ? ` — ${d.producer_feedback.verdict}` : ''}\nStrengths: ${(d.producer_feedback.strengths ?? []).join('; ')}\nTopic drift: ${d.producer_feedback.topic_drift}\nDepth gaps: ${d.producer_feedback.depth_gaps}\nBiggest win: ${d.producer_feedback.biggest_win}\nNext episode: ${d.producer_feedback.next_episode_suggestion}` : '',
     ].filter(Boolean).join('\n')
     try {
       await fetch('/api/notes', {
@@ -305,10 +352,27 @@ export default function PodcastEngine() {
             </button>
           </div>
 
-          {/* Episode Identity */}
+          {/* ⭐ TOP — listen, rate & review (before she scrolls) */}
+          <ShareCard links={result.show_links} />
+
+          {/* Episode Identity — now holds show notes, questions, and connect links */}
           <Section title="📌 Episode Identity" defaultOpen>
             <Field label="Title" value={result.title} />
             <Field label="Subtitle" value={result.subtitle} />
+            <Field label="📝 Show Notes" value={result.description} />
+            {(result.questions?.length ?? 0) > 0 && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>❓ Questions we explore</p>
+                  <CopyBtn text={(result.questions ?? []).map(q => `• ${q}`).join('\n')} label="Copy all" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {result.questions!.map((q, i) => (
+                    <p key={i} style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, padding: '6px 10px', background: 'var(--surface-raised)', borderRadius: '8px', borderLeft: '3px solid var(--purple)' }}>{q}</p>
+                  ))}
+                </div>
+              </div>
+            )}
             <Field label="SEO Description (150 chars)" value={result.seo_description} />
             <div>
               <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Keywords</p>
@@ -316,6 +380,7 @@ export default function PodcastEngine() {
                 {result.keywords?.map((k, i) => <span key={i} style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '20px', background: 'var(--purple-light)', color: 'var(--purple)', fontWeight: 600 }}>{k}</span>)}
               </div>
             </div>
+            <Field label="💛 Connect with Mandi (episode footer)" value={connectBlock()} />
           </Section>
 
           {/* Headlines */}
@@ -329,24 +394,6 @@ export default function PodcastEngine() {
             ))}
           </Section>
 
-          {/* Show Notes */}
-          <Section title="📝 Show Notes">
-            <Field label="Full Show Notes" value={result.description} />
-          </Section>
-
-          {/* Chapter Markers */}
-          <Section title="⏱ Chapter Markers">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {result.chapters?.map((c, i) => (
-                <div key={i} style={{ display: 'flex', gap: '12px', padding: '8px 12px', background: 'var(--surface-raised)', borderRadius: '8px', fontSize: '13px' }}>
-                  <span style={{ fontWeight: 700, color: 'var(--purple)', minWidth: '40px' }}>{c.time}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>{c.title}</span>
-                </div>
-              ))}
-              <CopyBtn text={result.chapters?.map(c => `${c.time} ${c.title}`).join('\n')} label="Copy all chapters" />
-            </div>
-          </Section>
-
           {/* Pull Quotes */}
           <Section title="💬 Pull Quotes (for graphics + social)">
             {result.pull_quotes?.map((q, i) => (
@@ -355,6 +402,15 @@ export default function PodcastEngine() {
                 <CopyBtn text={`"${q}"`} />
               </div>
             ))}
+          </Section>
+
+          {/* Timestamps — pasted from Riverside */}
+          <Section title="⏱ Timestamps (paste from Riverside)">
+            <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginBottom: '6px' }}>Riverside gives you the chapter timestamps — paste them here and they ride along in the full copy.</p>
+            <textarea value={timestamps} onChange={e => setTimestamps(e.target.value)}
+              placeholder={"00:02 - Mom brain stories\n04:23 - AI as a reflection of consciousness\n…"}
+              style={{ width: '100%', minHeight: '110px', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px', fontFamily: 'monospace', lineHeight: 1.6, resize: 'vertical' }} />
+            {timestamps.trim() && <CopyBtn text={timestamps} label="Copy timestamps" />}
           </Section>
 
           {/* Reels Scripts */}
@@ -374,8 +430,55 @@ export default function PodcastEngine() {
             ))}
           </Section>
 
-          {/* Medium Article */}
-          <Section title="✍️ Medium Article">
+          {/* 📻 The one episode description — paste to YouTube / Spotify / Apple. Hard 4000-char cap. */}
+          {(() => {
+            const links = result.show_links ?? SHOW_LINKS
+            const resourceLines = (result.resources ?? []).filter(r => r.name).map(r => `• ${r.name}${r.url ? ` — ${r.url}` : ''}`).join('\n')
+            const full = [
+              (result.episode_description ?? result.description ?? '').trim(),
+              '⭐ Rate, review & share if this gave you something — comment if it didn\'t. Join the conversation. 💛',
+              timestamps.trim() ? `TIMESTAMPS:\n${timestamps.trim()}` : '',
+              resourceLines ? `RESOURCES & LINKS:\n${resourceLines}` : '',
+              `LISTEN & FOLLOW:\nApple: ${links.apple}\nSpotify: ${links.spotify}\nYouTube: ${links.youtube}`,
+              connectBlock(),
+            ].filter(Boolean).join('\n\n')
+            const over = full.length > 4000
+            return (
+              <Section title="📻 Episode description — YouTube / Spotify / Apple (same everywhere)" defaultOpen>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: over ? '#E05252' : '#3DAA7C' }}>{full.length.toLocaleString()} / 4,000 characters {over ? '— over the limit, trim it' : '✓ fits'}</span>
+                  <CopyBtn text={full} label="Copy full description" />
+                </div>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, background: 'var(--surface-raised)', padding: '14px', borderRadius: '8px', whiteSpace: 'pre-wrap', border: over ? '1px solid #E05252' : '1px solid var(--border)' }}>{full}</p>
+                {result.youtube_title && (
+                  <>
+                    <Field label="YouTube title (SEO)" value={result.youtube_title} />
+                    <div>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>YouTube tags</p>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {result.youtube_tags?.map((t, i) => <span key={i} style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', background: 'var(--surface-raised)', color: 'var(--text-subtle)' }}>{t}</span>)}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </Section>
+            )
+          })()}
+
+          {/* Resources & Links mentioned in the episode */}
+          {(result.resources?.length ?? 0) > 0 && (
+            <Section title="🔗 Resources & Links (mentioned in the episode)">
+              {result.resources!.filter(r => r.name).map((r, i) => (
+                <div key={i} style={{ padding: '9px 12px', background: 'var(--surface-raised)', borderRadius: '8px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--purple)' }}>{r.name}</a> : r.name}</p>
+                  {r.note && <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{r.note}</p>}
+                </div>
+              ))}
+            </Section>
+          )}
+
+          {/* Medium Article — formatted from sections (no raw ### symbols) */}
+          <Section title="✍️ Medium Article (researched + long-form)">
             {result.medium_article && (
               <>
                 <Field label="Article Title" value={result.medium_article.title} />
@@ -383,9 +486,23 @@ export default function PodcastEngine() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
                     <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Full Article Body</p>
-                    <CopyBtn text={`# ${result.medium_article.title}\n\n*${result.medium_article.subtitle}*\n\n${result.medium_article.body}`} label="Copy full article" />
+                    <CopyBtn text={`# ${result.medium_article.title}\n\n*${result.medium_article.subtitle}*\n\n${mediumBody(result.medium_article)}`} label="Copy full article" />
                   </div>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, background: 'var(--surface-raised)', padding: '14px', borderRadius: '8px', whiteSpace: 'pre-wrap' }}>{result.medium_article.body}</p>
+                  <div style={{ background: 'var(--surface-raised)', padding: '16px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {result.medium_article.sections?.length ? (
+                      <>
+                        {result.medium_article.sections.map((sec, i) => (
+                          <div key={i}>
+                            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text)', marginBottom: '5px' }}>{sec.heading}</p>
+                            <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{sec.body}</p>
+                          </div>
+                        ))}
+                        {result.medium_article.closing && <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{result.medium_article.closing}</p>}
+                      </>
+                    ) : (
+                      <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{result.medium_article.body}</p>
+                    )}
+                  </div>
                 </div>
               </>
             )}
@@ -394,29 +511,12 @@ export default function PodcastEngine() {
           {/* Newsletter */}
           <Section title="📧 Newsletter (Substack)">
             <Field label="Subject Line" value={result.newsletter_subject} />
-            <Field label="Angle + Outline" value={result.newsletter_angle} />
-          </Section>
-
-          {/* YouTube */}
-          <Section title="▶️ YouTube">
-            <Field label="YouTube Title" value={result.youtube_title} />
-            <Field label="YouTube Description" value={result.youtube_description} />
-            <div>
-              <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Tags</p>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {result.youtube_tags?.map((t, i) => <span key={i} style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', background: 'var(--surface-raised)', color: 'var(--text-subtle)' }}>{t}</span>)}
-              </div>
-            </div>
-          </Section>
-
-          {/* Platform Descriptions */}
-          <Section title="🎵 Spotify + Apple">
-            <Field label="Spotify Description" value={result.spotify_description} />
-            <Field label="Apple Podcasts Description" value={result.apple_description} />
+            {result.newsletter_body && <Field label="Full Issue" value={result.newsletter_body} />}
           </Section>
 
           {/* Pinterest */}
           <Section title="📌 Pinterest Pins">
+            <p style={{ fontSize: '11px', color: 'var(--text-subtle)', marginBottom: '2px' }}>Visual generation for these pins is coming — the image prompt is ready on each.</p>
             {result.pinterest_pins?.map((p, i) => (
               <div key={i} style={{ padding: '10px 12px', background: 'var(--surface-raised)', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -424,12 +524,13 @@ export default function PodcastEngine() {
                   <CopyBtn text={`${p.title}\n\n${p.description}`} />
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{p.description}</p>
+                {p.image_prompt && <p style={{ fontSize: '11px', color: 'var(--text-subtle)', lineHeight: 1.5, marginTop: '5px', fontStyle: 'italic' }}>🎨 {p.image_prompt}</p>}
               </div>
             ))}
           </Section>
 
           {/* Ad Reads */}
-          <Section title="📣 Ad Reads (aiworksforyou.co)">
+          <Section title="📣 Ad Reads (→ aimomeducation.com)">
             <Field label="Pre-Roll (15 sec)" value={result.ad_reads?.pre_roll} />
             <Field label="Mid-Roll (30 sec)" value={result.ad_reads?.mid_roll} />
             <Field label="Post-Roll (10 sec)" value={result.ad_reads?.post_roll} />
@@ -444,21 +545,15 @@ export default function PodcastEngine() {
             <Field label="Auto-DM Message" value={result.manychat_dm} />
           </Section>
 
-          {/* Guest Share Kit */}
-          {result.guest_share_kit?.dm_message && (
-            <Section title="🤝 Guest Share Kit">
-              <Field label="DM to Guest" value={result.guest_share_kit.dm_message} />
-              <Field label="Guest Caption (copy-paste)" value={result.guest_share_kit.suggested_caption} />
-              <Field label="Quote Graphic Text" value={result.guest_share_kit.quote_graphic_text} />
-            </Section>
-          )}
-
           {/* Producer Feedback */}
           {result.producer_feedback && (
             <Section title="🎙 Producer Feedback">
-              <div style={{ padding: '12px 14px', background: 'var(--surface-raised)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '32px', fontWeight: 900, color: 'var(--purple)' }}>{result.producer_feedback.overall_grade?.split('/')[0]}</span>
-                <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.4 }}>{result.producer_feedback.overall_grade}</p>
+              <div style={{ padding: '14px', background: 'var(--surface-raised)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <span style={{ fontSize: '40px', fontWeight: 900, color: 'var(--purple)', lineHeight: 1, minWidth: '54px', textAlign: 'center' }}>{result.producer_feedback.overall_grade}</span>
+                <div>
+                  <p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Episode grade</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.5, fontWeight: 600 }}>{result.producer_feedback.verdict ?? ''}</p>
+                </div>
               </div>
 
               <div>
@@ -496,6 +591,9 @@ export default function PodcastEngine() {
               </div>
             </Section>
           )}
+
+          {/* ⭐ BOTTOM — rate & review again on the way out */}
+          <ShareCard links={result.show_links} />
         </div>
       )}
 

@@ -224,8 +224,6 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'podcast'    && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <PodcastEngine />
-            <InstantCompose />
-            <StoryProcessor />
           </div>
         )}
         {view === 'story'      && (

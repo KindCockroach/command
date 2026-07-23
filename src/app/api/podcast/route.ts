@@ -1,139 +1,117 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { CRAFT_RULES } from '@/lib/craft'
+import { fableText, researchWithWeb } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
-
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+export const maxDuration = 300
 
 // Where every episode CTA sends people: the SHOW, on the platforms it lives on.
-// Not aiworksforyou.co. Replace the three URLs below with the real show links.
 const SHOW_LINKS = {
   apple: 'https://podcasts.apple.com/us/podcast/ai-mom/id6786440414',
   spotify: 'https://open.spotify.com/show/033I8hRPjXiKlCHhaq5YYc',
   youtube: 'https://youtube.com/playlist?list=PLZ5DeAJ0I0WI',
 }
-const SHOW_LINKS_BLOCK = `Listen & follow the AI Mom Podcast — 🎧 Apple Podcasts: ${SHOW_LINKS.apple} · 🟢 Spotify: ${SHOW_LINKS.spotify} · ▶️ YouTube: ${SHOW_LINKS.youtube}`
+// The email-capture destination (coming-soon page collecting name + email).
+const OPT_IN = 'aimomeducation.com'
 
 export async function POST(req: NextRequest) {
   const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast' } = await req.json()
-
   if (!transcript) return NextResponse.json({ error: 'transcript required' }, { status: 400 })
 
-  const context = `
-SHOW: ${showName}
-HOST: Mandi Beck — AI Mom. Warm, bold, direct, plain English, real mom of 4.
+  const clip = String(transcript).slice(0, 9000)
+
+  // 1) RISE does its own homework — pull real, current context so Medium + Substack
+  //    have depth beyond what was said in the room (facts, studies, current events).
+  let researched = ''
+  try {
+    researched = await researchWithWeb({
+      maxSearches: 6,
+      maxTokens: 2500,
+      instructions: 'You are RISE\'s research desk. From this podcast transcript, identify the 2-3 threads worth deepening with real outside evidence (studies, data, current developments, expert sources). Search the live web and return a tight brief: for each thread, the fact/finding, the source name, and one sentence on why it matters. Real sources only — flag anything uncertain with "VERIFY:". Plain text, no preamble.',
+      input: clip,
+    })
+  } catch { /* research is best-effort — the episode still generates without it */ }
+
+  const context = `SHOW: ${showName}
+HOST: Mandi Beck — AI Mom. Warm, bold, direct, plain English, real mom of 4. This is HER show; write as her, never as a persona.
 EPISODE: ${episodeNumber ? `#${episodeNumber}` : 'TBD'}
 GUEST: ${guestName ?? 'None — solo episode'}
+${researched ? `\nOUTSIDE RESEARCH RISE PULLED (weave the real facts + name the sources into the Medium article and the Substack body — never invent, keep VERIFY: flags):\n${researched}\n` : ''}
 TRANSCRIPT:
-${transcript.slice(0, 8000)}
-`
+${clip}`
 
-  const response = await client.responses.create({
-    model: 'gpt-4o',
-    instructions: `You are the podcast production engine for RISE Station — Mandi Beck's AI content operating system.
-Given a podcast transcript, you produce EVERY deliverable needed to publish and promote the episode.
-You also provide honest, constructive producer feedback to help Mandi improve.
+  const instructions = `You are the podcast production engine for RISE Station — Mandi Beck's AI content operating system. Given a transcript, you produce every deliverable to publish and promote the episode, in MANDI'S OWN VOICE.
 
-Everything you write stays in MANDI'S OWN VOICE (this is her show, she is the host — do not write as a persona). But every deliverable still obeys the craft laws below — especially PLAIN VOICE (one point, plain words, no flowery or convoluted lines), FACTS (never invent a stat/quote — prefix "VERIFY:" if unsure), and right-sized LENGTH per platform (never publish a thin stub).
+Obey the craft laws — PLAIN VOICE (one point, plain words, no flowery lines), FACTS (never invent a stat/quote; prefix "VERIFY:" if unsure), right-sized LENGTH per platform (never a thin stub).
 
 ${CRAFT_RULES}
 
-HOOK DOCTRINE (governs the title, subtitle, EVERY headline, and EVERY reel hook — this is the bar):
-A hook must STOP A THUMB — make a scroller think "wait, WHAT?" It is a bold claim, a strange specific, a scene, or a provocation she cannot walk past. It is NOT an SEO/informational headline.
-BANNED — never produce these lazy defaults: "AI's rapid growth", "Are you prepared?", "The future of X", "Why X matters", "Everything you need to know about…", "5 ways to…", "How AI is changing…". If a headline could open a corporate blog post, DELETE it and write a real hook.
-NORTH STAR (write at this level): "We generated a new species. Follow this podcast to follow the evolution and our newfound understanding of consciousness." — a claim that reframes reality and makes her NEED to know more.
-Every headline and reel hook must be that specific and that alive. Reel hooks = ONE line at this bar.
+HOOK DOCTRINE (governs title, subtitle, every headline, every reel hook): a hook STOPS A THUMB — a bold claim, strange specific, scene, or provocation. NOT an SEO headline. BANNED lazy defaults: "AI's rapid growth", "Are you prepared?", "The future of X", "Why X matters", "5 ways to…", "How AI is changing…". If it could open a corporate blog post, delete it.
 
-Return ONLY valid JSON. No markdown. No explanation.`,
-    input: `${context}
+Return ONLY valid JSON. No markdown fences, no explanation.`
 
-Generate ALL podcast deliverables. Return this exact JSON structure:
+  const schema = `Return this exact JSON:
 {
   "title": "punchy episode title in Mandi's voice (under 60 chars)",
-  "subtitle": "one sentence that makes someone click play",
-  "headlines": [
-    "SCROLL-STOPPING headline option 1 — pattern interrupt, bold claim or contrast",
-    "SCROLL-STOPPING headline option 2 — curiosity gap or unexpected angle",
-    "SCROLL-STOPPING headline option 3 — listicle or direct benefit",
-    "SCROLL-STOPPING headline option 4 — emotional hook or personal story angle",
-    "SCROLL-STOPPING headline option 5 — controversy or counter-narrative"
-  ],
-  "description": "3-paragraph show notes in Mandi's voice — scene-setting, key insights, why it matters. Under 300 words.",
-  "seo_description": "150-character meta description optimized for search",
-  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
-  "chapters": [
-    {"time": "0:00", "title": "chapter title"},
-    {"time": "X:XX", "title": "chapter title"}
-  ],
-  "pull_quotes": ["quote 1", "quote 2", "quote 3", "quote 4", "quote 5"],
+  "subtitle": "one sentence that makes someone hit play",
+  "questions": ["the real question this episode asks/answers", "3-6 of them — what a listener came to figure out"],
+  "headlines": ["5 scroll-stopping options at the hook-doctrine bar"],
+  "description": "3-paragraph show notes in Mandi's voice — scene, key insight, why it matters. Under 300 words.",
+  "seo_description": "150-character search meta description",
+  "keywords": ["5 keywords"],
+  "pull_quotes": ["5 real quotes pulled from the transcript"],
   "reels_scripts": [
-    {
-      "hook": "ONE-line scroll-stopping hook at the HOOK DOCTRINE bar — a claim/scene/provocation, never an SEO headline",
-      "body": "15-30 second middle",
-      "cta": "comment trigger CTA",
-      "platform": "Instagram Reels"
-    },
-    {
-      "hook": "different hook angle",
-      "body": "15-30 second middle",
-      "cta": "comment trigger CTA",
-      "platform": "TikTok"
-    },
-    {
-      "hook": "third angle",
-      "body": "15-30 second middle",
-      "cta": "comment trigger CTA",
-      "platform": "YouTube Shorts"
-    }
+    {"hook": "ONE-line hook at the doctrine bar", "body": "15-30 sec middle", "cta": "comment-trigger CTA", "platform": "Instagram Reels"},
+    {"hook": "different angle", "body": "...", "cta": "...", "platform": "TikTok"},
+    {"hook": "third angle", "body": "...", "cta": "...", "platform": "YouTube Shorts"}
   ],
-  "newsletter_angle": "specific angle for Substack email — one observation, one insight, one takeaway",
-  "newsletter_subject": "email subject line that gets opened",
   "medium_article": {
-    "title": "Medium-optimized article title with keywords (SEO-friendly, curiosity-driven)",
-    "subtitle": "one-sentence deck under the title",
-    "body": "Full 600-900 word Medium article in Mandi's voice. Structure: opening hook paragraph, 3-4 substantive sections with bold subheadings, and a closing call to action inviting the reader to FOLLOW THE PODCAST — end the article with this exact line, links included verbatim: '${SHOW_LINKS_BLOCK}'. NEVER point to aiworksforyou.co. Conversational tone, short paragraphs, real examples from the episode. No fluff."
+    "title": "curiosity-driven, keyword-aware Medium title",
+    "subtitle": "one-sentence deck",
+    "sections": [
+      {"heading": "section heading (plain text, NO # symbols)", "body": "2-4 rich paragraphs. Weave in the outside research with named sources where it fits."}
+    ],
+    "closing": "closing paragraph that invites the reader to follow the podcast"
   },
-  "youtube_title": "YouTube-optimized title with keywords",
-  "youtube_description": "YouTube description with timestamps, hashtags, and this exact show-links line included verbatim: '${SHOW_LINKS_BLOCK}'",
-  "youtube_tags": ["tag1", "tag2", "tag3"],
+  "newsletter_subject": "Substack subject line that gets opened",
+  "newsletter_body": "Full 400-700 word Substack issue in Mandi's voice — one observation, one insight, one takeaway, deepened with the outside research. Short paragraphs. Ends with a warm invite to follow the show.",
+  "episode_description": "ONE ready-to-post episode description (200-400 words) used identically on YouTube, Spotify, and Apple. Scene + what's inside + who it's for.",
+  "youtube_title": "YouTube-optimized title",
+  "youtube_tags": ["8-12 tags"],
   "pinterest_pins": [
-    {"title": "pin title", "description": "pin description with keywords"},
-    {"title": "pin title", "description": "pin description with keywords"}
+    {"title": "pin title", "description": "keyword-rich pin description", "image_prompt": "a detailed, ready-to-generate visual prompt for this pin — warm, on-brand, no text baked in"}
   ],
-  "spotify_description": "short Spotify episode description under 200 chars",
-  "apple_description": "Apple Podcasts description under 255 chars",
+  "resources": [
+    {"name": "tool / book / study / person mentioned in the episode", "url": "the real link if known or a best-guess official URL (else empty string)", "note": "one line on what it is"}
+  ],
   "ad_reads": {
-    "pre_roll": "15-second SPOKEN invitation in Mandi's voice to follow the AI Mom Podcast — warm, pure-give (never a sales pitch). Tell them to follow AI Mom on Apple Podcasts, Spotify, or YouTube. Spoken words only — NEVER read a URL aloud, never mention aiworksforyou.co.",
-    "mid_roll": "30-second SPOKEN mid-roll in Mandi's voice inviting listeners to follow/subscribe to the AI Mom Podcast so they don't miss an episode — on Apple, Spotify, or YouTube. Pure-give energy, no sales ask. Spoken only, no URLs, no aiworksforyou.co.",
-    "post_roll": "10-second SPOKEN outro in Mandi's voice — invite them to follow AI Mom on Apple, Spotify, or YouTube and end on a signature line. Spoken only, no URLs, no aiworksforyou.co."
+    "pre_roll": "15-sec SPOKEN invite in Mandi's voice to follow AI Mom Podcast on Apple, Spotify, or YouTube. Warm, pure-give. You MAY say '${OPT_IN}' aloud to invite them to join the list. No other URLs.",
+    "mid_roll": "30-sec SPOKEN mid-roll inviting listeners to follow the show AND to go to ${OPT_IN} to get on the list. Pure-give, no hard sell.",
+    "post_roll": "10-sec SPOKEN outro — follow AI Mom on Apple/Spotify/YouTube, mention ${OPT_IN}, end on a signature line."
   },
-  "guest_share_kit": {
-    "dm_message": "message to send guest asking them to share (if applicable, else empty string)",
-    "suggested_caption": "caption guest can copy-paste to share the episode",
-    "quote_graphic_text": "text for a quote graphic the guest can share"
-  },
-  "manychat_trigger": "keyword for comment-to-DM automation for this episode",
-  "manychat_dm": "auto-DM message sent when someone comments the trigger word",
+  "manychat_trigger": "single keyword for comment-to-DM automation",
+  "manychat_dm": "auto-DM sent when someone comments the trigger word — warm, points to ${OPT_IN}",
   "producer_feedback": {
-    "overall_grade": "A/B/C/D with one sentence verdict",
-    "strengths": ["strength 1", "strength 2", "strength 3"],
-    "topic_drift": "honest assessment of whether Mandi stayed on topic or wandered — specific timestamps or moments if possible",
-    "depth_gaps": "topics that were mentioned but not covered thoroughly enough — what listeners probably wanted more of",
-    "too_many_directions": "if the episode tried to cover too much, call it out clearly and suggest which thread should have been the main one",
-    "biggest_win": "the single best moment or insight from this episode",
-    "next_episode_suggestion": "based on what was discussed, what topic would be the perfect follow-up episode"
+    "overall_grade": "JUST the letter grade, nothing else — e.g. \\"A-\\", \\"B+\\", \\"C\\"",
+    "verdict": "one honest sentence — the verdict on this episode",
+    "strengths": ["3 specific strengths"],
+    "topic_drift": "did she stay on topic or wander? specific moments.",
+    "depth_gaps": "what was mentioned but under-covered — what listeners wanted more of",
+    "too_many_directions": "if it tried to cover too much, name the ONE thread it should have been",
+    "biggest_win": "the single best moment or insight",
+    "next_episode_suggestion": "the perfect follow-up episode based on what was discussed"
   }
-}`,
-  })
+}`
 
   try {
-    const raw = response.output_text
+    const raw = await fableText({ instructions, input: `${context}\n\n${schema}`, maxTokens: 16000, effort: 'medium' })
     const match = raw.match(/\{[\s\S]*\}/)
     if (!match) throw new Error('No JSON found')
     const deliverables = JSON.parse(match[0])
+    deliverables.show_links = SHOW_LINKS
+    deliverables.opt_in = OPT_IN
     return NextResponse.json({ deliverables })
-  } catch {
-    return NextResponse.json({ error: 'Could not parse deliverables', raw: response.output_text }, { status: 500 })
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Could not parse deliverables' }, { status: 500 })
   }
 }
