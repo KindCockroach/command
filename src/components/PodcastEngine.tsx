@@ -167,7 +167,7 @@ export default function PodcastEngine() {
       if (d.transcript) {
         setTranscript(d.transcript)
         setAudioState('done')
-        setAudioMsg(`✓ Transcribed (${d.transcript.split(/\s+/).length.toLocaleString()} words)${d.publicUrl ? ' · audio saved to Media library' : ''} — hit Generate Everything below.`)
+        setAudioMsg(`✓ Transcribed (${d.transcript.split(/\s+/).length.toLocaleString()} words)${d.compressed ? ' · compressed MP3 saved to your Media library' : d.publicUrl ? ' · audio saved to Media library' : ''} — hit Generate Everything below.`)
       } else {
         setAudioState('error')
         setAudioMsg(d.error || 'Transcription failed — paste the transcript manually.')

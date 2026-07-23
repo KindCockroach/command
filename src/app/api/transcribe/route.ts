@@ -3,7 +3,7 @@ import OpenAI from 'openai'
 import { putObject, getPublicUrl, isR2Configured } from '@/lib/r2'
 import { randomUUID } from 'crypto'
 import { spawn } from 'child_process'
-import { mkdtemp, writeFile, rm, stat, readdir } from 'fs/promises'
+import { mkdtemp, writeFile, rm, stat, readdir, readFile } from 'fs/promises'
 import { createReadStream } from 'fs'
 import { tmpdir } from 'os'
 import path from 'path'
@@ -33,9 +33,51 @@ async function transcribeFile(filePath: string): Promise<string> {
   return t.text
 }
 
+// Compress an oversized file to speech-quality mono MP3, SAVE that compressed copy
+// to Media (so there's always a downloadable smaller version), then transcribe
+// (chunking if a very long episode is still over the cap).
+async function compressAndTranscribe(bytes: Buffer, origName: string): Promise<{ transcript: string; compressedUrl: string }> {
+  if (!(await hasFfmpeg())) throw new Error('ffmpeg-unavailable')
+  const dir = await mkdtemp(path.join(tmpdir(), 'rise-audio-'))
+  try {
+    const inExt = (origName.split('.').pop() ?? 'wav').toLowerCase()
+    const inPath = path.join(dir, `in.${inExt}`)
+    await writeFile(inPath, bytes)
+
+    // 48kbps mono MP3: ~21MB per hour of audio — inaudible loss for speech.
+    const compPath = path.join(dir, 'compressed.mp3')
+    await run('ffmpeg', ['-y', '-i', inPath, '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '48k', compPath])
+
+    // Keep the compressed copy in Media — this is the "where do I get the compressed version" answer.
+    let compressedUrl = ''
+    if (isR2Configured()) {
+      try {
+        const base = origName.replace(/\.[^.]+$/, '') || 'episode'
+        const key = `audio/${base}-compressed-${randomUUID().slice(0, 8)}.mp3`
+        if (await putObject(key, await readFile(compPath), 'audio/mpeg')) compressedUrl = getPublicUrl(key)
+      } catch { /* best-effort */ }
+    }
+
+    const compSize = (await stat(compPath)).size
+    let transcript: string
+    if (compSize <= LIMIT) {
+      transcript = await transcribeFile(compPath)
+    } else {
+      // Very long episode: split into ~50-min chunks (well under 25MB at 48kbps), stitch transcripts
+      await run('ffmpeg', ['-y', '-i', compPath, '-f', 'segment', '-segment_time', '3000', '-c', 'copy', path.join(dir, 'chunk_%03d.mp3')])
+      const chunks = (await readdir(dir)).filter(f => f.startsWith('chunk_')).sort()
+      const parts: string[] = []
+      for (const c of chunks) parts.push(await transcribeFile(path.join(dir, c)))
+      transcript = parts.join('\n\n')
+    }
+    return { transcript, compressedUrl }
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
 // Drop an audio file → store it in Media AND transcribe it (Whisper).
-// Oversized files are auto-compressed to speech-quality mono (and split into
-// chunks if still too big), so the raw Riverside export just works.
+// Oversized files are auto-compressed (and the compressed MP3 is kept in Media).
 export async function POST(req: NextRequest) {
   const contentType = req.headers.get('content-type') ?? ''
 
@@ -47,15 +89,21 @@ export async function POST(req: NextRequest) {
       const resp = await fetch(audioUrl)
       if (!resp.ok) return NextResponse.json({ error: `Could not fetch audio (${resp.status})` }, { status: 502 })
       const bytes = Buffer.from(await resp.arrayBuffer())
-      if (bytes.length > 25 * 1024 * 1024) {
-        return NextResponse.json({ error: `That file is ${(bytes.length / 1048576).toFixed(0)}MB — Whisper's limit is 25MB. Grab this episode's transcript from Riverside instead, or upload a compressed MP3.` }, { status: 413 })
+      const name = audioUrl.split('/').pop() || 'audio'
+      if (bytes.length <= LIMIT) {
+        const transcription = await transcribeFileFromBytes(bytes, name)
+        return NextResponse.json({ transcript: transcription })
       }
-      const name = audioUrl.split('/').pop() || 'audio.mp3'
-      const ext = name.split('.').pop()?.toLowerCase() || 'mp3'
-      const mime = ext === 'm4a' ? 'audio/mp4' : ext === 'wav' ? 'audio/wav' : ext === 'ogg' ? 'audio/ogg' : 'audio/mpeg'
-      const file = new File([bytes], name, { type: mime })
-      const transcription = await client.audio.transcriptions.create({ model: 'whisper-1', file })
-      return NextResponse.json({ transcript: transcription.text })
+      // Oversized → compress, keep the compressed copy, transcribe
+      try {
+        const { transcript, compressedUrl } = await compressAndTranscribe(bytes, name)
+        return NextResponse.json({ transcript, compressedUrl, compressed: true })
+      } catch (e) {
+        const msg = e instanceof Error && e.message === 'ffmpeg-unavailable'
+          ? `That file is ${(bytes.length / 1048576).toFixed(0)}MB — over Whisper's 25MB limit and compression isn't available on the server. Grab the transcript from Riverside instead.`
+          : `Transcription failed: ${e instanceof Error ? e.message : 'unknown'}`
+        return NextResponse.json({ error: msg }, { status: 413 })
+      }
     } catch (e) {
       return NextResponse.json({ error: `Transcription failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
     }
@@ -90,41 +138,27 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Oversized → compress (and chunk if needed) with ffmpeg
-  if (!(await hasFfmpeg())) {
-    return NextResponse.json({
-      publicUrl,
-      transcript: null,
-      error: `File is ${(bytes.length / 1048576).toFixed(0)}MB — over Whisper's 25MB limit and audio compression isn't available on the server yet. Saved to Media; export a compressed MP3 (64kbps mono) and drop it again.`,
-    })
-  }
-
-  let dir = ''
+  // Oversized → compress (keeping the compressed MP3 in Media) and transcribe
   try {
-    dir = await mkdtemp(path.join(tmpdir(), 'rise-audio-'))
-    const inPath = path.join(dir, `in.${(file.name.split('.').pop() ?? 'wav').toLowerCase()}`)
-    await writeFile(inPath, bytes)
-
-    // 48kbps mono MP3: ~21MB per hour of audio — inaudible loss for speech.
-    const compPath = path.join(dir, 'compressed.mp3')
-    await run('ffmpeg', ['-y', '-i', inPath, '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '48k', compPath])
-    const compSize = (await stat(compPath)).size
-
-    let transcript: string
-    if (compSize <= LIMIT) {
-      transcript = await transcribeFile(compPath)
-    } else {
-      // Very long episode: split into ~50-min chunks (well under 25MB at 48kbps), stitch transcripts
-      await run('ffmpeg', ['-y', '-i', compPath, '-f', 'segment', '-segment_time', '3000', '-c', 'copy', path.join(dir, 'chunk_%03d.mp3')])
-      const chunks = (await readdir(dir)).filter(f => f.startsWith('chunk_')).sort()
-      const parts: string[] = []
-      for (const c of chunks) parts.push(await transcribeFile(path.join(dir, c)))
-      transcript = parts.join('\n\n')
-    }
-    return NextResponse.json({ publicUrl, transcript, compressed: true })
+    const { transcript, compressedUrl } = await compressAndTranscribe(bytes, file.name)
+    return NextResponse.json({ publicUrl, compressedUrl, transcript, compressed: true })
   } catch (e) {
+    if (e instanceof Error && e.message === 'ffmpeg-unavailable') {
+      return NextResponse.json({
+        publicUrl,
+        transcript: null,
+        error: `File is ${(bytes.length / 1048576).toFixed(0)}MB — over Whisper's 25MB limit and compression isn't available on the server. Saved to Media; export a compressed MP3 (64kbps mono) and drop it again.`,
+      })
+    }
     return NextResponse.json({ publicUrl, transcript: null, error: `Transcription failed while compressing: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
-  } finally {
-    if (dir) await rm(dir, { recursive: true, force: true }).catch(() => {})
   }
+}
+
+// Transcribe raw bytes that are already under the limit (used by the URL path).
+async function transcribeFileFromBytes(bytes: Buffer, name: string): Promise<string> {
+  const ext = name.split('.').pop()?.toLowerCase() || 'mp3'
+  const mime = ext === 'm4a' ? 'audio/mp4' : ext === 'wav' ? 'audio/wav' : ext === 'ogg' ? 'audio/ogg' : 'audio/mpeg'
+  const file = new File([bytes], name, { type: mime })
+  const t = await client.audio.transcriptions.create({ model: 'whisper-1', file })
+  return t.text
 }
