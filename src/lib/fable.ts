@@ -72,7 +72,7 @@ export async function fableText(opts: {
 // ── The Commander — Mandi's conversational partner, on Claude Fable 5 ─────────
 // A real back-and-forth thinker. Content generation stays on cheap 4o; THIS is the
 // high-value reasoning surface, so it gets the most capable model.
-export async function commanderChat(system: string, messages: { role: 'user' | 'assistant'; content: string }[], maxTokens = 1600): Promise<string> {
+export async function commanderChat(system: string, messages: { role: 'user' | 'assistant'; content: unknown }[], maxTokens = 1600): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — add it in Railway so the Commander can think.')
   const res = await fetch(ANTHROPIC_URL, {
