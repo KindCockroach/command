@@ -240,6 +240,24 @@ export default function PodcastEngine() {
     } catch { /* kit save is best-effort; content stays on screen */ }
   }
 
+  // Second note: the raw transcript on its own, so it's kept + searchable apart from the kit.
+  const saveTranscriptToNotes = async (episodeTitle: string) => {
+    if (!transcript.trim()) return
+    try {
+      await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `📄 Ep ${episodeNumber || '?'} Transcript — ${episodeTitle}`,
+          body: transcript,
+          category: 'idea',
+          tags: ['podcast', 'transcript', episodeNumber ? `ep-${episodeNumber}` : 'unnumbered'],
+          pinned: false,
+        }),
+      })
+    } catch { /* best-effort */ }
+  }
+
   const generate = async () => {
     if (!transcript.trim()) return
     setLoading(true)
@@ -256,6 +274,7 @@ export default function PodcastEngine() {
       if (data.deliverables) {
         setResult(data.deliverables)
         saveKitToNotes(data.deliverables)
+        saveTranscriptToNotes(data.deliverables.title ?? `Episode ${episodeNumber || ''}`.trim())
       }
       else setError(data.error ?? 'Something went wrong')
     } catch {
