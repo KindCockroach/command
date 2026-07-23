@@ -385,7 +385,7 @@ export default function PodcastEngine() {
             placeholder="Paste your full episode transcript here. The station will generate show notes, SEO, 3 Reels scripts, newsletter, YouTube description, Pinterest pins, ad reads, ManyChat funnel, and more."
             style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px', resize: 'vertical', minHeight: '180px', fontFamily: 'inherit', lineHeight: 1.6 }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
-            <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{transcript.length.toLocaleString()} characters · AI reads first ~8,000</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{transcript.length.toLocaleString()} characters · Fable reads the whole episode</p>
             {transcript.trim() && (
               <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
                 <CopyBtn text={transcript} label="Copy transcript" />
