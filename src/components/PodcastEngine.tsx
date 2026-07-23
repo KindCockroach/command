@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { Loader2, Copy, CheckCircle2, ChevronDown, ChevronUp, Mic, Zap } from 'lucide-react'
 
 interface Deliverables {
+  core_takeaway?: string
+  emotional_spine?: string
   title: string
   subtitle: string
   questions?: string[]
@@ -432,6 +434,16 @@ export default function PodcastEngine() {
               {riverStatus === 'sending' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Filing…</> : riverStatus === 'done' ? <><CheckCircle2 size={13} /> Filed</> : <><Zap size={13} /> Compose & File</>}
             </button>
           </div>
+
+          {/* 🎯 What RISE heard — the extracted takeaway (quality check: did it get the episode?) */}
+          {(result.core_takeaway || result.emotional_spine) && (
+            <div style={{ border: '1px solid var(--border)', borderLeft: '3px solid #3DAA7C', borderRadius: '10px', padding: '12px 14px', background: 'var(--surface-raised)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>🎯 What RISE heard in this episode</span>
+              {result.core_takeaway && <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.55 }}><strong style={{ color: '#2E8B60' }}>Takeaway:</strong> {result.core_takeaway}</p>}
+              {result.emotional_spine && <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}><strong style={{ color: 'var(--text)' }}>Heart:</strong> {result.emotional_spine}</p>}
+              <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>If this misses the point, regenerate — everything below is built from this.</p>
+            </div>
+          )}
 
           {/* ⭐ TOP — listen, rate & review (before she scrolls) */}
           <ShareCard links={result.show_links} />

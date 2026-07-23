@@ -18,63 +18,77 @@ export async function POST(req: NextRequest) {
   const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast' } = await req.json()
   if (!transcript) return NextResponse.json({ error: 'transcript required' }, { status: 400 })
 
-  const clip = String(transcript).slice(0, 9000)
+  // Read the WHOLE episode — Fable's context is huge. (The old 8-9k cap meant the
+  // model never saw the last third of an episode, where the real takeaway usually lands.)
+  const clip = String(transcript).slice(0, 120000)
 
-  // 1) RISE does its own homework — pull real, current context so Medium + Substack
-  //    have depth beyond what was said in the room (facts, studies, current events).
+  // RISE's homework is SUPPORTING evidence only — real sources that back the claims
+  // MANDI ALREADY MADE. It must never introduce new specifics that become the story.
   let researched = ''
   try {
     researched = await researchWithWeb({
-      maxSearches: 6,
-      maxTokens: 2500,
-      instructions: 'You are RISE\'s research desk. From this podcast transcript, identify the 2-3 threads worth deepening with real outside evidence (studies, data, current developments, expert sources). Search the live web and return a tight brief: for each thread, the fact/finding, the source name, and one sentence on why it matters. Real sources only — flag anything uncertain with "VERIFY:". Plain text, no preamble.',
+      maxSearches: 5,
+      maxTokens: 2000,
+      instructions: 'You are RISE\'s fact-checking desk. Read this podcast transcript and find real outside sources that SUPPORT or gently contextualize the specific claims THE HOST ALREADY MADE (do not introduce new topics she did not raise). Return a short list: [her claim] → [supporting source name + URL] → [one line of context]. Real sources only; "VERIFY:" anything uncertain. This is a further-reading layer, not new content. Plain text.',
       input: clip,
     })
   } catch { /* research is best-effort — the episode still generates without it */ }
 
   const context = `SHOW: ${showName}
-HOST: Mandi Beck — AI Mom. Warm, bold, direct, plain English, real mom of 4. This is HER show; write as her, never as a persona.
+HOST: Mandi Beck — AI Mom. Warm, tangential, self-aware, philosophical, plain-spoken — a mom at the window, NOT a tech-bro explainer. This is HER show; write AS her.
 EPISODE: ${episodeNumber ? `#${episodeNumber}` : 'TBD'}
 GUEST: ${guestName ?? 'None — solo episode'}
-${researched ? `\nOUTSIDE RESEARCH RISE PULLED (weave the real facts + name the sources into the Medium article and the Substack body — never invent, keep VERIFY: flags):\n${researched}\n` : ''}
-TRANSCRIPT:
+${researched ? `\nSUPPORTING SOURCES (further-reading ONLY — real sources that back claims Mandi already made. Use them ONLY as citations/links in the Medium article's further-reading. NEVER state one of these specifics as something discussed in the episode, NEVER put them in headlines, quotes, show notes, reels, or the episode description, NEVER speak them in her voice):\n${researched}\n` : ''}
+FULL TRANSCRIPT (this is the source of truth — everything you write must come from HERE):
 ${clip}`
 
-  const instructions = `You are the podcast production engine for RISE Station — Mandi Beck's AI content operating system. Given a transcript, you produce every deliverable to publish and promote the episode, in MANDI'S OWN VOICE.
+  const instructions = `You are the podcast production engine for RISE Station — Mandi Beck's AI content operating system. You turn ONE episode into every deliverable, in MANDI'S OWN VOICE.
 
-Obey the craft laws — PLAIN VOICE (one point, plain words, no flowery lines), FACTS (never invent a stat/quote; prefix "VERIFY:" if unsure), right-sized LENGTH per platform (never a thin stub).
+⚑ UNDERSTAND THE EPISODE FIRST. Before writing anything, read the whole transcript and lock three things (you'll return them):
+1. THE ONE TAKEAWAY — the host's actual thesis, in HER framing, not the generic topic. (This episode's topic is "AI and water," but its TAKEAWAY is a specific argument she builds. Find the real argument.)
+2. THE EMOTIONAL SPINE — the story or wound at the center (who it's about, what actually happened, why it matters to her).
+3. HER REAL LINES — the 6-8 most striking things she ACTUALLY said, verbatim.
+Then make EVERY asset serve the takeaway and honor the spine. TEST: if a headline, quote, or reel could have been written from the episode's TITLE alone — without reading the transcript — it FAILS. Rewrite it so it could only have come from THIS episode.
 
-${CRAFT_RULES}
+⚑ GROUND EVERYTHING IN WHAT SHE SAID. Every fact, number, name, place, and quote must come from the transcript. Do NOT import outside statistics, institutions, or place names into headlines, pull_quotes, show notes, reels, keywords, or the episode description — those come ONLY from her words. "pull_quotes" must be VERBATIM (or near-verbatim) lines from the transcript — never paraphrased or invented. If she gave a number ("50% less than lawns", "4,000 residents, 1,200 data centers"), use HER number, not one from research.
 
-HOOK DOCTRINE (governs title, subtitle, every headline, every reel hook): a hook STOPS A THUMB — a bold claim, strange specific, scene, or provocation. NOT an SEO headline. BANNED lazy defaults: "AI's rapid growth", "Are you prepared?", "The future of X", "Why X matters", "5 ways to…", "How AI is changing…". If it could open a corporate blog post, delete it.
+⚑ HEADLINES PROMISE WHAT THE EPISODE DELIVERS. Every headline and reel hook must be answerable BY her actual takeaway — never promise a technical exposé or facts-deep-dive she didn't give. A hook still STOPS A THUMB (a bold claim, a scene, a provocation from HER argument) — but it must be TRUE to this episode. Banned lazy defaults: "The future of X", "Why X matters", "5 ways to…", "How AI is changing…", "The truth about…".
 
-Return ONLY valid JSON. No markdown fences, no explanation.`
+⚑ RESEARCH IS SUBORDINATE. The supporting sources above are a further-reading layer for the Medium article only. They support claims she already made; they never replace her argument, never appear in her voice, never become the story.
+
+⚑ VOICE. Warm, human, a little tangential, philosophical, self-aware, funny when it lands. Never corporate, never "arm you with the facts", never explainer-bro. If a line sounds like a content marketer wrote it, rewrite it as her.
+
+Obey the craft laws below for HOW every line is built. Return ONLY valid JSON — no markdown fences, no explanation.
+
+${CRAFT_RULES}`
 
   const schema = `Return this exact JSON:
 {
-  "title": "punchy episode title in Mandi's voice (under 60 chars)",
-  "subtitle": "one sentence that makes someone hit play",
-  "questions": ["the real question this episode asks/answers", "3-6 of them — what a listener came to figure out"],
-  "headlines": ["5 scroll-stopping options at the hook-doctrine bar"],
-  "description": "3-paragraph show notes in Mandi's voice — scene, key insight, why it matters. Under 300 words.",
+  "core_takeaway": "the ONE real thesis of this episode, in Mandi's framing — the argument she actually builds, not the topic. One or two sentences.",
+  "emotional_spine": "the story or wound at the center — who it's about, what happened, why it matters to her. One or two sentences.",
+  "title": "punchy episode title in Mandi's voice (under 60 chars) — TRUE to the core_takeaway",
+  "subtitle": "one sentence that makes someone hit play — reflects the real takeaway, not a generic topic",
+  "questions": ["the real questions THIS episode asks/answers (many are literally asked near the end) — 3-6, in her words"],
+  "headlines": ["5 scroll-stopping options — each must be answerable by core_takeaway and honor emotional_spine; none writable from the title alone"],
+  "description": "3-paragraph show notes in Mandi's voice — open on the emotional spine (the real story), land the core takeaway, why it matters. Under 300 words. Her warm, tangential voice.",
   "seo_description": "150-character search meta description",
-  "keywords": ["5 keywords"],
-  "pull_quotes": ["5 real quotes pulled from the transcript"],
+  "keywords": ["5 keywords drawn from what she actually discussed"],
+  "pull_quotes": ["6 VERBATIM (or near-verbatim) lines she ACTUALLY said — the most striking, quotable, human ones. Copy them from the transcript; never invent or paraphrase into a marketer's line."],
   "reels_scripts": [
     {"hook": "ONE-line hook at the doctrine bar", "body": "15-30 sec middle", "cta": "comment-trigger CTA", "platform": "Instagram Reels"},
     {"hook": "different angle", "body": "...", "cta": "...", "platform": "TikTok"},
     {"hook": "third angle", "body": "...", "cta": "...", "platform": "YouTube Shorts"}
   ],
   "medium_article": {
-    "title": "curiosity-driven, keyword-aware Medium title",
+    "title": "curiosity-driven Medium title — TRUE to the core_takeaway",
     "subtitle": "one-sentence deck",
     "sections": [
-      {"heading": "section heading (plain text, NO # symbols)", "body": "2-4 rich paragraphs. Weave in the outside research with named sources where it fits."}
+      {"heading": "section heading (plain text, NO # symbols)", "body": "2-4 rich paragraphs that follow HER argument from the episode. You MAY cite a supporting source (with its name) to back a point she made — but the spine is her episode, never the research. Never state an outside specific as something she discussed."}
     ],
-    "closing": "closing paragraph that invites the reader to follow the podcast"
+    "closing": "closing paragraph in her voice that invites the reader to follow the podcast (optionally: a short 'further reading' line with 1-2 real source links from the supporting sources)"
   },
-  "newsletter_subject": "Substack subject line that gets opened",
-  "newsletter_body": "Full 400-700 word Substack issue in Mandi's voice — one observation, one insight, one takeaway, deepened with the outside research. Short paragraphs. Ends with a warm invite to follow the show.",
+  "newsletter_subject": "Substack subject line that gets opened — reflects the real takeaway",
+  "newsletter_body": "Full 400-700 word Substack issue in HER voice, built on the episode's actual argument and story. One observation, one insight, one takeaway. You may reference a real supporting source to deepen a point she made, clearly as outside context — never invented, never as her episode content. Short paragraphs, warm close inviting them to follow the show.",
   "episode_description": "ONE ready-to-post episode description (200-400 words) used identically on YouTube, Spotify, and Apple. Scene + what's inside + who it's for.",
   "youtube_title": "YouTube-optimized title",
   "youtube_tags": ["8-12 tags"],
