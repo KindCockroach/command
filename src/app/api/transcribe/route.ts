@@ -38,8 +38,31 @@ async function transcribeFile(filePath: string): Promise<string> {
 // chunks if still too big), so the raw Riverside export just works.
 export async function POST(req: NextRequest) {
   const contentType = req.headers.get('content-type') ?? ''
+
+  // URL mode — transcribe an audio file already in Media (R2). JSON { audioUrl }.
+  if (contentType.includes('application/json')) {
+    const { audioUrl } = await req.json().catch(() => ({}))
+    if (!audioUrl) return NextResponse.json({ error: 'audioUrl required' }, { status: 400 })
+    try {
+      const resp = await fetch(audioUrl)
+      if (!resp.ok) return NextResponse.json({ error: `Could not fetch audio (${resp.status})` }, { status: 502 })
+      const bytes = Buffer.from(await resp.arrayBuffer())
+      if (bytes.length > 25 * 1024 * 1024) {
+        return NextResponse.json({ error: `That file is ${(bytes.length / 1048576).toFixed(0)}MB — Whisper's limit is 25MB. Grab this episode's transcript from Riverside instead, or upload a compressed MP3.` }, { status: 413 })
+      }
+      const name = audioUrl.split('/').pop() || 'audio.mp3'
+      const ext = name.split('.').pop()?.toLowerCase() || 'mp3'
+      const mime = ext === 'm4a' ? 'audio/mp4' : ext === 'wav' ? 'audio/wav' : ext === 'ogg' ? 'audio/ogg' : 'audio/mpeg'
+      const file = new File([bytes], name, { type: mime })
+      const transcription = await client.audio.transcriptions.create({ model: 'whisper-1', file })
+      return NextResponse.json({ transcript: transcription.text })
+    } catch (e) {
+      return NextResponse.json({ error: `Transcription failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
+    }
+  }
+
   if (!contentType.includes('multipart/form-data')) {
-    return NextResponse.json({ error: 'Send multipart/form-data with a "file" field' }, { status: 400 })
+    return NextResponse.json({ error: 'Send multipart/form-data with a "file" field, or JSON { audioUrl }' }, { status: 400 })
   }
   const form = await req.formData()
   const file = form.get('file')

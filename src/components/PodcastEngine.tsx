@@ -203,6 +203,30 @@ export default function PodcastEngine() {
 
   const [kitSaved, setKitSaved] = useState(false)
   const [transcriptSaved, setTranscriptSaved] = useState(false)
+  const [showMedia, setShowMedia] = useState(false)
+  const [audioLib, setAudioLib] = useState<{ key: string; name: string; url: string; size: number; lastModified: string }[]>([])
+  const [pullingKey, setPullingKey] = useState<string | null>(null)
+  const [pullErr, setPullErr] = useState('')
+
+  const loadAudioLib = async () => {
+    setShowMedia(v => !v)
+    if (audioLib.length) return
+    const d = await fetch('/api/media/list').then(r => r.json()).catch(() => null)
+    setAudioLib((d?.files ?? []).filter((f: { type: string }) => f.type === 'audio'))
+  }
+
+  // Pull a transcript from an audio file already in Media (Whisper), drop it in the box.
+  const transcribeFromMedia = async (f: { key: string; url: string }) => {
+    setPullingKey(f.key); setPullErr('')
+    try {
+      const d = await fetch('/api/transcribe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioUrl: f.url }),
+      }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+      if (d.transcript) { setTranscript(d.transcript); setShowMedia(false) }
+      else setPullErr(d.error || 'Could not transcribe')
+    } finally { setPullingKey(null) }
+  }
 
   // The full episode kit persists to Notes (storage) so nothing is lost on click-away
   const saveKitToNotes = async (d: Deliverables) => {
@@ -324,6 +348,32 @@ export default function PodcastEngine() {
           </label>
           {audioState !== 'idle' && audioState !== 'working' && (
             <p style={{ fontSize: '12px', marginTop: '6px', fontWeight: 600, color: audioState === 'done' ? '#3DAA7C' : '#E05252' }}>{audioMsg}</p>
+          )}
+          <button onClick={loadAudioLib}
+            style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 11px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 600, fontSize: '11px', cursor: 'pointer' }}>
+            🎧 {showMedia ? 'Hide' : 'Or pull an old episode from Media →'}
+          </button>
+          {showMedia && (
+            <div style={{ marginTop: '8px', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '260px', overflowY: 'auto' }}>
+              {audioLib.length === 0 && <p style={{ fontSize: '11px', color: 'var(--text-subtle)', padding: '6px' }}>No audio in Media, or still loading…</p>}
+              {audioLib.map(f => {
+                const mb = f.size / 1048576
+                const tooBig = mb > 25
+                return (
+                  <div key={f.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 9px', background: 'var(--surface-raised)', borderRadius: '8px' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</p>
+                      <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>{mb.toFixed(1)} MB · {f.lastModified ? new Date(f.lastModified).toLocaleDateString() : ''}{tooBig ? ' · over 25MB — use Riverside' : ''}</p>
+                    </div>
+                    <button onClick={() => transcribeFromMedia(f)} disabled={pullingKey !== null || tooBig}
+                      style={{ flexShrink: 0, padding: '5px 10px', borderRadius: '6px', border: 'none', background: tooBig ? 'var(--border)' : 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: tooBig ? 'not-allowed' : 'pointer', opacity: tooBig ? 0.6 : 1 }}>
+                      {pullingKey === f.key ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : 'Transcribe'}
+                    </button>
+                  </div>
+                )
+              })}
+              {pullErr && <p style={{ fontSize: '11px', color: '#E05252', padding: '4px 6px' }}>⚠ {pullErr}</p>}
+            </div>
           )}
         </div>
 
