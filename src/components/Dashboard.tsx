@@ -31,6 +31,16 @@ interface Stats { ideas: number; inProgress: number; ready: number; totalActive:
 interface Props { initialContent: ContentPiece[]; stats: Stats }
 type View = 'command' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
 
+// Renders children on first activation and KEEPS them mounted after — hidden with
+// display:none when inactive — so long-running work (podcast generation) and state
+// survive tab switches instead of being torn down.
+function KeepAlive({ active, children }: { active: boolean; children: React.ReactNode }) {
+  const [everActive, setEverActive] = useState(active)
+  useEffect(() => { if (active && !everActive) setEverActive(true) }, [active, everActive])
+  if (!everActive) return null
+  return <div style={{ display: active ? 'block' : 'none' }}>{children}</div>
+}
+
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
   const [stats, setStats] = useState(initialStats)
@@ -221,11 +231,13 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'research'   && <ResearchPanel />}
         {view === 'goals'      && <GoalsPanel />}
         {view === 'avatars'    && <AvatarsPanel />}
-        {view === 'podcast'    && (
+        {/* Podcast stays mounted once opened, so a running generation survives
+            clicking to another tab and finishes into the still-live component. */}
+        <KeepAlive active={view === 'podcast'}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <PodcastEngine />
           </div>
-        )}
+        </KeepAlive>
         {view === 'story'      && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <StoryStudio />
