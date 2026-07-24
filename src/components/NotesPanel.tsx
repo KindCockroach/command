@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { Plus, Search, Pin, PinOff, Trash2, X, BookOpen, Archive, Send, Sparkles } from 'lucide-react'
+import { Plus, Search, Pin, PinOff, Trash2, X, BookOpen, Archive, Send, Sparkles, Copy, Check } from 'lucide-react'
 import type { Note } from '@/lib/db'
 import CommanderModal from './CommanderModal'
 
@@ -31,6 +31,7 @@ function NoteCard({ note, accounts, onUpdate, onDelete, onSelect, onSendToAccoun
   const age = h < 48 ? `${Math.max(1, Math.round(h))}h ago` : h < 24 * 30 ? `${Math.round(h / 24)}d ago` : new Date(note.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   const [menu, setMenu] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [msg, setMsg] = useState('')
 
   const run = async (fn: () => Promise<SendResult>) => {
@@ -72,6 +73,9 @@ function NoteCard({ note, accounts, onUpdate, onDelete, onSelect, onSendToAccoun
               </div>
             )}
           </div>
+          <button title={copied ? 'Copied!' : 'Copy note'} onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(note.body || ''); setCopied(true); setTimeout(() => setCopied(false), 1500) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied ? '#3DAA7C' : 'var(--text-muted)', padding: '2px', opacity: copied ? 1 : 0.6 }}>
+            {copied ? <Check size={12} /> : <Copy size={12} />}
+          </button>
           <button onClick={e => { e.stopPropagation(); onUpdate(note.id, { pinned: !note.pinned }) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: note.pinned ? 'var(--hot-pink)' : 'var(--text-muted)', padding: '2px', opacity: 0.6 }}>
             {note.pinned ? <Pin size={12} /> : <PinOff size={12} />}
           </button>

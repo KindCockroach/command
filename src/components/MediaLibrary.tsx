@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Loader2, Video, Music, Image, FileText, Download, ExternalLink, RefreshCw, Search, Pencil, Sparkles } from 'lucide-react'
+import { Loader2, Video, Music, Image, FileText, Download, ExternalLink, RefreshCw, Search, Pencil, Sparkles, Copy, Check } from 'lucide-react'
 
 interface MediaFile {
   key: string
@@ -72,6 +72,18 @@ export default function MediaLibrary() {
       }).then(r => r.json()).catch(() => ({ error: 'failed' }))
       if (d.url) { setRenaming(false); setPreview(null); load() }
     } finally { setRenameBusy(false) }
+  }
+
+  // Inline (grid) rename via a quick prompt.
+  const [copiedKey, setCopiedKey] = useState('')
+  const renameInline = async (file: MediaFile) => {
+    const nn = window.prompt('Rename this file', displayName(file.name))
+    if (!nn || !nn.trim()) return
+    await fetch('/api/media/rename', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: file.key, newName: nn.trim() }),
+    }).catch(() => {})
+    load()
   }
 
   // Hand this media off to Instant Compose (the media-native tool) and jump to it.
@@ -198,6 +210,16 @@ export default function MediaLibrary() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{formatBytes(file.size)}</span>
                   <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{timeAgo(file.lastModified)}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                  <button onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(file.url); setCopiedKey(file.key); setTimeout(() => setCopiedKey(''), 1500) }}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '5px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--surface-raised)', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: copiedKey === file.key ? '#3DAA7C' : 'var(--text-muted)' }}>
+                    {copiedKey === file.key ? <><Check size={11} /> Copied</> : <><Copy size={11} /> Copy link</>}
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); renameInline(file) }}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '5px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--surface-raised)', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    <Pencil size={11} /> Rename
+                  </button>
                 </div>
               </div>
             </div>
