@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getAllContent, updateContent } from '@/lib/db'
-import { putObject, getPublicUrl } from '@/lib/r2'
-import { randomUUID } from 'crypto'
+import { putObject, getPublicUrl, mediaKey } from '@/lib/r2'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -39,7 +38,7 @@ export async function POST(req: NextRequest) {
     else if (item?.url) bytes = Buffer.from(await (await fetch(item.url)).arrayBuffer())
     if (!bytes) throw new Error('no image returned')
 
-    const key = `post-media/${randomUUID()}.jpg`
+    const key = mediaKey('post-media', piece.title || 'image', 'jpg')
     const ok = await putObject(key, bytes, 'image/jpeg')
     if (!ok) throw new Error('storage failed')
     const publicUrl = getPublicUrl(key)

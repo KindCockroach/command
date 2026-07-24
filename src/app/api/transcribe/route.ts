@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { putObject, getPublicUrl, isR2Configured } from '@/lib/r2'
-import { randomUUID } from 'crypto'
+import { putObject, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
 import { spawn } from 'child_process'
 import { mkdtemp, writeFile, rm, stat, readdir, readFile } from 'fs/promises'
 import { createReadStream } from 'fs'
@@ -54,7 +53,7 @@ async function compressAndTranscribe(bytes: Buffer, origName: string): Promise<{
     if (isR2Configured()) {
       try {
         const base = origName.replace(/\.[^.]+$/, '') || 'episode'
-        const key = `audio/${base}-compressed-${randomUUID().slice(0, 8)}.mp3`
+        const key = mediaKey('audio', `${base}-compressed`, 'mp3')
         if (await putObject(key, await readFile(compPath), 'audio/mpeg')) compressedUrl = getPublicUrl(key)
       } catch { /* best-effort */ }
     }
@@ -127,7 +126,7 @@ export async function POST(req: NextRequest) {
     if (!isR2Configured() || publicUrl) return
     try {
       const ext = (file.name.split('.').pop() ?? 'mp3').toLowerCase()
-      const key = `audio/${randomUUID()}.${ext}`
+      const key = mediaKey('audio', file.name, ext)
       if (await putObject(key, bytes, file.type || 'audio/mpeg')) publicUrl = getPublicUrl(key)
     } catch { /* storage best-effort */ }
   }

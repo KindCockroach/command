@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { putObject, getUploadUrl, getPublicUrl, isR2Configured } from '@/lib/r2'
-import { randomUUID } from 'crypto'
+import { putObject, getUploadUrl, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -23,7 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'file field required' }, { status: 400 })
     }
     const ext = (file.name.split('.').pop() ?? 'bin').toLowerCase()
-    const key = `${folder}/${randomUUID()}.${ext}`
+    const key = mediaKey(folder, file.name, ext)
     const bytes = Buffer.from(await file.arrayBuffer())
     const ok = await putObject(key, bytes, file.type || 'application/octet-stream')
     if (!ok) return NextResponse.json({ error: 'Upload to storage failed' }, { status: 500 })
@@ -36,7 +35,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'filename and contentType required' }, { status: 400 })
   }
   const ext = filename.split('.').pop() ?? 'bin'
-  const key = `${folder}/${randomUUID()}.${ext}`
+  const key = mediaKey(folder, filename, ext)
   const uploadUrl = await getUploadUrl(key, ct)
   if (!uploadUrl) return NextResponse.json({ error: 'Failed to generate upload URL' }, { status: 500 })
   return NextResponse.json({ uploadUrl, publicUrl: getPublicUrl(key), key })

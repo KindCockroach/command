@@ -1,5 +1,23 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { randomUUID } from 'crypto'
+
+// Turn a real filename/title into a clean slug (drops extension + junk).
+export function slugify(s: string): string {
+  return (s || '')
+    .replace(/\.[^.]+$/, '')          // drop extension
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')      // non-alphanumeric → hyphen
+    .replace(/^-+|-+$/g, '')          // trim leading/trailing hyphens
+    .slice(0, 60) || 'file'
+}
+
+// Standard media key: folder/human-readable-name-<6char>.ext — keeps the given
+// name (e.g. Riverside's filename or a post title) instead of a bare UUID.
+export function mediaKey(folder: string, name: string, ext: string): string {
+  const cleanExt = (ext || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin'
+  return `${folder}/${slugify(name)}-${randomUUID().slice(0, 6)}.${cleanExt}`
+}
 
 function r2Client() {
   const accountId = process.env.R2_ACCOUNT_ID

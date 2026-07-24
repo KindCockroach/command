@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllContent, updateContent } from '@/lib/db'
-import { putObject, getPublicUrl } from '@/lib/r2'
-import { randomUUID } from 'crypto'
+import { putObject, getPublicUrl, mediaKey } from '@/lib/r2'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -88,7 +87,7 @@ export async function POST(req: NextRequest) {
       try {
         const img = await fetch(imgUrl)
         const bytes = Buffer.from(await img.arrayBuffer())
-        const r2key = `post-media/${randomUUID()}.jpg`
+        const r2key = mediaKey('post-media', `${piece.title || 'frame'}-supercomputer`, 'jpg')
         const ok = await putObject(r2key, bytes, 'image/jpeg')
         if (!ok) throw new Error('storage failed')
         const publicUrl = getPublicUrl(r2key)
