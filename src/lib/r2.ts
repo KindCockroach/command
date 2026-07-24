@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { randomUUID } from 'crypto'
 
@@ -60,6 +60,14 @@ export async function deleteObject(key: string): Promise<void> {
   const client = r2Client()
   if (!client) return
   await client.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }))
+}
+
+/** Server-side copy within the bucket (no data through us) — for rename. */
+export async function copyObject(srcKey: string, destKey: string): Promise<boolean> {
+  const client = r2Client()
+  if (!client) return false
+  await client.send(new CopyObjectCommand({ Bucket: BUCKET, CopySource: `${BUCKET}/${encodeURIComponent(srcKey)}`, Key: destKey }))
+  return true
 }
 
 export function isR2Configured(): boolean {

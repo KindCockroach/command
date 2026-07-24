@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Sparkles, Loader2, Copy, CheckCircle2, UploadCloud, X } from 'lucide-react'
 
 type Variation = { angle: string; onscreen_text: string; caption: string; hashtags: string }
@@ -78,6 +78,21 @@ export default function InstantCompose() {
   const [frames, setFrames] = useState<string[]>([])
   const [feedback, setFeedback] = useState('')
   const [refining, setRefining] = useState(false)
+  const [mediaType, setMediaType] = useState('')
+
+  // Media handed off from the Media Library ("Send to Instant Compose") → preload it.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('rise-media-handoff')
+      if (!raw) return
+      localStorage.removeItem('rise-media-handoff')
+      const h = JSON.parse(raw) as { url: string; name: string; type: string }
+      if (!h.url) return
+      setMediaUrl(h.url)
+      setPreview(h.url)
+      setMediaType(h.type === 'video' ? 'video/mp4' : h.type === 'image' ? 'image/jpeg' : '')
+    } catch { /* no handoff */ }
+  }, [])
   const inputRef = useRef<HTMLInputElement>(null)
 
   const acceptFile = async (f: File) => {
@@ -117,7 +132,7 @@ export default function InstantCompose() {
     try {
       const res = await fetch('/api/compose', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ context, mediaUrl: mediaUrl || undefined, mediaType: file?.type, frames: frames.length ? frames : undefined }),
+        body: JSON.stringify({ context, mediaUrl: mediaUrl || undefined, mediaType: file?.type || mediaType || undefined, frames: frames.length ? frames : undefined }),
       })
       const d = await res.json()
       if (d.error) setError(d.error)

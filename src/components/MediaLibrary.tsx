@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Loader2, Video, Music, Image, FileText, Download, ExternalLink, RefreshCw, Search } from 'lucide-react'
+import { Loader2, Video, Music, Image, FileText, Download, ExternalLink, RefreshCw, Search, Pencil, Sparkles } from 'lucide-react'
 
 interface MediaFile {
   key: string
@@ -27,6 +27,11 @@ const TYPE_COLOR: Record<string, string> = {
   other: '#9494B0',
 }
 
+// Friendly name for the rename field: drop the extension and the -6char uniquifier.
+function displayName(name: string): string {
+  return (name || '').replace(/\.[^.]+$/, '').replace(/-[a-z0-9]{6}$/i, '').replace(/-/g, ' ')
+}
+
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -51,7 +56,31 @@ export default function MediaLibrary() {
   const [preview, setPreview] = useState<MediaFile | null>(null)
   const [txState, setTxState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
   const [txMsg, setTxMsg] = useState('')
-  useEffect(() => { setTxState('idle'); setTxMsg('') }, [preview?.name])
+  const [renaming, setRenaming] = useState(false)
+  const [renameVal, setRenameVal] = useState('')
+  const [renameBusy, setRenameBusy] = useState(false)
+  const [sent, setSent] = useState('')
+  useEffect(() => { setTxState('idle'); setTxMsg(''); setRenaming(false); setSent(''); setRenameVal(displayName(preview?.name ?? '')) }, [preview?.name])
+
+  const doRename = async () => {
+    if (!preview || !renameVal.trim()) return
+    setRenameBusy(true)
+    try {
+      const d = await fetch('/api/media/rename', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: preview.key, newName: renameVal.trim() }),
+      }).then(r => r.json()).catch(() => ({ error: 'failed' }))
+      if (d.url) { setRenaming(false); setPreview(null); load() }
+    } finally { setRenameBusy(false) }
+  }
+
+  // Hand this media off to Instant Compose (the media-native tool) and jump to it.
+  const sendToCompose = () => {
+    if (!preview) return
+    localStorage.setItem('rise-media-handoff', JSON.stringify({ url: preview.url, name: preview.name, type: preview.type }))
+    window.dispatchEvent(new CustomEvent('rise-goto-compose'))
+    setSent('✓ Sent to Instant Compose — opening…')
+  }
 
   // Transcribe an audio file straight from Media → save the transcript as a note.
   const transcribe = async (f: MediaFile) => {
@@ -180,9 +209,23 @@ export default function MediaLibrary() {
       {preview && (
         <div onClick={() => setPreview(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: '16px', padding: '20px', maxWidth: '600px', width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{preview.name}</p>
-              <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: '4px' }}>✕</button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              {renaming ? (
+                <div style={{ display: 'flex', gap: '6px', flex: 1 }}>
+                  <input autoFocus value={renameVal} onChange={e => setRenameVal(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') doRename() }}
+                    style={{ flex: 1, padding: '7px 10px', borderRadius: '8px', border: '1px solid var(--purple)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px' }} />
+                  <button onClick={doRename} disabled={renameBusy} style={{ padding: '7px 12px', borderRadius: '8px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                    {renameBusy ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : 'Save'}
+                  </button>
+                  <button onClick={() => setRenaming(false)} style={{ padding: '7px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-subtle)', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
+                </div>
+              ) : (
+                <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                  {preview.name}
+                  <button onClick={() => setRenaming(true)} title="Rename" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--purple)', padding: '2px', display: 'flex' }}><Pencil size={13} /></button>
+                </p>
+              )}
+              <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: '4px', flexShrink: 0 }}>✕</button>
             </div>
 
             {preview.type === 'video' && <video src={preview.url} controls style={{ width: '100%', borderRadius: '10px' }} />}
@@ -208,6 +251,17 @@ export default function MediaLibrary() {
                 <ExternalLink size={13} /> Open in R2
               </a>
             </div>
+
+            {(preview.type === 'image' || preview.type === 'video') && (
+              <div>
+                <button onClick={sendToCompose}
+                  style={{ width: '100%', padding: '10px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <Sparkles size={13} /> Send to Instant Compose
+                </button>
+                {sent && <p style={{ fontSize: '11px', marginTop: '5px', textAlign: 'center', color: '#3DAA7C', fontWeight: 600 }}>{sent}</p>}
+                <p style={{ fontSize: '10px', color: 'var(--text-subtle)', textAlign: 'center', marginTop: '4px' }}>Composes 3 ready posts from this media. (Full Send &amp; Shredder work on written stories, not raw files.)</p>
+              </div>
+            )}
 
             {preview.type === 'audio' && (
               <div>

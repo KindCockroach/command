@@ -103,6 +103,13 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
   for (const it of NAV_ITEMS) navById[it.id] = it
   const order: View[] = navOrder.length ? navOrder : NAV_IDS
 
+  // "Send to Instant Compose" from Media → jump to the Story tab (where it lives)
+  useEffect(() => {
+    const go = () => setView('story')
+    window.addEventListener('rise-goto-compose', go)
+    return () => window.removeEventListener('rise-goto-compose', go)
+  }, [])
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('rise-nav-order-v1')
