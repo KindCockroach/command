@@ -184,7 +184,8 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
 
       <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-        {view === 'command' && <HomeScreen />}
+        {/* Home stays alive so the Commander chat + Daily Command survive navigation */}
+        <KeepAlive active={view === 'command'}><HomeScreen /></KeepAlive>
 
         {view === 'pipeline' && (
           <>
@@ -228,7 +229,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {view === 'accounts'   && <AccountsPanel />}
         {view === 'audience'   && <AudiencePanel />}
         {view === 'audit'      && <AuditPanel />}
-        {view === 'research'   && <ResearchPanel />}
+        <KeepAlive active={view === 'research'}><ResearchPanel /></KeepAlive>
         {view === 'goals'      && <GoalsPanel />}
         {view === 'avatars'    && <AvatarsPanel />}
         {/* Podcast stays mounted once opened, so a running generation survives
@@ -246,12 +247,13 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
           </div>
         )}
         {view === 'pitch'      && <PitchStudio />}
-        {view === 'media'      && (
+        {/* Media stays alive so a Universal Capture 'You do it' build survives navigation */}
+        <KeepAlive active={view === 'media'}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <UniversalCapture />
             <MediaLibrary />
           </div>
-        )}
+        </KeepAlive>
       </main>
 
       <footer style={{ background: 'var(--navy)', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '12px 20px', textAlign: 'center' }}>
