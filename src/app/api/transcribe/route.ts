@@ -44,9 +44,10 @@ async function compressAndTranscribe(bytes: Buffer, origName: string): Promise<{
     const inPath = path.join(dir, `in.${inExt}`)
     await writeFile(inPath, bytes)
 
-    // 48kbps mono MP3: ~21MB per hour of audio — inaudible loss for speech.
+    // 128kbps mono MP3 — voice-grade quality good enough to reuse in HeyGen /
+    // published video (not just transcription). ~57MB/hour vs a ~140MB/45min WAV.
     const compPath = path.join(dir, 'compressed.mp3')
-    await run('ffmpeg', ['-y', '-i', inPath, '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '48k', compPath])
+    await run('ffmpeg', ['-y', '-i', inPath, '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '128k', compPath])
 
     // Keep the compressed copy in Media — this is the "where do I get the compressed version" answer.
     let compressedUrl = ''
@@ -63,8 +64,9 @@ async function compressAndTranscribe(bytes: Buffer, origName: string): Promise<{
     if (compSize <= LIMIT) {
       transcript = await transcribeFile(compPath)
     } else {
-      // Very long episode: split into ~50-min chunks (well under 25MB at 48kbps), stitch transcripts
-      await run('ffmpeg', ['-y', '-i', compPath, '-f', 'segment', '-segment_time', '3000', '-c', 'copy', path.join(dir, 'chunk_%03d.mp3')])
+      // For transcription only: split into ~20-min chunks (~18MB at 128kbps, safely
+      // under Whisper's 25MB), stitch the transcripts. The saved compressed.mp3 stays whole.
+      await run('ffmpeg', ['-y', '-i', compPath, '-f', 'segment', '-segment_time', '1200', '-c', 'copy', path.join(dir, 'chunk_%03d.mp3')])
       const chunks = (await readdir(dir)).filter(f => f.startsWith('chunk_')).sort()
       const parts: string[] = []
       for (const c of chunks) parts.push(await transcribeFile(path.join(dir, c)))
