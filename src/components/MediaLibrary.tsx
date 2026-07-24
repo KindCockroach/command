@@ -49,6 +49,31 @@ export default function MediaLibrary() {
   const [filter, setFilter] = useState<'all' | 'video' | 'audio' | 'image'>('all')
   const [search, setSearch] = useState('')
   const [preview, setPreview] = useState<MediaFile | null>(null)
+  const [txState, setTxState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
+  const [txMsg, setTxMsg] = useState('')
+  useEffect(() => { setTxState('idle'); setTxMsg('') }, [preview?.name])
+
+  // Transcribe an audio file straight from Media → save the transcript as a note.
+  const transcribe = async (f: MediaFile) => {
+    setTxState('working'); setTxMsg('Transcribing…')
+    try {
+      const d = await fetch('/api/transcribe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioUrl: f.url }),
+      }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+      if (d.transcript) {
+        await fetch('/api/notes', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: `📄 Transcript — ${f.name}`, body: d.transcript, category: 'idea', tags: ['transcript', 'from-media'] }),
+        }).catch(() => {})
+        setTxState('done'); setTxMsg(`✓ Transcribed (${d.transcript.split(/\s+/).length.toLocaleString()} words) — saved to Notes${d.compressed ? ' · compressed MP3 added to Media' : ''}`)
+      } else {
+        setTxState('error'); setTxMsg(d.error || 'Transcription failed')
+      }
+    } catch {
+      setTxState('error'); setTxMsg('Transcription failed')
+    }
+  }
 
   const load = async () => {
     setLoading(true)
@@ -183,6 +208,17 @@ export default function MediaLibrary() {
                 <ExternalLink size={13} /> Open in R2
               </a>
             </div>
+
+            {preview.type === 'audio' && (
+              <div>
+                <button onClick={() => transcribe(preview)} disabled={txState === 'working'}
+                  style={{ width: '100%', padding: '10px', background: txState === 'done' ? '#3DAA7C' : 'var(--surface)', color: txState === 'done' ? '#fff' : 'var(--purple)', border: '1px solid var(--purple)', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: txState === 'working' ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  {txState === 'working' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Transcribing…</> : <><FileText size={13} /> Transcribe → save to Notes</>}
+                </button>
+                {txMsg && txState !== 'working' && <p style={{ fontSize: '11px', marginTop: '5px', textAlign: 'center', color: txState === 'error' ? '#E05252' : '#3DAA7C', fontWeight: 600 }}>{txMsg}</p>}
+                <p style={{ fontSize: '10px', color: 'var(--text-subtle)', textAlign: 'center', marginTop: '4px' }}>Big files auto-compress to a HeyGen-usable MP3 saved back to Media.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
