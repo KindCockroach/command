@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import OpenAI, { toFile } from 'openai'
 import { putObject, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
 import { spawn } from 'child_process'
 import { mkdtemp, writeFile, rm, stat, readdir, readFile } from 'fs/promises'
@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
 async function transcribeFileFromBytes(bytes: Buffer, name: string): Promise<string> {
   const ext = name.split('.').pop()?.toLowerCase() || 'mp3'
   const mime = ext === 'm4a' ? 'audio/mp4' : ext === 'wav' ? 'audio/wav' : ext === 'ogg' ? 'audio/ogg' : 'audio/mpeg'
-  const file = new File([bytes], name, { type: mime })
+  const file = await toFile(bytes, name, { type: mime })
   const t = await client.audio.transcriptions.create({ model: 'whisper-1', file })
   return t.text
 }
