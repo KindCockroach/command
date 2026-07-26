@@ -95,15 +95,55 @@ function NoteCard({ note, accounts, onUpdate, onDelete, onSelect, onSendToAccoun
   )
 }
 
-function NoteModal({ note, onSave, onClose }: { note: Partial<Note>; onSave: (n: Partial<Note>) => void; onClose: () => void }) {
+function NoteModal({ note, onSave, onClose, accounts, onSendToAccount, onExpand, onShred }: {
+  note: Partial<Note>; onSave: (n: Partial<Note>) => void; onClose: () => void;
+  accounts: Acct[]; onSendToAccount: (n: Note, accountId: string) => Promise<SendResult>;
+  onExpand: (n: Note) => Promise<SendResult>; onShred: (n: Note) => void;
+}) {
   const [draft, setDraft] = useState<Partial<Note>>(note)
+  const [menu, setMenu] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
   const titleRef = useRef<HTMLInputElement>(null)
   useEffect(() => { titleRef.current?.focus() }, [])
+
+  const asNote = () => ({ ...draft, id: draft.id ?? 0, tags: draft.tags ?? [] }) as Note
+  const run = async (fn: () => Promise<SendResult>) => {
+    setMenu(false); setBusy(true); setMsg('')
+    try { const r = await fn(); setMsg(r.msg) } catch { setMsg('Send failed — try again') }
+    setBusy(false); setTimeout(() => setMsg(''), 7000)
+  }
+  const menuItem = { display: 'flex', alignItems: 'center', gap: '7px', width: '100%', textAlign: 'left' as const, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', borderRadius: '7px', fontSize: '12px', color: 'var(--text)' }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
       <div style={{ background: 'var(--surface)', borderRadius: '18px', width: '100%', maxWidth: '680px', maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+        <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
+          {draft.id ? (
+            <div style={{ position: 'relative' }}>
+              <button title="Send to…" disabled={busy} onClick={() => setMenu(m => !m)}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', background: menu ? 'var(--hot-pink)' : 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: menu ? '#fff' : 'var(--text-muted)', padding: '6px 11px', fontSize: '12px', fontWeight: 700, opacity: busy ? 0.5 : 1 }}>
+                <Send size={13} /> {busy ? 'sending…' : msg && !menu ? msg.slice(0, 30) : 'Send to…'}
+              </button>
+              {menu && (
+                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 0, top: '38px', zIndex: 30, width: '230px', maxHeight: '300px', overflow: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.22)', padding: '6px' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-subtle)', padding: '4px 8px' }}>Compose a post for</p>
+                  {accounts.map(a => (
+                    <button key={a.id} onClick={() => run(() => onSendToAccount(asNote(), a.id))} style={menuItem} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                      <span>{a.emoji}</span> {a.handle}
+                    </button>
+                  ))}
+                  <div style={{ borderTop: '1px solid var(--border)', margin: '6px 4px' }} />
+                  <button onClick={() => { setMenu(false); onShred(asNote()); onClose() }} style={{ ...menuItem, fontWeight: 700, color: 'var(--purple)' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                    🔱 Shred &amp; Compose (across accounts)
+                  </button>
+                  <button onClick={() => run(() => onExpand(asNote()))} style={{ ...menuItem, fontWeight: 700, color: 'var(--hot-pink)' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                    <Sparkles size={12} /> Expand 1→30 stream
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : null}
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={18} /></button>
         </div>
         <div style={{ padding: '8px 24px 16px', flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -310,7 +350,7 @@ export default function NotesPanel() {
         )}
       </div>
 
-      {selected && <NoteModal note={selected} onSave={save} onClose={() => setSelected(null)} />}
+      {selected && <NoteModal note={selected} onSave={save} onClose={() => setSelected(null)} accounts={accounts} onSendToAccount={sendToAccount} onExpand={expandNote} onShred={setShredNote} />}
       {shredNote && <CommanderModal input={`${shredNote.title}\n\n${shredNote.body}`} onClose={() => setShredNote(null)} />}
     </div>
   )
