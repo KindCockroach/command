@@ -362,11 +362,11 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   const [regenerating, setRegenerating] = useState(false)
   const [form, setForm] = useState({
     title: post.title, script: post.script ?? '', onscreen_text: post.onscreen_text ?? '', description: post.description ?? '',
-    hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '',
+    hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '', notes: post.notes ?? '',
   })
   const isVideoPost = post.type === 'video' || post.type === 'podcast'
   const startEdit = () => {
-    setForm({ title: post.title, script: post.script ?? '', onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '' })
+    setForm({ title: post.title, script: post.script ?? '', onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '', notes: post.notes ?? '' })
     setEditing(true); setOpen(true)
   }
   const saveEdit = async () => {
@@ -932,6 +932,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
                   ? '📱 On-Screen Hook — ONE line (the scroll-stopping overlay)'
                   : '📱 On-Screen Text / Slides (overlays — can differ from script)', 4],
                 ['description', '✅ Caption — THIS is what posts (hashtags included)', 5],
+                ['notes', '🗒 Notes — the Commander\'s context & your reminders (never posts)', 3],
               ]) as [keyof typeof form, string, number][]).map(([key, label, rows]) => (
                 <div key={key}>
                   <label style={{ display: 'block', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)', marginBottom: '4px' }}>{label}</label>
@@ -972,6 +973,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
               {post.script && <Section label="🎬 Script (spoken — build, does not post)" text={post.script} bold />}
               {post.onscreen_text && <Section label="📱 On-Screen Text / Slides (build, does not post)" text={post.onscreen_text} bold />}
               <Section label="✅ Caption — this is what posts" text={post.description} />
+              {post.notes && <Section label="🗒 Notes — context, not posted" text={post.notes} />}
             </>
           )}
 

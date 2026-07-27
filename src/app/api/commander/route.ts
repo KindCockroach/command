@@ -101,7 +101,7 @@ THE ANGLE (why this point serves this account): ${p.angle}
 ${craftFor(acct.id)}
 ${getWatchContext()}
 Never invent facts beyond her words below — if a detail is missing, write around it, don't fabricate.
-Return ONLY valid JSON: { "title": "short internal title", "onscreen_text": "the hook", "caption": "full post-ready caption", "hashtags": "8-20 space-separated", "image_prompt": "visual/video prompt for this format" }`,
+Return ONLY valid JSON: { "title": "short internal title", "onscreen_text": "the hook", "caption": "full post-ready caption", "hashtags": "8-20 single-word hashtags, space-separated, NEVER a space inside a tag — camelCase any multi-word idea (e.g. #presenceOverPerfection)", "image_prompt": "visual/video prompt for this format" }`,
           input: `POINT: ${s.point}\nHER WORDS: ${s.source_quote ?? s.point}`,
         })
         const parsed = JSON.parse(out.match(/\{[\s\S]*\}/)![0])

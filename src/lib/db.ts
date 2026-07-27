@@ -592,6 +592,26 @@ export function getAllContent(statusFilter?: string): ContentPiece[] {
   return items.sort((a, b) => a.sort_order - b.sort_order || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 }
 
+// Turn a raw hashtag string (however the model phrased it — spaces inside
+// phrases, commas, stray #) into clean, single-token #tags. "presence over
+// perfection innerchild" → "#presence #over #perfection #innerchild". Keeps
+// camelCase intact, dedupes case-insensitively, caps at 30.
+export function normalizeHashtags(raw?: string): string {
+  if (!raw || typeof raw !== 'string') return ''
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const token of raw.split(/[\s,]+/)) {
+    const clean = token.replace(/^#+/, '').replace(/[^\p{L}\p{N}_]/gu, '')
+    if (clean.length < 2) continue
+    const key = clean.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push('#' + clean)
+    if (out.length >= 30) break
+  }
+  return out.join(' ')
+}
+
 export function createContent(data: Partial<ContentPiece>): ContentPiece {
   const db = readDb()
   const now = new Date().toISOString()
@@ -616,7 +636,7 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     image_prompt: data.image_prompt ?? '',
     script: data.script ?? '',
     onscreen_text: data.onscreen_text ?? '',
-    hashtags: data.hashtags ?? '',
+    hashtags: normalizeHashtags(data.hashtags),
     media_url: data.media_url ?? '',
     media_urls: data.media_urls ?? (data.media_url ? [data.media_url] : []),
     ghl_post_id: null,
@@ -634,6 +654,7 @@ export function updateContent(id: number, updates: Partial<ContentPiece>): Conte
   const idx = db.content.findIndex(c => c.id === id)
   if (idx === -1) return null
   const now = new Date().toISOString()
+  if (typeof updates.hashtags === 'string') updates = { ...updates, hashtags: normalizeHashtags(updates.hashtags) }
   const updated = { ...db.content[idx], ...updates, id, updated_at: now }
   if (updates.status === 'published' && !db.content[idx].published_at) {
     updated.published_at = now

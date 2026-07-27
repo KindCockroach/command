@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Loader2, Video, Music, Image, FileText, Download, ExternalLink, RefreshCw, Search, Pencil, Sparkles, Copy, Check } from 'lucide-react'
+import { Loader2, Video, Music, Image, FileText, Download, ExternalLink, RefreshCw, Search, Pencil, Sparkles, Copy, Check, Trash2 } from 'lucide-react'
 
 interface MediaFile {
   key: string
@@ -84,6 +84,23 @@ export default function MediaLibrary() {
       body: JSON.stringify({ key: file.key, newName: nn.trim() }),
     }).catch(() => {})
     load()
+  }
+
+  const [deleteBusy, setDeleteBusy] = useState('')
+  const doDelete = async (file: MediaFile) => {
+    if (!window.confirm(`Delete "${displayName(file.name)}"? This removes it from R2 permanently and unlinks it from any post using it.`)) return
+    setDeleteBusy(file.key)
+    const res = await fetch('/api/media/delete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: file.key }),
+    }).catch(() => null)
+    setDeleteBusy('')
+    if (res && res.ok) {
+      setFiles(fs => fs.filter(f => f.key !== file.key))
+      if (preview?.key === file.key) setPreview(null)
+    } else {
+      window.alert('Could not delete that file. Try again.')
+    }
   }
 
   // Hand this media off to Instant Compose (the media-native tool) and jump to it.
@@ -220,6 +237,10 @@ export default function MediaLibrary() {
                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '5px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--surface-raised)', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
                     <Pencil size={11} /> Rename
                   </button>
+                  <button onClick={e => { e.stopPropagation(); doDelete(file) }} title="Delete file" disabled={deleteBusy === file.key}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5px 8px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--surface-raised)', cursor: 'pointer', color: '#E05252' }}>
+                    {deleteBusy === file.key ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={11} />}
+                  </button>
                 </div>
               </div>
             </div>
@@ -272,6 +293,10 @@ export default function MediaLibrary() {
                 style={{ flex: 1, padding: '10px', background: 'var(--surface-raised)', color: 'var(--text)', borderRadius: '10px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                 <ExternalLink size={13} /> Open in R2
               </a>
+              <button onClick={() => doDelete(preview)} disabled={deleteBusy === preview.key} title="Delete file"
+                style={{ padding: '10px 14px', background: 'rgba(224,82,82,0.1)', color: '#E05252', border: '1px solid rgba(224,82,82,0.4)', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                {deleteBusy === preview.key ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Trash2 size={13} />} Delete
+              </button>
             </div>
 
             {(preview.type === 'image' || preview.type === 'video') && (

@@ -118,7 +118,7 @@ Return ONLY valid JSON:
   "body": "full post caption/body, complete and ready to post (empty string if it can't stand alone)",
   "onscreen_text": "text overlay / opening on-screen line",
   "image_prompt": "detailed AI image/video prompt for the visual",
-  "hashtags": "15-25 hashtags space-separated",
+  "hashtags": "12-20 single-word hashtags, space-separated, NEVER a space inside a tag — camelCase any multi-word idea (e.g. #presenceOverPerfection #innerChild)",
   "content_type": "MATCH the chosen account's Format: video-first accounts (reels, talking-to-camera, personal shares) → 'video'; carousel/static-image accounts → 'image'; only use 'post' when the account is genuinely text-first. Never default everything to 'post'.",
   "needs": ["media" | "answers"],
   "open_questions": ["question only Mandi can answer", ...],
@@ -199,12 +199,16 @@ Return ONLY valid JSON:
   const complete = (verdict.stands_alone && !!verdict.body) || (!!mediaUrl && !!verdict.body)
   const piece = createContent({
     title: verdict.title || 'River capture',
-    description: complete ? verdict.body : `RAW: ${input}`,
+    // A parked item has no finished caption yet — keep the caption box EMPTY and
+    // stash the raw brief in notes, so "this is what posts" never shows meta text.
+    description: complete ? verdict.body : '',
     status: complete ? 'ready' : 'idea',
     type: (verdict.content_type as ContentType) || (mediaUrl ? 'image' : 'post'),
     platforms: verdict.account_id ? [accounts.find(a => a.id === verdict.account_id)?.platform.toLowerCase() ?? 'instagram'] : [],
     tags: ['river', source ?? 'capture'],
-    notes: verdict.account_reason,
+    notes: complete
+      ? (verdict.account_reason ?? '')
+      : [verdict.account_reason, `— Parked draft (answer the open questions to compose) —\n${input}`].filter(Boolean).join('\n\n'),
     account_id: verdict.account_id,
     // Real uploaded media beats a prompt — attach it; only keep a prompt when there's no image
     media_url: mediaUrl || '',
