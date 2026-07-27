@@ -35,7 +35,9 @@ function detectNamedAccounts(input: string, accounts: BrandAccount[]): string[] 
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const mode: 'plan' | 'compose' = body.mode ?? 'plan'
-  const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted')
+  // active + restricted are live; planned means she's teeing up posts for it, so
+  // the Commander should route/compose for those too. Only 'paused' stays hidden.
+  const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted' || a.status === 'planned')
 
   // ── PASS 1: SHRED & PLAN ────────────────────────────────────────────────────
   if (mode === 'plan') {

@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
   const attachment: Attachment = body.attachment ?? null
   if (!messages.length) return NextResponse.json({ error: 'messages required' }, { status: 400 })
 
-  const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted')
+  // active + restricted are live; planned means she's teeing up posts for it, so
+  // the Commander should route/compose for those too. Only 'paused' stays hidden.
+  const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted' || a.status === 'planned')
   const roster = accounts.map(a => `- ${a.handle} (id:"${a.id}", ${a.status}): ${a.topic} — "${a.underlying_message || a.mission}"`).join('\n')
   const goals = getAllGoals().filter(g => g.active).map(g => `- ${g.title} (${g.target_per_week}/wk)`).join('\n')
 
