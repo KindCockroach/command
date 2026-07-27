@@ -88,9 +88,9 @@ export default async function LiteWelcome({
 
         <div className="next">
           <h2>When one brain isn&rsquo;t enough</h2>
-          <p>Post Sorter runs one flow. The full <em>Content Command Station</em> runs <em>all</em> your
-            accounts, paces your goals, and flags what&rsquo;s stuck. When you&rsquo;re ready to scale,
-            that&rsquo;s your next step up.</p>
+          <p>Post Sorter runs one flow. The full <em>Content Command Station</em> runs{' '}<em>all</em>{' '}
+            your accounts, paces your goals, and flags what&rsquo;s stuck.</p>
+          <span className="soon-badge">✨ Coming Soon — by AI Mom</span>
         </div>
       </div>
     </main>
@@ -116,5 +116,7 @@ const css = `
 .lw .loom,.lw .next { background:var(--midnight); color:#fff; border-radius:16px; padding:24px; margin-top:24px; }
 .lw .loom h2,.lw .next h2 { color:#fff; }
 .lw .next em { color:var(--ember); }
+.lw .next .soon-badge { display:inline-block; margin-top:16px; background:var(--ember); color:var(--midnight);
+  font-weight:800; font-size:14px; letter-spacing:0.4px; padding:9px 18px; border-radius:999px; }
 .lw .locked { text-align:center; padding-top:120px; }
 `
