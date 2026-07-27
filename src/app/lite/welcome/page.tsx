@@ -3,17 +3,19 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Welcome to The River Lite',
-  description: 'Your River Lite delivery: the GPT, the workspace, and your 10-minute first win.',
+  title: 'Welcome to Post Sorter',
+  description: 'Your Post Sorter delivery: the GPT, the workspace, and your 10-minute first win.',
   robots: { index: false },
 }
 
-// Post-purchase delivery page. Point the payment processor's success/redirect
-// URL here (optionally with ?k=<NEXT_PUBLIC_LITE_ACCESS_KEY> for a soft gate).
-// The GPT is already live; template + Loom links are env-configurable so they
-// can be filled in the moment those assets are published.
+// Post-purchase delivery page (internal name: River Lite). Point the payment
+// processor's success/redirect URL here (optionally with
+// ?k=<NEXT_PUBLIC_LITE_ACCESS_KEY> for a soft gate). GPT + Notion workspace
+// links default to the live assets so delivery works without env config.
 const GPT_URL = 'https://chatgpt.com/g/g-6a4dc595ee408191b4b422fca6bd74de-the-river-lite'
-const TEMPLATE_URL = process.env.NEXT_PUBLIC_LITE_TEMPLATE_URL || ''
+const TEMPLATE_URL =
+  process.env.NEXT_PUBLIC_LITE_TEMPLATE_URL ||
+  'https://app.notion.com/p/The-River-Your-Content-Workspace-dff31126df3a4797a1b6013a6ddd5ae6?source=copy_link'
 const LOOM_URL = process.env.NEXT_PUBLIC_LITE_LOOM_URL || ''
 const ACCESS_KEY = process.env.NEXT_PUBLIC_LITE_ACCESS_KEY || ''
 
@@ -31,7 +33,7 @@ export default async function LiteWelcome({
         <style>{css}</style>
         <div className="wrap locked">
           <h1>This is your delivery page</h1>
-          <p>Use the link from your purchase confirmation to unlock it. If you bought The River Lite
+          <p>Use the link from your purchase confirmation to unlock it. If you bought Post Sorter
             and landed here, reply to your receipt and we&rsquo;ll get you in.</p>
         </div>
       </main>
@@ -43,15 +45,15 @@ export default async function LiteWelcome({
       <style>{css}</style>
       <div className="wrap">
         <p className="eyebrow">YOU&rsquo;RE IN 🎉</p>
-        <h1>Welcome to The River Lite</h1>
+        <h1>Welcome to Post Sorter</h1>
         <p className="sub">Everything you need is right here. Give it 10 minutes and you&rsquo;ll walk
           away with 3 finished post-cards. Do the steps in order.</p>
 
         <ol className="steps">
           <li>
-            <h2>1 · Open your River</h2>
+            <h2>1 · Open your Post Sorter</h2>
             <p>This is your personal sorting-hat AI. Bookmark it — this is where you&rsquo;ll live.</p>
-            <a className="btn" href={GPT_URL} target="_blank" rel="noopener noreferrer">Open The River Lite →</a>
+            <a className="btn" href={GPT_URL} target="_blank" rel="noopener noreferrer">Open Post Sorter →</a>
           </li>
 
           <li>
@@ -86,9 +88,9 @@ export default async function LiteWelcome({
 
         <div className="next">
           <h2>When one brain isn&rsquo;t enough</h2>
-          <p>The River Lite runs one flow. The full RISE runs <em>all</em> your accounts, paces your
-            goals, and flags what&rsquo;s stuck. When you&rsquo;re ready to scale, that&rsquo;s the
-            next river to step into.</p>
+          <p>Post Sorter runs one flow. The full <em>Content Command Station</em> runs <em>all</em> your
+            accounts, paces your goals, and flags what&rsquo;s stuck. When you&rsquo;re ready to scale,
+            that&rsquo;s your next step up.</p>
         </div>
       </div>
     </main>

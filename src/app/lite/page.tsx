@@ -3,22 +3,23 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'The River Lite — Raw life in, ready-to-post cards out',
-  description: 'A smart sorting system that turns your real life into ready-to-post content — in your voice. $27.',
+  title: 'Post Sorter — AI Caption Builder in Your Own Voice',
+  description: 'Drop your raw story in, get ready-to-post content out — hook, caption, hashtags & the photo to take, in your voice. AI-supported content, just $27.',
 }
 
-// Public sales page for the $27 entry offer. The Buy button points at
-// NEXT_PUBLIC_LITE_CHECKOUT_URL (Mandi's Stripe/Gumroad payment link). When
-// that env var is unset the button becomes a soft placeholder so the page
-// still renders while she stands up checkout.
-const CHECKOUT_URL = process.env.NEXT_PUBLIC_LITE_CHECKOUT_URL || ''
+// Public sales page for the $27 entry offer (internal name: River Lite).
+// The Buy button points at NEXT_PUBLIC_LITE_CHECKOUT_URL, defaulting to the
+// live GHL/FastPayDirect payment link so it works without any env config.
+const CHECKOUT_URL =
+  process.env.NEXT_PUBLIC_LITE_CHECKOUT_URL ||
+  'https://link.fastpaydirect.com/payment-link/6a67ba88a655fa0b802a6707'
 
 function BuyButton({ tagline }: { tagline?: string }) {
   const href = CHECKOUT_URL || '#'
   return (
     <div className="cta">
       <a className="buy" href={href} {...(CHECKOUT_URL ? {} : { 'data-placeholder': 'true' })}>
-        GET THE RIVER LITE — $27
+        GET POST SORTER — $27
       </a>
       {tagline && <p className="tagline">{tagline}</p>}
     </div>
@@ -32,11 +33,11 @@ export default function LiteSalesPage() {
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">THE RIVER LITE</p>
+          <p className="eyebrow">POST SORTER</p>
           <h1>It&rsquo;s 9:52pm. The house is finally quiet. You open Instagram to post something&hellip; and you&rsquo;ve got nothing.</h1>
           <p className="sub">
             Not because your life is boring — because your ideas are scattered across 14 notes,
-            3 voice memos, and a screenshot you&rsquo;ll never find again. <strong>The River Lite
+            3 voice memos, and a screenshot you&rsquo;ll never find again. <strong>Post Sorter
             sorts your real life into ready-to-post content — in YOUR voice — for $27.</strong>
           </p>
           <BuyButton />
@@ -59,10 +60,10 @@ export default function LiteSalesPage() {
       <section className="what">
         <div className="wrap">
           <h2>What it is</h2>
-          <p className="lead">The River Lite is a smart sorting system with one job:</p>
+          <p className="lead">Post Sorter is a smart sorting system with one job:</p>
           <blockquote>Raw life in &rarr; ready-to-post cards out. In your voice.</blockquote>
           <p>You dump the messy stuff — a rant, a moment, a voice memo, a photo and what happened.
-            Your River decides if it&rsquo;s a post, and either:</p>
+            Post Sorter decides if it&rsquo;s a post, and either:</p>
           <div className="cards">
             <div className="card compose">
               <span className="pill">✅ Composes it</span>
@@ -83,10 +84,10 @@ export default function LiteSalesPage() {
         <div className="wrap">
           <h2>What you get</h2>
           <ol className="get-list">
-            <li><strong>The River Lite</strong> — your personal sorting-hat AI (runs in your own ChatGPT — a free account works).</li>
-            <li><strong>The River Workspace</strong> — a duplicate-able template: your capture Stream, Post-Card Library, and Park Lot, so ideas never die in a chat again.</li>
+            <li><strong>The Post Sorter GPT</strong> — your personal sorting-hat AI (runs in your own ChatGPT — a free account works).</li>
+            <li><strong>The Post Sorter Workspace</strong> — a duplicate-able Notion template: your capture Stream, Post-Card Library, and Park Lot, so ideas never die in a chat again.</li>
             <li><strong>The 10-Minute Setup + First Win walkthrough</strong> — you&rsquo;ll have 3 finished post-cards in your first sitting.</li>
-            <li><strong>Lifetime updates</strong> — when the River gets smarter, yours does too, automatically.</li>
+            <li><strong>Lifetime updates</strong> — when Post Sorter gets smarter, yours does too, automatically.</li>
           </ol>
         </div>
       </section>
@@ -100,7 +101,7 @@ export default function LiteSalesPage() {
             with, shrunk to fit in your pocket.</p>
           <p className="who"><strong>Who it&rsquo;s for:</strong> Moms and creators who have a real
             life worth posting and zero extra hours to become a copywriter. If you can send a text
-            message, you can run the River.</p>
+            message, you can run Post Sorter.</p>
         </div>
       </section>
 
