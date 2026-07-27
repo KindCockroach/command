@@ -103,6 +103,24 @@ export default function MediaLibrary() {
     }
   }
 
+  // Compress a big audio file to a HeyGen-ready sub-100MB MP3, saved back to Media.
+  const [cmpState, setCmpState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
+  const [cmpMsg, setCmpMsg] = useState('')
+  const compress = async (f: MediaFile) => {
+    setCmpState('working'); setCmpMsg('Compressing for HeyGen…')
+    const d = await fetch('/api/media/compress', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: f.url }),
+    }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+    if (d.url) {
+      setCmpState('done')
+      setCmpMsg(`✓ Saved ${d.name} — ${formatBytes(d.size)} @ ${d.bitrate}kbps${d.underLimit ? '' : ' (still large)'}`)
+      load()
+    } else {
+      setCmpState('error'); setCmpMsg(d.error || 'Compression failed.')
+    }
+  }
+
   // Hand this media off to Instant Compose (the media-native tool) and jump to it.
   const sendToCompose = () => {
     if (!preview) return
@@ -317,7 +335,13 @@ export default function MediaLibrary() {
                   {txState === 'working' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Transcribing…</> : <><FileText size={13} /> Transcribe → save to Notes</>}
                 </button>
                 {txMsg && txState !== 'working' && <p style={{ fontSize: '11px', marginTop: '5px', textAlign: 'center', color: txState === 'error' ? '#E05252' : '#3DAA7C', fontWeight: 600 }}>{txMsg}</p>}
-                <p style={{ fontSize: '10px', color: 'var(--text-subtle)', textAlign: 'center', marginTop: '4px' }}>Big files auto-compress to a HeyGen-usable MP3 saved back to Media.</p>
+
+                <button onClick={() => compress(preview)} disabled={cmpState === 'working'}
+                  style={{ width: '100%', marginTop: '8px', padding: '10px', background: cmpState === 'done' ? '#3DAA7C' : 'var(--surface)', color: cmpState === 'done' ? '#fff' : 'var(--purple)', border: '1px solid var(--purple)', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: cmpState === 'working' ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  {cmpState === 'working' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Compressing…</> : <>🗜 Compress for HeyGen → save to Media</>}
+                </button>
+                {cmpMsg && cmpState !== 'working' && <p style={{ fontSize: '11px', marginTop: '5px', textAlign: 'center', color: cmpState === 'error' ? '#E05252' : '#3DAA7C', fontWeight: 600 }}>{cmpMsg}</p>}
+                <p style={{ fontSize: '10px', color: 'var(--text-subtle)', textAlign: 'center', marginTop: '4px' }}>Makes a sub-100MB mono MP3 (voice-grade) you can upload to HeyGen.</p>
               </div>
             )}
           </div>
