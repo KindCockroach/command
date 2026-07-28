@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllBrandAccounts, getWatchContext, createNote, audienceLine, getLoreContext } from '@/lib/db'
-import { CRAFT_RULES } from '@/lib/craft'
+import { craftFor } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
@@ -37,6 +37,11 @@ export async function POST(req: NextRequest) {
 
   const composeImages = [...(isImage ? [mediaUrl] : []), ...videoFrames]
 
+  // Craft layer: when the account is known (Add Post → forceAccountId), apply that
+  // account's full craft — its voice lessons + the Podcast Constitution for
+  // @aimompodcast. Otherwise still fold in her learned voice lessons via craftFor(null).
+  const craft = craftFor(forceAccountId ?? null)
+
   const output = await fableText({
     maxTokens: 6000,
     effort: 'medium',
@@ -52,7 +57,7 @@ ${getWatchContext()}
 
 ${getLoreContext(String(context ?? ''))}
 
-${CRAFT_RULES}
+${craft}
 
 CONTENT AUDIT RULES: lead with HER (the reader's) problem or moment, 3-second cold-stranger test, comment-keyword CTA matching the chosen account, no links in captions.
 
