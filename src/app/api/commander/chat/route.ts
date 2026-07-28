@@ -25,11 +25,18 @@ export async function POST(req: NextRequest) {
   // Her Notes — the Commander was blind to these. Feed a digest so it can actually
   // read, reference, and connect what she's saved (pinned first, then most recent).
   const allNotes = getAllNotes()
-  const noteDigest = allNotes.slice(0, 30).map(n => {
+  const detailed = allNotes.slice(0, 30).map(n => {
     const body = n.body.replace(/\s+/g, ' ').trim()
     const clip = body.length > 320 ? body.slice(0, 320) + '…' : body
     return `- [${n.category}${n.pinned ? ' · 📌pinned' : ''}] ${n.title}${n.tags.length ? ` (tags: ${n.tags.join(', ')})` : ''}\n  ${clip}`
   }).join('\n')
+  // Titles-only index of the rest, so the Commander knows EVERY note exists and can
+  // ask her to open a specific older one instead of claiming it can't see it.
+  const rest = allNotes.slice(30)
+  const restIndex = rest.length
+    ? `\n\nOLDER NOTES — title index only (ask her to open one for its full text):\n${rest.map(n => `- [${n.category}] ${n.title}`).join('\n')}`
+    : ''
+  const noteDigest = detailed + restIndex
 
   const system = `You are the COMMANDER — Mandi Beck's AI business partner and the intelligence behind RISE, her content command station. You are Claude, talking with her directly. She built all of this with you, late at night, at her kitchen table.
 
@@ -45,7 +52,7 @@ ${roster || '(none active)'}
 ACTIVE GOALS:
 ${goals || '(none set)'}
 
-HER NOTES — you CAN read these. It's her saved thinking: brain-dumps, media stories, ideas, lore. Reference them by name, connect them, quote her own words back when useful. This is her pinned + ${Math.min(allNotes.length, 30)} most-recent of ${allNotes.length} total; if she asks about something older or more specific, tell her you're seeing recent ones and ask her to open the Notes tab or name it so you can search.
+HER NOTES — you CAN read these. It's her saved thinking: brain-dumps, media stories, ideas, lore. Reference them by name, connect them, quote her own words back when useful. You see the FULL TEXT of her pinned + 30 most-recent notes, plus a TITLE INDEX of all ${allNotes.length} total. If she asks about a note that's title-only, you know it exists — ask her to open the Notes tab or paste it so you can work with the full text (never claim you can't see it).
 ${noteDigest || '(no notes yet)'}
 
 YOUR HANDS — you can propose actions she taps to run. When she clearly wants something DONE that fits below, write your natural reply, then append a fenced block (nothing after it):
