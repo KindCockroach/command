@@ -63,7 +63,9 @@ function CopyBtn({ text, label }: { text: string; label: string }) {
   )
 }
 
-export default function InstantCompose() {
+type LockedAccount = { id: string; handle: string; emoji: string; color: string }
+
+export default function InstantCompose({ lockedAccount }: { lockedAccount?: LockedAccount | null } = {}) {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string>('')
   const [mediaUrl, setMediaUrl] = useState<string>('')
@@ -132,7 +134,7 @@ export default function InstantCompose() {
     try {
       const res = await fetch('/api/compose', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ context, mediaUrl: mediaUrl || undefined, mediaType: file?.type || mediaType || undefined, frames: frames.length ? frames : undefined }),
+        body: JSON.stringify({ context, mediaUrl: mediaUrl || undefined, mediaType: file?.type || mediaType || undefined, frames: frames.length ? frames : undefined, forceAccountId: lockedAccount?.id }),
       })
       const d = await res.json()
       if (d.error) setError(d.error)
@@ -155,7 +157,7 @@ export default function InstantCompose() {
         body: JSON.stringify({
           context, mediaUrl: mediaUrl || undefined, mediaType: file?.type,
           frames: frames.length ? frames : undefined,
-          previous: result.variations, feedback,
+          previous: result.variations, feedback, forceAccountId: lockedAccount?.id,
         }),
       })
       const d = await res.json()
@@ -204,6 +206,12 @@ export default function InstantCompose() {
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
           Drop your photo/video + tell the story → 3 ready post variations. Media saves to your library, story saves to Notes — automatically.
         </p>
+        {lockedAccount && (
+          <div style={{ marginTop: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', background: lockedAccount.color + '18', border: `1px solid ${lockedAccount.color}55` }}>
+            <span style={{ fontSize: '12px' }}>{lockedAccount.emoji}</span>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: lockedAccount.color }}>Composing for {lockedAccount.handle}</span>
+          </div>
+        )}
       </div>
 
       {/* Drop zone / preview */}
@@ -237,7 +245,9 @@ export default function InstantCompose() {
 
       {/* Context */}
       <textarea value={context} onChange={e => setContext(e.target.value)} rows={3}
-        placeholder="Tell the story: what's happening, who's in it, what it means, which account it's for (optional — the station will pick if you don't say)…"
+        placeholder={lockedAccount
+          ? `Tell the story: what's happening, who's in it, what it means — this composes for ${lockedAccount.handle}…`
+          : "Tell the story: what's happening, who's in it, what it means, which account it's for (optional — the station will pick if you don't say)…"}
         style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '13px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical', outline: 'none', lineHeight: 1.6, boxSizing: 'border-box', marginBottom: '10px' }} />
 
       <button onClick={compose} disabled={composing || uploading || !context.trim()}

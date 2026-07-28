@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus, CheckSquare, Eye, Heart, MessageCircle, Send, Bookmark } from 'lucide-react'
 import type { BrandAccount, ContentPiece } from '@/lib/db'
+import InstantCompose from './InstantCompose'
 
 // ── Platform theming: the flip side wears the platform's colors ───────────────
 const PLATFORM_THEMES: Record<string, { color: string; gradient: string; fg: string }> = {
@@ -1107,6 +1108,7 @@ export default function AccountsPanel() {
   const [showArchive, setShowArchive] = useState(false)
   const [queueFilter, setQueueFilter] = useState('all')
   const [editing, setEditing] = useState<Partial<BrandAccount> | null>(null)
+  const [composeFor, setComposeFor] = useState<BrandAccount | null>(null)
   const [previewPost, setPreviewPost] = useState<ContentPiece | null>(null)
   // Bulk edit
   const [selectMode, setSelectMode] = useState(false)
@@ -1219,6 +1221,18 @@ export default function AccountsPanel() {
     <div className="space-y-4">
       {editing && (
         <AccountEditorModal account={editing} onSave={handleAccountSaved} onDelete={editing.id ? handleAccountDeleted : undefined} onClose={() => setEditing(null)} />
+      )}
+
+      {composeFor && composeFor.id && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '40px 16px' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(28,31,59,0.5)', backdropFilter: 'blur(4px)' }} onClick={() => setComposeFor(null)} />
+          <div style={{ position: 'relative', width: '100%', maxWidth: '640px', zIndex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+              <button onClick={() => setComposeFor(null)} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', border: 'none', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}><X size={13} /> Close</button>
+            </div>
+            <InstantCompose lockedAccount={{ id: composeFor.id, handle: composeFor.handle, emoji: composeFor.emoji, color: composeFor.color }} />
+          </div>
+        </div>
       )}
 
       {/* ── FLIP SIDE: layered overlay wearing the platform's colors ── */}
@@ -1462,6 +1476,14 @@ export default function AccountsPanel() {
                   </div>
                 ))}
               </div>
+
+              {/* Drop a photo/video and compose a post locked to THIS account */}
+              <button onClick={e => { e.stopPropagation(); setComposeFor(acct) }}
+                title={`Compose a post for ${acct.handle} from a photo or video`}
+                className="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-bold w-full"
+                style={{ background: acct.color + '15', color: acct.color, border: 'none', cursor: 'pointer' }}>
+                <Plus size={12} /> Add Post
+              </button>
 
               <div className="flex items-center justify-between mt-auto pt-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: acct.priority === 'high' ? 'var(--aurora-pink)' : 'var(--text-subtle)' }}>

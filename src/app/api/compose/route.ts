@@ -12,10 +12,15 @@ export const maxDuration = 300
 // - previous + feedback: refinement loop ("expand the on-screen text to 5-10 punchy lines")
 // Story/context is archived to Notes; the media already lives in the Media library.
 export async function POST(req: NextRequest) {
-  const { context, mediaUrl, mediaType, frames, previous, feedback } = await req.json()
+  const { context, mediaUrl, mediaType, frames, previous, feedback, forceAccountId } = await req.json()
   if (!context?.trim() && !feedback?.trim()) return NextResponse.json({ error: 'context required' }, { status: 400 })
 
-  const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted')
+  // forceAccountId: "Add Post" from an account card locks compose to THAT account
+  // (any status), skipping auto-detection. Otherwise pick from active/restricted.
+  const allAccounts = getAllBrandAccounts()
+  const accounts = forceAccountId
+    ? allAccounts.filter(a => a.id === forceAccountId)
+    : allAccounts.filter(a => a.status === 'active' || a.status === 'restricted')
   const accountList = accounts.map(a =>
     `- id:"${a.id}" ${a.handle} — ${a.topic}. Tone: ${a.tone}. CTA style: ${a.notes?.includes('Comment') ? a.notes.slice(0, 120) : 'comment-keyword CTA'}${audienceLine(a.audience_id) ? ` 👤 ${audienceLine(a.audience_id)}` : ''}`
   ).join('\n')
@@ -39,7 +44,9 @@ export async function POST(req: NextRequest) {
     input: composeInput,
     instructions: `You compose Instagram-ready posts from Mandi Beck's own photos/videos plus her context.
 
-ACCOUNT ROSTER (pick the ONE best fit):
+${forceAccountId
+  ? `COMPOSE FOR THIS ACCOUNT ONLY — Mandi chose it from the account card. Set account_id:"${forceAccountId}" and do NOT pick any other account:`
+  : 'ACCOUNT ROSTER (pick the ONE best fit):'}
 ${accountList}
 ${getWatchContext()}
 
@@ -81,7 +88,8 @@ Produce THREE meaningfully different variations (different angles — e.g. relat
       } catch { /* archive is best-effort */ }
     }
 
-    return NextResponse.json({ ...parsed, account: accounts.find(a => a.id === parsed.account_id) ?? null })
+    const finalAccountId = forceAccountId || parsed.account_id
+    return NextResponse.json({ ...parsed, account_id: finalAccountId, account: accounts.find(a => a.id === finalAccountId) ?? null })
   } catch {
     return NextResponse.json({ error: 'Could not compose from this input', raw: output }, { status: 502 })
   }
