@@ -3,8 +3,8 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Welcome to Post Sorter',
-  description: 'Your Post Sorter delivery: the GPT, the workspace, and your 10-minute first win.',
+  title: 'Welcome to Caption Writer',
+  description: 'Your Caption Writer delivery: the GPT, the workspace, and your 10-minute first win.',
   robots: { index: false },
 }
 
@@ -33,7 +33,7 @@ export default async function LiteWelcome({
         <style>{css}</style>
         <div className="wrap locked">
           <h1>This is your delivery page</h1>
-          <p>Use the link from your purchase confirmation to unlock it. If you bought Post Sorter
+          <p>Use the link from your purchase confirmation to unlock it. If you bought Caption Writer
             and landed here, reply to your receipt and we&rsquo;ll get you in.</p>
         </div>
       </main>
@@ -45,15 +45,15 @@ export default async function LiteWelcome({
       <style>{css}</style>
       <div className="wrap">
         <p className="eyebrow">YOU&rsquo;RE IN 🎉</p>
-        <h1>Welcome to Post Sorter</h1>
+        <h1>Welcome to Caption Writer</h1>
         <p className="sub">Everything you need is right here. Give it 10 minutes and you&rsquo;ll walk
           away with 3 finished post-cards. Do the steps in order.</p>
 
         <ol className="steps">
           <li>
-            <h2>1 · Open your Post Sorter</h2>
+            <h2>1 · Open your Caption Writer</h2>
             <p>This is your personal sorting-hat AI. Bookmark it — this is where you&rsquo;ll live.</p>
-            <a className="btn" href={GPT_URL} target="_blank" rel="noopener noreferrer">Open Post Sorter →</a>
+            <a className="btn" href={GPT_URL} target="_blank" rel="noopener noreferrer">Open Caption Writer →</a>
           </li>
 
           <li>
@@ -88,7 +88,7 @@ export default async function LiteWelcome({
 
         <div className="next">
           <h2>When one brain isn&rsquo;t enough</h2>
-          <p>Post Sorter runs one flow. The full <em>Content Command Station</em> runs{' '}<em>all</em>{' '}
+          <p>Caption Writer runs one flow. The full <em>Content Command Station</em> runs{' '}<em>all</em>{' '}
             your accounts, paces your goals, and flags what&rsquo;s stuck.</p>
           <span className="soon-badge">✨ Coming Soon — by AI Mom</span>
         </div>

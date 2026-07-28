@@ -295,7 +295,7 @@ function AccountEditorModal({ account, onSave, onDelete, onClose }: { account: P
             <div>{lbl('Offer price')}<input value={form.offer_price ?? ''} onChange={e => set('offer_price', e.target.value)} style={fld} /></div>
           </div>
           <div>{lbl('💰 Currently pushing — which business → product this account markets right now')}
-            <input value={form.pushing ?? ''} onChange={e => set('pushing', e.target.value)} placeholder='e.g. "Room30 → Reset Button Workshop" or "RISE → Post Sorter $27" or "Pure give — no offer yet"' style={fld} />
+            <input value={form.pushing ?? ''} onChange={e => set('pushing', e.target.value)} placeholder='e.g. "Room30 → Reset Button Workshop" or "RISE → Caption Writer $27" or "Pure give — no offer yet"' style={fld} />
           </div>
           <div>{lbl('Profile URL')}<input value={form.url ?? ''} onChange={e => set('url', e.target.value)} placeholder="https://instagram.com/..." style={fld} /></div>
           <div>{lbl('Non-negotiable rules / notes (the generator obeys these)')}<textarea value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} rows={3} style={area} /></div>

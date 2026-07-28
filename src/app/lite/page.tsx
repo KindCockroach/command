@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Post Sorter — AI Caption Builder in Your Own Voice',
+  title: 'Caption Writer — Ready-to-Post Captions in Your Own Voice',
   description: 'Drop your raw story in, get ready-to-post content out — hook, caption, hashtags & the photo to take, in your voice. AI-supported content, just $27.',
 }
 
@@ -19,7 +19,7 @@ function BuyButton({ tagline }: { tagline?: string }) {
   return (
     <div className="cta">
       <a className="buy" href={href} {...(CHECKOUT_URL ? {} : { 'data-placeholder': 'true' })}>
-        GET POST SORTER — $27
+        GET CAPTION WRITER — $27
       </a>
       {tagline && <p className="tagline">{tagline}</p>}
     </div>
@@ -33,11 +33,11 @@ export default function LiteSalesPage() {
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">POST SORTER</p>
+          <p className="eyebrow">CAPTION WRITER</p>
           <h1>It&rsquo;s 9:52pm. The house is finally quiet. You open Instagram to post something&hellip; and you&rsquo;ve got nothing.</h1>
           <p className="sub">
             Not because your life is boring — because your ideas are scattered across 14 notes,
-            3 voice memos, and a screenshot you&rsquo;ll never find again. <strong>Post Sorter
+            3 voice memos, and a screenshot you&rsquo;ll never find again. <strong>Caption Writer
             sorts your real life into ready-to-post content — in YOUR voice — for $27.</strong>
           </p>
           <BuyButton />
@@ -60,10 +60,10 @@ export default function LiteSalesPage() {
       <section className="what">
         <div className="wrap">
           <h2>What it is</h2>
-          <p className="lead">Post Sorter is a smart sorting system with one job:</p>
+          <p className="lead">Caption Writer is a smart sorting system with one job:</p>
           <blockquote>Raw life in &rarr; ready-to-post cards out. In your voice.</blockquote>
           <p>You dump the messy stuff — a rant, a moment, a voice memo, a photo and what happened.
-            Post Sorter decides if it&rsquo;s a post, and either:</p>
+            Caption Writer decides if it&rsquo;s a post, and either:</p>
           <div className="cards">
             <div className="card compose">
               <span className="pill">✅ Composes it</span>
@@ -84,10 +84,10 @@ export default function LiteSalesPage() {
         <div className="wrap">
           <h2>What you get</h2>
           <ol className="get-list">
-            <li><strong>The Post Sorter GPT</strong> — your personal sorting-hat AI (runs in your own ChatGPT — a free account works).</li>
-            <li><strong>The Post Sorter Workspace</strong> — a duplicate-able Notion template: your capture Stream, Post-Card Library, and Park Lot, so ideas never die in a chat again.</li>
+            <li><strong>The Caption Writer GPT</strong> — your personal sorting-hat AI (runs in your own ChatGPT — a free account works).</li>
+            <li><strong>The Caption Writer Workspace</strong> — a duplicate-able Notion template: your capture Stream, Post-Card Library, and Park Lot, so ideas never die in a chat again.</li>
             <li><strong>The 10-Minute Setup + First Win walkthrough</strong> — you&rsquo;ll have 3 finished post-cards in your first sitting.</li>
-            <li><strong>Lifetime updates</strong> — when Post Sorter gets smarter, yours does too, automatically.</li>
+            <li><strong>Lifetime updates</strong> — when Caption Writer gets smarter, yours does too, automatically.</li>
           </ol>
         </div>
       </section>
@@ -101,7 +101,7 @@ export default function LiteSalesPage() {
             with, shrunk to fit in your pocket.</p>
           <p className="who"><strong>Who it&rsquo;s for:</strong> Moms and creators who have a real
             life worth posting and zero extra hours to become a copywriter. If you can send a text
-            message, you can run Post Sorter.</p>
+            message, you can run Caption Writer.</p>
         </div>
       </section>
 
