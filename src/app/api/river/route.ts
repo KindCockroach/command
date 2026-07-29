@@ -206,9 +206,10 @@ Return ONLY valid JSON:
     type: (verdict.content_type as ContentType) || (mediaUrl ? 'image' : 'post'),
     platforms: verdict.account_id ? [accounts.find(a => a.id === verdict.account_id)?.platform.toLowerCase() ?? 'instagram'] : [],
     tags: ['river', source ?? 'capture'],
-    notes: complete
-      ? (verdict.account_reason ?? '')
-      : [verdict.account_reason, `— Parked draft (answer the open questions to compose) —\n${input}`].filter(Boolean).join('\n\n'),
+    // Keep meta/analysis OUT of notes and the caption. The routing rationale is
+    // internal reasoning, not creator notes; the raw original is preserved in
+    // source_context (shown on the card as "the original" behind any questions).
+    notes: '',
     account_id: verdict.account_id,
     // Real uploaded media beats a prompt — attach it; only keep a prompt when there's no image
     media_url: mediaUrl || '',
@@ -218,6 +219,7 @@ Return ONLY valid JSON:
     hashtags: verdict.hashtags || '',
     open_questions: complete ? [] : (verdict.open_questions ?? []),
     river_source: source ?? 'capture',
+    source_context: String(input ?? ''),
   })
 
   return NextResponse.json({

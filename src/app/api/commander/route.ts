@@ -113,13 +113,15 @@ Return ONLY valid JSON: { "title": "short internal title", "onscreen_text": "the
           type: (isVideo ? 'video' : /carousel|image/i.test(p.format) ? 'image' : 'post') as ContentType,
           platforms: [acct.platform.toLowerCase()],
           tags: ['commander'],
-          notes: `Commander · ${p.angle}`,
+          // notes stays clean (no routing rationale); the original is in source_context
+          notes: '',
           account_id: acct.id,
           onscreen_text: parsed.onscreen_text || '',
           hashtags: parsed.hashtags || '',
           image_prompt: parsed.image_prompt || '',
           open_questions: [],
           river_source: 'commander',
+          source_context: s.source_quote ?? s.point ?? '',
         })
         created.push({ id: c.id, account_id: acct.id, handle: acct.handle, title: c.title })
       } catch {

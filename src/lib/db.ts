@@ -40,6 +40,7 @@ export type ContentPiece = {
   // River (sorting hat) fields
   open_questions?: string[]        // questions only Mandi can answer before this post is complete
   river_source?: string            // which stream fed this in (capture, story, podcast, vision...)
+  source_context?: string          // the original raw input / her words that produced this post (for recall + the "original" behind open questions)
   // AI pipeline fields
   pipeline_stage?: string
   ai_enrichment?: Record<string, unknown>
@@ -643,6 +644,7 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     scheduled_at: null,
     open_questions: data.open_questions ?? [],
     river_source: data.river_source ?? '',
+    source_context: data.source_context ?? '',
   }
   db.content.unshift(piece)
   writeDb(db)

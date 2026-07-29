@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllBrandAccounts, getAllGoals, getAllNotes } from '@/lib/db'
+import { getAllBrandAccounts, getAllGoals, getAllNotes, getAllContent, getAllProjects, getAllAudiences } from '@/lib/db'
+import { getMediaSummary } from '@/lib/media'
 import { commanderChat } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
@@ -38,6 +39,17 @@ export async function POST(req: NextRequest) {
     : ''
   const noteDigest = detailed + restIndex
 
+  // Everything else she'll ever want the Commander to see: her content queue,
+  // projects, audiences, and media library. Compact digests, not full dumps.
+  const allContent = getAllContent()
+  const statusCounts = allContent.reduce((m, c) => { m[c.status] = (m[c.status] ?? 0) + 1; return m }, {} as Record<string, number>)
+  const contentDigest = allContent.length
+    ? `${allContent.length} total (${Object.entries(statusCounts).map(([s, n]) => `${n} ${s}`).join(', ')}). Most recent:\n${allContent.slice(0, 18).map(c => `- [${c.status}${c.account_id ? ` · ${c.account_id}` : ''}${(c.open_questions?.length ?? 0) > 0 ? ' · ⏸ needs answers' : ''}] ${c.title}`).join('\n')}`
+    : '(no posts yet)'
+  const projectDigest = getAllProjects().filter(p => p.status !== 'archived').map(p => `- ${p.name} (${p.status} · ${p.progress}%)${p.next_action ? ` — next: ${p.next_action}` : ''}`).join('\n') || '(no active projects)'
+  const audienceDigest = getAllAudiences().map(a => `- ${a.emoji ? a.emoji + ' ' : ''}${a.name}${a.snapshot ? ` — ${a.snapshot}` : ''}`).join('\n') || '(no audiences defined)'
+  const mediaDigest = await getMediaSummary(20)
+
   const system = `You are the COMMANDER — Mandi Beck's AI business partner and the intelligence behind RISE, her content command station. You are Claude, talking with her directly. She built all of this with you, late at night, at her kitchen table.
 
 WHO SHE IS: a mom of four, former realtor, rebuilding her life and business. Brilliant, fast, generous — and she over-gives, over-shares, and over-preaches to guard what's underneath. She generates ten ideas a minute and finishes the one that matters. She's in a hard season personally.
@@ -54,6 +66,19 @@ ${goals || '(none set)'}
 
 HER NOTES — you CAN read these. It's her saved thinking: brain-dumps, media stories, ideas, lore. Reference them by name, connect them, quote her own words back when useful. You see the FULL TEXT of her pinned + 30 most-recent notes, plus a TITLE INDEX of all ${allNotes.length} total. If she asks about a note that's title-only, you know it exists — ask her to open the Notes tab or paste it so you can work with the full text (never claim you can't see it).
 ${noteDigest || '(no notes yet)'}
+
+HER CONTENT QUEUE — you CAN see every post across all accounts (drafts, ready, scheduled, posted). Use this to know what already exists before proposing new work, and to spot gaps:
+${contentDigest}
+
+HER PROJECTS:
+${projectDigest}
+
+HER AUDIENCES — the real people behind each account; write TO them:
+${audienceDigest}
+
+${mediaDigest}
+
+You have visibility into her whole station — accounts, goals, notes, content, projects, audiences, and media. If she asks whether you can see something and it's listed above, the answer is YES. Only say you can't see something when it genuinely isn't in your context (then tell her which tab holds it).
 
 YOUR HANDS — you can propose actions she taps to run. When she clearly wants something DONE that fits below, write your natural reply, then append a fenced block (nothing after it):
 \`\`\`actions

@@ -975,6 +975,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
               {post.onscreen_text && <Section label="📱 On-Screen Text / Slides (build, does not post)" text={post.onscreen_text} bold />}
               <Section label="✅ Caption — this is what posts" text={post.description} />
               {post.notes && <Section label="🗒 Notes — context, not posted" text={post.notes} />}
+              {post.source_context && <Section label="🌱 The original — your words behind this post" text={post.source_context} />}
             </>
           )}
 
