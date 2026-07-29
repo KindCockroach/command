@@ -361,6 +361,11 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   const [editing, setEditing] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
+  // Recaption: rewrite just the caption in place — 🔁 fresh version, or 💬 with feedback (which trains it)
+  const [recaptioning, setRecaptioning] = useState(false)
+  const [recapErr, setRecapErr] = useState('')
+  const [showFeedback, setShowFeedback] = useState(false)
+  const [feedbackText, setFeedbackText] = useState('')
   const [form, setForm] = useState({
     title: post.title, script: post.script ?? '', onscreen_text: post.onscreen_text ?? '', description: post.description ?? '',
     hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '', notes: post.notes ?? '',
@@ -430,6 +435,27 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
         setEditing(false); setUndoAvail(true); onChanged?.()
       }
     } finally { setRegenerating(false) }
+  }
+
+  // Recaption — rewrite ONLY the caption in place. feedback undefined = 🔁 fresh
+  // variation; feedback string = follow it AND learn from it. Snapshots for undo.
+  const recaption = async (feedback?: string) => {
+    setRecaptioning(true); setRecapErr('')
+    try {
+      localStorage.setItem(`undo-${post.id}`, JSON.stringify({ title: post.title, onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '' }))
+      const res = await fetch('/api/content/recaption', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: post.id, feedback: feedback ?? '' }),
+      })
+      if (res.ok) {
+        const d = await res.json().catch(() => ({}))
+        if (Array.isArray(d.learned) && d.learned.length) setLearnedRule(d.learned.join(' · '))
+        setShowFeedback(false); setFeedbackText(''); setUndoAvail(true); onChanged?.()
+      } else {
+        const d = await res.json().catch(() => ({}))
+        setRecapErr(d.error || `rewrite failed (${res.status})`)
+      }
+    } finally { setRecaptioning(false) }
   }
 
   const undoRegen = async () => {
@@ -974,6 +1000,34 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
               {post.script && <Section label="🎬 Script (spoken — build, does not post)" text={post.script} bold />}
               {post.onscreen_text && <Section label="📱 On-Screen Text / Slides (build, does not post)" text={post.onscreen_text} bold />}
               <Section label="✅ Caption — this is what posts" text={post.description} />
+              {post.description && (
+                <div style={{ marginTop: '-2px' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <button onClick={() => recaption()} disabled={recaptioning}
+                      title="Give me another caption — a fresh angle, no feedback needed"
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                      {recaptioning && !showFeedback ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <span style={{ fontSize: '13px' }}>🔁</span>} Another caption
+                    </button>
+                    <button onClick={() => setShowFeedback(v => !v)} disabled={recaptioning}
+                      title="Tell it what to change — it rewrites the caption and learns your taste for next time"
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '9px', border: '1px solid rgba(124,58,237,0.4)', background: showFeedback ? 'rgba(124,58,237,0.1)' : 'rgba(124,58,237,0.06)', color: '#7C3AED', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                      💬 Rewrite with feedback
+                    </button>
+                  </div>
+                  {showFeedback && (
+                    <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <textarea value={feedbackText} onChange={e => setFeedbackText(e.target.value)} rows={2}
+                        placeholder="What should change? e.g. 'less analytical, more like I'm talking to a friend' or 'open with the fig tree scene'"
+                        style={{ width: '100%', padding: '9px 11px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.5 }} />
+                      <button onClick={() => recaption(feedbackText)} disabled={recaptioning || !feedbackText.trim()}
+                        style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '9px', border: 'none', background: '#7C3AED', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: feedbackText.trim() ? 'pointer' : 'not-allowed', opacity: feedbackText.trim() ? 1 : 0.6 }}>
+                        {recaptioning ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Rewriting & learning…</> : <>✨ Rewrite caption &amp; learn my taste</>}
+                      </button>
+                    </div>
+                  )}
+                  {recapErr && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '6px' }}>⚠ {recapErr}</p>}
+                </div>
+              )}
               {post.notes && <Section label="🗒 Notes — context, not posted" text={post.notes} />}
               {post.source_context && <Section label="🌱 The original — your words behind this post" text={post.source_context} />}
             </>

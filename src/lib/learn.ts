@@ -9,6 +9,34 @@ import { fableText } from './fable'
 
 type Fields = { onscreen_text?: string | null; script?: string | null; description?: string | null }
 
+// Learn from Mandi's plain-language FEEDBACK on a caption (not a hand-edit). Her
+// feedback is the taste signal; distill it into durable voice lessons so every
+// future generation obeys it. Used by /api/content/recaption.
+export async function learnFromFeedback(opts: {
+  title: string
+  accountId?: string | null
+  feedback: string
+  before: string
+  after: string
+}): Promise<string[]> {
+  const feedback = (opts.feedback ?? '').trim()
+  if (!feedback) return []
+  try {
+    const out = await fableText({
+      instructions: `Mandi gave feedback to redirect a caption's voice. Distill the DEEP, durable preference behind her feedback into 1-3 craft rules (each under 25 words, imperative voice) a content generator can obey FOREVER — capture the taste (her rhythm, what she rejects, the tone she wants), never a one-off fact. If the feedback is too vague or trivial to generalize, return an empty array. Return ONLY a JSON array of strings.`,
+      input: `POST: ${opts.title}\n\nHER FEEDBACK: ${feedback}\n\nCAPTION BEFORE:\n${opts.before}\n\nCAPTION AFTER (following her feedback):\n${opts.after}`,
+      maxTokens: 400,
+      effort: 'low',
+    })
+    const arr = JSON.parse(out.match(/\[[\s\S]*\]/)?.[0] ?? '[]') as unknown[]
+    const rules = arr.map(r => String(r).trim().replace(/^["']|["']$/g, '')).filter(Boolean).slice(0, 3)
+    for (const r of rules) addVoiceLesson(r, opts.before, opts.after, opts.accountId)
+    return rules
+  } catch {
+    return []
+  }
+}
+
 export async function learnFromEdits(opts: {
   title: string
   accountId?: string | null
