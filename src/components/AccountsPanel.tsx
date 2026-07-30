@@ -357,6 +357,28 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   const [uploading, setUploading] = useState(false)
   const [uploadErr, setUploadErr] = useState('')
 
+  // Pull existing files from the Media library onto this card.
+  const [pickerOpen, setPickerOpen] = useState<false | 'add' | 'swap'>(false)
+  const [mediaList, setMediaList] = useState<{ url: string; name: string; type: string }[]>([])
+  const [mediaLoading, setMediaLoading] = useState(false)
+  const openPicker = (mode: 'add' | 'swap') => {
+    setPickerOpen(mode); setMediaLoading(true)
+    fetch('/api/media/list').then(r => r.json())
+      .then(d => setMediaList((d.files ?? []).filter((f: { type: string }) => f.type === 'image' || f.type === 'video')))
+      .catch(() => setMediaList([]))
+      .finally(() => setMediaLoading(false))
+  }
+  const attachFromMedia = async (url: string) => {
+    const next = pickerOpen === 'swap' ? [url] : [...gallery, url]
+    await fetch('/api/content', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      // Media-native post: the file IS the visual, so clear any image prompt.
+      body: JSON.stringify({ id: post.id, media_urls: next, media_url: next[0], image_prompt: '' }),
+    }).catch(() => {})
+    setPickerOpen(false)
+    onChanged?.()
+  }
+
   // Inline editing of the card's fields
   const [editing, setEditing] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
@@ -833,16 +855,21 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
                             <button onClick={() => moveSlide(i, 1)} disabled={i === gallery.length - 1} title="Move right" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: i === gallery.length - 1 ? 'default' : 'pointer', fontSize: '10px', opacity: i === gallery.length - 1 ? 0.3 : 1 }}>▶</button>
                           </>
                         )}
+                        <a href={url} download target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} title="Download this file" style={{ width: '18px', height: '18px', borderRadius: '4px', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>⬇</a>
                         <button onClick={() => removeSlide(url)} title="Remove slide" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(224,82,82,0.85)', color: '#fff', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
                       </div>
                     </div>
                   )
                 })}
               </div>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: uploading ? 'default' : 'pointer', marginTop: '8px' }}>
-                {uploading ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>➕ Add slide(s)</>}
-                <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
-              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: uploading ? 'default' : 'pointer' }}>
+                  {uploading ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>➕ Add slide(s)</>}
+                  <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
+                </label>
+                <button onClick={() => openPicker('add')} style={{ border: 'none', background: 'none', padding: 0, fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: 'pointer' }}>📁 From Media</button>
+                <button onClick={() => openPicker('swap')} style={{ border: 'none', background: 'none', padding: 0, fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: 'pointer' }}>🔄 Swap</button>
+              </div>
               {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
             </div>
           ) : (
@@ -855,13 +882,47 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
                     {genImg ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Painting…</> : <>🎨 Generate image</>}
                   </button>
                 )}
-                <label style={{ flex: 1, minWidth: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: uploading ? 'default' : 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
+                <label style={{ flex: 1, minWidth: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: uploading ? 'default' : 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
                   {uploading ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>📎 Attach your own</>}
                   <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
                 </label>
+                <button onClick={() => openPicker('add')} style={{ flex: 1, minWidth: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
+                  📁 Attach from Media
+                </button>
               </div>
               {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
             </>
+          )}
+
+          {/* Attach-from-Media picker */}
+          {pickerOpen && (
+            <div onClick={() => setPickerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: '16px', padding: '18px', maxWidth: '620px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{pickerOpen === 'swap' ? 'Swap in a file from Media' : 'Attach from Media'}</p>
+                  <button onClick={() => setPickerOpen(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '16px' }}>✕</button>
+                </div>
+                {mediaLoading ? (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '30px' }}><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading your Media…</p>
+                ) : mediaList.length === 0 ? (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '30px' }}>No images or videos in Media yet.</p>
+                ) : (
+                  <div style={{ overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px' }}>
+                    {mediaList.map(f => (
+                      <button key={f.url} onClick={() => attachFromMedia(f.url)} title={f.name}
+                        style={{ border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', background: 'var(--surface-raised)', padding: 0, display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ height: '90px', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {f.type === 'video'
+                            ? <video src={f.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : <img src={f.url} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                        </div>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', padding: '5px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{f.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           {/* ⬇ Canva Bulk Create export — slide lines as CSV (carousels only) */}
