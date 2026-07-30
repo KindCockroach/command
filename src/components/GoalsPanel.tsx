@@ -386,6 +386,9 @@ export default function GoalsPanel() {
   useEffect(() => {
     load()
     fetch('/api/accounts').then(r => r.json()).then(setAccounts).catch(() => {})
+    const onChange = (e: Event) => { const t = (e as CustomEvent).detail?.type; if (!t || t === 'create_goal') load() }
+    window.addEventListener('rise-data-changed', onChange)
+    return () => window.removeEventListener('rise-data-changed', onChange)
   }, [load])
 
   const startEdit = (g?: GoalRow) => {

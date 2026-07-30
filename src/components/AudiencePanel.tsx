@@ -96,8 +96,14 @@ export default function AudiencePanel() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    fetch('/api/audiences').then(r => r.json()).then(setAudiences).catch(() => {})
+    const loadAudiences = () => fetch('/api/audiences').then(r => r.json()).then(setAudiences).catch(() => {})
+    loadAudiences()
     fetch('/api/accounts').then(r => r.json()).then(setAccounts).catch(() => {})
+    // The Commander can paste a persona in from Daily Command while this tab
+    // stays mounted (keep-alive) — refetch when it does so she appears live.
+    const onChange = (e: Event) => { const t = (e as CustomEvent).detail?.type; if (!t || t === 'create_audience') loadAudiences() }
+    window.addEventListener('rise-data-changed', onChange)
+    return () => window.removeEventListener('rise-data-changed', onChange)
   }, [])
 
   const runResearch = async () => {

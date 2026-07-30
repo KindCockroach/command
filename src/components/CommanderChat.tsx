@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Loader2, Send, Paperclip, X } from 'lucide-react'
 import CommanderModal from './CommanderModal'
 
-type Action = { type: string; label: string; payload: Record<string, string> }
+type Action = { type: string; label: string; payload: Record<string, unknown> }
 type Attach = { url: string; type: string; name: string }
 type Msg = { role: 'user' | 'assistant'; content: string; actions?: Action[]; attach?: Attach | null }
 
@@ -60,22 +60,49 @@ export default function CommanderChat() {
   }
 
   const runAction = async (key: string, a: Action) => {
-    if (a.type === 'shred') { setShredInput(a.payload.input || ''); setActStatus(s => ({ ...s, [key]: '🔱 opened' })); return }
+    const p = a.payload
+    const str = (v: unknown, d = '') => (typeof v === 'string' ? v : v == null ? d : String(v))
+    const arr = (v: unknown) => (Array.isArray(v) ? v : [])
+    const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || `a${Date.now()}`
+    const post = (url: string, body: unknown) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+
+    if (a.type === 'shred') { setShredInput(str(p.input)); setActStatus(s => ({ ...s, [key]: '🔱 opened' })); return }
     setActStatus(s => ({ ...s, [key]: '…' }))
     try {
       if (a.type === 'store_note') {
-        const r = await fetch('/api/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: a.payload.title || 'Note', body: a.payload.body || '', category: 'idea', tags: ['commander'] }) })
+        const r = await post('/api/notes', { title: str(p.title, 'Note'), body: str(p.body), category: 'idea', tags: ['commander'] })
         setActStatus(s => ({ ...s, [key]: r.ok ? '✓ Saved to Notes' : 'failed' }))
       } else if (a.type === 'create_task') {
-        const r = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: a.payload.title, notes: a.payload.notes || '', priority: a.payload.priority || 'medium', due_date: a.payload.due_date || null }) })
+        const r = await post('/api/tasks', { title: str(p.title), notes: str(p.notes), priority: str(p.priority, 'medium'), due_date: p.due_date || null })
         setActStatus(s => ({ ...s, [key]: r.ok ? '✓ Task added' : 'failed' }))
       } else if (a.type === 'compose_post') {
-        const r = await fetch('/api/river', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input: a.payload.brief, accountId: a.payload.account_id, source: 'commander-chat' }) })
+        const r = await post('/api/river', { input: str(p.brief), accountId: str(p.account_id), source: 'commander-chat' })
         const d = await r.json()
-        setActStatus(s => ({ ...s, [key]: r.ok && d.piece ? `✓ Composed for ${d.account?.handle ?? a.payload.account_id} — approve in Accounts` : 'couldn\'t compose' }))
+        setActStatus(s => ({ ...s, [key]: r.ok && d.piece ? `✓ Composed for ${d.account?.handle ?? str(p.account_id)} — approve in Accounts` : 'couldn\'t compose' }))
+      } else if (a.type === 'create_audience') {
+        const name = str(p.name, 'New Audience')
+        const r = await post('/api/audiences', {
+          id: str(p.id) || slug(name), name, emoji: str(p.emoji, '🎯'),
+          snapshot: str(p.snapshot), life_stage: str(p.life_stage), tuesday_reality: str(p.tuesday_reality),
+          pains: arr(p.pains), pain_side_effects: arr(p.pain_side_effects), desires: arr(p.desires),
+          exact_language: arr(p.exact_language), trending_phrases: arr(p.trending_phrases),
+          objections: arr(p.objections), buying_triggers: arr(p.buying_triggers),
+          watering_holes: arr(p.watering_holes), tried_already: arr(p.tried_already), notes: str(p.notes),
+        })
+        setActStatus(s => ({ ...s, [key]: r.ok ? `✓ ${name} added to Audiences` : 'failed' }))
+      } else if (a.type === 'create_goal') {
+        const r = await post('/api/goals', { title: str(p.title), account_id: p.account_id ? str(p.account_id) : null, target_per_week: Number(p.target_per_week) || 3, deadline: p.deadline || null, notes: str(p.notes) })
+        setActStatus(s => ({ ...s, [key]: r.ok ? '✓ Goal added' : 'failed' }))
+      } else if (a.type === 'create_project') {
+        const r = await post('/api/projects', { name: str(p.name), description: str(p.description), priority: str(p.priority, 'medium'), label: str(p.label, 'general'), next_action: str(p.next_action), notes: str(p.notes) })
+        setActStatus(s => ({ ...s, [key]: r.ok ? '✓ Project started' : 'failed' }))
+      } else if (a.type === 'create_event') {
+        const r = await post('/api/events', { title: str(p.title), date: str(p.date), time: str(p.time), kind: str(p.kind, 'other'), account_id: p.account_id ? str(p.account_id) : null, notes: str(p.notes) })
+        setActStatus(s => ({ ...s, [key]: r.ok ? '✓ On the calendar' : 'failed' }))
       } else {
         setActStatus(s => ({ ...s, [key]: 'unknown action' }))
       }
+      window.dispatchEvent(new CustomEvent('rise-data-changed', { detail: { type: a.type } }))
     } catch { setActStatus(s => ({ ...s, [key]: 'failed — try again' })) }
   }
 

@@ -192,7 +192,13 @@ export default function ProjectsPanel() {
   const [adding, setAdding] = useState(false)
   const [newProject, setNewProject] = useState({ name: '', description: '', next_action: '', priority: 'medium' as ProjectPriority, label: 'general' as ProjectLabel, assistant: 'strategist', notes: '' })
 
-  useEffect(() => { fetch('/api/projects').then(r => r.json()).then(setProjects) }, [])
+  useEffect(() => {
+    const load = () => fetch('/api/projects').then(r => r.json()).then(setProjects).catch(() => {})
+    load()
+    const onChange = (e: Event) => { const t = (e as CustomEvent).detail?.type; if (!t || t === 'create_project') load() }
+    window.addEventListener('rise-data-changed', onChange)
+    return () => window.removeEventListener('rise-data-changed', onChange)
+  }, [])
 
   const add = async () => {
     if (!newProject.name.trim()) return
