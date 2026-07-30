@@ -115,7 +115,7 @@ Return ONLY valid JSON:
   "account_id": "id from roster" | null,
   "account_reason": "one sentence why this account",
   "title": "short internal title",
-  "body": "full post caption/body, complete and ready to post (empty string if it can't stand alone)",
+  "body": "full post caption, ready to paste-and-post. FORMAT WITH BREATHING ROOM using real line breaks (\\n): a punchy hook line on its own, then a blank line, then the body in SHORT 1-2 sentence paragraphs each separated by a blank line, then a blank line before the CTA on its own line. No wall of text. Do NOT put hashtags in here — they go in the hashtags field. Empty string if it can't stand alone.",
   "onscreen_text": "text overlay / opening on-screen line",
   "image_prompt": "detailed AI image/video prompt for the visual",
   "hashtags": "12-20 single-word hashtags, space-separated, NEVER a space inside a tag — camelCase any multi-word idea (e.g. #presenceOverPerfection #innerChild)",

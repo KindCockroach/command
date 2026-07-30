@@ -53,13 +53,13 @@ export default function CommanderChat() {
         body: JSON.stringify({ messages: next.map(m => ({ role: m.role, content: m.content })), attachment: sentAttach }),
       })
       const d = await res.json()
-      setMessages(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Something glitched — say that again?', actions: Array.isArray(d.actions) ? d.actions : [] }])
+      setMessages(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Something glitched — say that again?', actions: Array.isArray(d.actions) ? d.actions : [], attach: sentAttach }])
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: 'Connection hiccup — try that once more.' }])
     } finally { setLoading(false) }
   }
 
-  const runAction = async (key: string, a: Action) => {
+  const runAction = async (key: string, a: Action, media?: Attach | null) => {
     const p = a.payload
     const str = (v: unknown, d = '') => (typeof v === 'string' ? v : v == null ? d : String(v))
     const arr = (v: unknown) => (Array.isArray(v) ? v : [])
@@ -76,9 +76,11 @@ export default function CommanderChat() {
         const r = await post('/api/tasks', { title: str(p.title), notes: str(p.notes), priority: str(p.priority, 'medium'), due_date: p.due_date || null })
         setActStatus(s => ({ ...s, [key]: r.ok ? '✓ Task added' : 'failed' }))
       } else if (a.type === 'compose_post') {
-        const r = await post('/api/river', { input: str(p.brief), accountId: str(p.account_id), source: 'commander-chat' })
+        // If she dropped a photo/video on the turn that spawned this post, ride it
+        // in so the composed card is media-native (no stray image prompt).
+        const r = await post('/api/river', { input: str(p.brief), accountId: str(p.account_id), source: 'commander-chat', mediaUrl: media?.url, mediaType: media?.type })
         const d = await r.json()
-        setActStatus(s => ({ ...s, [key]: r.ok && d.piece ? `✓ Composed for ${d.account?.handle ?? str(p.account_id)} — approve in Accounts` : 'couldn\'t compose' }))
+        setActStatus(s => ({ ...s, [key]: r.ok && d.piece ? `✓ Composed for ${d.account?.handle ?? str(p.account_id)}${media ? ' (media attached)' : ''} — approve in Accounts` : 'couldn\'t compose' }))
       } else if (a.type === 'create_audience') {
         const name = str(p.name, 'New Audience')
         const r = await post('/api/audiences', {
@@ -146,7 +148,7 @@ export default function CommanderChat() {
                   const st = actStatus[key]
                   const done = st && st !== '…'
                   return (
-                    <button key={ai} onClick={() => runAction(key, a)} disabled={st === '…' || (!!done && st.startsWith('✓'))}
+                    <button key={ai} onClick={() => runAction(key, a, m.attach)} disabled={st === '…' || (!!done && st.startsWith('✓'))}
                       style={{ fontSize: '12px', fontWeight: 700, padding: '6px 11px', borderRadius: '9px', border: '1px solid var(--purple)', cursor: st === '…' ? 'default' : 'pointer', background: done && st.startsWith('✓') ? '#EAF7F0' : 'var(--surface)', color: done && st.startsWith('✓') ? '#2E8B60' : 'var(--purple)' }}>
                       {st === '…' ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite', display: 'inline', verticalAlign: 'middle' }} /> working…</> : done ? st : a.label}
                     </button>
