@@ -14,6 +14,24 @@ const CHECKOUT_URL =
   process.env.NEXT_PUBLIC_LITE_CHECKOUT_URL ||
   'https://link.fastpaydirect.com/payment-link/6a67ba88a655fa0b802a6707'
 
+// Meta Pixel — set NEXT_PUBLIC_META_PIXEL_ID in Railway to turn on ad tracking.
+// Fires PageView on load and InitiateCheckout when the buy button is clicked.
+const META_PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || ''
+
+function MetaPixel() {
+  if (!META_PIXEL) return null
+  return (
+    <>
+      <script dangerouslySetInnerHTML={{ __html: `
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','${META_PIXEL}');fbq('track','PageView');
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a.buy');if(a){fbq('track','InitiateCheckout',{value:27,currency:'USD'});}});
+` }} />
+      <noscript><img height="1" width="1" style={{ display: 'none' }} alt="" src={`https://www.facebook.com/tr?id=${META_PIXEL}&ev=PageView&noscript=1`} /></noscript>
+    </>
+  )
+}
+
 function BuyButton({ tagline }: { tagline?: string }) {
   const href = CHECKOUT_URL || '#'
   return (
@@ -29,6 +47,7 @@ function BuyButton({ tagline }: { tagline?: string }) {
 export default function LiteSalesPage() {
   return (
     <main className="lite">
+      <MetaPixel />
       <style>{css}</style>
 
       <section className="hero">
