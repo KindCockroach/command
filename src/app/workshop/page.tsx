@@ -3,11 +3,11 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Sort Your Whole Life Into Content — Live Workshop',
-  description: 'A 90-minute live workshop: bring your messy real life, leave with a week of ready-to-post content. $97.',
+  title: 'Channel Your Calling Into Content — Live Workshop with Mandi',
+  description: 'A live workshop with Mandi: a grounding exercise to channel your highest calling, a gentle intro to AI, and implementing Caption Writer together. $55.',
 }
 
-// Mid-rung offer for the August launch: the $97 live workshop that upsells
+// Mid-rung offer for the launch: the $55 live workshop that upsells
 // Caption Writer buyers. Register button → NEXT_PUBLIC_WORKSHOP_CHECKOUT_URL
 // (defaults to the Caption Writer checkout until the workshop link is set).
 const CHECKOUT_URL =
@@ -23,7 +23,7 @@ function MetaPixel() {
       <script dangerouslySetInnerHTML={{ __html: `
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
 fbq('init','${META_PIXEL}');fbq('track','PageView');
-document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a.buy');if(a){fbq('track','InitiateCheckout',{value:97,currency:'USD'});}});
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a.buy');if(a){fbq('track','InitiateCheckout',{value:55,currency:'USD'});}});
 ` }} />
       <noscript><img height="1" width="1" style={{ display: 'none' }} alt="" src={`https://www.facebook.com/tr?id=${META_PIXEL}&ev=PageView&noscript=1`} /></noscript>
     </>
@@ -33,8 +33,8 @@ document.addEventListener('click',function(e){var a=e.target.closest&&e.target.c
 function RegisterButton() {
   return (
     <div className="cta">
-      <a className="buy" href={CHECKOUT_URL}>SAVE MY SEAT — $97</a>
-      <p className="tagline">Live · 90 minutes · recording + Caption Writer workspace included</p>
+      <a className="buy" href={CHECKOUT_URL}>SAVE MY SEAT — $55</a>
+      <p className="tagline">Live with Mandi · recording + Caption Writer workspace included</p>
     </div>
   )
 }
@@ -47,23 +47,24 @@ export default function WorkshopPage() {
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">LIVE WORKSHOP</p>
-          <h1>Bring your messy life. Leave with a week of content.</h1>
-          <p className="sub">In 90 minutes, live with me, you&rsquo;ll turn one brain-dump of your real
-            life into a full week of ready-to-post content — using Caption Writer, together, in real
-            time. No theory. You post what we make.</p>
+          <p className="eyebrow">LIVE WORKSHOP WITH MANDI</p>
+          <h1>Channel your highest calling — and let AI carry it.</h1>
+          <p className="sub">Live with me, we&rsquo;ll ground first — a real exercise to get quiet and hear
+            what you&rsquo;re actually here to say. Then I&rsquo;ll walk you gently into AI (no tech
+            overwhelm) and we&rsquo;ll run your calling through Caption Writer together, until raw truth
+            becomes ready-to-post content in your voice.</p>
           <RegisterButton />
         </div>
       </section>
 
       <section className="what">
         <div className="wrap">
-          <h2>What we do in the room</h2>
+          <h2>What we do together</h2>
           <ul className="list">
-            <li><strong>Dump it out</strong> — you bring the messy stuff; I show you how to capture it so nothing dies in a note.</li>
-            <li><strong>Sort it live</strong> — we run it through Caption Writer and watch raw life become finished post-cards.</li>
-            <li><strong>Leave with a week</strong> — you walk out with 5–7 posts ready to schedule, in your voice.</li>
-            <li><strong>Keep the system</strong> — the workflow sticks, so next week you do it in 15 minutes alone.</li>
+            <li><strong>Ground &amp; channel</strong> — a guided exercise to drop in and surface your highest calling, the message under the noise.</li>
+            <li><strong>Gentle intro to AI</strong> — what it actually is, how to talk to it, and why it&rsquo;s a mirror, not a robot. No overwhelm, no jargon.</li>
+            <li><strong>Implement Caption Writer live</strong> — we set it up in your voice and run your real story through it, together.</li>
+            <li><strong>Leave with content</strong> — you walk out with ready-to-post pieces that actually sound like you, plus the loop to keep going.</li>
           </ul>
         </div>
       </section>
@@ -72,17 +73,17 @@ export default function WorkshopPage() {
         <div className="wrap">
           <h2>What&rsquo;s included</h2>
           <ol className="get">
-            <li>The <strong>90-minute live workshop</strong> (weekly in August — pick your date at checkout).</li>
+            <li>The <strong>live workshop with Mandi</strong> (pick your date at checkout).</li>
+            <li>The <strong>grounding / channeling exercise</strong> you can return to any time you feel scattered.</li>
             <li>The <strong>full recording</strong>, yours forever.</li>
-            <li>The <strong>Caption Writer workspace</strong> so your content has a home.</li>
-            <li>A <strong>swipe file</strong> of the hooks and prompts we use in the room.</li>
+            <li>The <strong>Caption Writer workspace</strong>, set up in your voice, so your content has a home.</li>
           </ol>
         </div>
       </section>
 
       <section className="final">
         <div className="wrap">
-          <h2>One afternoon. A week of content, and the system to keep making it.</h2>
+          <h2>Get grounded, meet AI, and watch your calling become content — for $55.</h2>
           <RegisterButton />
         </div>
       </section>
