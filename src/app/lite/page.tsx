@@ -140,10 +140,24 @@ export default function LiteSalesPage() {
         </div>
       </section>
 
+      <section className="bump">
+        <div className="wrap">
+          <div className="bumpcard">
+            <p className="bumptag">WANT ME THERE LIVE? ADD AT CHECKOUT</p>
+            <h3>The Level Up — set it up <em>with</em> me · +$55</h3>
+            <p>Grab a live session where we <strong>Ground, Reset &amp; Channel</strong> what you&rsquo;re
+              here to say, then I <strong>screen-share and onboard Caption Writer click-by-click</strong>
+              in your voice — plus bonus prompts and a live Q&amp;A. Just check the box at checkout.</p>
+            <p className="bumpsmall">Not ready to go live? At checkout you can grab <strong>The Reset</strong> instead —
+              a 60-minute rewire-and-relax for $10.</p>
+          </div>
+        </div>
+      </section>
+
       <section className="final">
         <div className="wrap">
           <h2>One coffee-shop lunch. A content system for life.</h2>
-          <BuyButton tagline="Lifetime access · Instant delivery" />
+          <BuyButton tagline="Lifetime access · Instant delivery · add The Level Up at checkout" />
         </div>
       </section>
     </main>
@@ -191,5 +205,11 @@ const css = `
 .lite .buy:hover { transform:translateY(-2px); }
 .lite .buy[data-placeholder] { opacity:0.65; }
 .lite .tagline { font-size:14px; opacity:0.85; margin:12px 0 0; }
+.lite .bump { background:#fff; padding-top:0; }
+.lite .bumpcard { border:2px dashed var(--nebula); border-radius:16px; padding:24px 26px; background:#f4f2fb; }
+.lite .bumptag { font-size:12px; font-weight:800; letter-spacing:1.5px; color:var(--nebula); margin:0 0 8px; }
+.lite .bumpcard h3 { font-family:Georgia,serif; font-size:24px; margin:0 0 10px; }
+.lite .bumpcard h3 em { color:var(--nebula); font-style:italic; }
+.lite .bumpsmall { font-size:14px; color:#6a6280; margin-top:12px; }
 @media (max-width:560px){ .lite .cards { grid-template-columns:1fr; } }
 `
