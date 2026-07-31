@@ -47,36 +47,36 @@ export default function WorkshopPage() {
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">LIVE WORKSHOP WITH MANDI</p>
-          <h1>Channel your highest calling — and let AI carry it.</h1>
-          <p className="sub">Live with me, we&rsquo;ll ground first — a real exercise to get quiet and hear
-            what you&rsquo;re actually here to say. Then I&rsquo;ll walk you gently into AI (no tech
-            overwhelm) and we&rsquo;ll run your calling through Caption Writer together, until raw truth
-            becomes ready-to-post content in your voice.</p>
+          <p className="eyebrow">ADD-ON TO CAPTION WRITER · LIVE WITH MANDI</p>
+          <h1>Ground, Reset &amp; Channel — then set up Caption Writer with me, live.</h1>
+          <p className="sub">You grabbed Caption Writer ($27). For $55 more, come live with me: we&rsquo;ll
+            get quiet and channel what you&rsquo;re actually here to say, then I&rsquo;ll screen-share and
+            walk you through setting up Caption Writer <em>click by click</em> — so you leave with it
+            running in your voice, not sitting in a tab.</p>
           <RegisterButton />
         </div>
       </section>
 
       <section className="what">
         <div className="wrap">
-          <h2>What we do together</h2>
+          <h2>What&rsquo;s in the room</h2>
           <ul className="list">
-            <li><strong>Ground &amp; channel</strong> — a guided exercise to drop in and surface your highest calling, the message under the noise.</li>
-            <li><strong>Gentle intro to AI</strong> — what it actually is, how to talk to it, and why it&rsquo;s a mirror, not a robot. No overwhelm, no jargon.</li>
-            <li><strong>Implement Caption Writer live</strong> — we set it up in your voice and run your real story through it, together.</li>
-            <li><strong>Leave with content</strong> — you walk out with ready-to-post pieces that actually sound like you, plus the loop to keep going.</li>
+            <li><strong>Ground, Reset &amp; Channel</strong> — a guided exercise to drop in and surface your highest calling, the message under the noise.</li>
+            <li><strong>Onboard Caption Writer live</strong> — I screen-share and set it up with you, <em>click by click</em>, in your voice. No guessing, no getting stuck.</li>
+            <li><strong>Bonus prompts</strong> — a pack of my go-to prompts to keep the ideas flowing after we&rsquo;re done.</li>
+            <li><strong>Live Q&amp;A</strong> — ask me anything, about AI, content, or your specific situation.</li>
           </ul>
         </div>
       </section>
 
       <section className="band">
         <div className="wrap">
-          <h2>What&rsquo;s included</h2>
+          <h2>What you walk away with</h2>
           <ol className="get">
-            <li>The <strong>live workshop with Mandi</strong> (pick your date at checkout).</li>
-            <li>The <strong>grounding / channeling exercise</strong> you can return to any time you feel scattered.</li>
-            <li>The <strong>full recording</strong>, yours forever.</li>
-            <li>The <strong>Caption Writer workspace</strong>, set up in your voice, so your content has a home.</li>
+            <li>A <strong>Caption Writer</strong> set up and running in your voice.</li>
+            <li>The <strong>Ground-Reset-Channel exercise</strong> to return to any time you feel scattered.</li>
+            <li>The <strong>bonus prompt pack</strong> and the <strong>full recording</strong>, yours forever.</li>
+            <li>Answers to your real questions from the live <strong>Q&amp;A</strong>.</li>
           </ol>
         </div>
       </section>
