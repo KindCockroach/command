@@ -89,6 +89,15 @@ export default function HomeScreen() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Pinned north-star reminder */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 18px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--purple), #d61f78)', color: '#fff', boxShadow: '0 8px 24px rgba(90,79,207,0.28)' }}>
+        <span style={{ fontSize: '22px' }}>📣</span>
+        <div>
+          <p style={{ fontSize: '15px', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: 1.2 }}>Marketing Beats Building</p>
+          <p style={{ fontSize: '12px', opacity: 0.9, marginTop: '2px' }}>Marketing is the only activity that makes money. Everything else is infrastructure. Ship the post.</p>
+        </div>
+      </div>
+
       {/* Edit-home control */}
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <button onClick={() => setEditing(e => !e)}
