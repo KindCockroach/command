@@ -55,6 +55,10 @@ export default function Home() {
       <section className="doors" id="doors">
         <div className="wrap">
           <h2>Where are you right now?</h2>
+          <p className="doorsub">Captions are begging to be written in less time. Your life is full of
+            stories people are looking for &mdash; if only they&rsquo;re written in order. Caption Writer
+            helps you find the message that ties all your stories together, makes it clear, and says it
+            in your voice.</p>
           <div className="grid">
             {DOORS.map((d) => (
               <a className="door" href={d.href} key={d.href}>
@@ -116,6 +120,7 @@ const css = `
   box-shadow:0 10px 30px rgba(242,166,90,0.4); transition:transform .12s ease; }
 .home .cta:hover { transform:translateY(-2px); }
 .home .doors { background:var(--light); }
+.home .doorsub { font-size:18px; color:#4a4560; max-width:700px; margin:0 0 26px; }
 .home .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:8px; }
 .home .door { display:flex; flex-direction:column; gap:8px; text-decoration:none; color:var(--midnight);
   background:#fff; border:1px solid #e7e0d3; border-radius:18px; padding:26px 22px; transition:transform .12s ease, box-shadow .12s ease; }
