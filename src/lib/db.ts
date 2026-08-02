@@ -272,9 +272,19 @@ export type ResearchBrief = {
   created_at: string
 }
 
+export type WaitlistEntry = {
+  id: number
+  email: string
+  name: string
+  source: string          // which product/page the signup came from (e.g. 'journal')
+  note?: string           // optional free-text ("what would you journal about?")
+  created_at: string
+}
+
 type Db = {
   content: ContentPiece[]
   intake_log: { id: number; raw_input: string; created_at: string }[]
+  waitlist?: WaitlistEntry[]
   memories: Memory[]
   projects: Project[]
   tasks: Task[]
@@ -314,6 +324,7 @@ function defaultDb(): Db {
     next_note_id: 4,
     next_vision_id: 7,
     intake_log: [],
+    waitlist: [],
     brand_accounts: [
       { id: 'aimomatwork', handle: '@aimomatwork', platform: 'Instagram', status: 'restricted', priority: 'high', color: '#E1306C', emoji: '🤖', brand_name: 'AI Mom at Work', topic: 'AI tools for moms', bio: 'Helping moms use AI to get their time back. Room30.ai founder.', mission: 'Sell Room30.ai. Show moms that AI works for them, not against them.', content_format: 'Reels, carousels, direct offers', underlying_message: 'You deserve help. AI is that help.', problem_message: 'You\'re doing everything manually and it\'s costing you your life.', solution_message: 'AI can run the backend while you show up for the front.', transformation: 'From buried in busywork to running a business with AI', the_how: 'One system at a time', tone: 'Direct, confident, zero fluff', beliefs: ['AI is not the future. It\'s the now.', 'Moms are the most underestimated operators on earth.', 'Your time is worth protecting.'], hooks: ['POV: You let AI write your captions while you napped', 'Tell me you\'re a mom without telling me you\'re a mom', 'The $10 tool that gave me my mornings back'], offer: 'Room30.ai membership', offer_price: '$10/day', notes: 'Restricted — rebuilding value ratio. Prioritize give > ask.' },
       { id: 'mandijoy', handle: '@mandij0y', platform: 'Instagram', status: 'active', priority: 'high', color: '#F2A65A', emoji: '✨', brand_name: 'Mandi Joy', topic: 'Inner child, confidence, parts work', bio: '✨Embrace your extraordinary✨\nAnd your inner child\nYour daily reminder to play more, laugh louder, and overcome your discomfort around people', mission: 'Spread joy, confidence, and self-esteem. Invite strangers to dance in public.', content_format: 'Dancing in public, inner child parts work, personal shares', underlying_message: 'You have what it takes to enjoy your days no matter what is going on.', problem_message: 'I was super sad for a long time', solution_message: 'Gratitude changed everything.', transformation: 'From down and out to up and about — one story at a time', the_how: 'One story at a time', tone: 'Light, fresh, joyful', beliefs: ['Inner Child healing is real', 'HEB (Human Emotional Behavior) drives everything', 'The journey IS the destination'], hooks: ['5 Signs she\'s confident, not crazy', '5 red flags that actually mean she\'s worth it', 'You say unhinged, I say deprogrammed', 'Why is no one talking about your pleasure threshold?!', 'I used to hate that version of me until I did this', 'Loving your cringy self is the poor man\'s ayahuasca'] },
@@ -404,6 +415,11 @@ export function readDb(): Db {
     return db
   }
   const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8')) as Db
+  // Migrate: add waitlist store if missing (Journal landing-page signups)
+  if (!db.waitlist) {
+    db.waitlist = []
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
   // Migrate: add brand_accounts if missing
   if (!db.brand_accounts || db.brand_accounts.length === 0) {
     db.brand_accounts = defaultDb().brand_accounts
@@ -585,6 +601,34 @@ export function readDb(): Db {
 export function writeDb(db: Db) {
   ensureDir()
   fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+}
+
+// --- Waitlist (landing-page email capture) ---
+export function getWaitlist(source?: string): WaitlistEntry[] {
+  const db = readDb()
+  const list = db.waitlist ?? []
+  return source ? list.filter(w => w.source === source) : list
+}
+
+export function addWaitlistEntry(data: { email: string; name?: string; source?: string; note?: string }): { entry: WaitlistEntry; duplicate: boolean } {
+  const db = readDb()
+  if (!db.waitlist) db.waitlist = []
+  const email = data.email.trim().toLowerCase()
+  const source = (data.source || 'journal').trim()
+  // Idempotent per (email, source): re-signup returns the existing entry.
+  const existing = db.waitlist.find(w => w.email === email && w.source === source)
+  if (existing) return { entry: existing, duplicate: true }
+  const entry: WaitlistEntry = {
+    id: Math.max(0, ...db.waitlist.map(w => w.id)) + 1,
+    email,
+    name: (data.name || '').trim(),
+    source,
+    note: (data.note || '').trim() || undefined,
+    created_at: new Date().toISOString(),
+  }
+  db.waitlist.push(entry)
+  writeDb(db)
+  return { entry, duplicate: false }
 }
 
 export function getAllContent(statusFilter?: string): ContentPiece[] {

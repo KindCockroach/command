@@ -91,7 +91,7 @@ export default function StudioView() {
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hot-pink)', marginLeft: '4px' }}>Studio</span>
           </div>
           <nav style={{ display: 'flex', gap: '4px' }}>
-            <Link href="/" style={NAV_LINK}><ArrowLeft size={12} /> Pipeline</Link>
+            <Link href="/station" style={NAV_LINK}><ArrowLeft size={12} /> Pipeline</Link>
             <Link href="/archive" style={NAV_LINK}><Archive size={12} /> Archive</Link>
             <span style={{ ...NAV_LINK, background: 'var(--hot-pink)', color: '#fff' }}><Zap size={12} /> Studio</span>
           </nav>

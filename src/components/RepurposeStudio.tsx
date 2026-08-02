@@ -154,7 +154,7 @@ export default function RepurposeStudio() {
       {/* Header */}
       <header style={{ background: 'var(--navy)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '0 20px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 40 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <a href="/" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', textDecoration: 'none' }}>← Pipeline</a>
+          <a href="/station" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', textDecoration: 'none' }}>← Pipeline</a>
           <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
           <span style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>🎙 Repurpose Studio</span>
           <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--hot-pink)', background: 'rgba(232,68,138,0.15)', padding: '2px 8px', borderRadius: '20px' }}>1 → 30</span>

@@ -50,7 +50,7 @@ export default function ArchiveView({ content: initial }: Props) {
             <span className="text-[15px] font-bold text-[#1C1917] tracking-tight">Command Center</span>
           </div>
           <nav className="flex items-center gap-1">
-            <Link href="/" className="flex items-center gap-1.5 text-[13px] px-3 py-1.5 rounded-lg text-[#78716C] hover:bg-[#F4F2EF] font-medium transition-colors">
+            <Link href="/station" className="flex items-center gap-1.5 text-[13px] px-3 py-1.5 rounded-lg text-[#78716C] hover:bg-[#F4F2EF] font-medium transition-colors">
               <LayoutGrid size={13} /> Board
             </Link>
             <button className="flex items-center gap-1.5 text-[13px] px-3 py-1.5 rounded-lg bg-[#EDE9FE] text-[#7C3AED] font-medium">
