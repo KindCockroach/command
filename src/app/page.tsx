@@ -55,10 +55,10 @@ export default function Home() {
       <section className="doors" id="doors">
         <div className="wrap">
           <h2>Where are you right now?</h2>
-          <p className="doorsub">Captions are begging to be written in less time. Your life is full of
-            stories people are looking for &mdash; if only they&rsquo;re written in order. Caption Writer
-            helps you find the message that ties all your stories together, makes it clear, and says it
-            in your voice.</p>
+          <p className="doorsub">Your captions and on-screen text are begging to be written in less time.
+            Your life is full of stories people are looking for &mdash; if only they&rsquo;re clearly
+            written. Caption Writer helps you find the message that ties all your stories together,
+            makes it clear, and says it in your voice.</p>
           <div className="grid">
             {DOORS.map((d) => (
               <a className="door" href={d.href} key={d.href}>
