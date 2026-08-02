@@ -61,10 +61,11 @@ export default async function Welcome({
           </li>
 
           <li>
-            <h2>5 · Pin it so it&rsquo;s always yours</h2>
-            <p>Once it&rsquo;s learned your voice, <strong>pin your trained co-writer to your ChatGPT
-              sidebar and rename it &ldquo;Caption Writer.&rdquo;</strong> Now your trained assistant is
-              one tap away — come back to it again and again, and it only gets better.</p>
+            <h2>5 · Pin your new chat</h2>
+            <p>To return to your trained assistant, <strong>pin the chat you already trained and
+              rename it &ldquo;Caption Writer.&rdquo;</strong> Now you can come back to your agent over
+              and over. Heads up — clicking the Caption Writer GPT link again opens a brand-new chat,
+              so you&rsquo;d start your training over.</p>
           </li>
         </ol>
 
