@@ -23,11 +23,14 @@ export default function SeenSalesPage() {
           <p className="eyebrow">FINALLY SEEN · BY AI MOM</p>
           <h1>&ldquo;No one really cares what you think anyway.&rdquo;</h1>
           <p className="sub">
-            You know that thought. You know feeling small all too well. So what? Say it anyway &mdash;
-            because it&rsquo;s healing just to write it down and share it out loud, and because{' '}
-            <strong>your voice might be exactly what your friend needs to hear to be brave enough to
-            tell her own story.</strong> This helps you say it, in your words &mdash; no blank page,
-            no overthinking. $27.
+            You know that thought. Feeling small is just getting old. Your story matters &mdash; if
+            only to heal yourself by writing it down and sharing it out loud. And <strong>your voice
+            might be exactly what your friend needs to hear to be brave enough to tell her own story.</strong>
+          </p>
+          <p className="sub">
+            Caption Writer helps you find the golden thread in your stories &mdash; your message, in
+            your words. No blank page. No more overthinking. Come messy, come scattered, come imperfect,
+            and Caption Writer will show you how your story makes sense.
           </p>
           <BuyButton href={CHECKOUT} label="GET SEEN — $27" />
         </div>
