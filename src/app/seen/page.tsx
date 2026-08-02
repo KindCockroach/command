@@ -107,7 +107,7 @@ export default function SeenSalesPage() {
       <section className="final">
         <div className="wrap">
           <h2>Say it anyway. Someone needs to hear it.</h2>
-          <BuyButton href={CHECKOUT} label="GET SEEN — $27" tagline="Lifetime access · Instant delivery" />
+          <BuyButton href={CHECKOUT} label="Time to Write — $27" tagline="Lifetime access · Instant delivery" />
         </div>
       </section>
     </main>
