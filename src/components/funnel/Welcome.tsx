@@ -59,6 +59,13 @@ export default async function Welcome({
               raw life become ready-to-post content. It parks anything it doesn&rsquo;t know instead
               of faking it.</p>
           </li>
+
+          <li>
+            <h2>5 · Pin it so it&rsquo;s always yours</h2>
+            <p>Once it&rsquo;s learned your voice, <strong>pin your trained co-writer to your ChatGPT
+              sidebar and rename it &ldquo;Caption Writer.&rdquo;</strong> Now your trained assistant is
+              one tap away — come back to it again and again, and it only gets better.</p>
+          </li>
         </ol>
 
         <div className={`comingsoon cs-${cs.theme}`}>
