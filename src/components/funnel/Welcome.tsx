@@ -1,4 +1,5 @@
 import WaitlistForm from './WaitlistForm'
+import { PurchasePixel } from './shared'
 import { GPT_URL, TEMPLATE_URL, ACCESS_KEY, type Audience } from '@/lib/funnels'
 
 // Shared post-purchase delivery page. Same product/steps for every audience;
@@ -29,6 +30,7 @@ export default async function Welcome({
 
   return (
     <main className="lw">
+      <PurchasePixel value={27} />
       <style>{welcomeCss}</style>
       <div className="wrap">
         <p className="eyebrow">YOU&rsquo;RE IN 🎉</p>

@@ -19,6 +19,20 @@ document.addEventListener('click',function(e){var a=e.target.closest&&e.target.c
   )
 }
 
+// Fires on the post-purchase welcome page (the GHL checkout's redirect target),
+// so a completed sale reports a Purchase to Meta — GHL payment links have no pixel
+// field, so this is how purchases track. Session-guarded against refresh double-counts.
+export function PurchasePixel({ value = 27 }: { value?: number }) {
+  if (!META_PIXEL) return null
+  return (
+    <script dangerouslySetInnerHTML={{ __html: `
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','${META_PIXEL}');fbq('track','PageView');
+try{if(!sessionStorage.getItem('cw_purch')){fbq('track','Purchase',{value:${value},currency:'USD'});sessionStorage.setItem('cw_purch','1');}}catch(e){fbq('track','Purchase',{value:${value},currency:'USD'});}
+` }} />
+  )
+}
+
 export function BuyButton({ href, label, tagline }: { href: string; label: string; tagline?: string }) {
   return (
     <div className="cta">

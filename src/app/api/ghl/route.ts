@@ -163,12 +163,13 @@ export async function POST(req: NextRequest) {
         if (platform && plat.includes(platform) && !handle) return true
         return false
       })
-      const pool = matches.length ? matches : accounts
-      targetIds = pool.map(a => a.id ?? a._id ?? a.oauthId ?? '').filter(Boolean)
+      // Only post to the GHL account(s) that match THIS piece's account — never
+      // fall back to blasting every connected account.
+      targetIds = matches.map(a => a.id ?? a._id ?? a.oauthId ?? '').filter(Boolean)
     }
     if (!targetIds.length) {
       const updated = updateContent(piece.id, { status: 'approved' })
-      return NextResponse.json({ configured: true, queued: true, content: updated, note: 'No connected social accounts found in GHL Social Planner — post stays approved. Connect accounts in GHL and approve again.' })
+      return NextResponse.json({ configured: true, queued: true, content: updated, note: 'Approved. No matching connected account in GHL Social Planner for this post — connect/name it in GHL, then re-approve to auto-schedule.' })
     }
 
     const { userId } = await fetchGhlUserId(token!, locationId!)
@@ -191,7 +192,9 @@ export async function POST(req: NextRequest) {
     })
     const data = await res.json()
     if (!res.ok) {
-      return NextResponse.json({ error: data?.message ?? 'GHL rejected the post', detail: data }, { status: 502 })
+      // GHL rejected it — but the approval still stands so it isn't lost.
+      const updated = updateContent(piece.id, { status: 'approved' })
+      return NextResponse.json({ configured: true, queued: true, content: updated, note: `Approved — but GHL didn't accept the post: ${data?.message ?? 'rejected'}. Fix it in GHL, then re-approve to schedule.`, detail: data })
     }
     const ghlPostId = data?.post?.id ?? data?.id ?? null
     const updated = updateContent(piece.id, {
@@ -201,6 +204,8 @@ export async function POST(req: NextRequest) {
     })
     return NextResponse.json({ configured: true, scheduled: true, scheduledAt: effectiveSchedule, ghl_post_id: ghlPostId, content: updated })
   } catch (e) {
-    return NextResponse.json({ error: `GHL request failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
+    // Network/GHL error — keep the approval so it isn't silently lost.
+    const updated = updateContent(piece.id, { status: 'approved' })
+    return NextResponse.json({ configured: true, queued: true, content: updated, note: `Approved — GHL push failed (${e instanceof Error ? e.message : 'unknown'}). Re-approve once GHL is sorted.` })
   }
 }
