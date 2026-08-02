@@ -32,7 +32,7 @@ export default function SeenSalesPage() {
             your words. No blank page. No more overthinking. Come messy, come scattered, come imperfect,
             and Caption Writer will show you how your story makes sense.
           </p>
-          <BuyButton href={CHECKOUT} label="GET SEEN — $27" />
+          <BuyButton href={CHECKOUT} label="Start Writing — $27" />
         </div>
       </section>
 
