@@ -22,14 +22,14 @@ const DOORS = [
   {
     href: '/captionwriter',
     emoji: '⚡',
-    label: 'Your side hustle',
-    line: 'You post for your thing, and the caption eats the whole nap. Done in minutes, in your voice.',
+    label: 'Mama’s Side Hustle',
+    line: 'You post for your thing, and the caption alone eats nap time. Done in minutes, in your voice.',
   },
   {
     href: '/queen',
     emoji: '👑',
-    label: 'Your business',
-    line: 'So much to say, so little makes it out of your head. Turn all of it into content.',
+    label: 'Her Business',
+    line: 'So much to say, so little makes it out of your head, but your people need to hear from you.',
   },
 ]
 
