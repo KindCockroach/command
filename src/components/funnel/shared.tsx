@@ -3,6 +3,8 @@
 
 // Meta Pixel — set NEXT_PUBLIC_META_PIXEL_ID in Railway to turn on ad tracking.
 // Fires PageView on load and InitiateCheckout when a `.buy` link is clicked.
+// NOTE: NEXT_PUBLIC_* values are inlined at BUILD time — after changing the
+// pixel ID in Railway you must REBUILD/redeploy for it to take effect.
 const META_PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || ''
 
 export function MetaPixel() {
