@@ -74,7 +74,7 @@ export const AUDIENCES: Record<AudienceSlug, Audience> = {
     slug: 'seen',
     label: 'Invisible Annie',
     bump: 'reset',
-    welcomeHeadline: 'Welcome — you’re about to be seen',
+    welcomeHeadline: 'Someone out there needs your story.',
     welcomeSub:
       'Everything you need is right here. Give it 10 minutes and you’ll walk away with 3 finished posts in your own voice. Do the steps in order.',
     comingSoon: KEEPER_SOON,

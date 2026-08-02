@@ -68,10 +68,17 @@ export default function SeenSalesPage() {
           </div>
           <p>It learns your rhythm from your own words in 60 seconds. The result feels less like
             &ldquo;making content&rdquo; and more like finally being understood.</p>
+          <BuyButton href={CHECKOUT} label="I'm Ready — $27" />
         </div>
       </section>
 
       <ProductBlock />
+
+      <section className="midcta">
+        <div className="wrap">
+          <BuyButton href={CHECKOUT} label="Help Me Write — $27" />
+        </div>
+      </section>
 
       <section className="proof">
         <div className="wrap">
@@ -100,7 +107,7 @@ export default function SeenSalesPage() {
       <section className="final">
         <div className="wrap">
           <h2>Say it anyway. Someone needs to hear it.</h2>
-          <BuyButton href={CHECKOUT} label="GET SEEN — $27" tagline="Lifetime access · Instant delivery · add The Reset or The Cheat Code at checkout" />
+          <BuyButton href={CHECKOUT} label="GET SEEN — $27" tagline="Lifetime access · Instant delivery" />
         </div>
       </section>
     </main>

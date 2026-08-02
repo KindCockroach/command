@@ -103,7 +103,7 @@ export default function QueenSalesPage() {
       <section className="final">
         <div className="wrap">
           <h2>Give your ideas somewhere to go.</h2>
-          <BuyButton href={CHECKOUT} label="SAY IT ALL — $27" tagline="Lifetime access · Instant delivery · add The Reset or The Cheat Code at checkout" />
+          <BuyButton href={CHECKOUT} label="SAY IT ALL — $27" tagline="Lifetime access · Instant delivery" />
         </div>
       </section>
     </main>

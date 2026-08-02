@@ -127,6 +127,8 @@ export const salesCss = `
   box-shadow:0 10px 30px rgba(242,166,90,0.4); transition:transform .12s ease; }
 .sales .buy:hover { transform:translateY(-2px); }
 .sales .tagline { font-size:14px; opacity:0.85; margin:12px 0 0; }
+.sales .midcta { padding:34px 0; text-align:center; }
+.sales .midcta .cta { margin:0; }
 .sales .bump { background:#fff; padding-top:0; }
 .sales .bumpcard { border:2px dashed var(--nebula); border-radius:16px; padding:24px 26px; background:#f4f2fb; }
 .sales .bumptag { font-size:12px; font-weight:800; letter-spacing:1.5px; color:var(--nebula); margin:0 0 8px; }

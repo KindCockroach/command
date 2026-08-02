@@ -93,7 +93,7 @@ export default function CaptionWriterSalesPage() {
       <section className="final">
         <div className="wrap">
           <h2>One coffee-shop lunch. Captions handled for life.</h2>
-          <BuyButton href={CHECKOUT} label="GET CAPTION WRITER — $27" tagline="Lifetime access · Instant delivery · add The Reset or The Cheat Code at checkout" />
+          <BuyButton href={CHECKOUT} label="GET CAPTION WRITER — $27" tagline="Lifetime access · Instant delivery" />
         </div>
       </section>
     </main>
