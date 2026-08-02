@@ -83,7 +83,7 @@ export const AUDIENCES: Record<AudienceSlug, Audience> = {
     slug: 'queen',
     label: 'Content-Chasing Camille',
     bump: 'uplevel',
-    welcomeHeadline: 'Welcome, Queen — nothing gets lost now',
+    welcomeHeadline: 'Someone out there needs your story.',
     welcomeSub:
       'Everything you need is right here. Give it 10 minutes and you’ll turn one brain-dump into a week of posts. Do the steps in order.',
     comingSoon: KEEPER_SOON,
@@ -92,7 +92,7 @@ export const AUDIENCES: Record<AudienceSlug, Audience> = {
     slug: 'captionwriter',
     label: 'Working moms',
     bump: 'uplevel',
-    welcomeHeadline: 'You’re in — let’s write your captions',
+    welcomeHeadline: 'Someone out there needs your story.',
     welcomeSub:
       'Everything you need is right here. Give it 10 minutes and you’ll have 3 ready-to-post captions in your own voice. Do the steps in order.',
     comingSoon: KEEPER_SOON,
