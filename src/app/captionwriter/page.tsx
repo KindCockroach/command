@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
-import { MetaPixel, BuyButton, OrderBumps, ProductBlock, salesCss } from '@/components/funnel/shared'
+import { MetaPixel, BuyButton, ProductBlock, salesCss } from '@/components/funnel/shared'
 import { checkoutUrl } from '@/lib/funnels'
 
 export const metadata: Metadata = {
@@ -89,8 +89,6 @@ export default function CaptionWriterSalesPage() {
           </dl>
         </div>
       </section>
-
-      <OrderBumps />
 
       <section className="final">
         <div className="wrap">
