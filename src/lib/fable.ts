@@ -8,6 +8,7 @@
 // Needs OPENAI_API_KEY (Railway). The live-web Researcher below stays on Opus 4.8
 // because it needs the server-side web_search tool 4o doesn't carry here.
 import OpenAI from 'openai'
+import { logUsage } from './usage'
 
 export const WRITER_MODEL = 'gpt-4o'
 export const CHEAP_MODEL = 'gpt-4o-mini'
@@ -24,6 +25,7 @@ type AnthropicResponse = {
   content?: TextBlock[]
   stop_reason?: string | null
   error?: { message?: string }
+  usage?: { input_tokens?: number; output_tokens?: number }
 }
 
 let _client: OpenAI | null = null
@@ -66,6 +68,14 @@ export async function fableText(opts: {
     messages: messages as never,
   })
 
+  logUsage({
+    provider: 'openai',
+    model: opts.cheap ? CHEAP_MODEL : WRITER_MODEL,
+    kind: 'content',
+    inputTokens: res.usage?.prompt_tokens ?? 0,
+    outputTokens: res.usage?.completion_tokens ?? 0,
+  })
+
   return (res.choices[0]?.message?.content ?? '').trim()
 }
 
@@ -84,6 +94,13 @@ export async function commanderChat(system: string, messages: { role: 'user' | '
   })
   const data = (await res.json()) as AnthropicResponse
   if (!res.ok) throw new Error(`Commander API error (${res.status}): ${data?.error?.message ?? 'unknown error'}`)
+  logUsage({
+    provider: 'anthropic',
+    model: COMMANDER_MODEL,
+    kind: 'commander',
+    inputTokens: data.usage?.input_tokens ?? 0,
+    outputTokens: data.usage?.output_tokens ?? 0,
+  })
   return (data.content ?? []).filter(b => b.type === 'text' && typeof b.text === 'string').map(b => b.text as string).join('').trim()
 }
 
@@ -110,6 +127,8 @@ export async function researchWithWeb(opts: {
 
   let messages: Array<Record<string, unknown>> = [{ role: 'user', content: opts.input }]
   let final: AnthropicResponse | null = null
+  let inTok = 0
+  let outTok = 0
 
   // Resume across pause_turn up to 5 times (server-side search loop limit)
   for (let i = 0; i < 5; i++) {
@@ -130,10 +149,14 @@ export async function researchWithWeb(opts: {
       throw new Error(`Researcher API error (${res.status}): ${(data as AnthropicResponse)?.error?.message ?? 'unknown error'}`)
     }
     final = data as AnthropicResponse
+    inTok += final.usage?.input_tokens ?? 0
+    outTok += final.usage?.output_tokens ?? 0
     if (data.stop_reason !== 'pause_turn') break
     // Paused mid-search — echo the assistant turn back and let it resume
     messages = [...messages, { role: 'assistant', content: data.content }]
   }
+
+  logUsage({ provider: 'anthropic', model: 'claude-opus-4-8', kind: 'research', inputTokens: inTok, outputTokens: outTok })
 
   return ((final?.content ?? []) as TextBlock[])
     .filter(b => b.type === 'text' && typeof b.text === 'string')
