@@ -39,19 +39,27 @@ export default async function Welcome({
 
         <ol className="steps">
           <li>
-            <h2>1 · Open your Caption Writer</h2>
-            <p>This is your personal sorting-hat AI. Bookmark it — this is where you&rsquo;ll live.</p>
-            <a className="btn" href={GPT_URL} target="_blank" rel="noopener noreferrer">Open Caption Writer →</a>
-          </li>
-          <li>
-            <h2>2 · Grab your Workspace</h2>
+            <h2>1 · Grab your Workspace</h2>
             <p>Duplicate this template — your capture Stream, Post-Card Library, and Park Lot. Ideas
               never die in a chat again.</p>
+            <p className="note">This is the least exciting part of Caption Writer — the admin and
+              organization for your captions and stories. We made it step 1 so it doesn&rsquo;t get
+              forgotten once you start playing with Caption Writer inside ChatGPT.</p>
             <a className="btn ghost" href={TEMPLATE_URL} target="_blank" rel="noopener noreferrer">Duplicate the Workspace →</a>
           </li>
           <li>
-            <h2>3 · Teach it your voice (60 seconds)</h2>
-            <p>Paste 2–3 of your own posts so it mirrors YOUR rhythm and slang. Do this once and it sticks.</p>
+            <h2>2 · Open Caption Writer</h2>
+            <p>Now head back to ChatGPT and open your Caption Writer — this is where you&rsquo;ll live.
+              Bookmark it.</p>
+            <a className="btn" href={GPT_URL} target="_blank" rel="noopener noreferrer">Open Caption Writer →</a>
+          </li>
+          <li>
+            <h2>3 · Teach it your voice</h2>
+            <p>On desktop, you&rsquo;ll see the <strong>Onboard</strong> button. On your phone, type
+              <strong> &ldquo;Let&rsquo;s Write&rdquo;</strong> or <strong>&ldquo;Onboard&rdquo;</strong>
+              and it&rsquo;ll start your voice training. Add any details about your writing and voice you
+              especially like and want it to emulate. Its goal isn&rsquo;t to write <em>for</em> you —
+              it&rsquo;s to shape your writing for recognition and engagement.</p>
           </li>
           <li>
             <h2>4 · Your first win</h2>
@@ -59,13 +67,15 @@ export default async function Welcome({
               raw life become ready-to-post content. It parks anything it doesn&rsquo;t know instead
               of faking it.</p>
           </li>
-
           <li>
-            <h2>5 · Pin your chat</h2>
-            <p>Once your chat is trained: <strong>right-click it → Pin. Right-click again → Rename it
-              &ldquo;Caption Writer.&rdquo;</strong> Now you can easily return to your trained Caption
-              Writer over and over. Heads up — clicking the Caption Writer stored in your GPTs opens a
-              brand-new chat and starts your training over.</p>
+            <h2>5 · Pin the chat and rename it</h2>
+            <p><strong>Right-click the chat → Pin. Right-click again → Rename it &ldquo;Caption Writer.&rdquo;</strong>
+              {' '}Now your trained Caption Writer lives at the top of your chat history, one tap away.</p>
+            <p className="note">ChatGPT recently tucked GPTs under the dropdown menu inside
+              &ldquo;Plugins.&rdquo; Pinning keeps your <em>trained</em> chat at the top of your history —
+              clicking the Caption Writer stored in your GPTs opens a brand-new chat and starts your
+              training over. To begin a fresh conversation with your trained one, find it by searching
+              inside Plugins / GPTs.</p>
           </li>
         </ol>
 
@@ -93,6 +103,7 @@ const welcomeCss = `
 .lw .sub { font-size:19px; margin:0 0 34px; }
 .lw .steps { list-style:none; padding:0; margin:0; }
 .lw .steps > li { background:#fff; border:1px solid #e7e0d3; border-radius:16px; padding:22px 24px; margin:16px 0; }
+.lw .steps .note { font-size:14px; line-height:1.5; color:#6a6280; margin-top:8px; }
 .lw .btn { display:inline-block; margin-top:12px; background:var(--nebula); color:#fff; font-weight:700;
   text-decoration:none; padding:13px 26px; border-radius:999px; }
 .lw .btn.ghost { background:#fff; color:var(--nebula); border:2px solid var(--nebula); }
