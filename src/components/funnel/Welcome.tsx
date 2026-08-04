@@ -45,9 +45,9 @@ export default async function Welcome({
               in a chat again.</p>
             <p className="note">This is the least exciting part of Caption Writer — the admin and
               organization for your captions and stories. We made it step 1 so it doesn&rsquo;t get
-              forgotten once you start playing with Caption Writer inside ChatGPT. Come back here when
-              you&rsquo;re done with Notion.</p>
+              forgotten once you start playing with Caption Writer inside ChatGPT.</p>
             <a className="btn ghost" href={TEMPLATE_URL} target="_blank" rel="noopener noreferrer">Duplicate the Workspace →</a>
+            <p className="comeback">Come back here when you&rsquo;re done with Notion.</p>
           </li>
           <li>
             <h2>2 · Open Caption Writer</h2>
@@ -57,11 +57,11 @@ export default async function Welcome({
           </li>
           <li>
             <h2>3 · Teach it your voice</h2>
-            <p>On desktop, you&rsquo;ll see the <strong>Onboard</strong> button. On your phone, type
-              <strong> &ldquo;Let&rsquo;s Write&rdquo;</strong> or <strong>&ldquo;Onboard&rdquo;</strong>
+            <p>On desktop, you&rsquo;ll see the <strong>Onboard</strong> button. On your phone, type{' '}
+              <strong>&ldquo;Let&rsquo;s Write&rdquo;</strong> or <strong>&ldquo;Onboard&rdquo;</strong>{' '}
               and it&rsquo;ll start your voice training. Add any details about your writing and voice you
-              especially like and want it to emulate. Its goal isn&rsquo;t to write <em>for</em> you —
-              it&rsquo;s to shape your writing for recognition and engagement.</p>
+              especially like and want it to emulate. Its goal isn&rsquo;t to write for you — it&rsquo;s
+              to shape your writing for recognition and engagement.</p>
           </li>
           <li>
             <h2>4 · Pin the chat and rename it</h2>
@@ -106,6 +106,7 @@ const welcomeCss = `
 .lw .steps { list-style:none; padding:0; margin:0; }
 .lw .steps > li { background:#fff; border:1px solid #e7e0d3; border-radius:16px; padding:22px 24px; margin:16px 0; }
 .lw .steps .note { font-size:14px; line-height:1.5; color:#6a6280; margin-top:8px; }
+.lw .steps .comeback { font-style:italic; font-weight:600; color:var(--nebula); margin:12px 0 0; }
 .lw .btn { display:inline-block; margin-top:12px; background:var(--nebula); color:#fff; font-weight:700;
   text-decoration:none; padding:13px 26px; border-radius:999px; }
 .lw .btn.ghost { background:#fff; color:var(--nebula); border:2px solid var(--nebula); }

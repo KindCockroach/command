@@ -63,7 +63,7 @@ const KEEPER_SOON: ComingSoon = {
   body: [
     'Caption Writer helps you write it. The Caption Keeper keeps it — a journal that talks back, and a home for every caption.',
     'You write out the real, messy thing, and it reflects it back: it hears the feeling under your words and leads you toward a little peace. Then, when you want, it helps you shape what you wrote into a post — and keeps them all in one place.',
-    'Want first access and founding pricing? Get on the list.',
+    'Want first access? Get on the list.',
   ],
   cta: 'Get on the waitlist',
   source: 'caption-keeper',

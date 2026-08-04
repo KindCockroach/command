@@ -145,7 +145,7 @@ export default function CaptionKeeperLanding() {
         <div className="wrap">
           <h2>Be the first through the door.</h2>
           <p className="finalsub">It&rsquo;s coming soon. Leave your email and I&rsquo;ll write to you
-            the moment it opens &mdash; founding pricing for the waitlist, always.</p>
+            the moment it opens.</p>
           <div className="formbox dark">
             <WaitlistForm cta="Save my spot" source="caption-keeper" />
           </div>

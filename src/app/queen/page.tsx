@@ -67,6 +67,7 @@ export default function QueenSalesPage() {
           <p>It learns your voice in 60 seconds and supports <em>how</em> you tell a story &mdash; never
             boxing you in, never telling you to &ldquo;pick a lane.&rdquo; You stay as many-sided as you
             are. It just makes sure none of it gets lost.</p>
+          <BuyButton href={CHECKOUT} label="CATCH EVERY IDEA — $27" />
         </div>
       </section>
 
@@ -81,6 +82,12 @@ export default function QueenSalesPage() {
             and a hand telling it. If you&rsquo;ve got the ideas, this catches them. (And when you want
             a place that keeps it all &mdash; a journal that talks back, and a home for every caption
             &mdash; <em>the Caption Keeper</em> is coming.)</p>
+        </div>
+      </section>
+
+      <section className="midcta">
+        <div className="wrap">
+          <BuyButton href={CHECKOUT} label="SAY THE READY ONES — $27" />
         </div>
       </section>
 

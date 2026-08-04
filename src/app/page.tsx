@@ -86,7 +86,7 @@ export default function Home() {
           <p className="soontag">✨ COMING SOON</p>
           <h2>The Caption Keeper</h2>
           <p>A place that keeps it all &mdash; a journal that talks back, and a home for every caption.
-            Get on the list for first access and founding pricing.</p>
+            Get on the list for first access.</p>
           <a className="ghost" href="/journal">Get on the waitlist →</a>
         </div>
       </section>
