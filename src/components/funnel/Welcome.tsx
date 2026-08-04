@@ -40,8 +40,9 @@ export default async function Welcome({
         <ol className="steps">
           <li>
             <h2>1 · Grab your Workspace</h2>
-            <p>Duplicate this template — your capture Stream, Post-Card Library, and Park Lot. Ideas
-              never die in a chat again.</p>
+            <p>Duplicate this template — your Post-Card Library and Parking Lot. Copy and paste your
+              captions that need more of your brain to your workspace, and your ideas will never die
+              in a chat again.</p>
             <p className="note">This is the least exciting part of Caption Writer — the admin and
               organization for your captions and stories. We made it step 1 so it doesn&rsquo;t get
               forgotten once you start playing with Caption Writer inside ChatGPT. Come back here when
