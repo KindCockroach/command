@@ -44,7 +44,8 @@ export default async function Welcome({
               never die in a chat again.</p>
             <p className="note">This is the least exciting part of Caption Writer — the admin and
               organization for your captions and stories. We made it step 1 so it doesn&rsquo;t get
-              forgotten once you start playing with Caption Writer inside ChatGPT.</p>
+              forgotten once you start playing with Caption Writer inside ChatGPT. Come back here when
+              you&rsquo;re done with Notion.</p>
             <a className="btn ghost" href={TEMPLATE_URL} target="_blank" rel="noopener noreferrer">Duplicate the Workspace →</a>
           </li>
           <li>
@@ -62,13 +63,7 @@ export default async function Welcome({
               it&rsquo;s to shape your writing for recognition and engagement.</p>
           </li>
           <li>
-            <h2>4 · Your first win</h2>
-            <p>Brain-dump one real thing from today — messy is perfect. Ask for 3 post-cards. Watch
-              raw life become ready-to-post content. It parks anything it doesn&rsquo;t know instead
-              of faking it.</p>
-          </li>
-          <li>
-            <h2>5 · Pin the chat and rename it</h2>
+            <h2>4 · Pin the chat and rename it</h2>
             <p><strong>Right-click the chat → Pin. Right-click again → Rename it &ldquo;Caption Writer.&rdquo;</strong>
               {' '}Now your trained Caption Writer lives at the top of your chat history, one tap away.</p>
             <p className="note">ChatGPT recently tucked GPTs under the dropdown menu inside
@@ -76,6 +71,12 @@ export default async function Welcome({
               clicking the Caption Writer stored in your GPTs opens a brand-new chat and starts your
               training over. To begin a fresh conversation with your trained one, find it by searching
               inside Plugins / GPTs.</p>
+          </li>
+          <li>
+            <h2>5 · Your first win</h2>
+            <p>Brain-dump one real thing from today — messy is perfect. Ask for 3 post-cards. Watch
+              raw life become ready-to-post content. It parks anything it doesn&rsquo;t know instead
+              of faking it.</p>
           </li>
         </ol>
 

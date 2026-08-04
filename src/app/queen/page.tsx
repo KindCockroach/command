@@ -59,9 +59,9 @@ export default function QueenSalesPage() {
             </div>
             <div className="card park">
               <span className="pill">🅿️ Parks it for later</span>
-              <p>The idea that needs more of YOU — a detail, an ending only you know — gets <strong>parked</strong>
-                with the exact thing it&rsquo;s waiting on. Come back when inspiration hits. It never
-                invents; it waits for you.</p>
+              <p>The idea that needs more of YOU — a detail, an ending only you know — gets{' '}
+                <strong>parked</strong> with the exact thing it&rsquo;s waiting on. Come back when
+                inspiration hits. It never invents; it waits for you.</p>
             </div>
           </div>
           <p>It learns your voice in 60 seconds and supports <em>how</em> you tell a story &mdash; never
