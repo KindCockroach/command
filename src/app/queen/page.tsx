@@ -28,7 +28,7 @@ export default function QueenSalesPage() {
             you&rsquo;re not too much &mdash; <strong>you just need a net to catch it all.</strong>{' '}
             That&rsquo;s what Caption Writer is for. $27.
           </p>
-          <BuyButton href={CHECKOUT} label="SAY IT ALL — $27" />
+          <BuyButton href={CHECKOUT} label="Say It Right — $27" />
         </div>
       </section>
 
@@ -67,7 +67,7 @@ export default function QueenSalesPage() {
           <p>It learns your voice in 60 seconds and supports <em>how</em> you tell a story &mdash; never
             boxing you in, never telling you to &ldquo;pick a lane.&rdquo; You stay as many-sided as you
             are. It just makes sure none of it gets lost.</p>
-          <BuyButton href={CHECKOUT} label="CATCH EVERY IDEA — $27" />
+          <BuyButton href={CHECKOUT} label="Say It Proud — $27" />
         </div>
       </section>
 
@@ -87,7 +87,7 @@ export default function QueenSalesPage() {
 
       <section className="midcta">
         <div className="wrap">
-          <BuyButton href={CHECKOUT} label="SAY THE READY ONES — $27" />
+          <BuyButton href={CHECKOUT} label="Speak Up — $27" />
         </div>
       </section>
 
@@ -110,7 +110,7 @@ export default function QueenSalesPage() {
       <section className="final">
         <div className="wrap">
           <h2>Give your ideas somewhere to go.</h2>
-          <BuyButton href={CHECKOUT} label="SAY IT ALL — $27" tagline="Lifetime access · Instant delivery" />
+          <BuyButton href={CHECKOUT} label="Say It All — $27" tagline="Lifetime access · Instant delivery" />
         </div>
       </section>
     </main>
