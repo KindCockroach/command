@@ -175,6 +175,10 @@ export async function POST(req: NextRequest) {
     const { userId } = await fetchGhlUserId(token!, locationId!)
     // Body is now post-ready (caption + hashtags inline); only append the hashtags field if the body lacks them
     const summary = (piece.description ?? '').includes('#') ? (piece.description ?? '') : [piece.description, piece.hashtags].filter(Boolean).join('\n\n')
+    // GHL categorizes each media item by its MIME type (it does `type.includes('image'|'video')`),
+    // so a media object WITHOUT `type` makes their API throw "Cannot read properties of undefined
+    // (reading 'includes')". Always send an explicit type derived from the URL extension.
+    const mediaType = (url: string): string => (/\.(mp4|mov|webm|m4v)(\?|$)/i.test(url) ? 'video/mp4' : 'image/jpeg')
     // Auto-schedule into the next open 5/day slot unless an explicit time was passed
     const effectiveSchedule = scheduleAt || (autoSchedule ? nextScheduleSlot(piece.account_id) : null)
     const res = await fetch(`${GHL_BASE}/social-media-posting/${locationId}/posts`, {
@@ -184,7 +188,7 @@ export async function POST(req: NextRequest) {
         accountIds: targetIds,
         ...(userId ? { userId } : {}),
         summary,
-        media: piece.media_url ? [{ url: piece.media_url }] : [],
+        media: piece.media_url ? [{ url: piece.media_url, type: mediaType(piece.media_url) }] : [],
         status: effectiveSchedule ? 'scheduled' : 'draft',
         scheduleDate: effectiveSchedule ?? undefined,
         type: 'post',
