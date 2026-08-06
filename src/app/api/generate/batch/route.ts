@@ -16,37 +16,31 @@ const TYPE_PROMPTS: Record<string, (project: string, desc: string, notes: string
 Generate ${q} Instagram posts for project "${p}".
 Description: ${d}. Notes: ${n}.
 
-CONTENT AUDIT RULES — every post must pass all of these:
-1. HER FRAME: Lead with her specific Tuesday-night problem, not Mandi's journey. Never narrate Mandi's transformation and expect the reader to project. Put the reader in the frame.
-2. 3-SECOND TEST: A cold stranger must immediately know this is for her. No abstract feelings, no poetry, no vague inspiration.
-3. HOOK MECHANICS — WINNING: Direct question about HER life ("What's one thing you wish you never had to think about again?"), concrete stats, bold specific analogies. LOSING: vague openers ("done beats perfect!"), mood without meaning ("disgust. regrets."), fortune-cookie abstractions.
-4. ONE CTA: Every post ends with "Comment WISH and I'll DM you [specific thing] — no link-hunting, no funnel." Never "link in bio" as primary CTA.
-5. VOICE: "Grab the damn cup" energy — funny, warm, human, direct. Aimed at her, not at Mandi.
-6. STRUCTURE: Open with her pain → show you've lived it (briefly) → deliver the tool/insight → Comment WISH CTA.
+Obey the CRAFT LAWS above — they govern voice, hook, specificity, and CTA. The list below is STRUCTURE only; it never overrides a Law.
+- The on-screen hook and the caption's FIRST LINE must be two DIFFERENT doors — never the same words (Craft Law 2). Don't default every hook to a question; vary the door.
+- CTA follows the OFFERS law: INVITE her into the conversation unless a real offer exists in THIS account's DNA. Use this account's own keyword/CTA — never a generic "Comment WISH", never "link in bio" as the primary ask.
 
 Each post must have:
-- "body": full caption with line breaks, emoji, and CTA ending in "Comment WISH"
+- "body": full post-ready caption with line breaks (headline first line ≠ on-screen hook; curiosity-gap last line; its CTA per the OFFERS law)
 - "hashtags": string of NO MORE THAN 5 hashtags (space-separated — the 5 most relevant, niche over broad)
 - "alt_text": 1-sentence image description for accessibility
-- "angle": hook angle used (question / stat / reframe / permission slip / objection buster)
+- "angle": the emotional door used (reframe / permission / objection / untold detail / confession) — vary across the batch
 
-Vary angles across the batch. Return JSON array. Each item: { title, body, hashtags, alt_text, angle, platform: "instagram" }`,
+Return JSON array. Each item: { title, body, hashtags, alt_text, angle, platform: "instagram" }`,
 
   instagram_reel: (p, d, n, q) => `
 Generate ${q} Instagram Reel scripts for project "${p}".
 Description: ${d}. Notes: ${n}.
 
-CONTENT AUDIT RULES — every reel must pass all of these:
-1. Hook (first 3 seconds) must be about HER life, not Mandi's. Specific, concrete, second-person.
-2. Script leads with her pain, positions Mandi as proof it's solvable, delivers the tool fast.
-3. End with: "Comment WISH and I'll DM you [specific deliverable]."
-4. Voice: warm, direct, funny when natural. Never corporate. Never vague inspiration.
+Obey the CRAFT LAWS above (hook, specificity, offers, plain voice). Structure only below.
+- "hook" = ONE on-screen line that stops the scroll; the "caption" first line must be a DIFFERENT door than that hook — never the same words.
+- CTA follows the OFFERS law — invite unless a real offer exists in this account's DNA; use this account's own keyword, never a generic "Comment WISH".
 
 Each reel must have:
-- "hook": opening line spoken on camera (first 3 seconds — specific, stops scroll, about HER)
-- "script": full spoken script (15–30 seconds, punchy, conversational, ends with Comment WISH CTA)
-- "caption": post caption with Comment WISH CTA
-- "hashtags": 15–20 hashtags
+- "hook": the single opening/on-screen line (specific, about HER, stops scroll)
+- "script": full spoken script (15–30 seconds, conversational, pays off the hook, ends on its CTA) — no emojis, labels, or stage cues
+- "caption": post-ready caption (first line ≠ hook; curiosity-gap last line)
+- "hashtags": up to 5 hashtags
 - "b_roll": list of 3–5 suggested visual cuts/text overlays
 
 Return JSON array. Each item: { title, hook, script, caption, hashtags, b_roll, angle, platform: "instagram_reel" }`,
@@ -91,19 +85,17 @@ Return JSON array. Each item: { title, subject_line, preview_text, body, ps, pla
 Generate ${q} TikTok video scripts for project "${p}".
 Description: ${d}. Notes: ${n}.
 
-CONTENT AUDIT RULES:
-1. Hook must be about HER specific problem, not a mood or Mandi's feelings. Concrete + second-person wins.
-2. Script: open with her pain → Mandi as proof → tool → CTA. Never "I was lost but now I'm found" self-narration.
-3. CTA: "Comment WISH and I'll DM you [specific thing]."
+Obey the CRAFT LAWS above. Structure only below.
+- "hook" = ONE opening/on-screen line; the "caption" first line must be a DIFFERENT door than the hook — never the same words.
+- CTA follows the OFFERS law — invite unless a real offer exists in this account's DNA; use this account's own keyword, never a generic "Comment WISH".
 
 Each script must have:
-- "hook": first spoken line (under 3 seconds — specific, about HER, stops scroll)
-- "script": full 30–60 second spoken script (casual, fast-paced, punchy, ends with Comment WISH CTA)
-- "caption": TikTok caption with Comment WISH CTA (1-2 sentences max)
-- "hashtags": 5–8 hashtags
-- "trending_sound_vibe": description of the audio energy that fits (e.g. "chaotic girl boss", "emotional reveal", "hype build")
+- "hook": first spoken/on-screen line (under 3 seconds — specific, about HER, stops scroll)
+- "script": full 30–60 second spoken script (casual, fast-paced, pays off the hook, ends on its CTA)
+- "caption": TikTok caption, 1–2 sentences max (first line ≠ hook)
+- "hashtags": up to 5 hashtags
+- "trending_sound_vibe": description of the audio energy that fits (e.g. "emotional reveal", "hype build")
 
-Voice: Mandi Beck. Mom energy. Relatable chaos with a confident solution.
 Return JSON array. Each item: { title, hook, script, caption, hashtags, trending_sound_vibe, angle, platform: "tiktok" }`,
 
   email: (p, d, n, q) => `
@@ -167,7 +159,7 @@ Return JSON array. Each item: { title, body, angle, platform: "threads" }`,
 const VISUAL_RULE = `
 ADDITIONALLY every item must include:
 - "image_prompt": a detailed, ready-to-paste AI image or video generation prompt for this post's visual (subject, setting, mood, style, aspect ratio). Make it specific to the post's hook.
-- "onscreen_text": the exact text overlay (or opening on-screen line for video) shown on the visual — short, bold, scroll-stopping.`
+- "onscreen_text": the exact text overlay (or opening on-screen line for video) shown on the visual — short, bold, scroll-stopping. It MUST be a DIFFERENT line than the caption's first line (two-hooks rule) — never the same words.`
 
 // House rule: never more than 5 hashtags on anything, no matter what the model returns
 function capHashtags(raw: string): string {
@@ -230,7 +222,7 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
     // Carousel is only meaningful for Instagram posts; force the numbered-slide format
     const wantCarousel = carousel && order.type === 'instagram_post'
     const carouselRule = wantCarousel ? `
-CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 numbered slide lines, each on its own line ("Slide 1: ...", "Slide 2: ..."), each slide pulling to the next, the last slide a mic drop + Comment WISH CTA. These lines are the skeleton Mandi builds in Canva.` : ''
+CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 numbered slide lines, each on its own line ("Slide 1: ...", "Slide 2: ..."), each slide pulling to the next, the last slide a mic drop + the CTA per the OFFERS law (this account's own keyword — never a generic "Comment WISH"). These lines are the skeleton Mandi builds in Canva.` : ''
 
     const basePrompt = promptFn(projectName, projectDescription || '', projectNotes || '', order.qty)
     const prompt = `${accountContext}\n${getWatchContext()}\n\n${craftFor(accountId)}\n\n${basePrompt}\n${VISUAL_RULE}${carouselRule}\n\nHARD RULE: never output more than 5 hashtags on any item.`

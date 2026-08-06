@@ -657,13 +657,39 @@ export function normalizeHashtags(raw?: string): string {
   return out.join(' ')
 }
 
+// Two-hooks guard (Craft Law 2): the on-screen hook and the caption's first
+// line must be different doors. When a generator (esp. gpt-4o) repeats the hook
+// as the caption's opening line, strip that duplicate so they never read the
+// same. Deterministic, model-independent — runs on every door via createContent.
+// Skips carousels (on-screen text is numbered slides, not a single hook).
+export function stripDuplicateHeadline(onscreen: string | undefined, description: string | undefined): string {
+  const desc = description ?? ''
+  const hookRaw = onscreen ?? ''
+  if (!desc || !hookRaw) return desc
+  if (/slide\s*\d/i.test(hookRaw)) return desc // carousel — not a single hook
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const hook = norm(hookRaw)
+  if (!hook) return desc
+  const lines = desc.split('\n')
+  let i = 0
+  while (i < lines.length && lines[i].trim() === '') i++
+  if (i >= lines.length) return desc
+  const first = norm(lines[i])
+  if (!first) return desc
+  const dup = first === hook || first.startsWith(hook) || hook.startsWith(first)
+  if (!dup) return desc
+  lines.splice(i, 1)
+  while (i < lines.length && lines[i].trim() === '') lines.splice(i, 1)
+  return lines.join('\n').replace(/^\n+/, '')
+}
+
 export function createContent(data: Partial<ContentPiece>): ContentPiece {
   const db = readDb()
   const now = new Date().toISOString()
   const piece: ContentPiece = {
     id: db.next_id++,
     title: data.title ?? 'Untitled',
-    description: data.description ?? '',
+    description: stripDuplicateHeadline(data.onscreen_text, data.description),
     status: data.status ?? 'idea',
     type: data.type ?? 'other',
     platforms: data.platforms ?? [],
