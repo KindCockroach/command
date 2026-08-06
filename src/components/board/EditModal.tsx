@@ -461,11 +461,42 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
   const [synthesizing, setSynthesizing] = useState(false)
   const [audioUrl, setAudioUrl] = useState('')
   const [copied, setCopied] = useState(false)
+  const [genImg, setGenImg] = useState(false)
+  const [genImgErr, setGenImgErr] = useState('')
+  const [vidState, setVidState] = useState<'idle' | 'starting' | 'rendering' | 'error'>('idle')
+  const [vidErr, setVidErr] = useState('')
 
   useEffect(() => { if (piece) { setForm({ ...piece }); setTagInput(''); setExpanded(''); setAudioUrl('') } }, [piece])
   if (!piece) return null
 
   const set = (k: keyof ContentPiece, v: unknown) => setForm(f => ({ ...f, [k]: v }))
+
+  // 🎨 Generate this post's image from its prompt and attach it (queue-view visual gen)
+  const generateImage = async () => {
+    setGenImg(true); setGenImgErr('')
+    try {
+      const res = await fetch('/api/image/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: piece.id, ...(form.image_prompt ? { prompt: form.image_prompt } : {}) }) })
+      const d = await res.json()
+      if (d.generated && d.url) { set('media_url', d.url); set('media_urls', [...((form.media_urls ?? []) as string[]).filter(u => u !== d.url), d.url]) }
+      else setGenImgErr(d.error || 'generation failed')
+    } catch { setGenImgErr('connection failed') } finally { setGenImg(false) }
+  }
+  // 🎬 Start a HeyGen avatar render, poll until done, attach the MP4
+  const pollVideo = async () => {
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 15000))
+      const d = await fetch('/api/heygen/attach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: piece.id, action: 'check' }) }).then(r => r.json()).catch(() => null)
+      if (d?.status === 'attached' || d?.status === 'completed_external') { setVidState('idle'); if (d.videoUrl) set('media_url', d.videoUrl); return }
+      if (d?.status === 'failed') { setVidState('error'); setVidErr(d.error || 'render failed'); return }
+    }
+    setVidState('error'); setVidErr('Render is taking unusually long — check HeyGen, or retry later.')
+  }
+  const makeVideo = async () => {
+    setVidState('starting'); setVidErr('')
+    const d = await fetch('/api/heygen/attach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: piece.id, action: 'start' }) }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+    if (d.started) { setVidState('rendering'); pollVideo() }
+    else { setVidState('error'); setVidErr(d.error || 'could not start render') }
+  }
   const togglePlatform = (p: string) => {
     const cur = (form.platforms ?? []) as string[]
     set('platforms', cur.includes(p) ? cur.filter(x => x !== p) : [...cur, p])
@@ -714,6 +745,38 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
             <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'rgba(232,68,138,0.06)', border: '1px solid rgba(232,68,138,0.2)' }}>
               <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--hot-pink)', marginBottom: '4px' }}>☁️ Cloudflare R2 Storage</p>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>Files upload directly to R2 — bypassing this server entirely. Videos, images, and audio are stored in your Cloudflare account and served via CDN.</p>
+            </div>
+
+            {/* Generated visual preview */}
+            {(form.media_url || (form.media_urls?.length)) && (
+              <div>
+                <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '6px' }}>Generated Visual</p>
+                {(form.media_url?.match(/\.(mp4|mov|webm|m4v)(\?|$)/i)) ? (
+                  <video src={form.media_url} controls style={{ width: '100%', borderRadius: '10px', maxHeight: '340px' }} />
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    {(((form.media_urls?.length ? form.media_urls : [form.media_url]) as string[]).filter(Boolean)).map((u, i) => (
+                      <img key={i} src={u} alt={`visual ${i + 1}`} style={{ height: '240px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Generate image / avatar video — right here in the queue */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Generate visual with AI</p>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button onClick={generateImage} disabled={genImg} style={{ flex: '1 1 160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '10px', background: 'var(--electric-nebula)', color: '#fff', border: 'none', cursor: genImg ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '13px', opacity: genImg ? 0.7 : 1 }}>
+                  {genImg ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating…</> : <><Sparkles size={15} /> {form.media_url ? 'Regenerate Image' : 'Generate Image'}</>}
+                </button>
+                <button onClick={makeVideo} disabled={vidState === 'starting' || vidState === 'rendering'} style={{ flex: '1 1 160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '10px', background: 'var(--aurora-pink)', color: '#fff', border: 'none', cursor: (vidState === 'starting' || vidState === 'rendering') ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '13px', opacity: (vidState === 'starting' || vidState === 'rendering') ? 0.7 : 1 }}>
+                  {vidState === 'starting' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Starting…</> : vidState === 'rendering' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Rendering avatar…</> : <><Film size={15} /> Generate Avatar Video</>}
+                </button>
+              </div>
+              {genImgErr && <p style={{ fontSize: '11px', color: '#E05252' }}>{genImgErr}</p>}
+              {vidErr && <p style={{ fontSize: '11px', color: '#E05252' }}>{vidErr}</p>}
+              <p style={{ fontSize: '11px', color: 'var(--text-subtle)', lineHeight: 1.4 }}>Image uses this post&rsquo;s image prompt (set it on the Edit tab). Avatar video uses the account&rsquo;s linked avatar speaking the post&rsquo;s script. Save after generating to keep the visual on the card.</p>
             </div>
 
             {form.file_path && (

@@ -79,6 +79,13 @@ export default function ContentCard({ piece, onEdit }: Props) {
         )}
       </div>
 
+      {/* Visual thumbnail preview */}
+      {piece.media_url && (
+        piece.media_url.match(/\.(mp4|mov|webm|m4v)(\?|$)/i)
+          ? <video src={piece.media_url} muted playsInline style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px', background: '#000' }} />
+          : <img src={piece.media_url} alt="" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px' }} />
+      )}
+
       {/* Title */}
       <p className="text-[13px] font-semibold leading-snug pr-5 mb-1.5" style={{ color: 'var(--cosmic-midnight)' }}>
         {piece.title}
