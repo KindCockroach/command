@@ -101,6 +101,10 @@ export default function CommanderChat() {
       } else if (a.type === 'create_event') {
         const r = await post('/api/events', { title: str(p.title), date: str(p.date), time: str(p.time), kind: str(p.kind, 'other'), account_id: p.account_id ? str(p.account_id) : null, notes: str(p.notes) })
         setActStatus(s => ({ ...s, [key]: r.ok ? '✓ On the calendar' : 'failed' }))
+      } else if (a.type === 'meta_post') {
+        const r = await post('/api/meta', { ask: str(p.ask), why: str(p.why), how: str(p.how) })
+        const d = await r.json()
+        setActStatus(s => ({ ...s, [key]: r.ok && d.piece ? '✓ Meta post drafted — in Content' : 'couldn\'t draft' }))
       } else {
         setActStatus(s => ({ ...s, [key]: 'unknown action' }))
       }

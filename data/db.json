@@ -14,6 +14,7 @@
   ],
   "content": [
     {
+      "project_id": null,
       "id": 7,
       "title": "Her Reset Button: Income After AI ",
       "description": "working in tech is like riding a roller coaster through the wild west today. Jobs come as fast as they go and as long as you rely on someone else to pay the bills, it's the same old rollercoaster. Take a 60 minute break from the ups and downs and leave with a straight path to what people mean when they say, \"I got rich with AI.\"",
@@ -28,9 +29,13 @@
       "sort_order": 0,
       "created_at": "2026-06-30T03:44:56.840Z",
       "updated_at": "2026-06-30T07:36:23.835Z",
-      "published_at": null
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 6,
       "title": "Her Reset Button: 60 Minutes to Yourself ",
       "description": "a workshop for the mom who's hitting the decision fatigue wall and just needs a break. I'll hold your brain and you leave with (at least) one less decision to make.",
@@ -45,152 +50,392 @@
       "sort_order": 0,
       "created_at": "2026-06-30T03:41:33.510Z",
       "updated_at": "2026-06-30T07:36:56.005Z",
-      "published_at": null
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 8,
       "title": "Carousel: 7 AI questions every mom can ask this week (without becoming 'an AI person')",
       "description": "Save-magnet carousel. 7 slides, one question per slide, each one practical and non-intimidating. Ends with comment trigger.",
       "status": "idea",
       "type": "carousel",
-      "platforms": ["instagram"],
-      "tags": ["carousel", "ai-tools", "mandi", "save-magnet"],
-      "transcript": "", "notes": "From Notion idea inbox — high save potential", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "instagram"
+      ],
+      "tags": [
+        "carousel",
+        "ai-tools",
+        "mandi",
+        "save-magnet"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — high save potential",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 9,
       "title": "Why I failed before (passwords, crashes, error codes) — and how AI/agents reduce that fragility",
       "description": "Podcast episode. Personal story about tech failure and overwhelm, pivot to how AI removes single points of failure in your life and business.",
       "status": "idea",
       "type": "podcast",
-      "platforms": ["podcast", "youtube"],
-      "tags": ["podcast", "mandi", "personal-story", "ai-tools"],
-      "transcript": "", "notes": "From Notion idea inbox — strong anchor story material", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "podcast",
+        "youtube"
+      ],
+      "tags": [
+        "podcast",
+        "mandi",
+        "personal-story",
+        "ai-tools"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — strong anchor story material",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 10,
       "title": "Analogy reel: ChatGPT is Google Maps for your brain",
       "description": "15-second reel. The analogy does all the work. Nobody feared Google Maps — they should feel the same about ChatGPT.",
       "status": "idea",
       "type": "reel",
-      "platforms": ["instagram", "tiktok"],
-      "tags": ["reel", "mandi", "analogy", "viral-format"],
-      "transcript": "", "notes": "From Notion idea inbox — viral potential, very shareable", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "instagram",
+        "tiktok"
+      ],
+      "tags": [
+        "reel",
+        "mandi",
+        "analogy",
+        "viral-format"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — viral potential, very shareable",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 11,
       "title": "Homeschooling without formal education — using AI to sanity-check lessons",
       "description": "Podcast episode. How Mandi uses AI to verify homeschool content, fill gaps, and feel confident teaching without a teaching degree.",
       "status": "idea",
       "type": "podcast",
-      "platforms": ["podcast", "youtube"],
-      "tags": ["podcast", "mandi", "homeschool", "parenting"],
-      "transcript": "", "notes": "From Notion idea inbox — strong niche crossover (AI moms + homeschool)", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "podcast",
+        "youtube"
+      ],
+      "tags": [
+        "podcast",
+        "mandi",
+        "homeschool",
+        "parenting"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — strong niche crossover (AI moms + homeschool)",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 12,
       "title": "Giving as strategy: what if we gave our house away?",
       "description": "Podcast episode. Vision and values content. Explores generosity as a business and life strategy, not just charity.",
       "status": "idea",
       "type": "podcast",
-      "platforms": ["podcast"],
-      "tags": ["podcast", "mandi", "vision", "values", "generosity"],
-      "transcript": "", "notes": "From Notion idea inbox — deeply personal, vision-level content", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "podcast"
+      ],
+      "tags": [
+        "podcast",
+        "mandi",
+        "vision",
+        "values",
+        "generosity"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — deeply personal, vision-level content",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 13,
       "title": "AI and humanity (for AI haters): what's left of being human?",
       "description": "Podcast episode. Direct address to the skeptics. Warm, non-defensive, genuinely curious exploration of what AI can't replace.",
       "status": "idea",
       "type": "podcast",
-      "platforms": ["podcast", "youtube"],
-      "tags": ["podcast", "mandi", "ai-skeptics", "humanity"],
-      "transcript": "", "notes": "From Notion idea inbox — great for reaching non-believers", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "podcast",
+        "youtube"
+      ],
+      "tags": [
+        "podcast",
+        "mandi",
+        "ai-skeptics",
+        "humanity"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — great for reaching non-believers",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 14,
       "title": "Parenting fears vs the world messing up your kids — where AI helps vs hurts",
       "description": "Podcast episode. Honest two-sided conversation. Where Mandi trusts AI with parenting and where she draws the line.",
       "status": "idea",
       "type": "podcast",
-      "platforms": ["podcast", "youtube"],
-      "tags": ["podcast", "mandi", "parenting", "ai-limits"],
-      "transcript": "", "notes": "From Notion idea inbox — emotionally resonant, shareable", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "podcast",
+        "youtube"
+      ],
+      "tags": [
+        "podcast",
+        "mandi",
+        "parenting",
+        "ai-limits"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — emotionally resonant, shareable",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 15,
       "title": "Who tried to make a birthday: [finish this story]",
       "description": "Incomplete idea — a personal story about someone attempting to make a birthday happen. Needs more context from Mandi to develop.",
       "status": "idea",
       "type": "other",
       "platforms": [],
-      "tags": ["mandi", "personal-story", "needs-context"],
-      "transcript": "", "notes": "From Notion idea inbox — story got cut off, needs finishing", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "tags": [
+        "mandi",
+        "personal-story",
+        "needs-context"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — story got cut off, needs finishing",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 16,
       "title": "Wash or not to wash — the question every mom asks before stepping into the shower",
       "description": "Comedy reel. The universal mom dilemma. Relatable hook, no explanation needed. Could be voiceover over B-roll or talking head.",
       "status": "idea",
       "type": "reel",
-      "platforms": ["instagram", "tiktok"],
-      "tags": ["reel", "mandi", "comedy", "relatable", "viral"],
-      "transcript": "", "notes": "From Notion idea inbox — comedy gold, high share potential", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "instagram",
+        "tiktok"
+      ],
+      "tags": [
+        "reel",
+        "mandi",
+        "comedy",
+        "relatable",
+        "viral"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — comedy gold, high share potential",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 17,
       "title": "'Write me a plan to never run out of diapers' → reality: the plan fails immediately",
       "description": "Comedy reel showing AI giving a perfect diaper plan followed by real mom chaos. Proves AI is useful AND funny when it meets real life.",
       "status": "idea",
       "type": "reel",
-      "platforms": ["instagram", "tiktok"],
-      "tags": ["reel", "mandi", "comedy", "ai-fails", "relatable"],
-      "transcript": "", "notes": "From Notion idea inbox — perfect AI Mom brand moment", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "instagram",
+        "tiktok"
+      ],
+      "tags": [
+        "reel",
+        "mandi",
+        "comedy",
+        "ai-fails",
+        "relatable"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — perfect AI Mom brand moment",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 18,
       "title": "The amount of coffee + ibuprofen I subsist on (and why moms are running on patches, not fuel)",
       "description": "Relatable reel or carousel. Opens with confession, pivots to how AI reduces the mental load that's draining moms in the first place.",
       "status": "idea",
       "type": "reel",
-      "platforms": ["instagram", "tiktok"],
-      "tags": ["reel", "mandi", "comedy", "mental-load", "relatable"],
-      "transcript": "", "notes": "From Notion idea inbox — high saves, 'send this to every mom' content", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "instagram",
+        "tiktok"
+      ],
+      "tags": [
+        "reel",
+        "mandi",
+        "comedy",
+        "mental-load",
+        "relatable"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — high saves, 'send this to every mom' content",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 19,
       "title": "If an AI ran my diaper bag: alerts at 3 diapers. If I run it: alerts at 0 diapers, in public.",
       "description": "PRIORITY. Comedy reel. The contrast IS the hook. Zero setup needed. Under 15 seconds. Most viral idea in the batch.",
       "status": "idea",
       "type": "reel",
-      "platforms": ["instagram", "tiktok", "youtube_shorts"],
-      "tags": ["reel", "mandi", "comedy", "viral", "PRIORITY"],
-      "transcript": "", "notes": "From Notion idea inbox — POST THIS FIRST. Highest viral potential in the batch.", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "instagram",
+        "tiktok",
+        "youtube_shorts"
+      ],
+      "tags": [
+        "reel",
+        "mandi",
+        "comedy",
+        "viral",
+        "PRIORITY"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — POST THIS FIRST. Highest viral potential in the batch.",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 20,
       "title": "Do I get up and make coffee or masturbate?",
       "description": "PRIORITY. Comedy reel. The most scroll-stopping idea in the batch. Bold, honest, funny, 100% Mandi voice. Goes viral or gets banned — either way people talk.",
       "status": "idea",
       "type": "reel",
-      "platforms": ["instagram", "tiktok"],
-      "tags": ["reel", "mandi", "comedy", "viral", "PRIORITY", "bold"],
-      "transcript": "", "notes": "From Notion idea inbox — POST THIS SECOND. Most disruptive hook in the batch.", "file_path": "", "thumbnail_url": "", "sort_order": 0,
-      "created_at": "2026-06-30T08:00:00.000Z", "updated_at": "2026-06-30T08:00:00.000Z", "published_at": null
+      "platforms": [
+        "instagram",
+        "tiktok"
+      ],
+      "tags": [
+        "reel",
+        "mandi",
+        "comedy",
+        "viral",
+        "PRIORITY",
+        "bold"
+      ],
+      "transcript": "",
+      "notes": "From Notion idea inbox — POST THIS SECOND. Most disruptive hook in the batch.",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-06-30T08:00:00.000Z",
+      "updated_at": "2026-06-30T08:00:00.000Z",
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 2,
       "title": "AI Mom Podcast – Episode TBD",
       "description": "Recorded, waiting for editing",
@@ -211,9 +456,13 @@
       "sort_order": 0,
       "created_at": "2026-06-30T03:32:22.498Z",
       "updated_at": "2026-06-30T03:32:22.498Z",
-      "published_at": null
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 3,
       "title": "YouTube Video – AI for Moms",
       "description": "Shot and exported from CapCut",
@@ -233,9 +482,13 @@
       "sort_order": 1,
       "created_at": "2026-06-30T03:32:22.498Z",
       "updated_at": "2026-06-30T03:32:22.498Z",
-      "published_at": null
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 4,
       "title": "AI Mom Podcast – Ep 1",
       "description": "Edited and waiting for publish approval",
@@ -255,9 +508,13 @@
       "sort_order": 0,
       "created_at": "2026-06-30T03:32:22.498Z",
       "updated_at": "2026-06-30T03:32:22.498Z",
-      "published_at": null
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     },
     {
+      "project_id": null,
       "id": 5,
       "title": "AI Mom Podcast – Ep 2",
       "description": "Edited and waiting for publish approval",
@@ -277,7 +534,10 @@
       "sort_order": 1,
       "created_at": "2026-06-30T03:32:22.498Z",
       "updated_at": "2026-06-30T03:32:22.498Z",
-      "published_at": null
+      "published_at": null,
+      "account_id": null,
+      "ghl_post_id": null,
+      "scheduled_at": null
     }
   ],
   "daily_commands": [
@@ -292,5 +552,848 @@
       "notes": "",
       "updated_at": "2026-06-30T07:32:45.072Z"
     }
-  ]
+  ],
+  "waitlist": [],
+  "brand_accounts": [
+    {
+      "id": "aimomatwork",
+      "handle": "@aimomatwork",
+      "platform": "Instagram",
+      "status": "restricted",
+      "priority": "high",
+      "color": "#E1306C",
+      "emoji": "🤖",
+      "brand_name": "AI Mom at Work",
+      "topic": "Faceless content systems, AI tools for moms",
+      "bio": "Helping moms use AI to get their time back. Room30.ai founder.",
+      "mission": "Sell faceless content systems to moms and beginners. Eventually sell RISE Lite. NOT a Room30 channel.",
+      "content_format": "Reels, carousels, direct offers",
+      "underlying_message": "You can build income online without showing your face or burning out.",
+      "problem_message": "You're doing everything manually and it's costing you your life.",
+      "solution_message": "A faceless content system that runs on AI while you live your life.",
+      "transformation": "From buried in busywork to running a business with AI",
+      "the_how": "One system at a time",
+      "tone": "Direct, confident, zero fluff",
+      "beliefs": [
+        "AI is not the future. It's the now.",
+        "Moms are the most underestimated operators on earth.",
+        "Your time is worth protecting."
+      ],
+      "hooks": [
+        "POV: You let AI write your captions while you napped",
+        "Tell me you're a mom without telling me you're a mom",
+        "The $10 tool that gave me my mornings back"
+      ],
+      "offer": "Faceless content systems → RISE Lite (coming)",
+      "offer_price": "TBD",
+      "notes": "Pivoted off Room30 2026-07-03. Still rebuilding value ratio — give > ask. Room30 sales now live on the Sage account."
+    },
+    {
+      "id": "mandijoy",
+      "handle": "@mandij0y",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "high",
+      "color": "#F2A65A",
+      "emoji": "✨",
+      "brand_name": "Mandi Joy",
+      "topic": "Inner child, confidence, parts work",
+      "bio": "✨Embrace your extraordinary✨\nAnd your inner child\nYour daily reminder to play more, laugh louder, and overcome your discomfort around people",
+      "mission": "Spread joy, confidence, and self-esteem. Invite strangers to dance in public.",
+      "content_format": "Dancing in public, inner child parts work, personal shares",
+      "underlying_message": "You have what it takes to enjoy your days no matter what is going on.",
+      "problem_message": "I was super sad for a long time",
+      "solution_message": "Gratitude changed everything.",
+      "transformation": "From down and out to up and about — one story at a time",
+      "the_how": "One story at a time",
+      "tone": "Light, fresh, joyful",
+      "beliefs": [
+        "Inner Child healing is real",
+        "HEB (Human Emotional Behavior) drives everything",
+        "The journey IS the destination"
+      ],
+      "hooks": [
+        "5 Signs she's confident, not crazy",
+        "5 red flags that actually mean she's worth it",
+        "You say unhinged, I say deprogrammed",
+        "Why is no one talking about your pleasure threshold?!",
+        "I used to hate that version of me until I did this",
+        "Loving your cringy self is the poor man's ayahuasca"
+      ]
+    },
+    {
+      "id": "empoweredsupermom",
+      "handle": "@empoweredsupermom",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "high",
+      "color": "#3DAA7C",
+      "emoji": "💪",
+      "brand_name": "Empowered Super Mom",
+      "topic": "Nervous system, safe kids, sane moms",
+      "bio": "Empowering safe kids and sane moms\nFollow her on the go 💃🏽 with 4 under 4\n🌎 All parenting styles welcome",
+      "mission": "Empower moms to soothe their overstimulated nervous system, giving greater safety to their kids.",
+      "content_format": "Voiceover videos of me talking my babies through steps — kids making safe choices while exploring",
+      "underlying_message": "Restore your nervous system.",
+      "problem_message": "You are the problem. (Start with yourself.)",
+      "solution_message": "Start with yourself — your nervous system is contagious.",
+      "transformation": "From your wits end to expanded — one minute at a time",
+      "the_how": "One minute at a time",
+      "tone": "Empathetic peer — \"I'm listening\"",
+      "beliefs": [
+        "Most kids are overtired, undernourished, and dehydrated. Same goes for moms.",
+        "Kids are safer when encouraged to explore with curious, focused questions."
+      ],
+      "hooks": [
+        "How I talk to my babies about hurt feelings... when I'm the one who is hurting",
+        "Mom of 4 under 4 coming through",
+        "Every time my heart leaps, I don't yell — I ask questions",
+        "The moment you're yelling \"be careful\" is the moment you need to try this",
+        "My twins don't need a referee. They need a pause button.",
+        "\"Be careful\" won't raise strong kids. But falling and recovering will."
+      ]
+    },
+    {
+      "id": "youradhdnature",
+      "handle": "@youradhdnature",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "high",
+      "color": "#9B8FA6",
+      "emoji": "🌿",
+      "brand_name": "Your ADHD Nature",
+      "topic": "ADHD in women, nature, presence",
+      "bio": "No quiz, no personality profile, no app, no games\nJust a $10 ebook that opens your eyes\nFor the undiagnosed, the exhausted, and the determined",
+      "mission": "Support women with ADHD via simple reminders — present pause, daily intention, next simplest step toward highest purpose.",
+      "content_format": "8-second nature videos with text overlays",
+      "underlying_message": "Breathe. You can grow through this like the trees, with ADHD like the mushrooms that connect the forest floor.",
+      "problem_message": "Undiagnosed and not enough tools",
+      "solution_message": "This $10 ebook — built with AI from the latest research — shows you how to spot it, what to do with it, and where to install systems.",
+      "transformation": "From cancelling plans to leading communities — one habit at a time",
+      "the_how": "One habit at a time",
+      "tone": "Gentle, inviting",
+      "beliefs": [
+        "ADHD is supported by nature, visuals of nature, imagining you're in nature, accepting your nature."
+      ],
+      "hooks": [],
+      "offer": "ADHD Ebook",
+      "offer_price": "$10"
+    },
+    {
+      "id": "theadderalleffect",
+      "handle": "@theadder.alleffect",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "medium",
+      "color": "#C0A87E",
+      "emoji": "⚡",
+      "brand_name": "The Adder All Effect",
+      "topic": "ADHD hacking, mindset, goal systems",
+      "bio": "ADHD Hacker | Mindset Aficionado | Goal Getter\nSharing a system based on the latest science. Adderall doesn't manage goals. Here's Your Cheat Sheet",
+      "mission": "Drive traffic to sell ADHD ebooks via 5-second luxury content.",
+      "content_format": "5-second luxury footage — fancy nature, cars, women — claiming you can have it all with ADHD if you buy the ebook",
+      "underlying_message": "Get a system. Buy the ebook.",
+      "problem_message": "Drugs don't manage goals.",
+      "solution_message": "This is the system to use.",
+      "transformation": "From losing to winning — one win at a time",
+      "the_how": "One win at a time",
+      "tone": "Authoritative",
+      "beliefs": [
+        "Men chase money, cars, and women — I can drive them toward progress by leading with beauty and power."
+      ],
+      "hooks": [],
+      "offer": "ADHD Goals Ebook",
+      "offer_price": "$10"
+    },
+    {
+      "id": "content4queens",
+      "handle": "@content4queens",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "medium",
+      "color": "#E8448A",
+      "emoji": "👑",
+      "brand_name": "Content 4 Queens",
+      "topic": "Women making money online, content systems",
+      "bio": "Give other women the playbook to financial freedom with the internet",
+      "mission": "Give women the playbook to financial freedom online.",
+      "content_format": "Videos with Em, Liz, and Mandi — sisterhood memes",
+      "underlying_message": "You have everything you need.",
+      "problem_message": "You lack clarity.",
+      "solution_message": "Clarity (and a system) gives you consistency.",
+      "transformation": "From drowning in social media to swimming in a sea of money — one message at a time",
+      "the_how": "One message at a time",
+      "tone": "Laughing, sister energy",
+      "beliefs": [],
+      "hooks": []
+    },
+    {
+      "id": "homeschool4humans",
+      "handle": "@homeschool4humans",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "medium",
+      "color": "#5A9E6F",
+      "emoji": "📚",
+      "brand_name": "Homeschool 4 Humans",
+      "topic": "Homeschooling, unschooling, world schooling",
+      "bio": "Learning about our home\nBodies, land, seas, space\nCultures, food, music, art\nThe Beatles meets Shakespeare with a side of science. Math is inevitable.",
+      "mission": "Enlighten the movement of unschoolers, homeschoolers, and world schoolers on topics that matter.",
+      "content_format": "My kids on the go and learning",
+      "underlying_message": "Kids need guidance.",
+      "problem_message": "Kids are not gurus.",
+      "solution_message": "Be the guidance they deserve.",
+      "transformation": "From feeling like something is missing to discovering the age of information together — one interest at a time",
+      "the_how": "One interest at a time",
+      "tone": "Light & bright",
+      "beliefs": [
+        "Unschooling is a disservice to society.",
+        "Public school serves the lowest common denominator — my kids are more a root than a bottom number.",
+        "Social norms are worth questioning — I want control over what influences my kids."
+      ],
+      "hooks": []
+    },
+    {
+      "id": "art4thefeminine",
+      "handle": "@art4thefeminine",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "medium",
+      "color": "#C77DFF",
+      "emoji": "🎨",
+      "brand_name": "Art 4 the Feminine",
+      "topic": "Art, feminine power, women rising",
+      "bio": "Speaking up for the feminine in a man's world",
+      "mission": "Speak up for the feminine in a man's world.",
+      "content_format": "Making art",
+      "underlying_message": "You are free.",
+      "problem_message": "Women are a target.",
+      "solution_message": "Rise up anyway.",
+      "transformation": "From fearful to free — one project at a time",
+      "the_how": "One project at a time",
+      "tone": "Empowering — \"I see you.\"",
+      "beliefs": [],
+      "hooks": []
+    },
+    {
+      "id": "philosophicalmom",
+      "handle": "@philosophicalmom",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "medium",
+      "color": "#748CAB",
+      "emoji": "🧠",
+      "brand_name": "Philosophical Mom",
+      "topic": "Philosophy, stoicism, motherhood",
+      "bio": "detangling concepts and content from my mind in real time",
+      "mission": "Detangle concepts from mind in real time.",
+      "content_format": "Carousels of writing — stories, stoicism, philosophy",
+      "underlying_message": "Seek clarity.",
+      "problem_message": "Life is complex.",
+      "solution_message": "Philosophy gives you a frame.",
+      "transformation": "From confusion to clarity",
+      "the_how": "One concept at a time",
+      "tone": "Thoughtful, curious",
+      "beliefs": [],
+      "hooks": []
+    },
+    {
+      "id": "aimompodcast",
+      "handle": "@aimompodcast",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "high",
+      "color": "#FF6B35",
+      "emoji": "🎙",
+      "brand_name": "AI Mom Podcast",
+      "topic": "Jobs, job training, and educational tools in the age of AI",
+      "bio": "The podcast for moms who want to use AI without the overwhelm",
+      "mission": "Help people become better witnesses in the age of AI. Attention is the product.",
+      "content_format": "Podcast clips, audiograms, episode promos",
+      "underlying_message": "AI is for you.",
+      "problem_message": "AI feels overwhelming and like it's not for regular people.",
+      "solution_message": "One episode at a time, we make AI simple.",
+      "transformation": "From intimidated to empowered",
+      "the_how": "One episode at a time",
+      "tone": "Educational, warm, conversational",
+      "beliefs": [
+        "Moms are the most creative problem solvers on earth."
+      ],
+      "hooks": [],
+      "notes": "CONTENT BOUNDARY (non-negotiable): This channel is ONLY about paying jobs, job training, and educational tools in the age of AI. Mandi's personal AI journey appears solely as entertainment/context woven lightly in — never the subject. DO NOT talk about AI avatars, avatar businesses, Room30, or influencer/creator monetization here. No sales asks — pure give. CONSTITUTION: This is NOT a podcast about AI — it is about becoming better WITNESSES in the age of AI. The real brand is ATTENTION. Never teach AI for AI's sake; always reveal something about PEOPLE. Arc: begin with what they think they're here for (jobs/school/prompts/fear) → reveal what they're actually here for (attention/wonder/presence/discernment/humanity) → end with ONE unforgettable revelation, not advice. Voice: a wise friend, a philosopher doing laundry, a woman changing her mind in public — never an expert or futurist. Humor from big ideas colliding with ordinary motherhood. Signature endings (sparingly): \"Let's plug in and stay human.\" / \"Bring the people who knew you were weird before AI.\" Final rule: don't predict the future — help people become humans who can meet it."
+    },
+    {
+      "id": "airevealsus",
+      "handle": "@airevealsus",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "medium",
+      "color": "#4CC9F0",
+      "emoji": "🔍",
+      "brand_name": "AI Reveals Us",
+      "topic": "AI self-discovery, what AI reveals about humanity",
+      "bio": "What AI reveals about who we are",
+      "mission": "Explore what AI reveals about human nature, connection, and meaning.",
+      "content_format": "Thought experiments, AI-generated images with meaning",
+      "underlying_message": "AI reveals us to ourselves.",
+      "problem_message": "We fear what AI says about us.",
+      "solution_message": "Let it. The mirror is the medicine.",
+      "transformation": "From fear to fascination",
+      "the_how": "One revelation at a time",
+      "tone": "Curious, philosophical",
+      "beliefs": [
+        "The AI age is a spiritual event, not just a tech event."
+      ],
+      "hooks": []
+    },
+    {
+      "id": "youradhdhusband",
+      "handle": "@youradhdhusband",
+      "platform": "Instagram",
+      "status": "planned",
+      "priority": "medium",
+      "color": "#F77F00",
+      "emoji": "🤪",
+      "brand_name": "Your ADHD Husband",
+      "topic": "Wives of men with ADHD — humor, relief, education",
+      "bio": "Make wives of ADHD men laugh and relate",
+      "mission": "Make wives of ADHD men laugh and feel seen.",
+      "content_format": "Humor, relatable moments, ADHD education from partner perspective",
+      "underlying_message": "You're not crazy.",
+      "problem_message": "Your husband is absurd.",
+      "solution_message": "Learn about ADHD — it explains everything.",
+      "transformation": "From lonely to held — one angle at a time",
+      "the_how": "One angle at a time",
+      "tone": "Funny",
+      "beliefs": [],
+      "hooks": []
+    },
+    {
+      "id": "survivethedome",
+      "handle": "@survivethedome",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "medium",
+      "color": "#2D6A4F",
+      "emoji": "🌍",
+      "brand_name": "Survive the Dome",
+      "topic": "Preparedness, resilience, sovereign living",
+      "bio": "For the woman who knows something is coming and wants to be ready",
+      "mission": "Equip families with practical survival skills, mindset, and community.",
+      "content_format": "Practical tips, family preparedness, community building",
+      "underlying_message": "Being prepared is an act of love.",
+      "problem_message": "Most people are one crisis away from chaos.",
+      "solution_message": "Preparedness is a practice, not a panic.",
+      "transformation": "From anxious to equipped",
+      "the_how": "One skill at a time",
+      "tone": "Calm authority, practical",
+      "beliefs": [
+        "Sovereignty begins at home."
+      ],
+      "hooks": []
+    },
+    {
+      "id": "gettriggered",
+      "handle": "@gettriggered",
+      "platform": "Instagram",
+      "status": "planned",
+      "priority": "low",
+      "color": "#E07A5F",
+      "emoji": "⚡",
+      "brand_name": "Get Triggered",
+      "topic": "Triggers as doorways to healing",
+      "bio": "The benefits of getting triggered",
+      "mission": "Reframe triggers as activation, not attack.",
+      "content_format": "Short philosophy, personal shares, breath work prompts",
+      "underlying_message": "Triggers are a doorway to healing.",
+      "problem_message": "Being triggered is bad.",
+      "solution_message": "Let it activate you.",
+      "transformation": "From angry to curious — one breath at a time",
+      "the_how": "One breath at a time",
+      "tone": "Compassionate — \"Sucks, but you can do this.\"",
+      "beliefs": [],
+      "hooks": []
+    },
+    {
+      "id": "sage",
+      "handle": "@sageaiworks",
+      "platform": "Instagram",
+      "status": "active",
+      "priority": "high",
+      "color": "#3DAA7C",
+      "emoji": "🪴",
+      "brand_name": "Sage",
+      "topic": "Minimalist AI systems, calm productivity",
+      "bio": "Less noise. More output. AI that works.",
+      "mission": "Sell Room30.ai through calm, value-first content. Zero spam signals — this account must never get restricted.",
+      "content_format": "Short reels with text overlays, faceless b-roll, calm talking points",
+      "underlying_message": "You don't need more hustle. You need a system.",
+      "problem_message": "You're drowning in tools, tabs, and advice.",
+      "solution_message": "One calm system that runs itself.",
+      "transformation": "From overwhelmed to automated — one system at a time",
+      "the_how": "One system at a time",
+      "tone": "Measured, clear, unhurried. Precision over hype.",
+      "beliefs": [
+        "Most people use AI wrong.",
+        "Fewer tools, deeper systems.",
+        "Calm sells better than hype."
+      ],
+      "hooks": [
+        "The Most Efficient Way To ___ If You're ___…",
+        "How To Get ___ Quickly",
+        "If you want ___ avoid this, and try this!",
+        "Want to feel ___ but don't want to break the bank?",
+        "Want ___? Then stop scrolling",
+        "What ___ industry don't want you to know about ___",
+        "here's why [common belief] is a myth.",
+        "here's why [common belief] is misleading.",
+        "here's why [common product] is overrated.",
+        "here's why [popular advice] isn't working for you."
+      ],
+      "offer": "Room30.ai membership (affiliate)",
+      "offer_price": "$10/day",
+      "notes": "RESTRICTION SAFETY — NON-NEGOTIABLE: never put links in captions or on-screen text. CTA is always \"Comment SAGE\" (keyword only). Give:ask ratio at least 4:1. No income claims, no \"DM me now\" pressure, no engagement bait, no follow-for-follow language. Calm > salesy, always."
+    }
+  ],
+  "notes": [
+    {
+      "id": 1,
+      "title": "Content converts when it opens with a scene",
+      "body": "Never open with a fact. Open with a scene. \"She's reheating the same coffee for the third time while...\" beats \"AI can save you 3 hours a day.\" every time. Lead with the wound, then give the tool.",
+      "category": "framework",
+      "tags": [
+        "content",
+        "hooks",
+        "voice"
+      ],
+      "pinned": true,
+      "created_at": "2026-07-31T19:39:24.704Z",
+      "updated_at": "2026-07-31T19:39:24.704Z"
+    },
+    {
+      "id": 2,
+      "title": "Business priority order",
+      "body": "Cash flow FIRST. Audience growth SECOND. Systems and scale THIRD. When unsure what to do, ask: does this bring in cash this week? If not, it's not a Level 1 priority.",
+      "category": "decision",
+      "tags": [
+        "strategy",
+        "priorities"
+      ],
+      "pinned": true,
+      "created_at": "2026-07-31T19:39:24.704Z",
+      "updated_at": "2026-07-31T19:39:24.704Z"
+    },
+    {
+      "id": 3,
+      "title": "The anchor story",
+      "body": "5 months postpartum: addicted to social media, angry, sad, overwhelmed, zero income, coffee and fast food. 90 days later: adaptogens, swimming, yoga, buddha bowls, calm with kids, $3k/month extra. The transformation is the proof. Moms are not behind — they are unsupported.",
+      "category": "personal",
+      "tags": [
+        "story",
+        "brand",
+        "anchor"
+      ],
+      "pinned": true,
+      "created_at": "2026-07-31T19:39:24.704Z",
+      "updated_at": "2026-07-31T19:39:24.704Z"
+    },
+    {
+      "id": 4,
+      "title": "Greg's 8 Meta Ads Hacks (Room30)",
+      "body": "1. VOLUME — Run 500-1000+ creatives simultaneously. Block 1hr/day to make fresh ads. More at-bats = more winners. You cannot predict which ad wins.\n\n2. ONE KEYWORD HACK — Duplicate your best ad, swap in one niche keyword (\"how teachers...\" / \"how stay-at-home moms...\"). CTR explodes because people feel seen.\n\n3. CLONE WINNERS WITH AI — Feed winning ad into Claude/GPT: \"Write 50 variations, same energy, different angles.\" Launch all. Run dead ones in a graveyard campaign — 20% of them become winners on second run.\n\n4. MAKE ADS LOOK LIKE CONTENT — Memes, screenshots, casual phone recordings. Greg's best ad ever = a screenshot of a student result. No design. Just real. Use a burner account to spy on what formats are winning organically in your niche — copy the format, not the content.\n\n5. GO BROAD — Strip all interest targeting. Country only. Let Meta's algorithm find buyers through your copy. Your copy IS the targeting. Broad beats stacked interests for low-ticket digital products.\n\n6. MATCH AD HEADLINE TO LANDING PAGE — Word for word. Same promise. When congruent: 20-30% conversion boost. Find winning headline in ads → paste it exactly on landing page. Do this same day.\n\n7. RETARGET WITH DIFFERENT ANGLES — Part 1: cold traffic → $27 offer. Part 2: retarget page visitors with testimonials + case studies (different angle, not same ad). Part 3: retarget warm audience with ALL other offers (masterclass, DFY, high-ticket). Front end breaks even. Back end prints money.\n\n8. TRACK THE METRIC THAT MATTERS — Did I spend $1 and make more than $1 back? That's it. iOS14 broke ad manager data (under 30% accuracy). Build your own Command Centre (RISE Station IS this). Track real revenue vs. real spend. Everyone doing $50k-$100k/month has a Command Centre — no exceptions.",
+      "category": "sop",
+      "tags": [
+        "ads",
+        "meta",
+        "room30",
+        "greg",
+        "affiliate",
+        "sales"
+      ],
+      "pinned": true,
+      "created_at": "2026-07-31T19:39:24.704Z",
+      "updated_at": "2026-07-31T19:39:24.704Z"
+    },
+    {
+      "id": 5,
+      "title": "TARGET AUDIENCE: Women with big followings who aren't converting",
+      "body": "This is the Room30 affiliate bullseye.\n\nWHO: Women with 10k-500k followers on Instagram/TikTok who have built trust and audience but are not monetizing. They are content-rich and income-poor. They know HOW to grow but not how to SELL.\n\nWHY THEY'LL BUY: Room30 solves their exact problem — a done-for-you AI influencer that monetizes their existing platform + teaches the ad system that turns $27 into scale. Greg's system is what they've been looking for.\n\nWHERE TO FIND THEM: Parenting creators, lifestyle moms, wellness women, homeschool influencers, ADHD content creators, women-in-business accounts. Search \"mom of 4\" \"homeschool mom\" \"adhd mom\" — mid-size accounts (10k-200k) with high engagement but no clear offer.\n\nCONTENT HOOK FOR THIS AVATAR:\n\"You have 50,000 followers and $0 in your account. I found what you're missing.\"\n\"She had 80k followers and was still broke. Then she found this.\"\n\"Big following. Small income. Here's exactly why — and the fix.\"\n\nTHE PITCH: Your audience trusts you. You just need a system that turns that trust into income. Room30 builds the AI influencer that does it on autopilot.\n\nAFFILIATE LINK: https://room30.ai/?fpr=l04zhc (general) or https://room30.ai/sep2026?fpr=l04zhc (Portugal retreat)",
+      "category": "business",
+      "tags": [
+        "room30",
+        "affiliate",
+        "targeting",
+        "avatar",
+        "portugal",
+        "sales"
+      ],
+      "pinned": true,
+      "created_at": "2026-07-31T19:39:24.704Z",
+      "updated_at": "2026-07-31T19:39:24.704Z"
+    },
+    {
+      "id": 6,
+      "title": "C4Q / Camille — problem + solution pair (the \"frankenstein\" line)",
+      "body": "For the Content 4 Queens account (Content-Chasing Camille), waiting until you build its account form.\n\nPROBLEM MESSAGE:\nYou have an idea, a story, and a purpose — but blended together, your posts come off like frankensteins.\n\nSOLUTION MESSAGE:\nYour story is already an asset; AI just assembles it in your voice — in minutes, not Sundays. (Craft support: storytelling, refine your arc, align your message with your story and what's happening in the image.)\n\nWHY IT LIVES HERE, NOT ON ANNIE: this pair was drafted on the MandiJoyBeck / Invisible Annie form, but it describes a woman who is ALREADY POSTING and hates the frankenstein result — that's Camille, not Annie. Annie isn't posting at all; she got her own permission-first replacement set. Two accounts, two wounds, zero bleed. See audience: content-chasing-camille.",
+      "category": "framework",
+      "tags": [
+        "c4q",
+        "camille",
+        "copy",
+        "frankenstein",
+        "account-setup"
+      ],
+      "pinned": true,
+      "created_at": "2026-08-01T21:12:19.943Z",
+      "updated_at": "2026-08-01T21:12:19.943Z"
+    }
+  ],
+  "avatars": [
+    {
+      "id": "mandi",
+      "name": "Mandi (AI Mom)",
+      "emoji": "🎈",
+      "tagline": "AI works for moms who do everything",
+      "niche": "AI tools for busy moms",
+      "personality": "Warm, bold, direct, plain English, real mom of 4 energy. Never corporate. Never jargon. Always honest.",
+      "voiceStyle": "Conversational, encouraging, occasionally funny, always real",
+      "targetAudience": "Moms 28-45 who want to use AI to save time and create income",
+      "instagramHandle": "@aimomatwork",
+      "primaryPlatform": "Instagram",
+      "accentColor": "#6B2D6E",
+      "bgColor": "#F3E8F4",
+      "systemPrompt": "You are Mandi Beck — AI Mom. You teach busy moms to use AI tools to save time and build income.\nVoice: warm, bold, direct, plain English, real mom of 4. Never corporate speak. Never jargon.\nAlways start with the specific result before explaining the how.\nYour offer is aiworksforyou.co",
+      "hookFormulas": [
+        "I did [specific thing] in [specific time] using AI — here's exactly how",
+        "You shouldn't have to choose between [thing A] and [thing B] — this tool changes that",
+        "I'm a mom of 4 with no tech background and I just [impressive result] in [time]",
+        "Stop spending [time] on [task]. This AI tool does it in [faster time]."
+      ],
+      "ctaTemplate": "Comment AI and I'll send you the exact tool + how I use it as a mom of 4.",
+      "heygen_photo_id": "",
+      "elevenlabs_voice_id": "",
+      "created_at": "2026-07-31T19:39:24.705Z",
+      "updated_at": "2026-07-31T19:39:24.705Z"
+    },
+    {
+      "id": "gator",
+      "name": "Gator",
+      "emoji": "🐊",
+      "tagline": "The swamp creature who makes AI simple.",
+      "niche": "AI for entrepreneurs and small business owners — no excuses, just results",
+      "personality": "Bold, no-nonsense, Southern drawl, zero tolerance for excuses. Terrifying gator appearance + genuinely helpful AI content.",
+      "voiceStyle": "Short sentences. Max 12 words per sentence. No hype words. Facts + results only. One swamp reference per piece max.",
+      "targetAudience": "Small business owners, entrepreneurs, side hustlers 30-55 who know they're behind on AI",
+      "instagramHandle": "@gatorai",
+      "primaryPlatform": "TikTok + Instagram",
+      "accentColor": "#2D6E3E",
+      "bgColor": "#E8F4EB",
+      "systemPrompt": "You are Gator — an AI influencer with a gator head and a business mind. Southern energy. Zero tolerance for excuses. Genuinely helpful.\nPersonality contradiction: looks terrifying, teaches AI tools with patience.\nVoice rules: short sentences (max 12 words), no hype words, facts + results only, one swamp reference per piece max.\nYour offer funnels to aiworksforyou.co.\nCTA always ends with: \"Comment GATOR. I'll handle the rest.\"",
+      "hookFormulas": [
+        "Your competitor just automated [task] with AI. You still doing it by hand?",
+        "Most business owners are leaving $[amount] on the table. One AI tool fixes it.",
+        "Stop [doing task manually]. AI does it in [time]. Here's the exact setup.",
+        "[Business result] in [time]. No team. No agency. Just this AI tool."
+      ],
+      "ctaTemplate": "Comment GATOR. I'll handle the rest.",
+      "heygen_photo_id": "",
+      "elevenlabs_voice_id": "",
+      "created_at": "2026-07-31T19:39:24.705Z",
+      "updated_at": "2026-07-31T19:39:24.705Z"
+    },
+    {
+      "id": "luna",
+      "name": "Luna",
+      "emoji": "🌙",
+      "tagline": "Align your vision. Automate your mission.",
+      "niche": "Abundance mindset + AI manifestation + passive income",
+      "personality": "Calm, mystical, aspirational. Speaks in possibilities. Bridges spiritual and practical. Never preachy.",
+      "voiceStyle": "Slow, intentional, ethereal but grounded. Pauses matter. Uses nature metaphors.",
+      "targetAudience": "Spiritually-minded women 25-45 interested in abundance, manifestation, and building intentional income",
+      "instagramHandle": "@lunaailife",
+      "primaryPlatform": "Instagram",
+      "accentColor": "#3D2D8E",
+      "bgColor": "#ECEAF8",
+      "systemPrompt": "You are Luna — a calm, mystical guide who bridges spiritual abundance thinking with practical AI tools.\nYou help women align their vision with automated income systems built on AI.\nVoice: slow, intentional, ethereal but grounded. Calm. Uses nature metaphors naturally.\nNever preachy. Always practical alongside the spiritual.\nYour offer funnels to aiworksforyou.co",
+      "hookFormulas": [
+        "What if your income grew while you slept — not someday, but using this AI tool right now",
+        "She manifested [result] and then built the system to make it automatic. Here's the AI behind it.",
+        "Your vision is clear. The path is AI. Here's where to start."
+      ],
+      "ctaTemplate": "Comment LUNA and I'll send you the abundance + AI starter guide.",
+      "heygen_photo_id": "",
+      "elevenlabs_voice_id": "",
+      "created_at": "2026-07-31T19:39:24.705Z",
+      "updated_at": "2026-07-31T19:39:24.705Z"
+    },
+    {
+      "id": "max",
+      "name": "Max",
+      "emoji": "⚡",
+      "tagline": "AI side hustles that actually hit",
+      "niche": "AI side hustles, Gen Z income, fast money with AI tools",
+      "personality": "High energy, Gen Z, hype but credible. Moves fast. Proves with receipts. No fake guru energy.",
+      "voiceStyle": "Fast, punchy, casual. Current slang used correctly. Transitions quickly. Always shows proof.",
+      "targetAudience": "Gen Z and young millennials 18-30 looking for AI side hustles and income outside of a 9-5",
+      "instagramHandle": "@maxaigrind",
+      "primaryPlatform": "TikTok",
+      "accentColor": "#D97706",
+      "bgColor": "#FEF5EA",
+      "systemPrompt": "You are Max — high energy Gen Z AI side hustle guy. No fake guru energy. Credible because you show proof.\nYou teach young people how to use AI to create real income streams fast.\nVoice: fast, punchy, casual Gen Z. Moves quickly. Always shows the receipts.\nYour offer funnels to aiworksforyou.co",
+      "hookFormulas": [
+        "POV: you used AI to make $[amount] this week without a boss",
+        "This AI side hustle is lowkey printing. Here's the setup:",
+        "I made [result] using [AI tool] in [time]. No cap. Here's exactly how:"
+      ],
+      "ctaTemplate": "Comment MAX and I'll drop the full side hustle toolkit.",
+      "heygen_photo_id": "",
+      "elevenlabs_voice_id": "",
+      "created_at": "2026-07-31T19:39:24.705Z",
+      "updated_at": "2026-07-31T19:39:24.705Z"
+    },
+    {
+      "id": "sage",
+      "name": "Sage",
+      "emoji": "🪴",
+      "tagline": "Your voice. Just faster.",
+      "niche": "Caption Writer for artists & makers — AI captions that actually sound like you, not like AI",
+      "personality": "Calm, wise, minimalist. No hype. No urgency. Just clarity and systems that work.",
+      "voiceStyle": "Measured, clear, unhurried. Thoughtful pauses. Precision over speed.",
+      "targetAudience": "Analog Ava — established photographer/writer creators who do things by hand, are AI-skeptical, and refuse to sound like everyone else",
+      "instagramHandle": "@sageaiworks",
+      "primaryPlatform": "Instagram + LinkedIn",
+      "accentColor": "#3DAA7C",
+      "bgColor": "#E8F7F1",
+      "systemPrompt": "You are Sage — a calm, wise, minimalist guide for artists and makers. No hype. No urgency.\nYou help discerning creators (photographers, writers) use AI WITHOUT losing their voice.\nVoice: measured, clear, unhurried. Thoughtful. Precision over speed.\nYour offer is Caption Writer — an AI that writes captions in the creator's OWN voice: it learns from their writing and asks instead of inventing. Your audience has been burned by generic AI copy, so lead with proof it sounds like them, respect their craft, and never use hustle or 'content empire' language.",
+      "hookFormulas": [
+        "The Most Efficient Way To ___ If You're ___…",
+        "How To Get ___ Quickly",
+        "If you want ___ avoid this, and try this!",
+        "Want to feel ___ but don't want to break the bank?",
+        "Want ___? Then stop scrolling",
+        "What ___ industry don't want you to know about ___",
+        "here's why [common belief] is a myth.",
+        "here's why [common belief] is misleading.",
+        "here's why [common product] is overrated.",
+        "here's why [popular advice] isn't working for you."
+      ],
+      "ctaTemplate": "Comment VOICE and I'll show you how to get captions that actually sound like you — not like AI.",
+      "heygen_photo_id": "477c97620c044af382c1a42ed11e5eb9",
+      "elevenlabs_voice_id": "cAaon0ZLFDZ56KlQB3Dn",
+      "created_at": "2026-07-31T19:39:24.705Z",
+      "updated_at": "2026-08-01T20:21:13.393Z"
+    }
+  ],
+  "goals": [
+    {
+      "id": 1,
+      "title": "Reset Button Workshop sales content",
+      "account_id": "aimomatwork",
+      "target_per_week": 5,
+      "deadline": null,
+      "notes": "Daily promo until workshop fills",
+      "active": true,
+      "created_at": "2026-07-31T19:39:24.707Z",
+      "updated_at": "2026-07-31T19:39:24.707Z"
+    },
+    {
+      "id": 2,
+      "title": "Room30 affiliate push — 3 referrals by Aug 3",
+      "account_id": null,
+      "target_per_week": 7,
+      "deadline": "2026-08-03",
+      "notes": "Across @aimomatwork + @content4queens",
+      "active": true,
+      "created_at": "2026-07-31T19:39:24.707Z",
+      "updated_at": "2026-07-31T19:39:24.707Z"
+    }
+  ],
+  "next_goal_id": 3,
+  "watch_accounts": [],
+  "next_watch_id": 1,
+  "events": [],
+  "next_event_id": 1,
+  "audiences": [
+    {
+      "id": "analog-ava",
+      "name": "Analog Ava",
+      "emoji": "🎞",
+      "snapshot": "An established photographer/writer with a real following who does things by hand — craft-first, AI-skeptical, and fiercely protective of her voice.",
+      "life_stage": "30s–40s, artist by identity (photography and/or writing). Already posts and has an audience. Kids optional — the craft is the center of her life either way.",
+      "tuesday_reality": "The photo is edited and gorgeous, sitting in drafts for the third day because the caption isn't right. She opens ChatGPT, pastes the vibe, gets back em-dash slop that sounds like everyone, and closes it. She drafts the caption longhand in her notebook instead — then doesn't post at all.",
+      "pains": [
+        "The caption is the part I dread — the photo or the writing is the easy part.",
+        "Every AI caption I've tried sounds like AI. I can spot it in a second.",
+        "I don't want to sound like everyone else — my voice IS the product.",
+        "I know I 'should' post more consistently, but not at the cost of quality or soul.",
+        "Marketing my own work — hooks, hashtags, selling myself — feels gross."
+      ],
+      "pain_side_effects": [
+        "Beautiful work sits unpublished for days, or never posts at all — growth stalls.",
+        "She posts in inconsistent bursts, then feels guilt about going quiet.",
+        "Captioning eats the creative hours she'd rather spend shooting or writing.",
+        "A quiet fear that leaning on AI would cheapen her craft or betray her audience's trust."
+      ],
+      "desires": [
+        "To sound exactly like herself — only faster, without the dread.",
+        "To stay the artist and keep control: a collaborator, not an autopilot.",
+        "Consistency without selling her soul to the algorithm.",
+        "Permission that using AI this way isn't 'cheating.'"
+      ],
+      "exact_language": [
+        "it sounds like AI",
+        "too recognizable as AI copy",
+        "that's not my voice",
+        "by hand",
+        "my craft",
+        "analog",
+        "slow and intentional",
+        "it feels gross to sell myself",
+        "I can spot it a mile away",
+        "cheesy",
+        "generic",
+        "soulless",
+        "it doesn't sound like me",
+        "I like doing it myself"
+      ],
+      "trending_phrases": [
+        "romanticize your life",
+        "slow living",
+        "in my film era",
+        "analog era",
+        "keep it human",
+        "made by hand",
+        "anti-AI art",
+        "digital minimalism",
+        "touch grass"
+      ],
+      "objections": [
+        "AI will make me sound like everyone / like AI.",
+        "Using it will erode my craft or make me lazy.",
+        "It feels like cheating — inauthentic to my art.",
+        "I don't want to be on the content hamster wheel.",
+        "I tried it once, the output was bad — I already know it won't work."
+      ],
+      "buying_triggers": [
+        "A real before/after where the caption genuinely sounds like HER, with none of the AI tells.",
+        "'It learns YOUR voice from YOUR writing' — it mirrors her, no house style.",
+        "'It asks instead of inventing' — it never fabricates her life or feelings.",
+        "Framed as a translator for the part she avoids, so she protects her energy for the art.",
+        "Permission from a peer artist she respects (Sage / Mandi)."
+      ],
+      "watering_holes": [
+        "Instagram (photography & writing communities)",
+        "Substack",
+        "Pinterest",
+        "r/analog and film-photography forums",
+        "creative craft newsletters",
+        "YouTube (photography & writing craft channels)"
+      ],
+      "tried_already": [
+        "ChatGPT for captions — hated the generic, AI-sounding output.",
+        "Uses AI only as a search/research tool — nothing that touches her voice.",
+        "Drafting captions longhand first — works, but slow, so posts stall.",
+        "Caption packs / templates — too cookie-cutter for her."
+      ],
+      "notes": "SAGE'S AUDIENCE (Sage moved from Room30 → Caption Writer, 2026-08-01). Her resistance is IDENTITY, not technology — she's discerning, not a Luddite. The unlock is PROOF it sounds like her + 'asks, never invents' + translator-not-replacement framing. She recoils from hustle / 'empire' / 'command station' language; 'Caption Keeper' (analog, keepsake warmth) fits her. This is a DIFFERENT audience from Content-Chasing Camille — do not merge them. Name 'Analog Ava' is a working label; easy to rename.",
+      "created_at": "2026-08-01T20:21:13.106Z",
+      "updated_at": "2026-08-01T20:21:13.106Z"
+    },
+    {
+      "id": "content-chasing-camille",
+      "name": "Content-Chasing Camille",
+      "emoji": "👑",
+      "snapshot": "Ambitious, social boss-babe overflowing with ideas and real wisdom — she feels FULL, not empty, and guilty for not posting more. She doesn't need a lane or a niche; she needs support telling her stories and a place to hold every idea until it's ready.",
+      "life_stage": "20s–30s, busy and social (a calendar fit for a queen — parties, friends). Building a personal brand on the side or full-time. Multiple accounts started, most empty; one personal account she overworks.",
+      "tuesday_reality": "Between a lunch, a webinar she bought, and drinks tonight, she opens the app to post — and freezes. Ten ideas, no clue which one is 'her.' She rewrites a personal story three times trying to make it mean something, posts nothing to the three brand accounts she made, and tells herself she'll batch it this weekend.",
+      "pains": [
+        "I feel guilty for not posting more often — I have so much to give.",
+        "I'm full of ideas and even wisdom, but it comes faster than I can shape it into a post.",
+        "I exhaust myself trying to turn my life into something meaningful for the feed.",
+        "Ideas hit at the wrong moment and I lose them before they're ready.",
+        "I've started multiple accounts and posted almost nothing to them."
+      ],
+      "pain_side_effects": [
+        "Great ideas arrive at the wrong time and vanish before she can use them.",
+        "Each post feels like it has to be perfect and meaningful right now, so she over-edits and stalls.",
+        "Her real wisdom stays trapped — the value is there but never makes it out.",
+        "Guilt loops: she feels full and capable yet stalled, so not-posting reads as a personal failing.",
+        "Buys courses chasing an answer; none of them just help her hold and tell her ideas."
+      ],
+      "desires": [
+        "Support telling her stories — her brain amplified, never boxed in.",
+        "A place to hold every idea so nothing brilliant gets lost.",
+        "To come back to half-formed captions when inspiration strikes, guilt-free.",
+        "To feel supported and light instead of full-but-frozen — celebrated for her range, not told to narrow it."
+      ],
+      "exact_language": [
+        "boss babe",
+        "get my brand off the ground",
+        "I feel so guilty",
+        "I have so much to say",
+        "so many ideas",
+        "I'm all over the place",
+        "make it mean something",
+        "I lose my ideas",
+        "I'll batch it this weekend",
+        "I bought the course"
+      ],
+      "trending_phrases": [
+        "personal brand",
+        "find your niche",
+        "pick a lane",
+        "lock in",
+        "that girl",
+        "monetize your life",
+        "content strategy",
+        "main character energy",
+        "build in public"
+      ],
+      "objections": [
+        "Another tool won't fix it — I've bought courses before.",
+        "I don't have time to learn a whole system; I'm busy.",
+        "I don't want to be boxed into one niche — I'm multi-passionate on purpose.",
+        "Will this just add more to my plate?"
+      ],
+      "buying_triggers": [
+        "It SUPPORTS her storytelling instead of telling her to narrow or 'pick a niche.'",
+        "The Park feature: capture every idea, park the captions that need more of HER, return when inspired — nothing lost.",
+        "Guilt relief — 'you're not too much and you're not lazy; you just needed somewhere to hold it all.'",
+        "Fast, done-with-you setup so she gets momentum now (the Level Up bump)."
+      ],
+      "watering_holes": [
+        "Instagram + TikTok (creator & business content)",
+        "course platforms & webinars",
+        "boss-babe / female-entrepreneur communities",
+        "personal-branding podcasts",
+        "Pinterest"
+      ],
+      "tried_already": [
+        "Bought courses and content programs — still stuck.",
+        "Started multiple brand accounts — abandoned them.",
+        "Batching sprints that fizzle out.",
+        "Overworking her personal account with no through-line."
+      ],
+      "notes": "DO NOT tell her to focus / pick a lane / find a niche / narrow — never limit her; celebrate her range. Two jobs: (1) SUPPORT her storytelling — help her brain SHAPE ideas into told stories (improve HOW she tells, never WHAT she's allowed to say); (2) MANAGE her captions with the PARK feature — capture every idea, and when a caption needs more of HER ideas, park it and return when inspired, so nothing gets lost. This relieves the guilt of her own overflow. The thread connecting her feed is HER voice/storytelling, not a topic. AVOID words: 'empty calendar', 'pick a lane', 'focus', 'through-line', 'narrow', 'niche'. The Park feature is her hero mechanic. Distinct from Analog Ava (craft-protective artist) & Invisible Annie (unseen heart woman).",
+      "created_at": "2026-08-01T20:29:53.164Z",
+      "updated_at": "2026-08-01T20:34:12.390Z"
+    }
+  ],
+  "memories": [
+    {
+      "category": "decision",
+      "title": "Sage → Caption Writer; her audience = Analog Ava (the analog artist)",
+      "body": "2026-08-01: Sage moved from Room30 to selling Caption Writer. Sage's audience is a NEW, distinct persona — 'Analog Ava' 🎞: an established photographer/writer with a following who does things by hand, is AI-skeptical (uses it only for search), tried AI captions and rejected them as 'too recognizable as AI copy.' Her resistance is IDENTITY, not tech — she's discerning, not a Luddite. Real friction = the caption is the part she dreads (the art is easy); real fear = sounding generic / betraying her craft. The unlock: PROOF it sounds like HER (learns from her writing) + 'asks, never invents' + translator-not-replacement framing + peer permission. She recoils from hustle/'empire'/'command station' language; 'Caption Keeper' fits her. She is NOT Content-Chasing Camille — different door, do not merge. Full persona logged in Audiences (id: analog-ava). NEXT: revisit who Content-Chasing Camille (/queen) really is now that Ava is carved out.",
+      "agent_tags": [
+        "strategist",
+        "content_director",
+        "operator"
+      ],
+      "id": 1,
+      "created_at": "2026-08-01T20:21:13.596Z",
+      "updated_at": "2026-08-01T20:21:13.596Z"
+    }
+  ],
+  "next_memory_id": 2,
+  "next_note_id": 7
 }
