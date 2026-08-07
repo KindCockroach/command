@@ -109,17 +109,17 @@ export async function commanderChat(system: string, messages: { role: 'user' | '
 // on-screen hook + the caption's first sentence); cheap 4o writes the body,
 // anchored to them. Fable's judgment is exactly where 4o's "generic voice"
 // problem lives, so buying it only for these two lines is the cost/quality sweet spot.
-export async function fableHooks(system: string, input: string, maxTokens = 3000): Promise<string> {
+export async function fableHooks(system: string, input: string, maxTokens = 3000, kind = 'hooks', effort: Effort = 'high'): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — needed for the Fable hook writer.')
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — needed for the Fable writer.')
   const res = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
-    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, output_config: { effort: 'high' }, system, messages: [{ role: 'user', content: input }] }),
+    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, output_config: { effort }, system, messages: [{ role: 'user', content: input }] }),
   })
   const data = (await res.json()) as AnthropicResponse
-  if (!res.ok) throw new Error(`Fable hook API error (${res.status}): ${data?.error?.message ?? 'unknown error'}`)
-  logUsage({ provider: 'anthropic', model: COMMANDER_MODEL, kind: 'hooks', inputTokens: data.usage?.input_tokens ?? 0, outputTokens: data.usage?.output_tokens ?? 0 })
+  if (!res.ok) throw new Error(`Fable API error (${res.status}): ${data?.error?.message ?? 'unknown error'}`)
+  logUsage({ provider: 'anthropic', model: COMMANDER_MODEL, kind, inputTokens: data.usage?.input_tokens ?? 0, outputTokens: data.usage?.output_tokens ?? 0 })
   return (data.content ?? []).filter(b => b.type === 'text' && typeof b.text === 'string').map(b => b.text as string).join('').trim()
 }
 

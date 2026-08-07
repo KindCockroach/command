@@ -242,12 +242,13 @@ CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 n
     const prompt = `${accountContext}\n${getWatchContext()}\n\n${craftFor(accountId)}\n\n${basePrompt}\n${VISUAL_RULE}${carouselRule}${anchors}\n\nHARD RULE: never output more than 5 hashtags on any item.`
 
     try {
-      const output = await fableText({
-        instructions: 'You are a master storyteller writing scroll-stopping content that makes people FEEL something and see themselves differently. Show, never tell. Earn one emotional shift per piece. Return only valid JSON arrays, no markdown, no explanation.',
-        input: prompt,
-        maxTokens: 16000,
-        effort: 'medium',
-      })
+      // Body writer: all-Fable now (quality-first, low volume). Flip to 'gpt4o' via
+      // env (BODY_WRITER=gpt4o) to drop back to the cheaper hybrid once at scale.
+      const BODY_WRITER = (process.env.BODY_WRITER as 'fable' | 'gpt4o' | undefined) ?? 'fable'
+      const bodyInstructions = 'You are a master storyteller writing scroll-stopping content that makes her FEEL something and see herself differently. Show, never tell. Plain, true, human — short real sentences, NO purple prose, no metaphor-stacking ("danced with dread", "whispers of tomorrow", "folded futures" are BANNED). Earn one honest shift per piece. Return only valid JSON arrays, no markdown, no explanation.'
+      const output = BODY_WRITER === 'fable'
+        ? await fableHooks(bodyInstructions, prompt, 16000, 'content', 'high')
+        : await fableText({ instructions: bodyInstructions, input: prompt, maxTokens: 16000, effort: 'medium' })
 
       const raw = output.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
       const items: Array<Record<string, string>> = JSON.parse(raw)

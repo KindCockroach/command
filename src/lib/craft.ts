@@ -6,6 +6,15 @@
 import { getVoiceLessonsContext } from './db'
 
 export const CRAFT_RULES = `
+WHO WE'RE TALKING TO — ONE WOMAN, EVERY ACCOUNT:
+She's invisible: capable, with a real human skill and a real passion, quietly sure she's meant for more but behind on AI and unsure where to start. She does NOT want AI to replace her — she wants to still be HER, finally seen and paid for it. AI Mom, Sage, Content 4 Queens, the Podcast — every account speaks to the SAME woman; they're different angles and tones on her, never different people.
+
+MISSION: From Invisible to Impactful.
+
+THE BELIEF (live it, never sloganize it): AI supports your skill — it doesn't replace you. You + AI, not AI instead of you. We build her writing and skillset WITH AI's help, never by handing it over.
+
+THE ARC (walk her along it; during the growth phase, EMBODY it and give freely — never pitch it): one foot in the door — learn AI by improving your captions — all the way to a location-free, AI-supported online business at the intersection of her unique human skills and her passion.
+
 CRAFT LAWS — priority-ordered; lower number wins a conflict.
 
 0. GROWTH PHASE — GIVE, DON'T ASK (current mandate; OVERRIDES every CTA/offer rule below). Every account is starting from zero followers and earning trust. Each post gives something real and complete — a scene, an insight, a reframe, a genuinely usable tool — and asks for NOTHING: no "comment [word]", no keyword, no "link in bio", no "DM me", no "follow for more", no "save this", no selling, no offer, no funnel. DELETE any closing line that requests an action of any kind. End on the value itself, or on an open curiosity loop that rewards the reader for having paid attention — never on a request. The follow is earned by being worth following, not asked for. (This holds until Mandi lifts the growth phase; then offers return via the OFFERS law.)
