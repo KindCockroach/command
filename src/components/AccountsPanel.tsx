@@ -345,6 +345,71 @@ function profileUrl(acct: BrandAccount): string {
   return fn ? fn(acct.handle) : '#'
 }
 
+// 🎙 Drop your real recording → HeyGen lip-syncs AI Mom Mandi to your exact voice,
+// and the finished video lands as a post-card under this account.
+function PodcastAudioDrop({ accountId, accentColor, onDone }: { accountId: string; accentColor: string; onDone: () => void }) {
+  const [state, setState] = useState<'idle' | 'uploading' | 'rendering' | 'done' | 'error'>('idle')
+  const [msg, setMsg] = useState('')
+
+  const run = async (file: File) => {
+    try {
+      setState('uploading'); setMsg(file.name)
+      const fd = new FormData(); fd.append('file', file); fd.append('folder', 'post-media')
+      const up = await fetch('/api/upload', { method: 'POST', body: fd })
+      const uj = await up.json()
+      if (!up.ok || !uj.publicUrl) throw new Error(uj.error || 'Upload failed')
+
+      const cr = await fetch('/api/content', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_id: accountId, title: `Mandi video — ${new Date().toLocaleDateString()}`, type: 'video', status: 'ready', file_path: uj.publicUrl }),
+      })
+      const piece = await cr.json()
+      if (!cr.ok || !piece.id) throw new Error('Could not create the card')
+
+      setState('rendering'); setMsg('HeyGen is rendering Mandi in your voice…')
+      const st = await fetch('/api/heygen/attach', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: piece.id, action: 'start', audioUrl: uj.publicUrl }),
+      })
+      const sj = await st.json()
+      if (!st.ok || !sj.started) throw new Error(sj.error || 'HeyGen rejected the render')
+      onDone()
+
+      for (let n = 0; n < 75; n++) {
+        await new Promise(r => setTimeout(r, 8000))
+        const ck = await fetch('/api/heygen/attach', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contentId: piece.id, action: 'check' }),
+        })
+        const cj = await ck.json()
+        if (cj.status === 'attached' || cj.status === 'completed_external') { setState('done'); setMsg('Video ready — on the card below ↓'); onDone(); return }
+        if (cj.status === 'failed') throw new Error(cj.error || 'Render failed')
+      }
+      setState('done'); setMsg('Still rendering — it will appear on the card shortly.'); onDone()
+    } catch (e) {
+      setState('error'); setMsg(e instanceof Error ? e.message : 'Something went wrong')
+    }
+  }
+
+  const busy = state === 'uploading' || state === 'rendering'
+  return (
+    <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '12px', border: `2px dashed ${accentColor}55`, background: `${accentColor}0d`, cursor: busy ? 'default' : 'pointer' }}>
+        <input type="file" accept="audio/*" disabled={busy} style={{ display: 'none' }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) run(f); e.currentTarget.value = '' }} />
+        <span style={{ fontSize: '20px' }}>🎙</span>
+        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.35 }}>
+          {state === 'idle' && <>Drop your voice recording → <span style={{ color: accentColor }}>AI Mom Mandi video in your exact voice</span></>}
+          {state === 'uploading' && <>Uploading {msg}…</>}
+          {state === 'rendering' && <>🎬 {msg}</>}
+          {state === 'done' && <>✅ {msg}</>}
+          {state === 'error' && <span style={{ color: '#E05252' }}>⚠ {msg} — tap to retry</span>}
+        </span>
+      </label>
+    </div>
+  )
+}
+
 // ── Post card shown on the flip side ──────────────────────────────────────────
 function PostCard({ post, accentColor, onApprove, approving, onChanged, onPreview, accounts }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; onChanged?: () => void; onPreview?: (p: ContentPiece) => void; accounts?: BrandAccount[] }) {
   const [open, setOpen] = useState(false)
@@ -1414,6 +1479,8 @@ export default function AccountsPanel() {
                   </button>
                 )}
               </div>
+
+              {acct.id && <PodcastAudioDrop accountId={acct.id} accentColor={theme.color} onDone={loadContent} />}
 
               {/* Post list */}
               <div style={{ padding: '14px 16px', overflowY: 'auto', flex: 1 }}>
