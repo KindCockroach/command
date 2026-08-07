@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createContent, getBrandAccount, getWatchContext, getAudienceContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
-import { fableText } from '@/lib/fable'
+import { fableText, fableHooks } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -225,7 +225,21 @@ Write ALL content in this account's voice, not generic Mandi Beck voice.
 CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 numbered slide lines, each on its own line ("Slide 1: ...", "Slide 2: ..."), each slide pulling to the next, the last slide a mic drop + the CTA per the OFFERS law (this account's own keyword — never a generic "Comment WISH"). These lines are the skeleton Mandi builds in Canva.` : ''
 
     const basePrompt = promptFn(projectName, projectDescription || '', projectNotes || '', order.qty)
-    const prompt = `${accountContext}\n${getWatchContext()}\n\n${craftFor(accountId)}\n\n${basePrompt}\n${VISUAL_RULE}${carouselRule}\n\nHARD RULE: never output more than 5 hashtags on any item.`
+    // PASS 1 — Claude Fable 5 writes the two hardest lines (on-screen hook + caption opener).
+    // Degrades to pure 4o if Fable is unavailable, so generation never hard-fails.
+    let fableHookSet: Array<{ onscreen_text?: string; first_line?: string; angle?: string }> = []
+    try {
+      const hookSys = 'You are Claude Fable, writing ONLY the two hardest lines of a social post: the scroll-stopping on-screen hook, and the caption\'s first sentence (a DIFFERENT door than the hook — never the same words). Specific, true, unscrollable. NO CTA. Return ONLY a valid JSON array, no prose.'
+      const hookPrompt = `${accountContext}\n${getWatchContext()}\n\n${craftFor(accountId)}\n\nWrite ${order.qty} DISTINCT hook pairs for "${projectName}" (${projectDescription || ''}). Vary the emotional door across the batch; lead with the account's real, specific pain — never generic. NO CTA of any kind.\nReturn JSON array: [{ "onscreen_text": "the on-screen line", "first_line": "the caption's first sentence, a different door", "angle": "the door used" }]`
+      const hookRaw = await fableHooks(hookSys, hookPrompt, 3000)
+      fableHookSet = JSON.parse(hookRaw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim())
+    } catch { fableHookSet = [] }
+
+    const anchors = fableHookSet.length
+      ? `\n\nFABLE WROTE THESE HOOKS — write ONE full post per hook, IN ORDER. Use the given on-screen line as-is, and OPEN the caption with the given first sentence verbatim, then continue in this account's voice, pulling SPECIFIC real details from the brand DNA and notes above. Do NOT change, restate, or re-hook — continue and deliver the value. End per the craft laws (growth phase = no CTA).\n${fableHookSet.map((h, i) => `${i + 1}. ON-SCREEN: ${h.onscreen_text}\n   CAPTION OPENS: ${h.first_line}`).join('\n')}`
+      : ''
+
+    const prompt = `${accountContext}\n${getWatchContext()}\n\n${craftFor(accountId)}\n\n${basePrompt}\n${VISUAL_RULE}${carouselRule}${anchors}\n\nHARD RULE: never output more than 5 hashtags on any item.`
 
     try {
       const output = await fableText({
@@ -240,12 +254,12 @@ CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 n
 
       const accountTag = account ? account.handle.replace('@', '') : 'generic'
       const isVideo = order.type === 'instagram_reel' || order.type === 'tiktok'
-      const created = items.map(item => {
+      const created = items.map((item, idx) => {
         const hashtags = capHashtags(String(item.hashtags || item.tags || item.keywords || ''))
         // BODY = post-ready caption + hashtags ONLY. No labels, no slides, no scripts.
         const caption = String(item.body || item.caption || item.description || item.title || '').trim()
         const description = [caption, hashtags].filter(Boolean).join('\n\n')
-        const hook = String(item.onscreen_text || item.hook || '').trim()
+        const hook = String(fableHookSet[idx]?.onscreen_text || item.onscreen_text || item.hook || '').trim()
         const baseImg = item.image_prompt || item.thumbnail_concept || item.image_concept || ''
         // SCRIPT (spoken) is its own field for videos; ON-SCREEN is slides/overlays and can differ
         const script = isVideo ? String(item.script || '').trim() : ''
