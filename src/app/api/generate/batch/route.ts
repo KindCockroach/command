@@ -246,8 +246,11 @@ CAROUSEL FORMAT (required for this batch): make "onscreen_text" a set of 5–8 n
       // env (BODY_WRITER=gpt4o) to drop back to the cheaper hybrid once at scale.
       const BODY_WRITER = (process.env.BODY_WRITER as 'fable' | 'gpt4o' | undefined) ?? 'fable'
       const bodyInstructions = 'You are writing a social post that TALKS TO HER — second person ("you", "your", "let\'s", "I\'ll help you"), a companion beside her holding her elbow. Do NOT write a first-person memoir about yourself ("I saved it eleven times, my dishwasher, I posted it" = about you, not to her). Do NOT describe her scene back at her ("It\'s 9pm and you\'re...") = performed empathy, she scrolls. Speak to the TRUTH of her circumstance so she feels seen, then walk her one gentle step. Plain, true, human — short real sentences, NO purple prose, no metaphor-stacking. Earn one honest shift. Return only valid JSON arrays, no markdown, no explanation.'
+      // Body at 'medium' effort: high-effort Fable on 3+ posts overruns the gateway
+      // timeout (502). Hooks stay 'high' (the scroll-stopper); medium bodies are
+      // still Fable-quality and let a full 5-post batch complete reliably.
       const output = BODY_WRITER === 'fable'
-        ? await fableHooks(bodyInstructions, prompt, 16000, 'content', 'high')
+        ? await fableHooks(bodyInstructions, prompt, 16000, 'content', 'medium')
         : await fableText({ instructions: bodyInstructions, input: prompt, maxTokens: 16000, effort: 'medium' })
 
       const raw = output.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
