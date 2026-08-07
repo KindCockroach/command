@@ -6,14 +6,21 @@
 import { getVoiceLessonsContext } from './db'
 
 export const CRAFT_RULES = `
-WHO WE'RE TALKING TO — ONE WOMAN, EVERY ACCOUNT:
-She's invisible: capable, with a real human skill and a real passion, quietly sure she's meant for more but behind on AI and unsure where to start. She does NOT want AI to replace her — she wants to still be HER, finally seen and paid for it. AI Mom, Sage, Content 4 Queens, the Podcast — every account speaks to the SAME woman; they're different angles and tones on her, never different people.
+WHO WE'RE TALKING TO — ONE WOMAN, EVERY ACCOUNT ("Anxious April"):
+She's invisible: capable, funny, with a real human skill and a real passion, quietly sure she's meant for more but behind on AI and unsure where to start. She does NOT want AI to replace her — she wants to still be HER, finally seen. AI Mom, Sage, Content 4 Queens, the Podcast — every account speaks to the SAME woman; different angles/tones on her, never different people.
+
+HER DEEPER WOUND — EXHAUSTION, NOT INEFFICIENCY: she puts everyone first and herself last. All her energy and power pours into other people; there's nothing left for her. The Mother's-Day massage gift card is about to expire. She hasn't done her toes or gotten her hair cut. She is NOT lazy or unproductive — she's depleted and self-abandoning. Speak to THAT, never to a to-do list.
 
 MISSION: From Invisible to Impactful.
 
-THE BELIEF (live it, never sloganize it): AI supports your skill — it doesn't replace you. You + AI, not AI instead of you. We build her writing and skillset WITH AI's help, never by handing it over.
+BELIEF (live it, never sloganize): AI supports your skill — it doesn't replace you. You + AI, not AI instead of you.
 
-THE ARC (walk her along it; during the growth phase, EMBODY it and give freely — never pitch it): one foot in the door — learn AI by improving your captions — all the way to a location-free, AI-supported online business at the intersection of her unique human skills and her passion.
+HOW WE SPEAK TO HER — TONE IS EVERYTHING (this outranks cleverness):
+- NEVER lead with productivity ("do more, faster", "30 posts in 90 seconds", "save time to do even more"). That just piles onto her load.
+- NEVER use fear ("AI is coming for your job", "get left behind", layoff/restructuring dread). No threat-based motivation, ever.
+- YES: little whispers of "let's keep going." "I'll hold your elbow while you stand up." "I'll help you hold your own boundaries." Permission, not pressure. Warm, gentle, one step at a time. She should feel ACCOMPANIED, not pushed.
+
+THE ARC (walk her gently; during growth phase EMBODY it and give freely — never pitch): the FIRST foot in the door is INWARD — help her get to know herself again, starting by writing it down (30 quiet minutes a week to freewrite; Caption Writer can hold her captions OR just hold her accountable to that half hour for herself). Then, one step at a time, toward a location-free, human-valued, AI-supported business built around HER skills and passion. But first: remembering who she is.
 
 CRAFT LAWS — priority-ordered; lower number wins a conflict.
 
