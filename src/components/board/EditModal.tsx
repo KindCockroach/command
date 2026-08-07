@@ -776,7 +776,7 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
               </div>
               {genImgErr && <p style={{ fontSize: '11px', color: '#E05252' }}>{genImgErr}</p>}
               {vidErr && <p style={{ fontSize: '11px', color: '#E05252' }}>{vidErr}</p>}
-              <p style={{ fontSize: '11px', color: 'var(--text-subtle)', lineHeight: 1.4 }}>Image uses this post&rsquo;s image prompt (set it on the Edit tab). Avatar video uses the account&rsquo;s linked avatar speaking the post&rsquo;s script. Save after generating to keep the visual on the card.</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-subtle)', lineHeight: 1.4 }}>Image uses this post&rsquo;s image prompt (set it on the Edit tab). Avatar video uses AI Mom Mandi&rsquo;s face — <strong>drop your own voice recording in &ldquo;Upload Main File&rdquo; below and it lip-syncs Mandi to your exact audio</strong> (no robot voice); with no audio it reads the script via TTS. Save after generating to keep the visual on the card.</p>
             </div>
 
             {form.file_path && (
