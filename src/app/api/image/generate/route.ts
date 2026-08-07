@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getAllContent, updateContent } from '@/lib/db'
 import { putObject, getPublicUrl, mediaKey } from '@/lib/r2'
+import { logCost } from '@/lib/usage'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -28,9 +29,10 @@ export async function POST(req: NextRequest) {
   } as never) as Promise<{ data?: Array<{ b64_json?: string; url?: string }> }>
 
   try {
+    let usedModel = 'gpt-image-1'
     let result
     try { result = await generate('gpt-image-1') }
-    catch { result = await generate('dall-e-3') }
+    catch { usedModel = 'dall-e-3'; result = await generate('dall-e-3') }
 
     const item = result.data?.[0]
     let bytes: Buffer | null = null
@@ -44,6 +46,8 @@ export async function POST(req: NextRequest) {
     const publicUrl = getPublicUrl(key)
     const urls = [...(piece.media_urls ?? []), publicUrl]
     updateContent(piece.id, { media_url: piece.media_url || publicUrl, media_urls: urls })
+    // Track the per-image cost on /admin (~$0.04 for a 1024² image; flat, not token-priced)
+    logCost(usedModel, 'image', 0.04)
     return NextResponse.json({ generated: true, url: publicUrl })
   } catch (e) {
     return NextResponse.json({ error: `Image generation failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })

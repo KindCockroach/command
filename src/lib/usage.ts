@@ -78,6 +78,19 @@ export function logUsage(e: {
   }
 }
 
+// Flat-cost usage for calls that aren't token-priced (e.g. image generation).
+// Shows up on /admin exactly like token calls, just with 0 tokens + a flat cost.
+export function logCost(model: string, kind: string, costUsd: number, provider: Provider = 'openai') {
+  try {
+    const list = read()
+    list.push({ ts: new Date().toISOString(), provider, model, kind, inputTokens: 0, outputTokens: 0, costUsd: costUsd || 0 })
+    if (list.length > MAX_ROWS) list.splice(0, list.length - MAX_ROWS)
+    write(list)
+  } catch {
+    /* never throw from logging */
+  }
+}
+
 export type ModelRow = { model: string; calls: number; inputTokens: number; outputTokens: number; costUsd: number }
 export type KindRow = { kind: string; calls: number; costUsd: number }
 
