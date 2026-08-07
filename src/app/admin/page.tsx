@@ -79,6 +79,23 @@ const GROUPS: { title: string; note?: string; links: { label: string; href: stri
   },
 ]
 
+// Fixed monthly AI subscriptions (credit/seat-based — NOT pay-per-call like
+// OpenAI/Anthropic, which are tracked live above). Edit these to your real plans.
+const SUBS: { name: string; note: string; monthly: number }[] = [
+  { name: 'ChatGPT Plus', note: 'GPT + Caption Writer GPT', monthly: 20 },
+  { name: 'Claude', note: 'Fable/Opus + Claude Code', monthly: 20 },
+  { name: 'HeyGen', note: 'avatar videos (Sage)', monthly: 29 },
+  { name: 'ElevenLabs', note: 'voice clone / TTS', monthly: 22 },
+  { name: 'Higgsfield', note: 'Supercomputer image/video', monthly: 29 },
+  { name: 'Canva Pro', note: 'finishing images / carousels', monthly: 15 },
+  { name: 'CapCut Pro', note: 'captions / video edit', monthly: 10 },
+  { name: 'Riverside', note: 'podcast record + distribute', monthly: 19 },
+  { name: 'Opus Clip', note: 'podcast → short clips', monthly: 15 },
+  { name: 'Beehiiv', note: 'newsletter', monthly: 0 },
+  { name: 'GoHighLevel', note: 'funnels + social planner', monthly: 97 },
+  { name: 'Make.com', note: 'automations', monthly: 9 },
+]
+
 function money(n: number): string {
   if (!n) return '$0.00'
   return n >= 1 ? `$${n.toFixed(2)}` : `$${n.toFixed(4)}`
@@ -111,6 +128,7 @@ export default function AdminPage() {
   }, [])
 
   const s = data?.summary
+  const subsTotal = SUBS.reduce((a, x) => a + x.monthly, 0)
 
   return (
     <main className="adm">
@@ -198,6 +216,36 @@ export default function AdminPage() {
               </div>
             </>
           )}
+        </section>
+
+        {/* ── Monthly subscriptions ── */}
+        <section>
+          <h2>Monthly AI subscriptions</h2>
+          <p className="gnote">Fixed monthly tools (credit / seat-based — HeyGen, Higgsfield, ElevenLabs, etc. don&rsquo;t bill per call). These are editable estimates — set them to your real plans in <span className="mono">SUBS</span> (admin/page.tsx). The pay-per-use APIs (OpenAI, Anthropic, images) are the live-tracked spend above.</p>
+          <div className="cards">
+            <div className="card"><span className="k">Subscriptions / mo</span><span className="v">{money(subsTotal)}</span></div>
+            <div className="card"><span className="k">API usage (30d)</span><span className="v">{money(s?.last30CostUsd ?? 0)}</span></div>
+            <div className="card"><span className="k">Est. total / mo</span><span className="v">{money(subsTotal + (s?.last30CostUsd ?? 0))}</span></div>
+          </div>
+          <div className="tw" style={{ marginTop: '14px' }}>
+            <table>
+              <thead><tr><th>Tool</th><th>What it&rsquo;s for</th><th>Monthly</th></tr></thead>
+              <tbody>
+                {SUBS.map((x) => (
+                  <tr key={x.name}>
+                    <td className="mono">{x.name}</td>
+                    <td>{x.note}</td>
+                    <td className="cost">{money(x.monthly)}</td>
+                  </tr>
+                ))}
+                <tr>
+                  <td className="mono" style={{ fontWeight: 800 }}>Subscriptions total</td>
+                  <td></td>
+                  <td className="cost" style={{ fontWeight: 800 }}>{money(subsTotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
 
         {/* ── API keys ── */}
