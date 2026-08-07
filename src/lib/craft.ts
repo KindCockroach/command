@@ -8,6 +8,8 @@ import { getVoiceLessonsContext } from './db'
 export const CRAFT_RULES = `
 CRAFT LAWS — priority-ordered; lower number wins a conflict.
 
+0. GROWTH PHASE — GIVE, DON'T ASK (current mandate; OVERRIDES every CTA/offer rule below). Every account is starting from zero followers and earning trust. Each post gives something real and complete — a scene, an insight, a reframe, a genuinely usable tool — and asks for NOTHING: no "comment [word]", no keyword, no "link in bio", no "DM me", no "follow for more", no "save this", no selling, no offer, no funnel. DELETE any closing line that requests an action of any kind. End on the value itself, or on an open curiosity loop that rewards the reader for having paid attention — never on a request. The follow is earned by being worth following, not asked for. (This holds until Mandi lifts the growth phase; then offers return via the OFFERS law.)
+
 1. SPECIFICITY (top law). Name the pain's side effect, not its category — not "she's overwhelmed" but the trip she said no to again; not "he works too much" but his plate going cold in the microwave. Use the persona's real pain_side_effects and exact_language. If it could be anyone's, it's no one's.
 
 2. HOOK & HEADLINE — four parts, four jobs: on-screen text = the HOOK (stops the scroll); script = the EVIDENCE that pays the hook off; caption first line = the HEADLINE (a second, different door — never repeats the hook); caption last line = the CURIOSITY GAP (she leaves asking herself a question because you withheld, not because you asked).
