@@ -410,6 +410,56 @@ function PodcastAudioDrop({ accountId, accentColor, onDone }: { accountId: strin
   )
 }
 
+// 🔊 Voice one card in Mandi's ElevenLabs clone → mp3 attaches to the card.
+function CardVoicer({ post, onChanged }: { post: ContentPiece; onChanged?: () => void }) {
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const voice = async () => {
+    setBusy(true); setErr('')
+    try {
+      const r = await fetch('/api/elevenlabs/voice-card', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id }) })
+      const j = await r.json()
+      if (!r.ok) throw new Error(j.error || 'failed')
+      onChanged?.()
+    } catch (e) { setErr(e instanceof Error ? e.message : 'failed') } finally { setBusy(false) }
+  }
+  return (
+    <div>
+      {post.audio_url && <audio controls src={post.audio_url} style={{ width: '100%', height: '34px', marginBottom: '6px' }} />}
+      <button onClick={voice} disabled={busy} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>
+        {busy ? '🔊 Voicing in Mandi’s clone…' : post.audio_url ? '🔊 Re-voice (Mandi)' : '🔊 Voice this in Mandi’s clone'}
+      </button>
+      {err && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {err}</p>}
+    </div>
+  )
+}
+
+// 🔊 Batch: voice every un-voiced ready post in Mandi's clone — burns ElevenLabs credits into a library.
+function VoiceAllButton({ posts, accentColor, onDone }: { posts: ContentPiece[]; accentColor: string; onDone: () => void }) {
+  const [running, setRunning] = useState(false)
+  const [done, setDone] = useState(0)
+  const [err, setErr] = useState(0)
+  const todo = posts.filter(p => !p.audio_url)
+  const run = async () => {
+    if (running || !todo.length) return
+    setRunning(true); setDone(0); setErr(0)
+    for (const p of todo) {
+      try {
+        const r = await fetch('/api/elevenlabs/voice-card', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: p.id }) })
+        if (r.ok) setDone(d => d + 1); else setErr(e => e + 1)
+      } catch { setErr(e => e + 1) }
+      onDone()
+    }
+    setRunning(false); onDone()
+  }
+  if (!todo.length) return null
+  return (
+    <button onClick={run} disabled={running} style={{ padding: '6px 12px', borderRadius: '20px', border: `2px solid ${accentColor}`, background: `${accentColor}12`, color: accentColor, fontSize: '11px', fontWeight: 700, cursor: running ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+      {running ? `🔊 Voicing… ${done}/${todo.length}${err ? ` · ${err} failed` : ''}` : `🔊 Voice ${todo.length} in Mandi’s clone (burn credits)`}
+    </button>
+  )
+}
+
 // ── Post card shown on the flip side ──────────────────────────────────────────
 function PostCard({ post, accentColor, onApprove, approving, onChanged, onPreview, accounts }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; onChanged?: () => void; onPreview?: (p: ContentPiece) => void; accounts?: BrandAccount[] }) {
   const [open, setOpen] = useState(false)
@@ -1060,6 +1110,9 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
             {videoState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {videoErr} <button onClick={makeVideo} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
           </div>
 
+          {/* 🔊 Mandi-clone voiceover for this card */}
+          <CardVoicer post={post} onChanged={onChanged} />
+
           {/* 🖥️ Higgsfield Supercomputer: cinematic frame from the image prompt → lands back on this card */}
           <div>
             <button onClick={sendToSupercomputer} disabled={scState === 'starting' || scState === 'rendering' || !post.image_prompt}
@@ -1481,6 +1534,12 @@ export default function AccountsPanel() {
               </div>
 
               {acct.id && <PodcastAudioDrop accountId={acct.id} accentColor={theme.color} onDone={loadContent} />}
+
+              {reviewable.length > 0 && (
+                <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                  <VoiceAllButton posts={reviewable} accentColor={theme.color} onDone={loadContent} />
+                </div>
+              )}
 
               {/* Post list */}
               <div style={{ padding: '14px 16px', overflowY: 'auto', flex: 1 }}>

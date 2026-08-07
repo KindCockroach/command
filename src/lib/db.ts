@@ -33,6 +33,7 @@ export type ContentPiece = {
   hashtags?: string                // hashtags/metadata string
   media_url?: string               // primary visual (first slide) — kept for scheduling/preview compat
   media_urls?: string[]            // full carousel: ordered list of image/video URLs
+  audio_url?: string               // ElevenLabs Mandi-clone voiceover (pair with HeyGen/CapCut)
   // GoHighLevel scheduling
   ghl_post_id?: string | null      // GHL social planner post id once pushed
   scheduled_at?: string | null     // when GHL is set to publish it
@@ -710,6 +711,7 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     hashtags: normalizeHashtags(data.hashtags),
     media_url: data.media_url ?? '',
     media_urls: data.media_urls ?? (data.media_url ? [data.media_url] : []),
+    audio_url: data.audio_url ?? '',
     ghl_post_id: null,
     scheduled_at: null,
     open_questions: data.open_questions ?? [],
