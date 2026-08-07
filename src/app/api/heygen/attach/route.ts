@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (action === 'start') {
     // Resolve the avatar via the trinity: account.avatar_id → avatar record
     const account = piece.account_id ? getBrandAccount(piece.account_id) : null
-    const avatar = getAllAvatars().find(a => a.id === (account?.avatar_id ?? '')) ?? getAllAvatars().find(a => a.id === 'sage')
+    const avatar = getAllAvatars().find(a => a.id === (account?.avatar_id ?? '')) ?? getAllAvatars().find(a => a.id === 'mandi')
     if (!avatar?.heygen_photo_id) {
       return NextResponse.json({ error: `No avatar with a HeyGen photo linked to ${account?.handle ?? 'this account'} — set one in the account editor (🎭) and the avatar's photo ID in Avatars.` }, { status: 400 })
     }
