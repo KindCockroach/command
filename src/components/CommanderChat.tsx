@@ -105,6 +105,10 @@ export default function CommanderChat() {
         const r = await post('/api/meta', { ask: str(p.ask), why: str(p.why), how: str(p.how) })
         const d = await r.json()
         setActStatus(s => ({ ...s, [key]: r.ok && d.piece ? '✓ Meta post drafted — in Content' : 'couldn\'t draft' }))
+      } else if (a.type === 'manifesto_story') {
+        const r = await post('/api/manifesto-story', { input: str(p.input), accountId: p.account_id ? str(p.account_id) : undefined })
+        const d = await r.json()
+        setActStatus(s => ({ ...s, [key]: r.ok && d.piece ? '✓ Before/after drafted — in Content' : 'couldn\'t draft' }))
       } else {
         setActStatus(s => ({ ...s, [key]: 'unknown action' }))
       }

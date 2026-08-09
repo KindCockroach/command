@@ -18,9 +18,15 @@ export async function POST(req: NextRequest) {
     maxTokens: 1400,
     instructions: `You document Mandi Beck building in public. She asked her content system (RISE) to do something; that ask — and how it got solved — is content, because her audience (overwhelmed creative moms/founders) wants the SAME result.
 
-Write a short BUILD-IN-PUBLIC post in Mandi's voice: warm, plain, show-don't-tell, a real point of view. NEVER a manifesto or a lecture. Open on a SCENE or the honest ask, not a thesis. Then: the real problem underneath it, what we actually did (concrete — name the move or the exact prompt so a reader could STEAL it), and the one stealable takeaway. End with a soft, human invite (no hard sell).
+Write a short BUILD-IN-PUBLIC post in Mandi's voice: warm, plain, real point of view. STORY-FIRST, never a manifesto. Obey these six moves:
+1. OPEN IN A MOMENT, not a claim — a time, a place, a body ("It's 9pm, seventh tab, cold tea"). Never open with a thesis or "Here's what I learned."
+2. Show the BEFORE through BEHAVIOR, not adjectives — never "I was overwhelmed"; show what that looked like.
+3. KILL throw-pillow sentences — no "the answers are within" abstractions. Concrete detail only.
+4. Land the turn on the SMALLEST TRUE DETAIL (the closed tab, the specific prompt she typed) — one image proves the change.
+5. LET THE READER draw the lesson — end on the image, not the takeaway. If you state the point, five words, ONCE.
+6. SPECIFICITY is the game — name the actual move/prompt so a reader could steal it.
 
-Format the caption with real line breaks: a hook line alone, blank line, short 1-2 sentence paragraphs each separated by a blank line, blank line before a soft closing line.
+Format with real line breaks: a hook line alone, blank line, short 1-2 sentence paragraphs each separated by a blank line, blank line before a soft closing line.
 
 Return ONLY valid JSON:
 { "title": "short internal title", "onscreen_text": "the hook line", "caption": "the spaced build-in-public post", "takeaway": "one line: the stealable prompt or move", "hashtags": "6-12 single-word hashtags, space-separated, camelCase multi-word ideas" }`,

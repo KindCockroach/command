@@ -5,6 +5,14 @@ export const dynamic = 'force-dynamic'
 
 const GHL_BASE = 'https://services.leadconnectorhq.com'
 
+// ── PUBLISH KILL SWITCH ──────────────────────────────────────────────────────
+// Paused 2026-08-08 during account-restriction cleanup (mandij0y + aimomatwork
+// carry "Features you can't use" limits; suspected trigger = Room30 referral link
+// across avatar-video posts). While paused, approvals are QUEUED (status
+// 'approved') instead of pushed to GHL, so nothing is lost — re-approving after
+// resume schedules them. To RESUME: set this to false (or GHL_AUTOPUBLISH_PAUSED=false).
+const AUTO_PUBLISH_PAUSED = process.env.GHL_AUTOPUBLISH_PAUSED === 'false' ? false : true
+
 function ghlConfig() {
   const token = process.env.GHL_API_KEY
   const locationId = process.env.GHL_LOCATION_ID
@@ -141,6 +149,12 @@ export async function POST(req: NextRequest) {
 
   const piece = getAllContent().find(c => c.id === Number(contentId))
   if (!piece) return NextResponse.json({ error: 'content not found' }, { status: 404 })
+
+  if (AUTO_PUBLISH_PAUSED) {
+    // Kill switch on: queue the approval, push nothing to any social account.
+    const updated = updateContent(piece.id, { status: 'approved' })
+    return NextResponse.json({ configured, paused: true, queued: true, content: updated, note: 'Publishing is paused (account cleanup). Approved and queued — it will schedule once publishing is resumed.' })
+  }
 
   if (!configured) {
     // No key yet: mark approved so it's queued and ready the moment GHL is connected
