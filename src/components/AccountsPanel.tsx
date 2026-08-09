@@ -755,10 +755,11 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
   }
 
   const [writingScript, setWritingScript] = useState(false)
+  const [scriptSecs, setScriptSecs] = useState(20)
   const writeScript = async () => {
     setWritingScript(true)
     try {
-      const r = await fetch('/api/content/script', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id }) }).then(r => r.json()).catch(() => ({ error: 'failed' }))
+      const r = await fetch('/api/content/script', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id, seconds: scriptSecs }) }).then(r => r.json()).catch(() => ({ error: 'failed' }))
       if (r.script) { setOpen(true); onChanged?.() }
     } finally { setWritingScript(false) }
   }
@@ -1114,10 +1115,21 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
           )}
 
           {/* ✍️ Write a spoken script for the avatar — turns this post into words to say to camera */}
-          <button onClick={writeScript} disabled={writingScript}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid rgba(90,79,207,0.4)', background: 'rgba(90,79,207,0.05)', color: '#5a4fcf', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: writingScript ? 0.7 : 1 }}>
-            {writingScript ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Writing a spoken script…</> : <>✍️ {post.script ? 'Rewrite the spoken script' : 'Write me a spoken script'}</>}
-          </button>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)' }}>Length:</span>
+              {[10, 20, 30].map(sec => (
+                <button key={sec} onClick={() => setScriptSecs(sec)}
+                  style={{ fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', border: `1px solid ${scriptSecs === sec ? '#5a4fcf' : 'var(--border)'}`, background: scriptSecs === sec ? 'rgba(90,79,207,0.1)' : 'var(--surface)', color: scriptSecs === sec ? '#5a4fcf' : 'var(--text-muted)' }}>
+                  {sec}s
+                </button>
+              ))}
+            </div>
+            <button onClick={writeScript} disabled={writingScript}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid rgba(90,79,207,0.4)', background: 'rgba(90,79,207,0.05)', color: '#5a4fcf', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: writingScript ? 0.7 : 1 }}>
+              {writingScript ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Writing a {scriptSecs}s script…</> : <>✍️ {post.script ? `Rewrite the ${scriptSecs}s script` : `Write me a ${scriptSecs}s script`}</>}
+            </button>
+          </div>
 
           {/* 🎬 Avatar video: needs a script first, then HeyGen render → MP4 lands back on this card */}
           <div>
