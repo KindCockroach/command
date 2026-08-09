@@ -13,7 +13,11 @@ import { logUsage } from './usage'
 export const WRITER_MODEL = 'gpt-4o'
 export const CHEAP_MODEL = 'gpt-4o-mini'
 export const FABLE_MODEL = WRITER_MODEL // back-compat alias for older imports
-export const COMMANDER_MODEL = 'claude-fable-5' // the Commander's reasoning brain — worth the premium
+// Opus 4.8 for the Commander + hook writer: ~half Fable 5's price ($5/$25 vs
+// $10/$50 per-M) and adaptive thinking burns fewer reasoning tokens than Fable's
+// high-effort mode — big cost win, near-identical quality. Flip back to
+// 'claude-fable-5' here if you ever want the top-tier writer again.
+export const COMMANDER_MODEL = 'claude-opus-4-8'
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
@@ -90,7 +94,7 @@ export async function commanderChat(system: string, messages: { role: 'user' | '
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
     // effort:'medium' keeps a chat partner snappy (high made it overthink + run long,
     // which combined with the old 1600 cap cut replies off mid-sentence).
-    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, output_config: { effort: 'medium' }, system, messages }),
+    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages }),
   })
   const data = (await res.json()) as AnthropicResponse
   if (!res.ok) throw new Error(`Commander API error (${res.status}): ${data?.error?.message ?? 'unknown error'}`)
@@ -109,13 +113,13 @@ export async function commanderChat(system: string, messages: { role: 'user' | '
 // on-screen hook + the caption's first sentence); cheap 4o writes the body,
 // anchored to them. Fable's judgment is exactly where 4o's "generic voice"
 // problem lives, so buying it only for these two lines is the cost/quality sweet spot.
-export async function fableHooks(system: string, input: string, maxTokens = 3000, kind = 'hooks', effort: Effort = 'high'): Promise<string> {
+export async function fableHooks(system: string, input: string, maxTokens = 3000, kind = 'hooks', _effort: Effort = 'high'): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — needed for the Fable writer.')
   const res = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
-    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, output_config: { effort }, system, messages: [{ role: 'user', content: input }] }),
+    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages: [{ role: 'user', content: input }] }),
   })
   const data = (await res.json()) as AnthropicResponse
   if (!res.ok) throw new Error(`Fable API error (${res.status}): ${data?.error?.message ?? 'unknown error'}`)

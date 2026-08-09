@@ -146,7 +146,12 @@ export default function CommanderChat() {
         {messages.map((m, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '82%' }}>
             <div style={{ ...bubble(m.role), maxWidth: '100%' }}>
-              {m.attach && <div style={{ fontSize: '11px', opacity: 0.85, marginBottom: m.content ? '5px' : 0 }}>📎 {m.attach.name}</div>}
+              {m.attach && (
+                m.attach.type?.startsWith('image')
+                  ? <img src={m.attach.url} alt={m.attach.name} title={m.attach.name} onClick={() => window.open(m.attach!.url, '_blank')}
+                      style={{ display: 'block', maxWidth: '180px', maxHeight: '180px', borderRadius: '10px', marginBottom: m.content ? '6px' : 0, cursor: 'zoom-in', objectFit: 'cover' }} />
+                  : <div style={{ fontSize: '11px', opacity: 0.85, marginBottom: m.content ? '5px' : 0 }}>📎 {m.attach.name}</div>
+              )}
               {m.content}
             </div>
             {m.actions && m.actions.length > 0 && (
@@ -176,10 +181,17 @@ export default function CommanderChat() {
 
       {attach && (
         <div style={{ padding: '8px 14px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--purple)', background: 'var(--purple-light)', borderRadius: '8px', padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            📎 {attach.name}
-            <button onClick={() => setAttach(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--purple)', padding: 0, display: 'flex' }}><X size={12} /></button>
-          </span>
+          {attach.type?.startsWith('image') ? (
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <img src={attach.url} alt={attach.name} title={attach.name} style={{ maxWidth: '84px', maxHeight: '84px', borderRadius: '10px', objectFit: 'cover', display: 'block', border: '1px solid var(--border)' }} />
+              <button onClick={() => setAttach(null)} title="Remove" style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', border: 'none', background: 'var(--purple)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={11} /></button>
+            </div>
+          ) : (
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--purple)', background: 'var(--purple-light)', borderRadius: '8px', padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              📎 {attach.name}
+              <button onClick={() => setAttach(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--purple)', padding: 0, display: 'flex' }}><X size={12} /></button>
+            </span>
+          )}
         </div>
       )}
 
