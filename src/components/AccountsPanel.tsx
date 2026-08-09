@@ -911,7 +911,7 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
         </button>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4, wordBreak: 'break-word' }}>{post.title}</p>
+          <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4, wordBreak: 'break-word' }}><span style={{ color: 'var(--text-subtle)', marginRight: '5px' }}>#{post.id}</span>{post.title}</p>
           <div style={{ display: 'flex', gap: '6px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: accentColor }}>{post.type.replace(/_/g, ' ')}</span>
             <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 8px', borderRadius: '10px', background: statusChip.bg, color: statusChip.color }}>{statusChip.label}</span>

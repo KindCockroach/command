@@ -88,7 +88,7 @@ export default function ContentCard({ piece, onEdit }: Props) {
 
       {/* Title */}
       <p className="text-[13px] font-semibold leading-snug pr-5 mb-1.5" style={{ color: 'var(--cosmic-midnight)' }}>
-        {piece.title}
+        <span style={{ color: 'var(--text-subtle)', fontWeight: 700, marginRight: '5px' }}>#{piece.id}</span>{piece.title}
       </p>
 
       {/* Description */}
