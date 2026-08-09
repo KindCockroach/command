@@ -13,7 +13,7 @@ import { Plus, Lightbulb, Loader2, CheckCircle2 } from 'lucide-react'
 
 const LANES = [
   { status: 'idea',        label: 'Ideas',              color: '#F2A65A', bg: '#FEF5EA', icon: <Lightbulb size={13} />,    dot: '🌱' },
-  { status: 'in_progress', label: 'In Progress',        color: '#5A4FCF', bg: '#EDEAFC', icon: <Loader2 size={13} />,      dot: '⚡' },
+  { status: 'in_progress', label: 'Being Built',         color: '#5A4FCF', bg: '#EDEAFC', icon: <Loader2 size={13} />,      dot: '⚡' },
   { status: 'ready',       label: 'Ready to Publish',   color: '#3DAA7C', bg: '#E8F7F1', icon: <CheckCircle2 size={13} />, dot: '✨' },
 ] as const
 
@@ -26,7 +26,14 @@ export default function KanbanBoard({ initialContent }: Props) {
   const [activeId, setActiveId] = useState<number | null>(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
-  const byStatus = (s: string) => content.filter(c => c.status === s)
+  // A post isn't "Ready to Publish" until it has real media attached — a caption
+  // with no image/video lives in "Being Built" no matter its stored status.
+  const hasMedia = (c: ContentPiece) => !!(c.media_url || (c.media_urls && c.media_urls.length))
+  const byStatus = (s: string) => {
+    if (s === 'ready') return content.filter(c => c.status === 'ready' && hasMedia(c))
+    if (s === 'in_progress') return content.filter(c => c.status === 'in_progress' || (c.status === 'ready' && !hasMedia(c)))
+    return content.filter(c => c.status === s)
+  }
 
   const handleDragEnd = useCallback(async (e: DragEndEvent) => {
     setActiveId(null)
