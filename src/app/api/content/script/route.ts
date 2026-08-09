@@ -7,10 +7,12 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 120
 
 const LENGTHS: Record<number, string> = {
-  10: 'about 22–28 words — one sharp beat',
-  20: 'about 45–55 words — a hook, one idea, a landing',
-  30: 'about 70–85 words — room to breathe and build',
+  10: 'ONE or TWO short sentences, ~25 words MAX. This is a 10-second script — brutally tight. Do NOT exceed it.',
+  20: 'about 45–55 words — 3–4 short sentences: a hook, one idea, a landing.',
+  30: 'about 70–85 words — room to breathe and build, but no rambling.',
 }
+// Hard token ceiling per duration so the model physically can't ramble long.
+const MAXTOK: Record<number, number> = { 10: 80, 20: 150, 30: 230 }
 
 // Turn a post into a natural SPOKEN script (for an avatar / talking to camera),
 // written to be said out loud — not a caption read aloud. Saves to the script field.
@@ -49,8 +51,8 @@ HARD RULE: the script must NOT restate or paraphrase the on-screen text or the c
 LENGTH: ${dur} seconds — ${LENGTHS[dur]}. Open with a spoken hook, deliver ONE idea, end on a line that lands. No hashtags, no emojis, no "link in bio," no stage directions — only the words she says out loud (the avatar reads this literally).
 
 ${voice}${voiceRef}`,
-      input: `POST (the on-screen text + caption already showing — do NOT repeat these):\n${source}\n\nWrite the ${dur}-second spoken layer that adds something new.`,
-      maxTokens: 1500,
+      input: `POST (the on-screen text + caption already showing — do NOT repeat these):\n${source}\n\nWrite the ${dur}-second spoken layer that adds something new. Keep it to ${LENGTHS[dur]}`,
+      maxTokens: MAXTOK[dur],
       effort: 'low',
     })).trim()
     if (!script) return NextResponse.json({ error: 'no script generated' }, { status: 502 })
