@@ -197,13 +197,18 @@ Return ONLY valid JSON:
 
   // With a real image attached, the post stands alone (the visual IS the media)
   const complete = (verdict.stands_alone && !!verdict.body) || (!!mediaUrl && !!verdict.body)
+  // YouTube only takes video — talking-head scripts (record or HeyGen) or faceless
+  // shorts, never a still image or carousel.
+  const acctPlatform = verdict.account_id ? accounts.find(a => a.id === verdict.account_id)?.platform : undefined
+  const isYouTube = (acctPlatform ?? '').toLowerCase() === 'youtube'
+  const rawType = (verdict.content_type as ContentType) || (mediaUrl ? 'image' : 'post')
   const piece = createContent({
     title: verdict.title || 'River capture',
     // A parked item has no finished caption yet — keep the caption box EMPTY and
     // stash the raw brief in notes, so "this is what posts" never shows meta text.
     description: complete ? verdict.body : '',
     status: complete ? 'ready' : 'idea',
-    type: (verdict.content_type as ContentType) || (mediaUrl ? 'image' : 'post'),
+    type: isYouTube ? 'video' : rawType,
     platforms: verdict.account_id ? [accounts.find(a => a.id === verdict.account_id)?.platform.toLowerCase() ?? 'instagram'] : [],
     tags: ['river', source ?? 'capture'],
     // Keep meta/analysis OUT of notes and the caption. The routing rationale is
