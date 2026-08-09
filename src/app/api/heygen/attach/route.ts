@@ -7,6 +7,15 @@ export const maxDuration = 300
 
 const BASE = 'https://api.heygen.com'
 
+// HeyGen sometimes returns an empty body or an HTML error page (rate limit,
+// outage, bad key). Reading .json() on that throws and crashes the route with an
+// empty response — which the client then chokes on ("Unexpected end of JSON
+// input"). Parse defensively and surface a real error instead.
+async function safeJson(res: Response): Promise<{ ok: boolean; data: unknown; text: string }> {
+  const text = await res.text().catch(() => '')
+  try { return { ok: true, data: JSON.parse(text), text } } catch { return { ok: false, data: null, text } }
+}
+
 // The missing loop: start an avatar video for a post, then poll until HeyGen
 // finishes — and pull the MP4 back INTO the post card as its media.
 // POST { contentId, action: 'start' | 'check' }
@@ -18,6 +27,7 @@ export async function POST(req: NextRequest) {
   const piece = getAllContent().find(c => c.id === Number(contentId))
   if (!piece) return NextResponse.json({ error: 'content not found' }, { status: 404 })
 
+  try {
   if (action === 'start') {
     // Resolve the avatar via the trinity: account.avatar_id → avatar record
     const account = piece.account_id ? getBrandAccount(piece.account_id) : null
@@ -55,7 +65,9 @@ export async function POST(req: NextRequest) {
         title: `${avatar?.name ?? 'AI Mom Mandi'} — ${piece.title.slice(0, 40)}`,
       }),
     })
-    const data = await res.json()
+    const { ok, data: raw, text } = await safeJson(res)
+    if (!ok) return NextResponse.json({ error: `Couldn't reach HeyGen (status ${res.status}). Check the API key and credits, then retry.`, detail: text.slice(0, 200) }, { status: 502 })
+    const data = raw as { data?: { video_id?: string }; error?: { message?: string } }
     const videoId = data?.data?.video_id
     if (!videoId) return NextResponse.json({ error: data?.error?.message ?? 'HeyGen rejected the render', raw: data }, { status: 502 })
     updateContent(piece.id, { heygen_video_id: videoId })
@@ -66,7 +78,9 @@ export async function POST(req: NextRequest) {
     const videoId = piece.heygen_video_id
     if (!videoId) return NextResponse.json({ error: 'No render in progress for this post' }, { status: 400 })
     const res = await fetch(`${BASE}/v1/video_status.get?video_id=${videoId}`, { headers: { 'X-Api-Key': key } })
-    const data = await res.json()
+    const { ok, data: raw } = await safeJson(res)
+    if (!ok) return NextResponse.json({ status: 'processing', note: `HeyGen status check returned no JSON (status ${res.status}); will retry.` })
+    const data = raw as { data?: { status?: string; video_url?: string; error?: { message?: string } } }
     const status = data?.data?.status
     if (status === 'completed' && data?.data?.video_url) {
       // Pull the MP4 out of HeyGen and onto OUR storage, then attach to the card
@@ -91,4 +105,8 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ error: 'unknown action' }, { status: 400 })
+  } catch (e) {
+    // Never crash with an empty body — always hand the client real JSON to show.
+    return NextResponse.json({ error: `HeyGen connection error: ${e instanceof Error ? e.message : 'unknown'}. Tap to retry.` }, { status: 502 })
+  }
 }
