@@ -483,6 +483,28 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
       .catch(() => setMediaList([]))
       .finally(() => setMediaLoading(false))
   }
+  // Suggested Footage — real, capturable b-roll (faceless ≠ AI-generated).
+  type Shot = { type: string; shot: string; why: string }
+  const [footState, setFootState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [footConcept, setFootConcept] = useState('')
+  const [shots, setShots] = useState<Shot[]>([])
+  const [footErr, setFootErr] = useState('')
+  const suggestFootage = async () => {
+    setFootState('loading'); setFootErr('')
+    const d = await fetch('/api/footage', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contentId: post.id }),
+    }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+    if (Array.isArray(d.shots)) { setFootConcept(d.concept || ''); setShots(d.shots); setFootState('done') }
+    else { setFootErr(d.error || 'Could not suggest footage'); setFootState('error') }
+  }
+  const SHOT_META: Record<string, { icon: string; label: string; color: string }> = {
+    capture: { icon: '🎥', label: 'Capture now', color: '#5A4FCF' },
+    camera_roll: { icon: '📸', label: 'In your camera roll', color: '#E8448A' },
+    talking_head: { icon: '🗣️', label: 'Talking head', color: '#3DAA7C' },
+    compilation: { icon: '🎞️', label: 'Compilation', color: '#F2A65A' },
+  }
+
   const attachFromMedia = async (url: string) => {
     const next = pickerOpen === 'swap' ? [url] : [...gallery, url]
     await fetch('/api/content', {
@@ -1211,6 +1233,43 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
               {post.source_context && <Section label="🌱 The original — your words behind this post" text={post.source_context} />}
             </>
           )}
+
+          {/* 🎥 Suggested Footage — real capturable b-roll (faceless ≠ AI) */}
+          <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 14px', background: 'var(--surface)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              <div>
+                <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>🎥 Suggested Footage</p>
+                <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>Real moments to film or find — not AI-generated.</p>
+              </div>
+              <button onClick={suggestFootage} disabled={footState === 'loading'}
+                style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--purple)', fontWeight: 700, fontSize: '11px', cursor: footState === 'loading' ? 'default' : 'pointer' }}>
+                {footState === 'loading' ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Scouting…</> : footState === 'done' ? '↻ Again' : '🎬 Suggest footage'}
+              </button>
+            </div>
+            {footErr && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '6px' }}>⚠ {footErr}</p>}
+            {footState === 'done' && (
+              <div style={{ marginTop: '10px' }}>
+                {footConcept && <p style={{ fontSize: '12px', fontStyle: 'italic', color: 'var(--text-muted)', marginBottom: '8px' }}>&ldquo;{footConcept}&rdquo;</p>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {shots.map((s, i) => {
+                    const m = SHOT_META[s.type] ?? { icon: '🎥', label: s.type, color: 'var(--text-muted)' }
+                    return (
+                      <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', padding: '8px 10px', borderRadius: '9px', background: 'var(--bg)' }}>
+                        <span style={{ fontSize: '15px', flexShrink: 0 }}>{m.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{s.shot}</span>
+                            <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: `${m.color}18`, color: m.color, whiteSpace: 'nowrap' }}>{m.label}</span>
+                          </div>
+                          {s.why && <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.45 }}>{s.why}</p>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Spin variations */}
           <div style={{ position: 'relative' }}>
