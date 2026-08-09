@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     maxTokens: 1600,
     instructions: `You are Mandi's b-roll director. Faceless does NOT mean AI-generated — it means REAL life shot beautifully. Given a post, suggest actual footage/photos she could capture or likely ALREADY HAS, that pair with the story's feeling and transformation. Concrete, shootable, ordinary-life moments — not stock, not AI renders.
 
-Give a short VISUAL CONCEPT (the feeling the footage should carry), then 6-9 SHOTS. For each shot pick a TYPE:
+Give a short VISUAL CONCEPT (the feeling the footage should carry), then EXACTLY 4 SHOTS — ONE per type (one "capture", one "camera_roll", one "talking_head", one "compilation"), each the single strongest option for this story. For each shot pick a TYPE:
 - "capture" — grab this real b-roll now (quick, at home/nearby). e.g. steam rising off morning coffee, a splash from the pool, a slow pan of the backyard, hands closing a laptop.
 - "camera_roll" — she probably already has this (a trip, a birth, her kid, her mother's hands) — name the kind of clip to go find.
 - "talking_head" — her, to camera, for the beat where her face/voice carries it.
@@ -44,5 +44,11 @@ Return ONLY valid JSON:
   try { parsed = JSON.parse(out.match(/\{[\s\S]*\}/)![0]) } catch {
     return NextResponse.json({ error: 'Could not suggest footage', raw: out }, { status: 502 })
   }
-  return NextResponse.json({ concept: parsed.concept ?? '', shots: Array.isArray(parsed.shots) ? parsed.shots : [] })
+  // One suggestion per category, in a consistent order.
+  const all = Array.isArray(parsed.shots) ? parsed.shots as { type?: string }[] : []
+  const order = ['talking_head', 'camera_roll', 'capture', 'compilation']
+  const shots = order
+    .map(t => all.find(s => s?.type === t))
+    .filter(Boolean)
+  return NextResponse.json({ concept: parsed.concept ?? '', shots })
 }
