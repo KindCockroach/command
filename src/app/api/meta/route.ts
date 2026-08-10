@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fableText } from '@/lib/fable'
 import { createContent } from '@/lib/db'
+import { craftFor } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -27,6 +28,8 @@ Write a short BUILD-IN-PUBLIC post in Mandi's voice: warm, plain, real point of 
 6. SPECIFICITY is the game — name the actual move/prompt so a reader could steal it.
 
 Format with real line breaks: a hook line alone, blank line, short 1-2 sentence paragraphs each separated by a blank line, blank line before a soft closing line.
+
+${craftFor(null)}
 
 Return ONLY valid JSON:
 { "title": "short internal title", "onscreen_text": "the hook line", "caption": "the spaced build-in-public post", "takeaway": "one line: the stealable prompt or move", "hashtags": "6-12 single-word hashtags, space-separated, camelCase multi-word ideas" }`,

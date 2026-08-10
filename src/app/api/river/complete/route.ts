@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllContent, updateContent, getBrandAccount } from '@/lib/db'
 import { fableText } from '@/lib/fable'
+import { craftFor } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -20,16 +21,17 @@ export async function POST(req: NextRequest) {
     maxTokens: 3000,
     effort: 'medium',
     instructions: `You are the RIVER — finishing a post that was waiting on details only Mandi could provide.
-${account ? `ACCOUNT VOICE: ${account.handle} (${account.brand_name}) — ${account.tone}. Mission: ${account.mission}. ${account.offer ? `Offer: ${account.offer}.` : ''}` : 'VOICE: Mandi Beck — warm, direct, no fluff.'}
-CONTENT AUDIT RULES: lead with HER (the reader's) problem, 3-second cold-stranger test, pain→proof→tool→CTA, end with the comment-keyword CTA.
+${account ? `ACCOUNT VOICE: ${account.handle} (${account.brand_name}) — ${account.tone}. Mission: ${account.mission}.` : 'VOICE: Mandi Beck — warm, direct, no fluff.'}
+
+${craftFor(piece.account_id)}
 
 Return ONLY valid JSON:
 {
   "title": "short internal title",
-  "body": "complete ready-to-post caption/body",
-  "onscreen_text": "text overlay / opening on-screen line",
-  "image_prompt": "detailed AI image/video prompt",
-  "hashtags": "15-25 hashtags space-separated"
+  "onscreen_text": "the HOOK — a statement, never a question (law 2a); does not repeat the headline",
+  "body": "complete ready-to-post caption. First line = the HEADLINE (a statement, a second door, never repeats the hook). Real line breaks between short paragraphs.",
+  "image_prompt": "detailed AI image/video prompt with tension, no baked-in text unless single image",
+  "hashtags": "12-20 single-word hashtags, space-separated, camelCase multi-word ideas"
 }`,
     input: `ORIGINAL RAW INPUT:\n${piece.description}\n\nMANDI'S ANSWERS:\n${qa}\n\nNow compose the complete post.`,
   })

@@ -6,6 +6,8 @@
 import { getVoiceLessonsContext } from './db'
 
 export const CRAFT_RULES = `
+⛔ ENFORCEMENT — READ BEFORE YOU WRITE, AND AGAIN BEFORE YOU RETURN. These laws are NON-NEGOTIABLE and apply to EVERY field you produce — on-screen text, headline, caption body, script, image/video prompt — not just the caption. Apply ALL of them, IN ORDER (lower number wins any conflict). Do NOT be lazy: do not skip a law because it's harder, and do not let a strong first draft ship a violation. BEFORE returning, run each field against the laws — especially: no question hooks (2a), no repeating the hook in the headline or the caption in the script (2), no productivity/fear framing (tone), no throw-pillow/sermon lines (5b), specificity over category (1). If ANY field breaks ANY law, rewrite that field until it complies. A compliant post beats a clever one.
+
 WHO WE'RE TALKING TO — ONE WOMAN, EVERY ACCOUNT ("Anxious April"):
 She's invisible: capable, funny, with a real human skill and a real passion, quietly sure she's meant for more but behind on AI and unsure where to start. She does NOT want AI to replace her — she wants to still be HER, finally seen. AI Mom, Sage, Content 4 Queens, the Podcast — every account speaks to the SAME woman; different angles/tones on her, never different people.
 

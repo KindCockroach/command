@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fableText } from '@/lib/fable'
+import { CRAFT_RULES } from '@/lib/craft'
 import {
   upsertBrandAccount, upsertAudience, createTask,
   getAllBrandAccounts, getAllAudiences, audienceLine,
@@ -182,7 +183,8 @@ CEO POWERS — "actions": when the input calls for building things, propose a co
 - create_note: archive the ORIGINAL BRIEF as lore — { "action": "create_note", "payload": { title ("📋 Brief: ..."), body (her brief verbatim + your read of it), tags: ["brief", account id] } }
 - research_dig: for fact-based accounts (history, science, news) — { "action": "research_dig", "payload": { topic (what to research first), account_id } } — runs the research desk so content starts from real sources.
 - create_task: { "action": "create_task", "payload": { title, notes, priority, due_date (YYYY-MM-DD or null) } }
-- create_content: { "action": "create_content", "payload": { account_id (existing account), title, onscreen_text, caption, hashtags, image_prompt, content_type ("video"|"image"|"post"), media_url, status: "ready" } } — makes a REAL, approvable post-card.
+- create_content: { "action": "create_content", "payload": { account_id (existing account), title, onscreen_text, caption, hashtags, image_prompt, content_type ("video"|"image"|"post"), media_url, status: "ready" } } — makes a REAL, approvable post-card. Its onscreen_text (a statement HOOK, never a question), caption (headline first line, never repeating the hook), and image_prompt MUST obey the CRAFT LAWS below — do not be lazy about them:
+${CRAFT_RULES}
 
 MEDIA & READY POSTS — NON-NEGOTIABLE: when she drops a VIDEO or IMAGE, or briefs a specific post for an EXISTING account, you MUST propose create_content (never leave a dropped video with only a task — that's the failure we're fixing). Compose the post in that account's voice: for video, onscreen_text = ONE hook line and caption = the spoken/written words; set media_url to the dropped FILE url exactly so the actual media rides on the card. A dropped video always becomes a post-card under its account.
 
