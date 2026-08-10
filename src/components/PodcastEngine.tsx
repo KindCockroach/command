@@ -155,22 +155,39 @@ export default function PodcastEngine() {
     } catch { setPackState('error'); setPackMsg('Connection failed') }
   }
 
-  // Drop episode audio → stored to Media library + transcribed → transcript box fills itself
+  // Drop episode audio → stored to Media first (short upload), THEN transcribed from
+  // its URL (server compresses big episodes; no giant body + long processing in one
+  // request, which is what failed for full-length episodes).
   const handleAudio = async (file: File) => {
     setAudioState('working')
-    setAudioMsg(`Uploading & transcribing ${file.name} (${(file.size / 1048576).toFixed(1)}MB)…`)
+    const mb = (file.size / 1048576).toFixed(1)
+    setAudioMsg(`Saving ${file.name} (${mb}MB) to your Media library…`)
     try {
+      // 1) Store the episode to Media (R2). Just an upload — no processing yet.
       const fd = new FormData()
       fd.append('file', file)
-      const res = await fetch('/api/transcribe', { method: 'POST', body: fd })
-      const d = await res.json()
+      fd.append('folder', 'audio')
+      const up = await fetch('/api/upload', { method: 'POST', body: fd })
+      const upd = await up.json().catch(() => ({}))
+      if (!up.ok || !upd.publicUrl) {
+        setAudioState('error')
+        setAudioMsg(upd.error || 'Upload failed — try again, or use “Pull from Media” if it saved.')
+        return
+      }
+      // 2) Transcribe from the stored URL — server fetches + compresses big files itself.
+      setAudioMsg(`Saved to Media ✓  Transcribing ${mb}MB — a full episode can take a few minutes…`)
+      const res = await fetch('/api/transcribe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioUrl: upd.publicUrl }),
+      })
+      const d = await res.json().catch(() => ({}))
       if (d.transcript) {
         setTranscript(d.transcript)
         setAudioState('done')
-        setAudioMsg(`✓ Transcribed (${d.transcript.split(/\s+/).length.toLocaleString()} words)${d.compressed ? ' · compressed MP3 saved to your Media library' : d.publicUrl ? ' · audio saved to Media library' : ''} — hit Generate Everything below.`)
+        setAudioMsg(`✓ Transcribed (${d.transcript.split(/\s+/).length.toLocaleString()} words) · audio saved to Media — hit Generate Everything below.`)
       } else {
         setAudioState('error')
-        setAudioMsg(d.error || 'Transcription failed — paste the transcript manually.')
+        setAudioMsg(d.error || 'Saved to Media, but transcription failed — paste the transcript manually or use “Pull from Media.”')
       }
     } catch {
       setAudioState('error')
@@ -344,7 +361,7 @@ export default function PodcastEngine() {
               : <>
                   <Mic size={20} style={{ color: audioDrag ? 'var(--purple)' : 'var(--text-subtle)' }} />
                   <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>Drop your episode audio here</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>MP3/M4A/WAV up to 25MB — saves to Media + transcribes automatically</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>MP3/M4A/WAV — full episodes welcome; saved to Media, then auto-compressed &amp; transcribed</span>
                 </>}
             <input type="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg" style={{ display: 'none' }} disabled={audioState === 'working'} onChange={e => { const f = e.target.files?.[0]; if (f) handleAudio(f); e.target.value = '' }} />
           </label>

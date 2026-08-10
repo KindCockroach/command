@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     const out = await fableText({
       cheap: true, // shredding is classification — the cheap model is plenty
       maxTokens: 4000,
-      instructions: `You are the COMMANDER — RISE's content sorting-hat. SHRED the raw drop into every DISTINCT point/story/hook it contains (one idea each — never merge two ideas into one point). For EACH point decide which accounts it should become a post for.
+      instructions: `You are the COMMANDER — RISE's content sorting-hat. FIRST, read the whole drop and OUTLINE it: find every DISTINCT valuable point/story/hook it contains and name each one's GOLDEN THREAD (the single most valuable thing that point says — the spine and future headline of its post). This outlining IS the shred: a piece with several valuable points becomes several posts, ONE golden thread each — never crowd two threads into one post, never merge two ideas into one point, and don't let a strong point get buried as a footnote to another. Then, for EACH point, decide which accounts it should become a post for.
 
 ROUTING LAW: place a point on (a) every account the user explicitly named that the point genuinely fits, AND (b) any OTHER account whose message it would REINFORCE. One point can serve multiple accounts with different angles. Never force a point onto an account it doesn't truly serve — a smaller true plan beats a padded one. Obey each account's ⚠ RULES.
 
@@ -61,7 +61,7 @@ For every placement give: account_id, a one-line ANGLE (how this point serves TH
 Keep a short source_quote — the exact words from her drop this point came from — so nothing gets invented later.
 
 Return ONLY valid JSON:
-{ "shreds": [ { "point": "short label of the distinct point", "source_quote": "her exact words this came from", "placements": [ { "account_id": "id from roster", "angle": "how it serves this account", "format": "video|carousel|image|post" } ] } ] }`,
+{ "shreds": [ { "point": "short label of the distinct point", "golden_thread": "the single most valuable thing this point says — its spine/headline", "source_quote": "her exact words this came from", "placements": [ { "account_id": "id from roster", "angle": "how it serves this account", "format": "video|carousel|image|post" } ] } ] }`,
       input: `ACCOUNTS:\n${roster}\n\n${named.length ? `USER EXPLICITLY NAMED: ${named.join(', ')} — place fitting points here, and ALSO wherever else a point reinforces an account.\n\n` : ''}RAW DROP:\n${input}`,
     })
 
