@@ -163,17 +163,36 @@ export default function PodcastEngine() {
     const mb = (file.size / 1048576).toFixed(1)
     setAudioMsg(`Saving ${file.name} (${mb}MB) to your Media library…`)
     try {
-      // 1) Store the episode to Media (R2). Just an upload — no processing yet.
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('folder', 'audio')
-      const up = await fetch('/api/upload', { method: 'POST', body: fd })
-      const upd = await up.json().catch(() => ({}))
-      if (!up.ok || !upd.publicUrl) {
-        setAudioState('error')
-        setAudioMsg(upd.error || 'Upload failed — try again, or use “Pull from Media” if it saved.')
-        return
+      // 1) Store the episode to Media (R2). Prefer a PRESIGNED direct-to-R2 PUT so
+      // big episodes bypass the server's request-body limit; fall back to a
+      // through-server multipart upload if the direct PUT can't be used.
+      let publicUrl = ''
+      try {
+        const pre = await fetch('/api/upload', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: file.name, contentType: file.type || 'audio/mpeg', folder: 'audio' }),
+        })
+        const pd = await pre.json().catch(() => ({}))
+        if (pre.ok && pd.uploadUrl && pd.publicUrl) {
+          const put = await fetch(pd.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'audio/mpeg' }, body: file })
+          if (put.ok) publicUrl = pd.publicUrl
+        }
+      } catch { /* fall through to multipart */ }
+
+      if (!publicUrl) {
+        const fd = new FormData()
+        fd.append('file', file)
+        fd.append('folder', 'audio')
+        const up = await fetch('/api/upload', { method: 'POST', body: fd })
+        const upd = await up.json().catch(() => ({}))
+        if (!up.ok || !upd.publicUrl) {
+          setAudioState('error')
+          setAudioMsg(upd.error || 'Upload failed — try again, or use “Pull from Media” if it saved.')
+          return
+        }
+        publicUrl = upd.publicUrl
       }
+      const upd = { publicUrl }
       // 2) Transcribe from the stored URL — server fetches + compresses big files itself.
       setAudioMsg(`Saved to Media ✓  Transcribing ${mb}MB — a full episode can take a few minutes…`)
       const res = await fetch('/api/transcribe', {

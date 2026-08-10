@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, PutBucketCorsCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { randomUUID } from 'crypto'
 
@@ -39,6 +39,26 @@ export async function getUploadUrl(key: string, contentType: string): Promise<st
   if (!client) return null
   const cmd = new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType })
   return getSignedUrl(client, cmd, { expiresIn: 300 })
+}
+
+/** Allow the browser to PUT directly to R2 (bypasses the server's body-size
+ *  limit — needed for full-length podcast episodes). One-time bucket config. */
+export async function setBucketCors(): Promise<boolean> {
+  const client = r2Client()
+  if (!client) return false
+  await client.send(new PutBucketCorsCommand({
+    Bucket: BUCKET,
+    CORSConfiguration: {
+      CORSRules: [{
+        AllowedMethods: ['PUT', 'GET', 'HEAD'],
+        AllowedOrigins: ['*'],
+        AllowedHeaders: ['*'],
+        ExposeHeaders: ['ETag'],
+        MaxAgeSeconds: 3600,
+      }],
+    },
+  }))
+  return true
 }
 
 /** Upload bytes to R2 from the server (no browser CORS involved) */
