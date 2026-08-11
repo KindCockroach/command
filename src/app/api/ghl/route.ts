@@ -215,13 +215,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ configured: true, queued: true, content: updated, note: `Approved — but GHL didn't accept the post: ${data?.message ?? 'rejected'}. Fix it in GHL, then re-approve to schedule.`, detail: data })
     }
     // GHL wraps the created post id under different keys across API versions — probe the known shapes
-    const ghlPostId = data?.post?.id ?? data?.post?._id ?? data?.id ?? data?._id ?? data?.results?.id ?? data?.data?.id ?? data?.data?._id ?? null
+    const ghlPostId = data?.post?.id ?? data?.post?._id ?? data?.post?.postId ?? data?.id ?? data?._id ?? data?.postId ?? data?.results?.id ?? data?.results?.post?.id ?? data?.data?.id ?? data?.data?._id ?? data?.data?.post?.id ?? null
     const updated = updateContent(piece.id, {
       status: 'scheduled',
       ghl_post_id: ghlPostId,
       scheduled_at: effectiveSchedule ?? null,
     })
-    return NextResponse.json({ configured: true, scheduled: true, scheduledAt: effectiveSchedule, ghl_post_id: ghlPostId, content: updated })
+    // If we couldn't capture an id, GHL's shape changed — surface its keys so we can
+    // fix the probe, and flag that we can't verify it went live.
+    const idNote = ghlPostId ? undefined : `Pushed to GHL, but couldn't read the post id (can't verify it's live). GHL returned keys: ${Object.keys(data || {}).join(', ')}${data?.post ? ` · post.{${Object.keys(data.post).join(',')}}` : ''}`
+    return NextResponse.json({ configured: true, scheduled: true, scheduledAt: effectiveSchedule, ghl_post_id: ghlPostId, note: idNote, raw: ghlPostId ? undefined : data, content: updated })
   } catch (e) {
     // Network/GHL error — keep the approval so it isn't silently lost.
     const updated = updateContent(piece.id, { status: 'approved' })

@@ -1509,7 +1509,8 @@ export default function AccountsPanel() {
       const d = res ? await res.json().catch(() => ({})) : {}
       // Surface WHY it didn't schedule instead of failing silently.
       let msg = ''
-      if (d.scheduled) msg = `✓ Scheduled in GHL${d.scheduledAt ? ` · ${new Date(d.scheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}`
+      if (d.scheduled && d.note) msg = `⚠ ${d.note}`
+      else if (d.scheduled) msg = `✓ Scheduled in GHL${d.scheduledAt ? ` · ${new Date(d.scheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}`
       else if (d.paused) msg = '⏸ Approved & queued — GHL auto-publish is PAUSED (set GHL_AUTOPUBLISH_PAUSED=false in Railway to resume).'
       else if (d.configured === false) msg = '⏸ Approved & queued — GHL isn\'t connected yet (add GHL_API_KEY + GHL_LOCATION_ID).'
       else if (d.queued) msg = `⚠ Approved but NOT scheduled — ${d.note || 'GHL didn\'t accept it. Re-approve after fixing.'}`
