@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { putObjectStream, getUploadUrl, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
+import { putObject, putObjectStream, getUploadUrl, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
 import { Readable } from 'stream'
+import sharp from 'sharp'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -23,10 +24,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'file field required' }, { status: 400 })
     }
     const ext = (file.name.split('.').pop() ?? 'bin').toLowerCase()
-    const key = mediaKey(folder, file.name, ext)
     try {
-      // STREAM big files (podcast episodes) straight to R2 — buffering the whole
-      // file in memory OOMs the container and returns a 500. Small files stream fine too.
+      // iPhone HEIC/HEIF isn't viewable by browsers OR by Claude's vision API
+      // (400: "file format is invalid or unsupported"). Convert to JPEG on the way in.
+      if (ext === 'heic' || ext === 'heif' || (file.type || '').includes('heic') || (file.type || '').includes('heif')) {
+        const buf = Buffer.from(await file.arrayBuffer())
+        const jpg = await sharp(buf).jpeg({ quality: 88 }).toBuffer()
+        const key = mediaKey(folder, file.name.replace(/\.(heic|heif)$/i, ''), 'jpg')
+        const ok = await putObject(key, jpg, 'image/jpeg')
+        if (!ok) return NextResponse.json({ error: 'Upload to storage failed' }, { status: 500 })
+        return NextResponse.json({ publicUrl: getPublicUrl(key), key, converted: 'heic→jpg' })
+      }
+      // STREAM everything else (big podcast episodes) straight to R2 — buffering the
+      // whole file in memory OOMs the container and returns a 500.
+      const key = mediaKey(folder, file.name, ext)
       const nodeStream = Readable.fromWeb(file.stream() as unknown as import('stream/web').ReadableStream)
       const ok = await putObjectStream(key, nodeStream, file.size, file.type || 'application/octet-stream')
       if (!ok) return NextResponse.json({ error: 'Upload to storage failed' }, { status: 500 })
