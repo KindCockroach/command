@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { putObject, putObjectStream, getUploadUrl, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
+import { putObject, getUploadUrl, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
 import { Readable } from 'stream'
 import sharp from 'sharp'
 
@@ -35,12 +35,22 @@ export async function POST(req: NextRequest) {
         if (!ok) return NextResponse.json({ error: 'Upload to storage failed' }, { status: 500 })
         return NextResponse.json({ publicUrl: getPublicUrl(key), key, converted: 'heic→jpg' })
       }
-      // STREAM everything else (big podcast episodes) straight to R2 — buffering the
-      // whole file in memory OOMs the container and returns a 500.
+      // Everything else (big podcast episodes, .MOV clips): PIPE the file through
+      // the server to R2 via a presigned PUT. The S3 SDK re-buffers the whole body
+      // to sign it (OOM → 500 on big files); a presigned PUT carries its own auth,
+      // so we can stream the body straight through with near-zero memory.
       const key = mediaKey(folder, file.name, ext)
-      const nodeStream = Readable.fromWeb(file.stream() as unknown as import('stream/web').ReadableStream)
-      const ok = await putObjectStream(key, nodeStream, file.size, file.type || 'application/octet-stream')
-      if (!ok) return NextResponse.json({ error: 'Upload to storage failed' }, { status: 500 })
+      const ct = file.type || 'application/octet-stream'
+      const putUrl = await getUploadUrl(key, ct)
+      if (!putUrl) return NextResponse.json({ error: 'Could not prepare storage upload' }, { status: 503 })
+      const put = await fetch(putUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': ct, 'Content-Length': String(file.size) },
+        body: Readable.fromWeb(file.stream() as unknown as import('stream/web').ReadableStream) as unknown as BodyInit,
+        // @ts-expect-error Node fetch needs duplex for a streaming request body
+        duplex: 'half',
+      })
+      if (!put.ok) return NextResponse.json({ error: `Upload to storage failed (${put.status})` }, { status: 502 })
       return NextResponse.json({ publicUrl: getPublicUrl(key), key })
     } catch (e) {
       return NextResponse.json({ error: `Upload failed: ${e instanceof Error ? e.message : 'storage error'}` }, { status: 502 })

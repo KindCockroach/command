@@ -47,7 +47,10 @@ export async function POST(req: NextRequest) {
     const script = (piece.script || scriptMatch?.[1] || piece.onscreen_text || piece.description || '').trim().slice(0, 1200)
     if (!audio && !script) return NextResponse.json({ error: 'Drop your voice recording (or add a script) before rendering.' }, { status: 400 })
 
-    const voiceId = avatar?.heygen_voice_id || avatar?.elevenlabs_voice_id || process.env.HEYGEN_VOICE_DEFAULT
+    // ONLY a HeyGen voice id is valid here — an ElevenLabs id makes HeyGen throw
+    // "Voice not found". If we have no HeyGen voice, omit it and let HeyGen use its
+    // default TTS voice. (For HER real voice, drop a voice clip → audio-driven render.)
+    const voiceId = avatar?.heygen_voice_id || process.env.HEYGEN_VOICE_DEFAULT
     const voice = audio
       ? { type: 'audio', audio_url: audio }
       : { type: 'text', input_text: script, ...(voiceId ? { voice_id: voiceId } : {}) }
