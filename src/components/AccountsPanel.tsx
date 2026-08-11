@@ -461,7 +461,7 @@ function VoiceAllButton({ posts, accentColor, onDone }: { posts: ContentPiece[];
 }
 
 // ── Post card shown on the flip side ──────────────────────────────────────────
-function PostCard({ post, accentColor, onApprove, approving, onChanged, onPreview, accounts }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; onChanged?: () => void; onPreview?: (p: ContentPiece) => void; accounts?: BrandAccount[] }) {
+function PostCard({ post, accentColor, onApprove, approving, approveNote, onChanged, onPreview, accounts }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; approveNote?: string; onChanged?: () => void; onPreview?: (p: ContentPiece) => void; accounts?: BrandAccount[] }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [answers, setAnswers] = useState<string[]>([])
@@ -1362,6 +1362,9 @@ function PostCard({ post, accentColor, onApprove, approving, onChanged, onPrevie
               </button>
             </div>
           )}
+          {approveNote && (
+            <p style={{ fontSize: '11px', fontWeight: 600, lineHeight: 1.45, padding: '9px 11px', borderRadius: '9px', background: approveNote.startsWith('✓') ? 'rgba(61,170,124,0.1)' : 'rgba(242,166,90,0.12)', color: approveNote.startsWith('✓') ? '#2E8B60' : '#C47A1A' }}>{approveNote}</p>
+          )}
           {showDecline && (
             <div style={{ padding: '12px', background: 'rgba(224,82,82,0.05)', border: '1px solid rgba(224,82,82,0.25)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#E05252' }}>Why isn&apos;t this a fit? (teaches this account)</p>
@@ -1409,6 +1412,7 @@ export default function AccountsPanel() {
   const [content, setContent] = useState<ContentPiece[]>([])
   const [flipped, setFlipped] = useState<string | null>(null)
   const [approvingId, setApprovingId] = useState<number | null>(null)
+  const [approveNotes, setApproveNotes] = useState<Record<number, string>>({})
   const [ghlConfigured, setGhlConfigured] = useState<boolean | null>(null)
   const [showArchive, setShowArchive] = useState(false)
   const [queueFilter, setQueueFilter] = useState('all')
@@ -1497,11 +1501,20 @@ export default function AccountsPanel() {
   const approve = async (post: ContentPiece) => {
     setApprovingId(post.id)
     try {
-      await fetch('/api/ghl', {
+      const res = await fetch('/api/ghl', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contentId: post.id }),
-      })
+        body: JSON.stringify({ contentId: post.id, autoSchedule: true }),
+      }).catch(() => null)
+      const d = res ? await res.json().catch(() => ({})) : {}
+      // Surface WHY it didn't schedule instead of failing silently.
+      let msg = ''
+      if (d.scheduled) msg = `✓ Scheduled in GHL${d.scheduledAt ? ` · ${new Date(d.scheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}`
+      else if (d.paused) msg = '⏸ Approved & queued — GHL auto-publish is PAUSED (set GHL_AUTOPUBLISH_PAUSED=false in Railway to resume).'
+      else if (d.configured === false) msg = '⏸ Approved & queued — GHL isn\'t connected yet (add GHL_API_KEY + GHL_LOCATION_ID).'
+      else if (d.queued) msg = `⚠ Approved but NOT scheduled — ${d.note || 'GHL didn\'t accept it. Re-approve after fixing.'}`
+      else msg = '⚠ Approved — no confirmation from GHL. Try again.'
+      setApproveNotes(n => ({ ...n, [post.id]: msg }))
       loadContent()
     } finally {
       setApprovingId(null)
@@ -1621,7 +1634,7 @@ export default function AccountsPanel() {
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {shown.map(p => (
-                    <PostCard key={p.id} post={p} accentColor={theme.color} onApprove={approve} approving={approvingId === p.id} onChanged={loadContent} onPreview={setPreviewPost} accounts={accounts} />
+                    <PostCard key={p.id} post={p} accentColor={theme.color} onApprove={approve} approving={approvingId === p.id} approveNote={approveNotes[p.id]} onChanged={loadContent} onPreview={setPreviewPost} accounts={accounts} />
                   ))}
                 </div>
               </div>
