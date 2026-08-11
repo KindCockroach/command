@@ -373,7 +373,7 @@ export default function PodcastEngine() {
         <div
           onDragOver={e => { e.preventDefault(); setAudioDrag(true) }}
           onDragLeave={() => setAudioDrag(false)}
-          onDrop={e => { e.preventDefault(); setAudioDrag(false); const f = Array.from(e.dataTransfer.files).find(x => x.type.startsWith('audio/') || /\.(mp3|m4a|wav|aac|ogg)$/i.test(x.name)); if (f) handleAudio(f) }}>
+          onDrop={e => { e.preventDefault(); setAudioDrag(false); const f = e.dataTransfer.files?.[0]; if (f) handleAudio(f); else { setAudioState('error'); setAudioMsg('No file detected in that drop — try again, or click to browse.') } }}>
           <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '18px', borderRadius: '12px', border: `2px dashed ${audioDrag ? 'var(--purple)' : 'var(--border)'}`, cursor: audioState === 'working' ? 'default' : 'pointer', background: audioDrag ? 'rgba(107,45,110,0.05)' : 'var(--surface-raised)', transition: 'all 0.15s' }}>
             {audioState === 'working'
               ? <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--purple)' }}><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> {audioMsg}</span>
@@ -382,7 +382,7 @@ export default function PodcastEngine() {
                   <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>Drop your episode audio here</span>
                   <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>MP3/M4A/WAV — full episodes welcome; saved to Media, then auto-compressed &amp; transcribed</span>
                 </>}
-            <input type="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg" style={{ display: 'none' }} disabled={audioState === 'working'} onChange={e => { const f = e.target.files?.[0]; if (f) handleAudio(f); e.target.value = '' }} />
+            <input type="file" accept="audio/*,video/*,.mp3,.m4a,.wav,.aac,.ogg,.mp4,.mov,.m4v,.webm" style={{ display: 'none' }} disabled={audioState === 'working'} onChange={e => { const f = e.target.files?.[0]; if (f) handleAudio(f); e.target.value = '' }} />
           </label>
           {audioState !== 'idle' && audioState !== 'working' && (
             <p style={{ fontSize: '12px', marginTop: '6px', fontWeight: 600, color: audioState === 'done' ? '#3DAA7C' : '#E05252' }}>{audioMsg}</p>
