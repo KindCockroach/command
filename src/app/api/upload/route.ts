@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { putObject, getUploadUrl, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
+import { putObjectStream, getUploadUrl, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
+import { Readable } from 'stream'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -23,10 +24,16 @@ export async function POST(req: NextRequest) {
     }
     const ext = (file.name.split('.').pop() ?? 'bin').toLowerCase()
     const key = mediaKey(folder, file.name, ext)
-    const bytes = Buffer.from(await file.arrayBuffer())
-    const ok = await putObject(key, bytes, file.type || 'application/octet-stream')
-    if (!ok) return NextResponse.json({ error: 'Upload to storage failed' }, { status: 500 })
-    return NextResponse.json({ publicUrl: getPublicUrl(key), key })
+    try {
+      // STREAM big files (podcast episodes) straight to R2 — buffering the whole
+      // file in memory OOMs the container and returns a 500. Small files stream fine too.
+      const nodeStream = Readable.fromWeb(file.stream() as unknown as import('stream/web').ReadableStream)
+      const ok = await putObjectStream(key, nodeStream, file.size, file.type || 'application/octet-stream')
+      if (!ok) return NextResponse.json({ error: 'Upload to storage failed' }, { status: 500 })
+      return NextResponse.json({ publicUrl: getPublicUrl(key), key })
+    } catch (e) {
+      return NextResponse.json({ error: `Upload failed: ${e instanceof Error ? e.message : 'storage error'}` }, { status: 502 })
+    }
   }
 
   // Legacy JSON path: presigned direct-to-R2 URL (kept for any old callers)

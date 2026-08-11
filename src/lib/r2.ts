@@ -69,6 +69,15 @@ export async function putObject(key: string, body: Uint8Array | Buffer, contentT
   return true
 }
 
+/** Stream a large file to R2 without buffering it all in memory (needs the byte
+ *  length up front). Fixes OOM 500s on big podcast episodes. */
+export async function putObjectStream(key: string, body: NodeJS.ReadableStream, contentLength: number, contentType: string): Promise<boolean> {
+  const client = r2Client()
+  if (!client) return false
+  await client.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body as unknown as Uint8Array, ContentLength: contentLength, ContentType: contentType }))
+  return true
+}
+
 /** Public URL for a stored object (requires R2 public bucket or custom domain) */
 export function getPublicUrl(key: string): string {
   const base = process.env.R2_PUBLIC_URL ?? ''
