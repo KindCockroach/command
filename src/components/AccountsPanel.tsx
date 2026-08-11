@@ -735,6 +735,12 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
     if (d.started) { setVideoState('rendering'); pollVideo() }
     else { setVideoState('error'); setVideoErr(d.error || 'could not start render') }
   }
+  // A render already in flight (e.g. from the one-drop clip pipeline) → resume
+  // polling so the captioned MP4 lands on the card on its own.
+  useEffect(() => {
+    if (post.heygen_video_id && !post.heygen_video_url && !post.media_url) pollVideo()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post.id])
 
   // 🖥️ Full loop: start the Higgsfield Supercomputer render, poll, attach the frame
   const pollSupercomputer = async () => {

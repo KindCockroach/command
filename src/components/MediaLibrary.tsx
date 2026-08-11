@@ -51,6 +51,25 @@ function timeAgo(iso: string) {
 export default function MediaLibrary() {
   const [files, setFiles] = useState<MediaFile[]>([])
   const [loading, setLoading] = useState(true)
+  // One-drop clip pipeline: pick an account, turn this voice clip into a captioned
+  // avatar reel + a ready post (kills the manual HeyGen round-trip).
+  const [clipAccounts, setClipAccounts] = useState<{ id: string; handle: string }[]>([])
+  const [clipAcct, setClipAcct] = useState('')
+  const [clipState, setClipState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
+  const [clipMsg, setClipMsg] = useState('')
+  useEffect(() => { fetch('/api/accounts').then(r => r.json()).then((a: { id: string; handle: string; status: string }[]) => setClipAccounts(a.filter(x => ['active', 'restricted', 'planned'].includes(x.status)))).catch(() => {}) }, [])
+  const makeClipReel = async (f: MediaFile) => {
+    if (!clipAcct) { setClipState('error'); setClipMsg('Pick an account first.'); return }
+    setClipState('working'); setClipMsg('Transcribing → writing the post → firing the captioned avatar render…')
+    const d = await fetch('/api/clip', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audioUrl: f.url, accountId: clipAcct }),
+    }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+    if (d.piece) {
+      setClipState('done')
+      setClipMsg(`✓ Post #${d.piece.id} created in ${clipAccounts.find(a => a.id === clipAcct)?.handle || clipAcct} · ${d.transcriptWords} words${d.heygen?.started ? ' · captioned avatar rendering (lands on the card)' : d.heygen?.error ? ` · (avatar render: ${d.heygen.error} — click Make avatar video on the card)` : ''}. Approve it in Accounts.`)
+    } else { setClipState('error'); setClipMsg(d.error || 'Could not build the reel.') }
+  }
   const [filter, setFilter] = useState<'all' | 'video' | 'audio' | 'image'>('all')
   const [search, setSearch] = useState('')
   const [preview, setPreview] = useState<MediaFile | null>(null)
@@ -342,6 +361,25 @@ export default function MediaLibrary() {
                 </button>
                 {cmpMsg && cmpState !== 'working' && <p style={{ fontSize: '11px', marginTop: '5px', textAlign: 'center', color: cmpState === 'error' ? '#E05252' : '#3DAA7C', fontWeight: 600 }}>{cmpMsg}</p>}
                 <p style={{ fontSize: '10px', color: 'var(--text-subtle)', textAlign: 'center', marginTop: '4px' }}>Makes a sub-100MB mono MP3 (voice-grade) you can upload to HeyGen.</p>
+
+                {/* 🎬 One-drop: voice clip → captioned avatar reel + ready post */}
+                <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed var(--border)' }}>
+                  <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)', textAlign: 'center', marginBottom: '6px' }}>🎬 Captioned Reel + Post</p>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <select value={clipAcct} onChange={e => setClipAcct(e.target.value)}
+                      style={{ flex: 1, padding: '9px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}>
+                      <option value="">Which account?</option>
+                      {clipAccounts.map(a => <option key={a.id} value={a.id}>{a.handle}</option>)}
+                    </select>
+                    <button onClick={() => makeClipReel(preview)} disabled={clipState === 'working' || !clipAcct}
+                      style={{ padding: '9px 14px', borderRadius: '9px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: clipState === 'working' || !clipAcct ? 'default' : 'pointer', opacity: clipState === 'working' || !clipAcct ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+                      {clipState === 'working' ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : 'Make it →'}
+                    </button>
+                  </div>
+                  {clipMsg && clipState !== 'working' && <p style={{ fontSize: '11px', marginTop: '6px', textAlign: 'center', color: clipState === 'error' ? '#E05252' : '#3DAA7C', fontWeight: 600 }}>{clipMsg}</p>}
+                  {clipState === 'working' && <p style={{ fontSize: '11px', marginTop: '6px', textAlign: 'center', color: 'var(--purple)', fontWeight: 600 }}>{clipMsg}</p>}
+                  <p style={{ fontSize: '10px', color: 'var(--text-subtle)', textAlign: 'center', marginTop: '4px' }}>Transcribes → writes the post → renders your avatar lip-synced to this audio with burned captions. No HeyGen round-trip.</p>
+                </div>
               </div>
             )}
           </div>
