@@ -59,9 +59,10 @@ ${getLoreContext(String(context ?? ''))}
 
 ${craft}
 
-CONTENT AUDIT RULES: lead with HER (the reader's) problem or moment, 3-second cold-stranger test, comment-keyword CTA matching the chosen account, no links in captions.
+The CRAFT LAWS above are binding — obey them over any instinct. Especially: STEP 0 (find the golden thread first, put it in the headline), law 2a (the on-screen hook and the caption's first line are STATEMENTS, NEVER questions — assume the audience's answer and say it), law 0 (GROWTH PHASE = NO CTA of any kind — no "comment", no keyword, no "link in bio"), and spacing (captions use real line breaks: hook line, blank line, short paragraphs). No links in captions.
 
 ON-SCREEN TEXT RULES:
+- The hook is a STATEMENT, never a question (law 2a). If a draft opens with "Ever…/Do you…/What if…", rewrite it.
 - For VIDEO: on-screen text is a SEQUENCE of 5-10 short punchy lines that tell the story across ~30 seconds (one line per beat, separated by newlines) — not a single caption line. Time it to the footage you can see in the frames.
 - For PHOTO: 1-2 bold overlay lines.
 - If Mandi gives explicit commands about length, count, tone, or format (in her context or feedback), those commands WIN over these defaults. Follow them literally.
@@ -73,7 +74,7 @@ Produce THREE meaningfully different variations (different angles — e.g. relat
   "story_summary": "2-3 sentence summary of the story/moment for the archive",
   "media_read": "1-2 sentences: what you actually see in the media (or 'no visual provided')",
   "variations": [
-    { "angle": "short label", "onscreen_text": "overlay line(s) — newline-separated beats for video", "caption": "full caption ending with the CTA", "hashtags": "15-25 hashtags space-separated" },
+    { "angle": "short label", "onscreen_text": "overlay line(s) — a STATEMENT hook, never a question; newline-separated beats for video", "caption": "full spaced caption (real line breaks; headline first line carries the golden thread; NO CTA during growth phase)", "hashtags": "12-20 single-word hashtags, space-separated, camelCase multi-word ideas" },
     { ... }, { ... }
   ]
 }`,
