@@ -162,11 +162,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Resolve target accounts: explicit > match station account handle/platform > all connected
-    let targetIds: string[] = accountIds ?? []
+    // Resolve target accounts: explicit request > the account's SAVED GHL mapping
+    // (reliable, set via "Connect to GHL") > fuzzy name-match fallback.
+    const stationAcct0 = piece.account_id ? getBrandAccount(piece.account_id) : null
+    let targetIds: string[] = accountIds ?? stationAcct0?.ghl_account_ids ?? []
     if (!targetIds.length) {
       const { accounts } = await fetchGhlAccounts(token!, locationId!)
-      const stationAcct = piece.account_id ? getBrandAccount(piece.account_id) : null
+      const stationAcct = stationAcct0
       const handle = stationAcct?.handle?.replace('@', '').toLowerCase()
       const platform = stationAcct?.platform?.toLowerCase()
       const matches = accounts.filter(a => {

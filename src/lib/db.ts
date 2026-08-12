@@ -162,6 +162,7 @@ export type BrandAccount = {
   notes?: string
   audience_id?: string | null   // THE one audience this account serves
   avatar_id?: string | null     // THE one avatar who speaks on this account
+  ghl_account_ids?: string[]    // EXACT GHL Social Planner account id(s) this posts to (reliable > name-matching)
 }
 
 export type AvatarRecord = {

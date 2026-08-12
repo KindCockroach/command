@@ -169,10 +169,13 @@ function AccountEditorModal({ account, onSave, onDelete, onClose }: { account: P
   const [saving, setSaving] = useState(false)
   const [audienceOpts, setAudienceOpts] = useState<{ id: string; name: string; emoji: string }[]>([])
   const [avatarOpts, setAvatarOpts] = useState<{ id: string; name: string; emoji: string }[]>([])
+  const [ghlOpts, setGhlOpts] = useState<{ id: string; label: string; platform: string }[]>([])
   useEffect(() => {
     fetch('/api/audiences').then(r => r.json()).then(setAudienceOpts).catch(() => {})
     fetch('/api/avatars').then(r => r.json()).then(setAvatarOpts).catch(() => {})
+    fetch('/api/ghl?accounts=1').then(r => r.json()).then(d => setGhlOpts((d.accounts ?? []).map((a: Record<string, string>) => ({ id: a.id || a._id || a.oauthId, label: a.name || a.username || 'account', platform: a.platform || a.type || '' })).filter((a: { id: string }) => a.id))).catch(() => {})
   }, [])
+  const toggleGhl = (id: string) => set('ghl_account_ids', ((form.ghl_account_ids ?? []).includes(id) ? (form.ghl_account_ids ?? []).filter(x => x !== id) : [...(form.ghl_account_ids ?? []), id]))
   const isNew = !account.id
   const set = (k: keyof BrandAccount, v: unknown) => setForm(f => ({ ...f, [k]: v }))
 
@@ -297,6 +300,22 @@ function AccountEditorModal({ account, onSave, onDelete, onClose }: { account: P
           </div>
           <div>{lbl('💰 Currently pushing — which business → product this account markets right now')}
             <input value={form.pushing ?? ''} onChange={e => set('pushing', e.target.value)} placeholder='e.g. "Room30 → Reset Button Workshop" or "RISE → Caption Writer $27" or "Pure give — no offer yet"' style={fld} />
+          </div>
+          <div>
+            {lbl('🔗 Connect to GHL — where approved posts publish (pick the exact account, so it never mis-routes)')}
+            {ghlOpts.length === 0
+              ? <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>No connected GHL accounts found (or GHL not configured).</p>
+              : <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {ghlOpts.map(g => {
+                    const on = (form.ghl_account_ids ?? []).includes(g.id)
+                    return (
+                      <button key={g.id} type="button" onClick={() => toggleGhl(g.id)}
+                        style={{ fontSize: '11px', padding: '5px 11px', borderRadius: '20px', border: `1px solid ${on ? '#3DAA7C' : 'var(--border)'}`, background: on ? 'rgba(61,170,124,0.12)' : 'var(--surface)', color: on ? '#2E8B60' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 700 }}>
+                        {on ? '✓ ' : ''}{g.label} · {g.platform}
+                      </button>
+                    )
+                  })}
+                </div>}
           </div>
           <div>{lbl('Profile URL')}<input value={form.url ?? ''} onChange={e => set('url', e.target.value)} placeholder="https://instagram.com/..." style={fld} /></div>
           <div>{lbl('Non-negotiable rules / notes (the generator obeys these)')}<textarea value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} rows={3} style={area} /></div>
