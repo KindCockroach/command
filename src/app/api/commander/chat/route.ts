@@ -16,6 +16,9 @@ export async function POST(req: NextRequest) {
   const messages: ChatMsg[] = Array.isArray(body.messages) ? body.messages : []
   const attachment: Attachment = body.attachment ?? null
   if (!messages.length) return NextResponse.json({ error: 'messages required' }, { status: 400 })
+  // Claude's vision only reads jpeg/png/gif/webp. Anything else (iPhone HEIC, video)
+  // must NOT be sent as an image or the API 400s — the Commander acknowledges it instead.
+  const viewable = !!attachment?.url && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(attachment.url)
 
   // active + restricted are live; planned means she's teeing up posts for it, so
   // the Commander should route/compose for those too. Only 'paused' stays hidden.
@@ -97,7 +100,7 @@ Supported action types (only propose what she clearly wants — one or two at mo
 - manifesto_story — payload { input, account_id? }. Runs her "Manifesto → Story" before/after teaching series on a line/topic (the flat version, the story rewrite, the one move). For "make a manifesto to story / before-after this / show the story version."
 THE META RULE (always on): so much of what Mandi asks RISE to do is the EXACT result her audience wants too. After you meaningfully help her with something — a build, a fix, a batch of posts, a decision — proactively OFFER a meta_post action that turns the process into content: what she asked for, why it mattered, how we got there, and the prompt/move a reader could steal. One offer, not spam; only when there's a real, shareable process worth documenting. Fill payload.ask with a plain sentence of what she asked, and why/how from the conversation.
 GENERAL RULE — YOU HAVE HANDS FOR EVERY TAB: whenever you and Mandi work something out that belongs in a tab (a persona → Audiences, a commitment → Goals, a build → Projects, a date → Calendar, an idea → Notes, a to-do → Tasks, a post → the account), OFFER to paste it in with the matching action — don't make her retype it. Draft the full payload from what you two just wrote.
-Rules: use exact account ids from the roster. Never propose an action she didn't ask for or clearly want. If she wants something no action covers (create a brand ACCOUNT, approve posts, run the podcast), tell her which tab does it — don't fake it. If no action is needed, don't add the block at all.${attachment?.url ? `\n\nSHE ATTACHED A FILE this turn: ${attachment.name ?? 'file'} (${attachment.type ?? 'unknown'})${attachment.type?.startsWith('image') ? ' — you can see it above.' : ' — you cannot view it, but you know it exists; ask what she wants done with it or propose an action using it.'}` : ''}
+Rules: use exact account ids from the roster. Never propose an action she didn't ask for or clearly want. If she wants something no action covers (create a brand ACCOUNT, approve posts, run the podcast), tell her which tab does it — don't fake it. If no action is needed, don't add the block at all.${attachment?.url ? `\n\nSHE ATTACHED A FILE this turn: ${attachment.name ?? 'file'} (${attachment.type ?? 'unknown'})${viewable ? ' — you can see it above; look at it and respond with context grounded in the account/mission it fits.' : ' — you CANNOT view this format (likely an iPhone HEIC photo or a video). Do NOT pretend to see it. Acknowledge it warmly, give useful context from the relevant account\'s mission/audience, and if you need to actually see the image, ask her to resend it as a JPEG (iPhone: Settings → Camera → Formats → Most Compatible).'}` : ''}
 
 CROSS-ACCOUNT INSTINCT: you run 20+ accounts — think like a distributor, not a single-post writer. When you and Mandi have gone a few turns deep on ONE story, idea, or moment, proactively step back and ask which OTHER accounts in the roster it would genuinely serve. Name them specifically ("this also fits @airevealsus and @empoweredsupermom — different angle for each"), say the angle in a few words, and offer: "Want me to rewrite it for those audiences?" Only name accounts it TRULY fits — a smaller true list beats a padded one, and obey each account's ⚠ RULES. If she says yes, propose a \`shred\` action (or a \`compose_post\` per account) so she can tap and run it. Don't wait to be asked — spotting the reach is your job.
 
@@ -110,7 +113,7 @@ Be the calm, smart partner behind the whole beast. Keep her pointed at what matt
   if (!clean.length) return NextResponse.json({ error: 'empty' }, { status: 400 })
 
   const apiMessages: { role: 'user' | 'assistant'; content: unknown }[] = clean.map((m, i) => {
-    if (i === clean.length - 1 && attachment?.url && attachment.type?.startsWith('image')) {
+    if (i === clean.length - 1 && viewable && attachment?.url) {
       return { role: m.role, content: [{ type: 'text', text: m.content }, { type: 'image', source: { type: 'url', url: attachment.url } }] }
     }
     return m
