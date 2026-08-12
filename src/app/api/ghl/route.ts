@@ -6,12 +6,11 @@ export const dynamic = 'force-dynamic'
 const GHL_BASE = 'https://services.leadconnectorhq.com'
 
 // ── PUBLISH KILL SWITCH ──────────────────────────────────────────────────────
-// Paused 2026-08-08 during account-restriction cleanup (mandij0y + aimomatwork
-// carry "Features you can't use" limits; suspected trigger = Room30 referral link
-// across avatar-video posts). While paused, approvals are QUEUED (status
-// 'approved') instead of pushed to GHL, so nothing is lost — re-approving after
-// resume schedules them. To RESUME: set this to false (or GHL_AUTOPUBLISH_PAUSED=false).
-const AUTO_PUBLISH_PAUSED = process.env.GHL_AUTOPUBLISH_PAUSED === 'false' ? false : true
+// Was paused 2026-08-08 during account-restriction cleanup; RESUMED now that the
+// Room30 triggers are gone and positioning is cleaned up. Auto-publish is LIVE by
+// default — approvals push to GHL and schedule into the 5/day slots. To pause
+// again (e.g. a new restriction scare), set GHL_AUTOPUBLISH_PAUSED=true in Railway.
+const AUTO_PUBLISH_PAUSED = process.env.GHL_AUTOPUBLISH_PAUSED === 'true'
 
 function ghlConfig() {
   const token = process.env.GHL_API_KEY
