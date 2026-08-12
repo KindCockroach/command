@@ -48,6 +48,7 @@ export async function fableText(opts: {
   effort?: Effort   // accepted for back-compat; ignored by 4o
   cheap?: boolean   // route classification/distillation to gpt-4o-mini
   useClaude?: boolean // route real caption-writing to Opus 4.8 (better voice; can't hold vision here)
+  json?: boolean    // force valid JSON output (gpt-4o json mode) — for big structured deliverables
   imageUrl?: string
   imageUrls?: string[]
 }): Promise<string> {
@@ -77,6 +78,7 @@ export async function fableText(opts: {
     model: opts.cheap ? CHEAP_MODEL : WRITER_MODEL,
     max_tokens: opts.maxTokens ?? 4000,
     messages: messages as never,
+    ...(opts.json ? { response_format: { type: 'json_object' as const } } : {}),
   })
 
   logUsage({

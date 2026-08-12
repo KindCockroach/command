@@ -118,10 +118,14 @@ ${CRAFT_RULES}`
 }`
 
   try {
-    const raw = await fableText({ instructions, input: `${context}\n\n${schema}`, maxTokens: 16000, effort: 'medium' })
-    const match = raw.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('No JSON found')
-    const deliverables = JSON.parse(match[0])
+    // json:true forces valid JSON from gpt-4o — no more "unexpected character" parse fails.
+    const raw = await fableText({ instructions, input: `${context}\n\n${schema}`, maxTokens: 16000, effort: 'medium', json: true })
+    let deliverables
+    try { deliverables = JSON.parse(raw) } catch {
+      const match = raw.match(/\{[\s\S]*\}/)
+      if (!match) throw new Error('No JSON found')
+      deliverables = JSON.parse(match[0])
+    }
     deliverables.show_links = SHOW_LINKS
     deliverables.opt_in = OPT_IN
     return NextResponse.json({ deliverables })
