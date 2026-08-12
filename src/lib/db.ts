@@ -50,6 +50,7 @@ export type ContentPiece = {
   heygen_video_url?: string
   higgsfield_request_id?: string
   higgsfield_url?: string
+  canva_design_url?: string        // Canva autofill result (brand template filled with this post's slides)
 }
 
 export type ContentPieceRow = ContentPiece

@@ -772,6 +772,23 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
     setScState('error'); setScErr('Taking unusually long — check Higgsfield, or retry later.')
   }
 
+  // 🎨 Canva Autofill — push this post's slide text into the brand template
+  const [canvaState, setCanvaState] = useState<'idle' | 'working' | 'done' | 'error'>(post.canva_design_url ? 'done' : 'idle')
+  const [canvaMsg, setCanvaMsg] = useState('')
+  const sendToCanva = async () => {
+    setCanvaState('working'); setCanvaMsg('Filling your Canva template…')
+    const d = await fetch('/api/canva/autofill', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id }) }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+    if (d.setup) { setCanvaState('error'); setCanvaMsg(d.setup); return }
+    if (!d.jobId) { setCanvaState('error'); setCanvaMsg(d.error || 'Could not start Canva autofill.'); return }
+    // poll
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 4000))
+      const p = await fetch('/api/canva/autofill', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id, jobId: d.jobId }) }).then(r => r.json()).catch(() => ({}))
+      if (p.status === 'success' && p.designUrl) { setCanvaState('done'); setCanvaMsg(''); onChanged?.(); return }
+      if (p.status === 'failed') { setCanvaState('error'); setCanvaMsg('Canva couldn\'t fill the template.'); return }
+    }
+    setCanvaState('error'); setCanvaMsg('Canva is taking a while — check back.')
+  }
   const sendToSupercomputer = async () => {
     setScState('starting'); setScErr('')
     const d = await fetch('/api/higgsfield', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: post.id, action: 'start' }) }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
@@ -1183,6 +1200,18 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
                 : <>🖥️ Send to Supercomputer</>}
             </button>
             {scState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {scErr} <button onClick={sendToSupercomputer} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
+          </div>
+
+          {/* 🎨 Canva Autofill — fill the brand template with this post's slides */}
+          <div>
+            <button onClick={post.canva_design_url ? undefined : sendToCanva} disabled={canvaState === 'working'}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: post.canva_design_url ? 'rgba(61,170,124,0.08)' : 'var(--surface)', color: post.canva_design_url ? '#2E8B60' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: canvaState === 'working' ? 'default' : 'pointer' }}>
+              {canvaState === 'working' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Filling Canva template…</>
+                : post.canva_design_url ? <>✓ Canva design ready</>
+                : <>🎨 Send to Canva template</>}
+            </button>
+            {post.canva_design_url && <a href={post.canva_design_url} target="_blank" rel="noreferrer" style={{ display: 'block', textAlign: 'center', fontSize: '11px', color: 'var(--purple)', fontWeight: 700, marginTop: '5px' }}>Open in Canva →</a>}
+            {canvaState === 'error' && canvaMsg && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px', lineHeight: 1.4 }}>⚠ {canvaMsg}</p>}
           </div>
 
           {editing ? (
