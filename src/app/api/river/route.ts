@@ -126,7 +126,7 @@ Return ONLY valid JSON:
 }`,
     input: isStillImage
       ? `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}\n\nAn IMAGE is attached — Mandi wants this actual image filed under the account it fits. LOOK at it, decide which account it belongs to, and write the post AROUND it (never describe the image; add value the picture can't). It stands alone (media is provided).${directive}\n\nHER NOTE:\n${input}`
-      : `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}${directive}\n\nRAW INPUT:\n${input}`,
+      : `ACCOUNT ROSTER:\n${accountList}\n\nACTIVE GOALS (weight sorting toward these):\n${goalList || 'none set'}\n\nSOURCE STREAM: ${source ?? 'capture'}${directive}\n\nRAW MATERIAL TO TRANSFORM — this is what Mandi handed you to BUILD FROM, not to restate. Do NOT paraphrase or summarize it. Assess it, find the golden thread, and write an ELEVATED post with a real arc that adds a beat/image/turn she didn't spell out. If she included fixed pieces (on-screen text, a headline, a last line), keep those exact as anchors and write NEW richer body between them:\n${input}`,
   })
 
   let verdict: RiverVerdict
