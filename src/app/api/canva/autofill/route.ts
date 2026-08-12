@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllContent, updateContent } from '@/lib/db'
+import { getAccessToken, canvaConfigured, canvaConnected } from '@/lib/canva'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -14,14 +15,15 @@ const CANVA_API = 'https://api.canva.com/rest/v1'
 // POST { contentId }              → starts an autofill job, returns { jobId }
 // POST { contentId, jobId }       → polls the job, returns status + design url when ready
 export async function POST(req: NextRequest) {
-  const token = process.env.CANVA_ACCESS_TOKEN
   const templateId = process.env.CANVA_BRAND_TEMPLATE_ID
-  if (!token || !templateId) {
-    return NextResponse.json({
-      error: 'Canva not connected yet.',
-      setup: 'Create a Canva Connect app (canva.com/developers), authorize it, then set CANVA_ACCESS_TOKEN and CANVA_BRAND_TEMPLATE_ID in Railway. Then RISE can autofill your brand template.',
-    }, { status: 503 })
+  if (!canvaConfigured() || !templateId) {
+    return NextResponse.json({ error: 'Canva not set up.', setup: 'Set CANVA_CLIENT_ID, CANVA_CLIENT_SECRET, and CANVA_BRAND_TEMPLATE_ID in Railway.' }, { status: 503 })
   }
+  if (!canvaConnected()) {
+    return NextResponse.json({ error: 'Canva not authorized yet.', setup: 'Open /api/canva/oauth/start once to connect your Canva account.' }, { status: 503 })
+  }
+  const token = await getAccessToken()
+  if (!token) return NextResponse.json({ error: 'Canva token expired — reconnect at /api/canva/oauth/start.', setup: '/api/canva/oauth/start' }, { status: 503 })
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
   const { contentId, jobId } = await req.json().catch(() => ({}))
