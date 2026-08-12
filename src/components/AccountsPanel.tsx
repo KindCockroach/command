@@ -1395,7 +1395,7 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {isApproved && (
                 <p style={{ fontSize: '11px', color: '#C47A1A', background: 'rgba(242,166,90,0.1)', padding: '8px 10px', borderRadius: '8px', lineHeight: 1.5 }}>
-                  GHL isn&apos;t connected yet, so nothing is scheduled automatically. <strong>Manual mode:</strong> Copy the post above, publish it on the platform yourself, then mark it posted below.
+                  Approved, but not auto-scheduled (see the note above for why — usually GHL auto-publish is paused). <strong>Manual mode:</strong> copy the post above, publish it on the platform yourself, then mark it posted below.
                 </p>
               )}
               <button onClick={markPosted} disabled={marking}
