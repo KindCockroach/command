@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllContent, updateContent } from '@/lib/db'
+import { getAllContent, updateContent, getBrandAccount, getAllAvatars } from '@/lib/db'
 import { putObject, getPublicUrl, mediaKey } from '@/lib/r2'
 import { logCost } from '@/lib/usage'
 
@@ -13,14 +13,20 @@ const BASE = 'https://api.elevenlabs.io/v1'
 // Built to burn down ElevenLabs credits into a usable audio library.
 export async function POST(req: NextRequest) {
   const key = process.env.ELEVENLABS_API_KEY
-  const voiceId = process.env.ELEVENLABS_VOICE_ID
-  if (!key || !voiceId) return NextResponse.json({ error: 'ElevenLabs key/voice not configured' }, { status: 503 })
+  if (!key) return NextResponse.json({ error: 'ElevenLabs key not configured' }, { status: 503 })
 
   const { contentId, text } = await req.json()
   if (!contentId) return NextResponse.json({ error: 'contentId required' }, { status: 400 })
 
   const piece = getAllContent().find(c => c.id === Number(contentId))
   if (!piece) return NextResponse.json({ error: 'content not found' }, { status: 404 })
+
+  // Use the voice set on THIS post's account avatar (so changing the avatar's
+  // ElevenLabs voice updates every Re-voice), falling back to the env default.
+  const account = piece.account_id ? getBrandAccount(piece.account_id) : null
+  const avatar = (account?.avatar_id ? getAllAvatars().find(a => a.id === account.avatar_id) : null) ?? getAllAvatars().find(a => a.id === 'mandi')
+  const voiceId = avatar?.elevenlabs_voice_id || process.env.ELEVENLABS_VOICE_ID
+  if (!voiceId) return NextResponse.json({ error: 'No ElevenLabs voice set on the avatar or in env' }, { status: 503 })
 
   // What she'd actually SAY: prefer a spoken script, else the caption body (no
   // hashtags), else the hook. Cap length so one clip can't blow the credit budget.
