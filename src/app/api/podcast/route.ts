@@ -66,10 +66,10 @@ ${CRAFT_RULES}`
 {
   "core_takeaway": "the ONE real thesis of this episode, in Mandi's framing — the argument she actually builds, not the topic. One or two sentences.",
   "emotional_spine": "the story or wound at the center — who it's about, what happened, why it matters to her. One or two sentences.",
-  "title": "punchy episode title in Mandi's voice (under 60 chars) — TRUE to the core_takeaway",
+  "title": "punchy episode title (under 60 chars) — TRUE to the core_takeaway. ADDRESS THE LISTENER: use 'you/your', never 'I/my/me'. It talks TO her, not about Mandi. (e.g. NOT 'I'm the AI Mom and AI Can't Raise My Kids' → 'AI Is Useful, But It Still Can't Tell You How to Raise Your Kids')",
   "subtitle": "one sentence that makes someone hit play — reflects the real takeaway, not a generic topic",
   "questions": ["the real questions THIS episode asks/answers (many are literally asked near the end) — 3-6, in her words"],
-  "headlines": ["5 scroll-stopping options — each must be answerable by core_takeaway and honor emotional_spine; none writable from the title alone"],
+  "headlines": ["5 scroll-stopping options — each ADDRESSED TO THE LISTENER (you/your), NOT the host (I/my); each answerable by core_takeaway and honoring emotional_spine; none writable from the title alone"],
   "description": "3-paragraph show notes in Mandi's voice — open on the emotional spine (the real story), land the core takeaway, why it matters. Under 300 words. Her warm, tangential voice.",
   "seo_description": "150-character search meta description",
   "keywords": ["5 keywords drawn from what she actually discussed"],
