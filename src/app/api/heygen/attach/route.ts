@@ -37,11 +37,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `No HeyGen talking photo for ${account?.handle ?? 'this account'} — wire AI Mom Mandi (Avatars) or set one in the account editor (🎭).` }, { status: 400 })
     }
 
-    // Audio-driven: if she dropped her REAL voice recording (passed as audioUrl, or an
-    // audio file on the card), lip-sync Mandi's photo to her exact audio — no TTS.
-    // Otherwise fall back to text-to-speech from the script.
+    // Audio-driven: ANY audio connected to the card drives the avatar — her real
+    // recording (file_path), OR audio she generated in her voice clone (audio_url,
+    // e.g. "Re-voice (Mandi)"), OR one passed in. Lip-sync to it exactly — no TTS.
     const cardAudio = piece.file_path && /\.(mp3|wav|m4a|aac|ogg)(\?|$)/i.test(piece.file_path) ? piece.file_path : ''
-    const audio = (audioUrl || cardAudio || '').trim()
+    const audio = (audioUrl || cardAudio || piece.audio_url || '').trim()
 
     const scriptMatch = (piece.description ?? '').match(/Script:\s*([\s\S]*?)(?=\n\n[A-Z][a-z]+:|$)/)
     const script = (piece.script || scriptMatch?.[1] || piece.onscreen_text || piece.description || '').trim().slice(0, 1200)
