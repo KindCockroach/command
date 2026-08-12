@@ -118,8 +118,12 @@ ${CRAFT_RULES}`
 }`
 
   try {
-    // json:true forces valid JSON from gpt-4o — no more "unexpected character" parse fails.
-    const raw = await fableText({ instructions, input: `${context}\n\n${schema}`, maxTokens: 16000, effort: 'medium', json: true })
+    // useClaude routes the WHOLE kit to Opus 4.8 — the same upgrade the caption
+    // paths got. gpt-4o was the reason every kit read like a content marketer wrote
+    // it ("Embracing Uncertainty", "Why X Matters"). json:true is kept as a fallback:
+    // it's ignored on the Opus path (JSON is enforced by the prompt) but kicks in if
+    // ANTHROPIC_API_KEY is missing and we drop back to gpt-4o.
+    const raw = await fableText({ instructions, input: `${context}\n\n${schema}`, maxTokens: 16000, effort: 'high', json: true, useClaude: true })
     let deliverables
     try { deliverables = JSON.parse(raw) } catch {
       const match = raw.match(/\{[\s\S]*\}/)
