@@ -108,18 +108,34 @@ export default function InstantCompose({ lockedAccount }: { lockedAccount?: Lock
     if (f.type.startsWith('video')) {
       extractFrames(f).then(setFrames).catch(() => {})
     }
-    // Upload to R2 immediately — lands in the Media library
+    // Upload to R2 — lands in the Media library
     setUploading(true)
     try {
-      const fd = new FormData()
-      fd.append('file', f)
-      fd.append('folder', 'media')
-      const res = await fetch('/api/upload', { method: 'POST', body: fd })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok || !data.publicUrl) throw new Error(data.error || `upload failed (${res.status})`)
-      setMediaUrl(data.publicUrl)
+      let publicUrl = ''
+      const isImage = f.type.startsWith('image')
+      // Images are small AND may need HEIC→JPEG conversion → go through the server.
+      // Videos/large files can't route through the server (Next buffers the whole
+      // body → OOM), so PUT them straight to R2 with a presigned URL.
+      if (isImage) {
+        const fd = new FormData()
+        fd.append('file', f); fd.append('folder', 'media')
+        const res = await fetch('/api/upload', { method: 'POST', body: fd })
+        const data = await res.json().catch(() => ({}))
+        if (res.ok && data.publicUrl) publicUrl = data.publicUrl
+      }
+      if (!publicUrl) {
+        const pre = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: f.name, contentType: f.type || 'application/octet-stream', folder: 'media' }) })
+        const pd = await pre.json().catch(() => ({}))
+        if (pd.uploadUrl && pd.publicUrl) {
+          const put = await fetch(pd.uploadUrl, { method: 'PUT', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f })
+          if (put.ok) publicUrl = pd.publicUrl
+          else throw new Error(`storage rejected the file (${put.status}) — enable R2 CORS to allow direct video upload`)
+        }
+      }
+      if (!publicUrl) throw new Error('upload failed')
+      setMediaUrl(publicUrl)
     } catch (e) {
-      setError(`Media upload issue: ${e instanceof Error ? e.message : 'failed'} — you can still compose from your description.`)
+      setError(`Media upload issue: ${e instanceof Error ? e.message : 'failed'} — you can still compose from your description${frames.length ? ' (I can still see your video frames)' : ''}.`)
     } finally {
       setUploading(false)
     }
