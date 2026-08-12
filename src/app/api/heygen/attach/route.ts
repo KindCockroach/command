@@ -45,6 +45,13 @@ export async function POST(req: NextRequest) {
 
     const scriptMatch = (piece.description ?? '').match(/Script:\s*([\s\S]*?)(?=\n\n[A-Z][a-z]+:|$)/)
     const script = (piece.script || scriptMatch?.[1] || piece.onscreen_text || piece.description || '').trim().slice(0, 1200)
+
+    // AUDIO-ONLY accounts (the podcast) must lip-sync to HER real voice — never a
+    // synthetic HeyGen TTS voice. If there's no audio attached, stop and say so.
+    const audioOnly = account?.id === 'aimompodcast' || /podcast|your voice|real voice/i.test(account?.content_format ?? '')
+    if (audioOnly && !audio) {
+      return NextResponse.json({ error: `${account?.handle ?? 'This account'} uses YOUR real voice — attach your podcast audio clip first (drop it in Media → 🎬 Captioned Reel, or attach the audio to this card). No synthetic voice here.` }, { status: 400 })
+    }
     if (!audio && !script) return NextResponse.json({ error: 'Drop your voice recording (or add a script) before rendering.' }, { status: 400 })
 
     // ONLY a HeyGen voice id is valid here — an ElevenLabs id makes HeyGen throw
