@@ -2,6 +2,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { putObject, getUploadUrl, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
 import { Readable } from 'stream'
 import sharp from 'sharp'
+import { spawn } from 'child_process'
+import { mkdtemp, writeFile, readFile, rm } from 'fs/promises'
+import { tmpdir } from 'os'
+import path from 'path'
+
+function run(cmd: string, args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const p = spawn(cmd, args); let err = ''
+    p.stderr.on('data', d => { err += String(d) })
+    p.on('error', reject)
+    p.on('close', c => (c === 0 ? resolve() : reject(new Error(err.slice(-200)))))
+  })
+}
+
+// HEIC → JPEG. sharp's prebuilt lacks the HEIC decoder, so try sharp then ffmpeg.
+async function heicToJpeg(buf: Buffer): Promise<Buffer | null> {
+  try { return await sharp(buf).jpeg({ quality: 88 }).toBuffer() } catch { /* try ffmpeg */ }
+  const dir = await mkdtemp(path.join(tmpdir(), 'heic-'))
+  try {
+    const inP = path.join(dir, 'in.heic'), outP = path.join(dir, 'out.jpg')
+    await writeFile(inP, buf)
+    await run('ffmpeg', ['-y', '-i', inP, outP])
+    return await readFile(outP)
+  } catch { return null } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}) }
+}
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -29,7 +54,10 @@ export async function POST(req: NextRequest) {
       // (400: "file format is invalid or unsupported"). Convert to JPEG on the way in.
       if (ext === 'heic' || ext === 'heif' || (file.type || '').includes('heic') || (file.type || '').includes('heif')) {
         const buf = Buffer.from(await file.arrayBuffer())
-        const jpg = await sharp(buf).jpeg({ quality: 88 }).toBuffer()
+        const jpg = await heicToJpeg(buf)
+        if (!jpg) {
+          return NextResponse.json({ error: 'iPhone HEIC photos can\'t be read by the AI. On your iPhone: Settings → Camera → Formats → "Most Compatible" (saves photos as JPEG). Or share/export this one as JPEG, then re-drop it.' }, { status: 415 })
+        }
         const key = mediaKey(folder, file.name.replace(/\.(heic|heif)$/i, ''), 'jpg')
         const ok = await putObject(key, jpg, 'image/jpeg')
         if (!ok) return NextResponse.json({ error: 'Upload to storage failed' }, { status: 500 })
