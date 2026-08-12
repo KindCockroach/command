@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
   const output = await fableText({
     maxTokens: 6000,
     effort: 'medium',
+    useClaude: true, // Opus writes it (unless media frames are attached → 4o vision)
     imageUrls: composeImages,
     input: composeInput,
     instructions: `You compose Instagram-ready posts from Mandi Beck's own photos/videos plus her context.

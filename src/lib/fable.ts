@@ -47,15 +47,22 @@ export async function fableText(opts: {
   maxTokens?: number
   effort?: Effort   // accepted for back-compat; ignored by 4o
   cheap?: boolean   // route classification/distillation to gpt-4o-mini
+  useClaude?: boolean // route real caption-writing to Opus 4.8 (better voice; can't hold vision here)
   imageUrl?: string
   imageUrls?: string[]
 }): Promise<string> {
+  // When images are attached (a photo, or sampled video frames), 4o looks at them.
+  const images = [opts.imageUrl, ...(opts.imageUrls ?? [])].filter(Boolean) as string[]
+
+  // Quality caption-writing (no image to see) → Opus 4.8. gpt-4o swings between
+  // flat-paraphrase and purple prose; Opus holds "elevated AND plain".
+  if (opts.useClaude && !opts.cheap && images.length === 0 && process.env.ANTHROPIC_API_KEY) {
+    return fableHooks(opts.instructions, opts.input, opts.maxTokens ?? 4000, 'content')
+  }
+
   if (!process.env.OPENAI_API_KEY) {
     throw new Error('OPENAI_API_KEY is not set — add it in Railway → Variables so the writer can work.')
   }
-
-  // When images are attached (a photo, or sampled video frames), 4o looks at them.
-  const images = [opts.imageUrl, ...(opts.imageUrls ?? [])].filter(Boolean) as string[]
   const messages: Array<Record<string, unknown>> = [{ role: 'system', content: opts.instructions }]
   messages.push(
     images.length

@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
   const triage = await fableText({
     maxTokens: 4000,
     effort: 'medium',
+    useClaude: true, // Opus writes the caption (text drops); image drops fall back to 4o vision
     imageUrl: isStillImage ? mediaUrl : undefined,
     instructions: `You are the RIVER — the sorting-hat brain of Mandi Beck's content command center. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
 Raw ideas, stories, fragments, tasks, and images flow in from every tab. Your job:
