@@ -125,15 +125,47 @@ export async function commanderChat(system: string, messages: { role: 'user' | '
 export async function fableHooks(system: string, input: string, maxTokens = 3000, kind = 'hooks', _effort: Effort = 'high'): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — needed for the Fable writer.')
+  // STREAM the response. A big non-streamed Opus reply (high max_tokens + thinking)
+  // hits the request timeout — this is exactly the case the Claude API warns about.
+  // Streaming keeps the connection alive with data and lets long kits finish.
   const res = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
-    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages: [{ role: 'user', content: input }] }),
+    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages: [{ role: 'user', content: input }], stream: true }),
   })
-  const data = (await res.json()) as AnthropicResponse
-  if (!res.ok) throw new Error(`Fable API error (${res.status}): ${data?.error?.message ?? 'unknown error'}`)
-  logUsage({ provider: 'anthropic', model: COMMANDER_MODEL, kind, inputTokens: data.usage?.input_tokens ?? 0, outputTokens: data.usage?.output_tokens ?? 0 })
-  return (data.content ?? []).filter(b => b.type === 'text' && typeof b.text === 'string').map(b => b.text as string).join('').trim()
+  if (!res.ok || !res.body) {
+    let msg = 'unknown error'
+    try { msg = ((await res.json()) as AnthropicResponse)?.error?.message ?? msg } catch { /* non-JSON */ }
+    throw new Error(`Fable API error (${res.status}): ${msg}`)
+  }
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buf = ''
+  let text = ''
+  let inTok = 0
+  let outTok = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buf += decoder.decode(value, { stream: true })
+    const lines = buf.split('\n')
+    buf = lines.pop() ?? ''
+    for (const line of lines) {
+      const s = line.trim()
+      if (!s.startsWith('data:')) continue
+      const payload = s.slice(5).trim()
+      if (!payload || payload === '[DONE]') continue
+      try {
+        const evt = JSON.parse(payload)
+        if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') text += evt.delta.text
+        else if (evt.type === 'message_start') inTok = evt.message?.usage?.input_tokens ?? 0
+        else if (evt.type === 'message_delta' && evt.usage?.output_tokens != null) outTok = evt.usage.output_tokens
+        else if (evt.type === 'error') throw new Error(evt.error?.message ?? 'stream error')
+      } catch (e) { if (e instanceof Error && e.message !== 'Unexpected end of JSON input') { /* skip partial */ } }
+    }
+  }
+  logUsage({ provider: 'anthropic', model: COMMANDER_MODEL, kind, inputTokens: inTok, outputTokens: outTok })
+  return text.trim()
 }
 
 // ── The Researcher — live web search with a heavyweight thinker ───────────────

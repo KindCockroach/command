@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CRAFT_RULES } from '@/lib/craft'
-import { fableText, researchWithWeb } from '@/lib/fable'
+import { fableText } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -22,17 +22,11 @@ export async function POST(req: NextRequest) {
   // model never saw the last third of an episode, where the real takeaway usually lands.)
   const clip = String(transcript).slice(0, 120000)
 
-  // RISE's homework is SUPPORTING evidence only — real sources that back the claims
-  // MANDI ALREADY MADE. It must never introduce new specifics that become the story.
-  let researched = ''
-  try {
-    researched = await researchWithWeb({
-      maxSearches: 5,
-      maxTokens: 2000,
-      instructions: 'You are RISE\'s fact-checking desk. Read this podcast transcript and find real outside sources that SUPPORT or gently contextualize the specific claims THE HOST ALREADY MADE (do not introduce new topics she did not raise). Return a short list: [her claim] → [supporting source name + URL] → [one line of context]. Real sources only; "VERIFY:" anything uncertain. This is a further-reading layer, not new content. Plain text.',
-      input: clip,
-    })
-  } catch { /* research is best-effort — the episode still generates without it */ }
+  // NOTE: the old blocking web-research pre-step was removed — it ran Opus + up to
+  // 5 live web searches BEFORE the kit even started writing, pushing the whole
+  // request past the timeout. Sources were "further-reading only" for the Medium
+  // article anyway. If we want them back, run them as a separate, non-blocking call.
+  const researched = ''
 
   const context = `SHOW: ${showName}
 HOST: Mandi Beck — AI Mom. Warm, tangential, self-aware, philosophical, plain-spoken — a mom at the window, NOT a tech-bro explainer. This is HER show; write AS her.
