@@ -104,11 +104,16 @@ export type Task = {
 
 export type NoteCategory = 'idea' | 'business' | 'personal' | 'client' | 'script' | 'framework' | 'sop' | 'prompt' | 'decision' | 'reflection'
 
+// Who authored a note: 'mine' = Mandi's own writing/drops; 'rise' = RISE
+// generated it (research, kits, transcripts, media stories, expansions).
+export type NoteSource = 'mine' | 'rise'
+
 export type Note = {
   id: number
   title: string
   body: string
   category: NoteCategory
+  source?: NoteSource           // 'rise' when a route generated it; defaults to 'mine' (she wrote it)
   tags: string[]
   pinned: boolean
   archived?: boolean            // moved to archive once opened/read
@@ -960,6 +965,7 @@ export function createNote(data: Partial<Note>): Note {
     title: data.title ?? 'Untitled',
     body: data.body ?? '',
     category: data.category ?? 'idea',
+    source: data.source ?? 'mine',
     tags: data.tags ?? [],
     pinned: data.pinned ?? false,
     created_at: now,

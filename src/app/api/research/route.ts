@@ -11,13 +11,29 @@ export const maxDuration = 300
 
 const ITEM_SHAPE = `Each item: { "headline": "the story in one line", "source": "publication name", "url": "link", "why_it_matters": "why Mandi specifically should care — one sharp sentence", "talk_track": "the angle if she speaks to it on AI Mom Podcast — a hook, not a summary" }`
 
-function parseItems(raw: string): { items: ResearchItem[]; summary: string } {
+function parseItems(raw: string): { items: ResearchItem[]; summary: string; deep_dive: string } {
   const match = raw.match(/\{[\s\S]*\}/)
   const parsed = match ? JSON.parse(match[0]) : {}
   return {
     items: Array.isArray(parsed.items) ? parsed.items : [],
     summary: typeof parsed.summary === 'string' ? parsed.summary : '',
+    deep_dive: typeof parsed.deep_dive === 'string' ? parsed.deep_dive : '',
   }
+}
+
+// Build the readable note body for a dig: KEY TAKEAWAY up top, RISE's in-depth
+// write-up in the middle, real SOURCES with links at the bottom. Falls back to a
+// clean assembly if the model didn't return a deep_dive.
+function digNoteBody(topic: string, summary: string, deep_dive: string, items: ResearchItem[]): string {
+  const sources = items.length
+    ? '\n\n## Sources\n' + items.map((i, n) => `${n + 1}. [${i.source}] ${i.headline}\n   ${i.url}`).join('\n')
+    : ''
+  if (deep_dive && deep_dive.length > 400) {
+    // Model already wrote the takeaway + body; just guarantee sources are appended.
+    return /##\s*sources/i.test(deep_dive) ? deep_dive : deep_dive + sources
+  }
+  // Fallback assembly (older/short responses)
+  return `## Key takeaway\n${summary}\n\n## What RISE found\n${items.map(i => `**${i.headline}** — ${i.why_it_matters} Angle for the podcast: ${i.talk_track}`).join('\n\n')}${sources}`
 }
 
 // The dig itself, callable from multiple actions
@@ -29,13 +45,25 @@ async function runDig(topic: string, accountId?: string | null, save?: boolean) 
 
   const raw = await researchWithWeb({
     maxSearches: 10,
+    maxTokens: 4000,
     instructions: `You are RISE's research desk — a rigorous, intelligent researcher for Mandi Beck. Search the live web deeply on the topic given. Prefer primary sources: peer-reviewed research, .gov/.edu, established journalism — over blogs and content farms. Real facts only; flag anything uncertain with "VERIFY:".${accountCtx}
 
-Return ONLY valid JSON: { "summary": "one-paragraph synthesis of what you found", "items": [ ...3 to 6 of the strongest findings/articles... ] }
+You will write a real briefing she can READ to educate herself — not a list of links. It must:
+- open with a one-line **KEY TAKEAWAY** (the single most important thing she should walk away knowing);
+- run at least 500 words of substance in her registers — plain, intelligent, specific: what's actually happening, the real numbers/names/dates, why sources disagree, and what it means for a mom raising kids into this economy;
+- weave in the evidence as she reads (name the source inline, e.g. "according to Pew…") — never hand-wave;
+- close with the concrete SOURCES (every claim traceable to a real link).
+
+Return ONLY valid JSON:
+{
+  "summary": "one-paragraph synthesis (this is the KEY TAKEAWAY, expanded to ~3 sentences)",
+  "deep_dive": "the full markdown briefing (500+ words). Start with '## Key takeaway' then one sharp line. Then '## The full picture' with several rich paragraphs (use ### sub-heads where it helps). Then '## What this means for you' — 2-4 sentences making it personal to Mandi. Then '## Sources' — a numbered list, each as 'Publication — headline' on one line and the full URL on the next. Real markdown, real links.",
+  "items": [ ...3 to 6 of the strongest findings/articles... ]
+}
 ${ITEM_SHAPE}`,
     input: `Dig into: ${topic}`,
   })
-  const { items, summary } = parseItems(raw)
+  const { items, summary, deep_dive } = parseItems(raw)
   if (!items.length) return null
   const brief = saveResearchBrief({
     date: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }),
@@ -45,8 +73,9 @@ ${ITEM_SHAPE}`,
     try {
       createNote({
         title: `🔬 Research: ${topic.trim().slice(0, 60)}`,
-        body: `${summary}\n\n${items.map(i => `• ${i.headline} (${i.source})\n  ${i.url}\n  Why: ${i.why_it_matters}\n  Angle: ${i.talk_track}`).join('\n\n')}`,
+        body: digNoteBody(topic, summary, deep_dive, items),
         category: 'idea',
+        source: 'rise',
         tags: ['research', account?.id ?? 'general'],
       })
     } catch { /* best-effort */ }

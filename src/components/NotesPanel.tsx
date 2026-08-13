@@ -1,11 +1,69 @@
 'use client'
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { Plus, Search, Pin, PinOff, Trash2, X, BookOpen, Archive, Send, Sparkles, Copy, Check } from 'lucide-react'
-import type { Note } from '@/lib/db'
+import { Plus, Search, Pin, PinOff, Trash2, X, BookOpen, Archive, Send, Sparkles, Copy, Check, Pencil, Eye, User, Bot } from 'lucide-react'
+import type { Note, NoteSource } from '@/lib/db'
 import CommanderModal from './CommanderModal'
 
 type Acct = { id: string; handle: string; emoji: string; color: string; status: string }
 type SendResult = { ok: boolean; msg: string }
+
+// Who wrote a note. Honors an explicit source; otherwise infers from title/tags so
+// the 100+ existing notes bucket correctly without a migration.
+function noteSource(n: Pick<Note, 'source' | 'title' | 'tags'>): NoteSource {
+  if (n.source === 'rise' || n.source === 'mine') return n.source
+  const t = n.title || ''
+  const tags = n.tags || []
+  const riseTag = ['research', 'transcript', 'episode-kit', 'deliverables', 'media', 'media-story', 'trends-source', 'river-research', '1-30', 'conversation', 'brief'].some(x => tags.includes(x))
+  const riseTitle = /transcript|research:|research —|deliverables|media story|trends source|1→30|1->30|ep kit|episode kit|daily brief/i.test(t) || /^\s*[🔬🔍📄🎙📊🧠📎✨🎧🗞📡]/u.test(t)
+  return riseTag || riseTitle ? 'rise' : 'mine'
+}
+
+// A tiny, dependency-free markdown renderer for the READ view — headings, bold,
+// blockquotes, lists, rules, and clickable links. Keeps RISE's briefings legible
+// instead of dumping raw markdown at her.
+function md(text: string): React.ReactNode {
+  const linkify = (s: string, keyBase: string): React.ReactNode[] => {
+    const out: React.ReactNode[] = []
+    // [label](url) first, then bare urls; also **bold**
+    const parts = s.split(/(\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s)]+|\*\*[^*]+\*\*)/g)
+    parts.forEach((p, i) => {
+      const mdlink = p.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+      if (mdlink) { out.push(<a key={`${keyBase}-${i}`} href={mdlink[2]} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--hot-pink)', textDecoration: 'underline', wordBreak: 'break-word' }}>{mdlink[1]}</a>); return }
+      if (/^https?:\/\//.test(p)) { out.push(<a key={`${keyBase}-${i}`} href={p} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--hot-pink)', textDecoration: 'underline', wordBreak: 'break-word' }}>{p}</a>); return }
+      const b = p.match(/^\*\*([^*]+)\*\*$/)
+      if (b) { out.push(<strong key={`${keyBase}-${i}`}>{b[1]}</strong>); return }
+      if (p) out.push(<span key={`${keyBase}-${i}`}>{p}</span>)
+    })
+    return out
+  }
+  const lines = text.replace(/\r/g, '').split('\n')
+  const blocks: React.ReactNode[] = []
+  let list: React.ReactNode[] = []
+  const flush = () => { if (list.length) { blocks.push(<ul key={`ul-${blocks.length}`} style={{ margin: '6px 0 12px', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '5px' }}>{list}</ul>); list = [] } }
+  lines.forEach((raw, i) => {
+    const line = raw.trimEnd()
+    if (/^###\s+/.test(line)) { flush(); blocks.push(<h4 key={i} style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)', margin: '14px 0 4px' }}>{linkify(line.replace(/^###\s+/, ''), `h4${i}`)}</h4>); return }
+    if (/^##\s+/.test(line)) { flush(); blocks.push(<h3 key={i} style={{ fontSize: '15px', fontWeight: 900, color: 'var(--hot-pink)', letterSpacing: '-0.01em', margin: '18px 0 6px' }}>{linkify(line.replace(/^##\s+/, ''), `h3${i}`)}</h3>); return }
+    if (/^#\s+/.test(line)) { flush(); blocks.push(<h2 key={i} style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text)', margin: '10px 0 8px' }}>{linkify(line.replace(/^#\s+/, ''), `h2${i}`)}</h2>); return }
+    if (/^\s*[-•]\s+/.test(line) || /^\s*\d+\.\s+/.test(line)) { list.push(<li key={i} style={{ fontSize: '14px', lineHeight: 1.65, color: 'var(--text)' }}>{linkify(line.replace(/^\s*(?:[-•]|\d+\.)\s+/, ''), `li${i}`)}</li>); return }
+    if (/^>\s?/.test(line)) { flush(); blocks.push(<blockquote key={i} style={{ borderLeft: '3px solid var(--hot-pink)', paddingLeft: '12px', margin: '8px 0', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.6 }}>{linkify(line.replace(/^>\s?/, ''), `bq${i}`)}</blockquote>); return }
+    if (/^(-{3,}|_{3,}|\*{3,})$/.test(line)) { flush(); blocks.push(<hr key={i} style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '14px 0' }} />); return }
+    if (!line.trim()) { flush(); return }
+    flush(); blocks.push(<p key={i} style={{ fontSize: '14px', lineHeight: 1.7, color: 'var(--text)', margin: '0 0 10px' }}>{linkify(line, `p${i}`)}</p>)
+  })
+  flush()
+  return <div>{blocks}</div>
+}
+
+// Plain-text preview for cards: strip markdown noise so the 3-line teaser reads clean.
+const plainPreview = (s: string) => (s || '')
+  .replace(/^#{1,6}\s+/gm, '').replace(/\*\*/g, '').replace(/^>\s?/gm, '').replace(/^\s*[-•]\s+/gm, '')
+  .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim()
+
+const SOURCE_BADGE: Record<NoteSource, { label: string; color: string; Icon: typeof User }> = {
+  mine: { label: 'You', color: 'var(--hot-pink)', Icon: User },
+  rise: { label: 'RISE', color: 'var(--purple)', Icon: Bot },
+}
 
 // Time buckets (relative to now, recomputed every render/load)
 const BUCKETS: { key: string; label: string; maxHours: number | null }[] = [
@@ -42,9 +100,10 @@ function NoteCard({ note, accounts, onUpdate, onDelete, onSelect, onSendToAccoun
   }
   const item = { display: 'flex', alignItems: 'center', gap: '7px', width: '100%', textAlign: 'left' as const, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', borderRadius: '7px', fontSize: '12px', color: 'var(--text)' }
   const hov = (on: boolean) => (e: React.MouseEvent) => ((e.currentTarget as HTMLButtonElement).style.background = on ? 'var(--bg)' : 'none')
+  const src = SOURCE_BADGE[noteSource(note)]
 
   return (
-    <div onClick={() => onSelect(note)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--hot-pink)', borderRadius: '10px', padding: '14px', cursor: 'pointer', transition: 'box-shadow 0.15s', opacity: note.archived ? 0.7 : 1 }}
+    <div onClick={() => onSelect(note)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: `3px solid ${src.color}`, borderRadius: '10px', padding: '14px', cursor: 'pointer', transition: 'box-shadow 0.15s', opacity: note.archived ? 0.7 : 1 }}
       onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-sm)'}
       onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
@@ -84,8 +143,11 @@ function NoteCard({ note, accounts, onUpdate, onDelete, onSelect, onSendToAccoun
           </button>
         </div>
       </div>
-      <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const }}>{note.body}</p>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const }}>{plainPreview(note.body)}</p>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: src.color, background: 'color-mix(in srgb, currentColor 12%, transparent)', padding: '2px 6px', borderRadius: '5px' }}>
+          <src.Icon size={9} /> {src.label}
+        </span>
         <span style={{ fontSize: '10px', color: 'var(--text-subtle)', fontWeight: 600 }}>{age}</span>
         {note.archived && <span style={{ fontSize: '9px', color: 'var(--text-subtle)', display: 'flex', alignItems: 'center', gap: '3px' }}><Archive size={9} /> archived</span>}
         {note.tags.slice(0, 3).map(t => <span key={t} style={{ fontSize: '10px', color: 'var(--text-muted)' }}>#{t}</span>)}
@@ -104,8 +166,11 @@ function NoteModal({ note, onSave, onClose, accounts, onSendToAccount, onExpand,
   const [menu, setMenu] = useState(false)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  // Existing notes open in a clean READ view; new notes open straight in edit.
+  const [mode, setMode] = useState<'read' | 'edit'>(note.id ? 'read' : 'edit')
   const titleRef = useRef<HTMLInputElement>(null)
-  useEffect(() => { titleRef.current?.focus() }, [])
+  useEffect(() => { if (mode === 'edit') titleRef.current?.focus() }, [mode])
+  const src = SOURCE_BADGE[noteSource({ source: draft.source, title: draft.title ?? '', tags: draft.tags ?? [] })]
 
   const asNote = () => ({ ...draft, id: draft.id ?? 0, tags: draft.tags ?? [] }) as Note
   const run = async (fn: () => Promise<SendResult>) => {
@@ -144,20 +209,37 @@ function NoteModal({ note, onSave, onClose, accounts, onSendToAccount, onExpand,
               )}
             </div>
           ) : null}
+          <button title={mode === 'read' ? 'Edit' : 'Read'} onClick={() => setMode(m => (m === 'read' ? 'edit' : 'read'))}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-muted)', padding: '6px 11px', fontSize: '12px', fontWeight: 700 }}>
+            {mode === 'read' ? <><Pencil size={13} /> Edit</> : <><Eye size={13} /> Read</>}
+          </button>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={18} /></button>
         </div>
+        {mode === 'read' ? (
+          <div style={{ padding: '10px 28px 20px', flex: 1, overflow: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: src.color, background: 'color-mix(in srgb, currentColor 12%, transparent)', padding: '3px 8px', borderRadius: '6px' }}>
+                <src.Icon size={10} /> {src.label === 'You' ? 'Your writing' : 'RISE generated'}
+              </span>
+              {(draft.tags ?? []).slice(0, 4).map(t => <span key={t} style={{ fontSize: '10px', color: 'var(--text-muted)' }}>#{t}</span>)}
+            </div>
+            <h1 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.2, margin: '0 0 14px' }}>{draft.title}</h1>
+            <div style={{ fontFamily: 'inherit' }}>{md(draft.body ?? '')}</div>
+          </div>
+        ) : (
         <div style={{ padding: '8px 24px 16px', flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <input ref={titleRef} value={draft.title ?? ''} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))}
             placeholder="Title..."
             style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', background: 'none', border: 'none', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.02em' }} />
           <textarea value={draft.body ?? ''} onChange={e => setDraft(d => ({ ...d, body: e.target.value }))}
-            placeholder="Write anything here..."
+            placeholder="Write anything here... (markdown supported — ## heading, **bold**, - list, > quote, [text](link))"
             rows={12}
             style={{ fontSize: '14px', color: 'var(--text)', background: 'none', border: 'none', outline: 'none', resize: 'none', fontFamily: 'inherit', lineHeight: 1.8 }} />
           <input value={(draft.tags ?? []).join(', ')} onChange={e => setDraft(d => ({ ...d, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) }))}
             placeholder="Tags (comma separated)..."
             style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'none', border: 'none', borderTop: '1px solid var(--border)', outline: 'none', padding: '10px 0 0', fontFamily: 'inherit' }} />
         </div>
+        )}
         <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button onClick={() => onSave(draft)} style={{ padding: '9px 20px', borderRadius: '10px', border: 'none', background: 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>Save Note</button>
           {draft.id && (
@@ -177,7 +259,7 @@ export default function NotesPanel() {
   const [search, setSearch] = useState('')
   const [bucket, setBucket] = useState('48h')
   const [sortBy, setSortBy] = useState<'created' | 'updated'>('created')
-  const [source, setSource] = useState<'all' | 'ideas' | 'chats' | 'pinned'>('all')
+  const [source, setSource] = useState<'all' | 'mine' | 'rise' | 'pinned'>('all')
   const [selected, setSelected] = useState<Partial<Note> | null>(null)
   const [accounts, setAccounts] = useState<Acct[]>([])
   const [shredNote, setShredNote] = useState<Note | null>(null)
@@ -214,7 +296,7 @@ export default function NotesPanel() {
       if (res.ok && d.result) {
         const cr = await fetch('/api/notes', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: `${note.title} — 1→30`, body: d.result, category: 'script', tags: ['1-30', ...(note.tags ?? []).slice(0, 2)] }),
+          body: JSON.stringify({ title: `${note.title} — 1→30`, body: d.result, category: 'script', source: 'rise', tags: ['1-30', ...(note.tags ?? []).slice(0, 2)] }),
         })
         const created = await cr.json().catch(() => null)
         if (created?.id) { setNotes(ns => [created, ...ns]); setSelected(created) }
@@ -253,11 +335,10 @@ export default function NotesPanel() {
   const openNote = (n: Note) => setSelected(n)
 
   const q = search.toLowerCase()
-  const isChat = (n: Note) => n.tags.includes('conversation')
   const searched = useMemo(() => {
     let list = notes.filter(n => !q || n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q) || n.tags.some(t => t.toLowerCase().includes(q)))
-    if (source === 'chats') list = list.filter(isChat)
-    else if (source === 'ideas') list = list.filter(n => !isChat(n))
+    if (source === 'mine') list = list.filter(n => noteSource(n) === 'mine')
+    else if (source === 'rise') list = list.filter(n => noteSource(n) === 'rise')
     else if (source === 'pinned') list = list.filter(n => n.pinned)
     return list
   }, [notes, q, source])
@@ -303,7 +384,7 @@ export default function NotesPanel() {
       {/* Source filter + sort (non-chronological organizers) */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {([['all', 'All'], ['ideas', '💡 Ideas'], ['chats', '💬 Chats'], ['pinned', '📌 Pinned']] as const).map(([k, lbl]) => (
+          {([['all', 'All'], ['mine', '✍️ My writing'], ['rise', '🤖 RISE'], ['pinned', '📌 Pinned']] as const).map(([k, lbl]) => (
             <button key={k} onClick={() => setSource(k)}
               style={{ fontSize: '11px', fontWeight: 700, padding: '5px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: source === k ? 'var(--purple)' : 'var(--surface)', color: source === k ? '#fff' : 'var(--text-muted)' }}>
               {lbl}
