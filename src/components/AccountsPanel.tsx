@@ -1419,6 +1419,15 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
           {approveNote && (
             <p style={{ fontSize: '11px', fontWeight: 600, lineHeight: 1.45, padding: '9px 11px', borderRadius: '9px', background: approveNote.startsWith('✓') ? 'rgba(61,170,124,0.1)' : 'rgba(242,166,90,0.12)', color: approveNote.startsWith('✓') ? '#2E8B60' : '#C47A1A' }}>{approveNote}</p>
           )}
+          {/* Retry GHL push — shows when a post is approved but hasn't confirmed to
+              GHL (no schedule/post id), or when the last push returned a warning.
+              Re-runs the exact same push so she never has to decline + re-approve. */}
+          {((isApproved && !isScheduled && !post.ghl_post_id) || (!!approveNote && !approveNote.startsWith('✓'))) && (
+            <button onClick={() => onApprove(post)} disabled={approving}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: `1px solid ${accentColor}`, background: 'transparent', color: accentColor, fontWeight: 800, fontSize: '12px', cursor: approving ? 'default' : 'pointer', opacity: approving ? 0.7 : 1 }}>
+              {approving ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Pushing to GHL…</> : <><RefreshCw size={13} /> Try GHL push again</>}
+            </button>
+          )}
           {showDecline && (
             <div style={{ padding: '12px', background: 'rgba(224,82,82,0.05)', border: '1px solid rgba(224,82,82,0.25)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#E05252' }}>Why isn&apos;t this a fit? (teaches this account)</p>
