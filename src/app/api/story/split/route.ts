@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { fableText } from '@/lib/fable'
 import { createNote } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 // Story Studio step 1: take a tangled multi-story dump and SEPARATE it.
 // For each story: map its shape, score it, and ask the editor's questions
@@ -16,8 +15,8 @@ export async function POST(req: NextRequest) {
   const { dump } = await req.json()
   if (!dump?.trim()) return NextResponse.json({ error: 'dump required' }, { status: 400 })
 
-  const res = await client.responses.create({
-    model: 'gpt-4o',
+  const raw = await fableText({
+    useClaude: true, json: true, maxTokens: 6000,
     instructions: `You are Mandi's story editor — a warm, sharp developmental editor who makes her a better storyteller.
 
 She brain-dumps MULTIPLE stories tangled together. You are also her NEWS ANCHOR: not every story is "a story" — not everything deserves airtime, and telling her the truth about that IS the job.
@@ -71,7 +70,7 @@ Return ONLY valid JSON:
   })
 
   try {
-    const parsed = JSON.parse(res.output_text.match(/\{[\s\S]*\}/)![0])
+    const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)![0])
     // Bank each raw story to Notes — her story vault (also feeds CEO review via raw-capture)
     for (const s of parsed.stories ?? []) {
       try {

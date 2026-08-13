@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { fableText } from '@/lib/fable'
 import { getAllContent, updateContent, getWatchContext, getBrandAccount, getAudienceContext } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 // Cross-reference a story (or an existing post) with the Trends Radar:
 // how to FRAME it to ride what's working, and what it needs to LOOK like,
@@ -29,8 +28,8 @@ export async function POST(req: NextRequest) {
   const account = piece?.account_id ? getBrandAccount(piece.account_id) : null
   const watch = getWatchContext()
 
-  const res = await client.responses.create({
-    model: 'gpt-4o',
+  const raw = await fableText({
+    useClaude: true, json: true, maxTokens: 4000,
     instructions: `You are a trend-savvy creative director. Cross-reference this story with what's CURRENTLY winning (the tracked-accounts intelligence below) and produce a production plan: how to frame it, and exactly what it looks like frame by frame.
 
 ${watch || 'No tracked-account intelligence yet — use current platform-native conventions for short vertical video.'}
@@ -53,7 +52,7 @@ Return ONLY valid JSON:
   })
 
   try {
-    const parsed = JSON.parse(res.output_text.match(/\{[\s\S]*\}/)![0])
+    const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)![0])
     // Persist onto the card when framing an existing post
     if (piece) {
       const planText = `FRAMING: ${parsed.framing}\n\nFRAME BY FRAME:\n${(parsed.frames ?? []).map((f: { t: string; visual: string; onscreen: string; note?: string }) => `[${f.t}] SEE: ${f.visual}\n  TEXT: ${f.onscreen}${f.note ? `\n  WHY: ${f.note}` : ''}`).join('\n')}\n\nSOUND: ${parsed.sound ?? ''}${parsed.diy_todo ? `\n\n🎬 YOUR TO-DO: ${parsed.diy_todo}` : ''}\nTREND REFS: ${(parsed.trend_refs ?? []).join(' · ')}`

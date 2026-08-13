@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
   try {
     const out = await fableText({
       maxTokens: 1800,
+      useClaude: true,
+      json: true,
       instructions: `${craftFor(accountId)}\n\n${voice}\n\nMandi recorded the spoken words below (a real voice clip that will become a captioned avatar reel). Write the POST that ships with it. Return ONLY valid JSON:\n{ "title": "short internal title", "onscreen_text": "the HOOK — a STATEMENT, never a question (law 2a)", "caption": "spaced caption: headline first line carries the golden thread, real line breaks, NO CTA in growth phase, never restates the on-screen hook", "hashtags": "12-20 single-word hashtags, space-separated, camelCase multi-word ideas" }`,
       input: `SPOKEN WORDS (the audio):\n${transcript.slice(0, 6000)}`,
     })

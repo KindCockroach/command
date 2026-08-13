@@ -53,7 +53,7 @@ LENGTH: ${dur} seconds — ${LENGTHS[dur]}. Open with a spoken hook, deliver ONE
 ${voice}${voiceRef}`,
       input: `POST (the on-screen text + caption already showing — do NOT repeat these):\n${source}\n\nWrite the ${dur}-second spoken layer that adds something new. Keep it to ${LENGTHS[dur]}`,
       maxTokens: MAXTOK[dur],
-      effort: 'low',
+      useClaude: true,
     })).trim()
     if (!script) return NextResponse.json({ error: 'no script generated' }, { status: 502 })
     const updated = updateContent(piece.id, { script })

@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { fableText } from '@/lib/fable'
 import { CRAFT_RULES } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 // Story Studio step 2: she answers the editor's questions → the story is
 // rebuilt STRONGER, in her voice, with her new details. Still a story —
@@ -14,8 +13,8 @@ export async function POST(req: NextRequest) {
   const { story, answers } = await req.json()
   if (!story) return NextResponse.json({ error: 'story required' }, { status: 400 })
 
-  const res = await client.responses.create({
-    model: 'gpt-4o',
+  const raw = await fableText({
+    useClaude: true, json: true, maxTokens: 4000,
     instructions: `You are Mandi's story editor. She answered your questions about one of her stories. Rebuild the story STRONGER — in HER voice, using HER new details. This is still a STORY (something she could tell out loud in 30-60 seconds), not a caption or post.
 
 Rules:
@@ -43,7 +42,7 @@ Return ONLY valid JSON:
   })
 
   try {
-    const parsed = JSON.parse(res.output_text.match(/\{[\s\S]*\}/)![0])
+    const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)![0])
     return NextResponse.json(parsed)
   } catch {
     return NextResponse.json({ error: 'Could not strengthen — try again' }, { status: 502 })

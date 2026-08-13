@@ -13,10 +13,15 @@ import { logUsage } from './usage'
 export const WRITER_MODEL = 'gpt-4o'
 export const CHEAP_MODEL = 'gpt-4o-mini'
 export const FABLE_MODEL = WRITER_MODEL // back-compat alias for older imports
-// Opus 4.8 for the Commander + hook writer: ~half Fable 5's price ($5/$25 vs
-// $10/$50 per-M) and adaptive thinking burns fewer reasoning tokens than Fable's
-// high-effort mode — big cost win, near-identical quality. Flip back to
-// 'claude-fable-5' here if you ever want the top-tier writer again.
+// THE QUALITY WRITER — every door that writes real copy (captions, hooks, kits,
+// 3-pack, story) routes here via useClaude. Sonnet 5 is the cost-effective quality
+// pick: ~60% cheaper than Opus ($3/$15 vs $5/$25 per-M — intro $2/$10 through
+// 2026-08-31) and far above gpt-4o's "generic voice" ceiling that produced the
+// question hooks and paraphrase. Change THIS one line to move every writer at once
+// (→ 'claude-opus-4-8' for max quality, 'claude-fable-5' for top-tier).
+export const WRITER_CLAUDE = 'claude-sonnet-5'
+// Opus 4.8 stays on the Commander — the partner Mandi talks to, low volume, high
+// value. Content generation no longer rides this (it's on WRITER_CLAUDE now).
 export const COMMANDER_MODEL = 'claude-opus-4-8'
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
@@ -124,14 +129,14 @@ export async function commanderChat(system: string, messages: { role: 'user' | '
 // problem lives, so buying it only for these two lines is the cost/quality sweet spot.
 export async function fableHooks(system: string, input: string, maxTokens = 3000, kind = 'hooks', _effort: Effort = 'high'): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — needed for the Fable writer.')
-  // STREAM the response. A big non-streamed Opus reply (high max_tokens + thinking)
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — needed for the writer.')
+  // STREAM the response. A big non-streamed reply (high max_tokens + thinking)
   // hits the request timeout — this is exactly the case the Claude API warns about.
   // Streaming keeps the connection alive with data and lets long kits finish.
   const res = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
-    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages: [{ role: 'user', content: input }], stream: true }),
+    body: JSON.stringify({ model: WRITER_CLAUDE, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages: [{ role: 'user', content: input }], stream: true }),
   })
   if (!res.ok || !res.body) {
     let msg = 'unknown error'
@@ -164,7 +169,7 @@ export async function fableHooks(system: string, input: string, maxTokens = 3000
       } catch (e) { if (e instanceof Error && e.message !== 'Unexpected end of JSON input') { /* skip partial */ } }
     }
   }
-  logUsage({ provider: 'anthropic', model: COMMANDER_MODEL, kind, inputTokens: inTok, outputTokens: outTok })
+  logUsage({ provider: 'anthropic', model: WRITER_CLAUDE, kind, inputTokens: inTok, outputTokens: outTok })
   return text.trim()
 }
 

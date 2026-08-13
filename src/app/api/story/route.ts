@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { fableText } from '@/lib/fable'
 import { CRAFT_RULES } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 180
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export async function POST(req: NextRequest) {
   const { freeWrite, title } = await req.json()
@@ -54,13 +53,13 @@ Return a JSON object with ALL of these fields:
 }`
 
   try {
-    const response = await client.responses.create({
-      model: 'gpt-4o',
+    const response = await fableText({
+      useClaude: true, json: true, maxTokens: 4000,
       instructions: 'You are a master storyteller and ruthless editor. Specific beats general every time. If a line could belong to anyone, it belongs to no one — cut it. Return only valid JSON.',
       input: prompt,
     })
 
-    const raw = response.output_text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
+    const raw = response.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
     const result = JSON.parse(raw)
     return NextResponse.json(result)
   } catch (e: unknown) {

@@ -19,6 +19,8 @@ export async function POST(req: NextRequest) {
 
   const out = await fableText({
     maxTokens: 1600,
+    useClaude: true,
+    json: true,
     instructions: `You run Mandi's "Manifesto → Story" teaching series: the same idea written two ways so her audience SEES the difference and learns to fix their own writing.
 
 Take the input and produce:
