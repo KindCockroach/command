@@ -36,7 +36,6 @@ const OPT_IN = 'aimomeducation.com'
 // can paste it straight into Riverside show notes. BARE URLs on purpose — they
 // auto-link in every hosting/description box (no manual hyperlinking), and RISE's
 // note reader renders them clickable too. "coming soon" items carry no link yet.
-// TODO(confirm): LinkedIn URL — replace the placeholder once Mandi sends it.
 const LINKS_FOOTER = `— — —
 🎙 AI Mom Podcast — listen & follow:
 ▶️ YouTube: ${SHOW_LINKS.youtube}
@@ -46,7 +45,7 @@ const LINKS_FOOTER = `— — —
 
 More from AI Mom:
 💻 AI Mom at Work (Instagram): https://instagram.com/aimomatwork
-💼 LinkedIn — connect with AI Mom: https://www.linkedin.com/in/aimom
+💼 LinkedIn — connect with AI Mom: https://www.linkedin.com/in/amanda-beck-588200378/
 ✍️ Substack: coming soon
 📝 Medium: coming soon
 🎵 TikTok: coming soon
