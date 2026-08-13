@@ -157,10 +157,11 @@ function NoteCard({ note, accounts, onUpdate, onDelete, onSelect, onSendToAccoun
   )
 }
 
-function NoteModal({ note, onSave, onClose, accounts, onSendToAccount, onExpand, onShred }: {
+function NoteModal({ note, onSave, onClose, accounts, onSendToAccount, onExpand, onShred, onCreate }: {
   note: Partial<Note>; onSave: (n: Partial<Note>) => void; onClose: () => void;
   accounts: Acct[]; onSendToAccount: (n: Note, accountId: string) => Promise<SendResult>;
   onExpand: (n: Note) => Promise<SendResult>; onShred: (n: Note) => void;
+  onCreate: (n: Note) => void;
 }) {
   const [draft, setDraft] = useState<Partial<Note>>(note)
   const [menu, setMenu] = useState(false)
@@ -172,6 +173,47 @@ function NoteModal({ note, onSave, onClose, accounts, onSendToAccount, onExpand,
   useEffect(() => { if (mode === 'edit') titleRef.current?.focus() }, [mode])
   const curKey = noteSource({ source: draft.source, title: draft.title ?? '', tags: draft.tags ?? [] })
   const src = SOURCE_BADGE[curKey]
+  // Show the Medium/Newsletter generators on episode-ish notes (a transcript or kit
+  // is the source material). Each result saves as a NEW draft, teed up for approval.
+  const isEpisode = /transcript|ep(?:isode)?\s*kit|deliverables|episode/i.test(draft.title ?? '') ||
+    ['transcript', 'episode-kit', 'deliverables'].some(t => (draft.tags ?? []).includes(t)) ||
+    (draft.body ?? '').length > 1800
+  const [genBusy, setGenBusy] = useState<null | 'medium' | 'newsletter'>(null)
+  const [genMsg, setGenMsg] = useState('')
+
+  const genDeliverable = async (kind: 'medium' | 'newsletter') => {
+    setGenBusy(kind); setGenMsg('')
+    const epTitle = (draft.title ?? 'Episode').replace(/^[^A-Za-z0-9]+/, '').replace(/—.*$/, '').trim().slice(0, 48)
+    try {
+      const res = await fetch('/api/podcast', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: kind, transcript: draft.body ?? '', title: epTitle }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setGenMsg(d.error || 'Failed — try again'); setGenBusy(null); return }
+      let title = '', body = '', tags: string[] = []
+      if (kind === 'medium' && d.medium_article) {
+        const m = d.medium_article
+        const secs = (m.sections ?? []).map((s: { heading: string; body: string }) => `## ${s.heading}\n${s.body}`).join('\n\n')
+        const sources = m.sources?.length ? `\n\n## Sources\n${m.sources.map((s: string, i: number) => `${i + 1}. ${s}`).join('\n')}` : ''
+        title = `📰 Medium — ${epTitle}`
+        body = `# ${m.title}\n*${m.subtitle}*\n\n${secs}${m.closing ? `\n\n${m.closing}` : ''}${sources}`
+        tags = ['medium', 'needs-approval', 'aimompodcast']
+      } else if (kind === 'newsletter' && (d.newsletter_body || d.newsletter_subject)) {
+        title = `✉️ Newsletter — ${epTitle}`
+        body = `**Subject:** ${d.newsletter_subject ?? ''}\n\n${d.newsletter_body ?? ''}`
+        tags = ['newsletter', 'substack', 'needs-approval', 'aimompodcast']
+      } else { setGenMsg('Came back empty — try again'); setGenBusy(null); return }
+      const cr = await fetch('/api/notes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body, category: 'script', source: 'rise', tags }),
+      })
+      const created = await cr.json().catch(() => null)
+      if (created?.id) { onCreate(created); setGenMsg('✓ Draft saved — teed up for approval') }
+      else setGenMsg('Saved, but could not open it')
+    } catch { setGenMsg('Connection error — try again') }
+    setGenBusy(null)
+  }
   // Manual override: flip a note between "You" and "RISE" and persist it (modal stays open).
   const flipSource = async () => {
     const next: NoteSource = curKey === 'mine' ? 'rise' : 'mine'
@@ -232,6 +274,20 @@ function NoteModal({ note, onSave, onClose, accounts, onSendToAccount, onExpand,
               {(draft.tags ?? []).slice(0, 4).map(t => <span key={t} style={{ fontSize: '10px', color: 'var(--text-muted)' }}>#{t}</span>)}
             </div>
             <h1 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.2, margin: '0 0 14px' }}>{draft.title}</h1>
+            {isEpisode && draft.id && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', margin: '0 0 16px', padding: '12px', background: 'var(--surface-raised)', borderRadius: '10px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.06em', width: '100%' }}>Turn this episode into…</span>
+                <button onClick={() => genDeliverable('medium')} disabled={!!genBusy}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 13px', borderRadius: '9px', border: 'none', background: genBusy === 'medium' ? 'var(--border)' : 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: genBusy ? 'default' : 'pointer' }}>
+                  {genBusy === 'medium' ? '📰 Researching + writing (~2 min)…' : '📰 Medium article'}
+                </button>
+                <button onClick={() => genDeliverable('newsletter')} disabled={!!genBusy}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 13px', borderRadius: '9px', border: 'none', background: genBusy === 'newsletter' ? 'var(--border)' : 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: genBusy ? 'default' : 'pointer' }}>
+                  {genBusy === 'newsletter' ? '✉️ Writing…' : '✉️ Newsletter'}
+                </button>
+                {genMsg && <span style={{ fontSize: '11px', fontWeight: 700, color: genMsg.startsWith('✓') ? '#2C9E6B' : 'var(--hot-pink)' }}>{genMsg}</span>}
+              </div>
+            )}
             <div style={{ fontFamily: 'inherit' }}>{md(draft.body ?? '')}</div>
           </div>
         ) : (
@@ -439,7 +495,7 @@ export default function NotesPanel() {
         )}
       </div>
 
-      {selected && <NoteModal note={selected} onSave={save} onClose={() => setSelected(null)} accounts={accounts} onSendToAccount={sendToAccount} onExpand={expandNote} onShred={setShredNote} />}
+      {selected && <NoteModal note={selected} onSave={save} onClose={() => setSelected(null)} accounts={accounts} onSendToAccount={sendToAccount} onExpand={expandNote} onShred={setShredNote} onCreate={(n) => { setNotes(ns => [n, ...ns]); setSelected(n) }} />}
       {shredNote && <CommanderModal input={`${shredNote.title}\n\n${shredNote.body}`} onClose={() => setShredNote(null)} />}
     </div>
   )
