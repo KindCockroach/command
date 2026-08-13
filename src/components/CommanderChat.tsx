@@ -59,6 +59,20 @@ export default function CommanderChat() {
     } finally { setLoading(false) }
   }
 
+  const [queueRunning, setQueueRunning] = useState<number | null>(null)
+  // Run a whole batch of proposed actions ONE AT A TIME (awaited) instead of letting
+  // her tap 12 at once and stampede the server — that's what was throwing "failed".
+  const runAllActions = async (mi: number, actions: Action[], media?: Attach | null) => {
+    setQueueRunning(mi)
+    for (let ai = 0; ai < actions.length; ai++) {
+      const key = `${mi}-${ai}`
+      if (actStatus[key]?.startsWith('✓')) continue
+      // eslint-disable-next-line no-await-in-loop
+      await runAction(key, actions[ai], media)
+    }
+    setQueueRunning(null)
+  }
+
   const runAction = async (key: string, a: Action, media?: Attach | null) => {
     const p = a.payload
     const str = (v: unknown, d = '') => (typeof v === 'string' ? v : v == null ? d : String(v))
@@ -156,6 +170,12 @@ export default function CommanderChat() {
             </div>
             {m.actions && m.actions.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {m.actions.length > 1 && (
+                  <button onClick={() => runAllActions(i, m.actions!, m.attach)} disabled={queueRunning !== null}
+                    style={{ fontSize: '12px', fontWeight: 800, padding: '6px 12px', borderRadius: '9px', border: 'none', cursor: queueRunning !== null ? 'default' : 'pointer', background: queueRunning === i ? 'var(--border)' : 'var(--purple)', color: '#fff', width: '100%', marginBottom: '2px' }}>
+                    {queueRunning === i ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite', display: 'inline', verticalAlign: 'middle' }} /> running {m.actions.length} in order…</> : `▶ Run all ${m.actions.length} (one at a time)`}
+                  </button>
+                )}
                 {m.actions.map((a, ai) => {
                   const key = `${i}-${ai}`
                   const st = actStatus[key]

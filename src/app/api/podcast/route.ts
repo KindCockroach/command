@@ -32,6 +32,27 @@ const SHOW_LINKS = {
 // The email-capture destination (coming-soon page collecting name + email).
 const OPT_IN = 'aimomeducation.com'
 
+// The full "find us / follow us" footer, dropped at the bottom of every kit so she
+// can paste it straight into Riverside show notes. BARE URLs on purpose — they
+// auto-link in every hosting/description box (no manual hyperlinking), and RISE's
+// note reader renders them clickable too. "coming soon" items carry no link yet.
+// TODO(confirm): LinkedIn URL — replace the placeholder once Mandi sends it.
+const LINKS_FOOTER = `— — —
+🎙 AI Mom Podcast — listen & follow:
+▶️ YouTube: ${SHOW_LINKS.youtube}
+🍎 Apple Podcasts: ${SHOW_LINKS.apple}
+🎧 Spotify: ${SHOW_LINKS.spotify}
+📸 Instagram: https://instagram.com/aimompodcast
+
+More from AI Mom:
+💻 AI Mom at Work (Instagram): https://instagram.com/aimomatwork
+💼 LinkedIn — connect with AI Mom: https://www.linkedin.com/in/aimom
+✍️ Substack: coming soon
+📝 Medium: coming soon
+🎵 TikTok: coming soon
+
+💌 Get on the list: ${OPT_IN}`
+
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast', action, title, core_takeaway } = body
@@ -196,6 +217,7 @@ ${CRAFT_RULES}`
   },
   "manychat_trigger": "single keyword for comment-to-DM automation",
   "manychat_dm": "auto-DM sent when someone comments the trigger word — warm, points to ${OPT_IN}",
+  "share_prompt": "a fresh 2-3 sentence spoken/written CTA — a NEW variation each episode, never boilerplate — inviting the listener to RATE and REVIEW the show AND to send this episode to a friend who's just starting to dabble in AI. Warm, specific to this episode's takeaway, pure-give. (e.g. tie it to what THIS episode was about.)",
   "producer_feedback": {
     "overall_grade": "JUST the letter grade, nothing else — e.g. \\"A-\\", \\"B+\\", \\"C\\"",
     "verdict": "one honest sentence — the verdict on this episode",
@@ -223,6 +245,8 @@ ${CRAFT_RULES}`
     }
     deliverables.show_links = SHOW_LINKS
     deliverables.opt_in = OPT_IN
+    deliverables.links_footer = LINKS_FOOTER
+    if (!deliverables.share_prompt) deliverables.share_prompt = 'If this gave you something, do two quick things: rate & review the show (it helps another mom find it), and send this episode to a friend who\'s just starting to dabble in AI — she\'ll thank you.'
     return NextResponse.json({ deliverables })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Could not parse deliverables' }, { status: 500 })

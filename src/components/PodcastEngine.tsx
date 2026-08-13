@@ -24,6 +24,8 @@ interface Deliverables {
   ad_reads: { pre_roll: string; mid_roll: string; post_roll: string }
   manychat_trigger: string
   manychat_dm: string
+  share_prompt?: string
+  links_footer?: string
   resources?: { name: string; url: string; note: string }[]
   show_links?: { apple: string; spotify: string; youtube: string }
   opt_in?: string
@@ -287,7 +289,9 @@ export default function PodcastEngine() {
       d.ad_reads ? `\n## Ad Reads\nPRE-ROLL: ${d.ad_reads.pre_roll}\n\nMID-ROLL: ${d.ad_reads.mid_roll}\n\nPOST-ROLL: ${d.ad_reads.post_roll}` : '',
       `\n## Pinterest Pins\n${(d.pinterest_pins ?? []).map(p => `- ${p.title}: ${p.description}`).join('\n')}`,
       d.manychat_trigger ? `\n## ManyChat\nTrigger: ${d.manychat_trigger}\nDM: ${d.manychat_dm}` : '',
+      d.share_prompt ? `\n## Rate, review & share\n${d.share_prompt}` : '',
       d.producer_feedback ? `\n## Producer Feedback\nGrade: ${d.producer_feedback.overall_grade}${d.producer_feedback.verdict ? ` — ${d.producer_feedback.verdict}` : ''}\nStrengths: ${(d.producer_feedback.strengths ?? []).join('; ')}\nTopic drift: ${d.producer_feedback.topic_drift}\nDepth gaps: ${d.producer_feedback.depth_gaps}\nBiggest win: ${d.producer_feedback.biggest_win}\nNext episode: ${d.producer_feedback.next_episode_suggestion}` : '',
+      d.links_footer ? `\n## Follow / find us (paste-ready)\n${d.links_footer}` : '',
     ].filter(Boolean).join('\n')
     try {
       await fetch('/api/notes', {
@@ -297,6 +301,7 @@ export default function PodcastEngine() {
           title: `🎙 Ep ${episodeNumber || '?'} Deliverables Kit — ${d.title}`,
           body,
           category: 'script',
+          source: 'rise',
           tags: ['podcast', 'episode-kit', episodeNumber ? `ep-${episodeNumber}` : 'unnumbered'],
           pinned: false,
         }),
@@ -688,6 +693,14 @@ export default function PodcastEngine() {
             <Field label="Subject Line" value={result.newsletter_subject} />
             {result.newsletter_body && <Field label="Full Issue" value={result.newsletter_body} />}
           </Section>
+
+          {/* Rate/review/share + paste-ready social footer */}
+          {(result.share_prompt || result.links_footer) && (
+            <Section title="🔗 Share + Links (paste-ready for Riverside)">
+              {result.share_prompt && <Field label="Rate, review & send to a friend" value={result.share_prompt} />}
+              {result.links_footer && <Field label="Follow / find us (bare URLs — auto-link on paste)" value={result.links_footer} />}
+            </Section>
+          )}
 
           {/* Pinterest */}
           <Section title="📌 Pinterest Pins">
