@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
 
   const raw = await fableText({
     useClaude: true, json: true, maxTokens: 6000, effort: 'high',
-    instructions: `From ONE podcast transcript, produce THREE distinct posts. Each is a different machine:
+    instructions: `⚑ READ THE ENTIRE TRANSCRIPT FIRST — beginning to END — before you write anything. The opening is throat-clearing; the STRONGEST idea (the golden thread) almost always lands in the middle or back half, after she's warmed up. Do NOT build from the intro. Find the single most valuable, most surprising, most quotable thing she says across the WHOLE episode, and build all three posts from THAT thread. If your hook could have been written from the first 2 minutes alone, you grabbed the wrong thing — go deeper into the episode and rewrite it.
+
+From ONE podcast transcript, produce THREE distinct posts. Each is a different machine:
 
 1. "faceless" — direct-response style (Greg's school: volume ads that look like content). A scroll-stopping hook in the first line, zero fluff, no face needed — the visual is a bold text-on-background or b-roll (Mandi will attach her own hook visual from her Media library). The CTA points to the PODCAST as the place the answers live ("Full breakdown on the AI Mom Podcast — episode in bio" style, comment-keyword CTA, never links in caption).
 2. "avatar_clip" — pick the single most quotable 20-40 second MOMENT from the transcript and rewrite it as a spoken avatar script (first person, punchy, natural speech — this will be lip-synced by a HeyGen avatar). Include the exact spoken script.
@@ -42,7 +44,7 @@ Return ONLY valid JSON:
     { "kind": "trending", "account_id": "...", "title": "...", "caption": "full caption", "hashtags": "15-20", "onscreen_text": "overlay beats — claims, not questions", "trend_ref": "which winning pattern this rides", "diy_todo": "EXACTLY what Mandi films (shot list) OR the Higgsfield prompt to generate", "diy_kind": "film | higgsfield" }
   ]
 }`,
-    input: `EPISODE${episodeTitle ? `: ${episodeTitle}` : ''} — TRANSCRIPT:\n${String(transcript).slice(0, 40000)}`,
+    input: `EPISODE${episodeTitle ? `: ${episodeTitle}` : ''} — FULL TRANSCRIPT (read all of it; the golden thread is usually NOT in the opening):\n${String(transcript).slice(0, 120000)}`,
   })
 
   try {
