@@ -138,6 +138,9 @@ export default function PodcastEngine() {
   const [audioState, setAudioState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
   const [audioMsg, setAudioMsg] = useState('')
   const [audioDrag, setAudioDrag] = useState(false)
+  const [reelState, setReelState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
+  const [reelMsg, setReelMsg] = useState('')
+  const [reelKey, setReelKey] = useState<string | null>(null)
   const [packState, setPackState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
   const [packMsg, setPackMsg] = useState('')
 
@@ -269,6 +272,52 @@ export default function PodcastEngine() {
       if (d.transcript) { setTranscript(d.transcript); setShowMedia(false) }
       else setPullErr(d.error || 'Could not transcribe')
     } finally { setPullingKey(null) }
+  }
+
+  // Upload an audio file to Media (R2), returning its public URL. Presigned direct
+  // PUT first (bypasses the request-body limit), multipart fallback.
+  const uploadAudioToMedia = async (file: File): Promise<string> => {
+    try {
+      const pre = await fetch('/api/upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type || 'audio/mpeg', folder: 'audio' }),
+      })
+      const pd = await pre.json().catch(() => ({}))
+      if (pre.ok && pd.uploadUrl && pd.publicUrl) {
+        const put = await fetch(pd.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'audio/mpeg' }, body: file })
+        if (put.ok) return pd.publicUrl
+      }
+    } catch { /* fall through */ }
+    const fd = new FormData(); fd.append('file', file); fd.append('folder', 'audio')
+    const up = await fetch('/api/upload', { method: 'POST', body: fd })
+    const upd = await up.json().catch(() => ({}))
+    return up.ok && upd.publicUrl ? upd.publicUrl : ''
+  }
+
+  // ONE-TAP QUICK REEL — audio → /api/clip does it all: transcribe, write the post
+  // (Sonnet 5, account voice), create the card with the audio attached, and fire the
+  // captioned HeyGen avatar render. Lands as a card in Accounts.
+  const quickReel = async (audioUrl: string, key: string) => {
+    setReelKey(key); setReelState('working'); setReelMsg('Transcribing → writing the post → starting your avatar video…')
+    try {
+      const res = await fetch('/api/clip', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioUrl, accountId: 'aimompodcast' }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok && d.piece) {
+        setReelState('done')
+        const started = d.heygen?.started
+        setReelMsg(`✓ Reel #${d.piece.id} created for @aimompodcast — post written${started ? ', avatar video rendering now (it lands on the card in Accounts)' : ' · tap 🎬 Make avatar video on the card to render'}.`)
+      } else { setReelState('error'); setReelMsg(d.error || 'Quick Reel failed — try again.') }
+    } catch { setReelState('error'); setReelMsg('Connection error — try again.') }
+    finally { setReelKey(null) }
+  }
+  const quickReelFromFile = async (file: File) => {
+    setReelKey('drop'); setReelState('working'); setReelMsg(`Uploading ${file.name}…`)
+    const url = await uploadAudioToMedia(file)
+    if (!url) { setReelState('error'); setReelMsg('Upload failed — try again.'); setReelKey(null); return }
+    await quickReel(url, 'drop')
   }
 
   // The full episode kit persists to Notes (storage) so nothing is lost on click-away
@@ -438,12 +487,27 @@ export default function PodcastEngine() {
                       style={{ flexShrink: 0, padding: '5px 10px', borderRadius: '6px', border: 'none', background: tooBig ? 'var(--border)' : 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: tooBig ? 'not-allowed' : 'pointer', opacity: tooBig ? 0.6 : 1 }}>
                       {pullingKey === f.key ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : 'Transcribe'}
                     </button>
+                    <button onClick={() => quickReel(f.url, f.key)} disabled={reelKey !== null} title="Turn this clip into a captioned avatar reel + post for @aimompodcast"
+                      style={{ flexShrink: 0, padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--hot-pink)', background: 'transparent', color: 'var(--hot-pink)', fontWeight: 700, fontSize: '11px', cursor: reelKey !== null ? 'default' : 'pointer' }}>
+                      {reelKey === f.key ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : '🎬 Reel'}
+                    </button>
                   </div>
                 )
               })}
               {pullErr && <p style={{ fontSize: '11px', color: '#E05252', padding: '4px 6px' }}>⚠ {pullErr}</p>}
             </div>
           )}
+
+          {/* ONE-TAP QUICK REEL — drop a short clip, get a captioned avatar video + post */}
+          <div style={{ marginTop: '12px', border: '1px solid var(--hot-pink)', borderRadius: '12px', padding: '12px', background: 'rgba(232,68,138,0.05)' }}>
+            <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--hot-pink)', margin: 0 }}>🎬 Quick Reel — 30-sec episode post, one tap</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '3px 0 9px' }}>Drop a short voice clip → RISE transcribes it, writes the post in @aimompodcast&apos;s voice, and renders a captioned avatar video in your voice. Lands as a card in Accounts.</p>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '9px', border: 'none', background: reelState === 'working' ? 'var(--border)' : 'var(--hot-pink)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: reelState === 'working' ? 'default' : 'pointer' }}>
+              {reelState === 'working' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Building your reel…</> : '🎬 Drop a clip → make my reel'}
+              <input type="file" accept="audio/*,video/*,.mp3,.m4a,.wav,.aac,.ogg,.mp4,.mov,.m4v,.webm" style={{ display: 'none' }} disabled={reelState === 'working'} onChange={e => { const f = e.target.files?.[0]; if (f) quickReelFromFile(f); e.target.value = '' }} />
+            </label>
+            {reelMsg && <p style={{ fontSize: '11.5px', marginTop: '8px', fontWeight: 600, lineHeight: 1.5, color: reelState === 'done' ? '#3DAA7C' : reelState === 'error' ? '#E05252' : 'var(--text-muted)' }}>{reelMsg}</p>}
+          </div>
         </div>
 
         <div>

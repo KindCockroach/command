@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const watch = getWatchContext()
 
   const raw = await fableText({
-    useClaude: true, json: true, maxTokens: 6000, effort: 'high',
+    useClaude: true, json: true, maxTokens: 6000, effort: 'medium',
     instructions: `⚑ READ THE ENTIRE TRANSCRIPT FIRST — beginning to END — before you write anything. The opening is throat-clearing; the STRONGEST idea (the golden thread) almost always lands in the middle or back half, after she's warmed up. Do NOT build from the intro. Find the single most valuable, most surprising, most quotable thing she says across the WHOLE episode, and build all three posts from THAT thread. If your hook could have been written from the first 2 minutes alone, you grabbed the wrong thing — go deeper into the episode and rewrite it.
 
 From ONE podcast transcript, produce THREE distinct posts. Each is a different machine:
@@ -48,7 +48,9 @@ Return ONLY valid JSON:
   })
 
   try {
-    const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)![0])
+    const jsonMatch = raw.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return NextResponse.json({ error: 'The writer returned no usable posts — try again (a very short clip can confuse the 3-pack; for a short clip use "Quick Reel" instead).' }, { status: 502 })
+    const parsed = JSON.parse(jsonMatch[0])
     const created: Array<{ kind: string; id: number; account: string }> = []
     for (const p of parsed.posts ?? []) {
       const acct = accounts.find(a => a.id === p.account_id)
