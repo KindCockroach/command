@@ -170,7 +170,14 @@ function NoteModal({ note, onSave, onClose, accounts, onSendToAccount, onExpand,
   const [mode, setMode] = useState<'read' | 'edit'>(note.id ? 'read' : 'edit')
   const titleRef = useRef<HTMLInputElement>(null)
   useEffect(() => { if (mode === 'edit') titleRef.current?.focus() }, [mode])
-  const src = SOURCE_BADGE[noteSource({ source: draft.source, title: draft.title ?? '', tags: draft.tags ?? [] })]
+  const curKey = noteSource({ source: draft.source, title: draft.title ?? '', tags: draft.tags ?? [] })
+  const src = SOURCE_BADGE[curKey]
+  // Manual override: flip a note between "You" and "RISE" and persist it (modal stays open).
+  const flipSource = async () => {
+    const next: NoteSource = curKey === 'mine' ? 'rise' : 'mine'
+    setDraft(d => ({ ...d, source: next }))
+    if (draft.id) { try { await fetch('/api/notes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: draft.id, source: next }) }) } catch { /* best-effort */ } }
+  }
 
   const asNote = () => ({ ...draft, id: draft.id ?? 0, tags: draft.tags ?? [] }) as Note
   const run = async (fn: () => Promise<SendResult>) => {
@@ -218,9 +225,10 @@ function NoteModal({ note, onSave, onClose, accounts, onSendToAccount, onExpand,
         {mode === 'read' ? (
           <div style={{ padding: '10px 28px 20px', flex: 1, overflow: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: src.color, background: 'color-mix(in srgb, currentColor 12%, transparent)', padding: '3px 8px', borderRadius: '6px' }}>
-                <src.Icon size={10} /> {src.label === 'You' ? 'Your writing' : 'RISE generated'}
-              </span>
+              <button onClick={flipSource} title={`Click to move to ${curKey === 'mine' ? 'RISE' : 'You'}`}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: src.color, background: 'color-mix(in srgb, currentColor 12%, transparent)', padding: '3px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>
+                <src.Icon size={10} /> {src.label === 'You' ? 'Your writing' : 'RISE generated'} ⇄
+              </button>
               {(draft.tags ?? []).slice(0, 4).map(t => <span key={t} style={{ fontSize: '10px', color: 'var(--text-muted)' }}>#{t}</span>)}
             </div>
             <h1 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.2, margin: '0 0 14px' }}>{draft.title}</h1>
