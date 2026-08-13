@@ -16,7 +16,7 @@ interface Deliverables {
   reels_scripts: { hook: string; body: string; cta: string; platform: string }[]
   newsletter_subject: string
   newsletter_body?: string
-  medium_article: { title: string; subtitle: string; sections?: { heading: string; body: string }[]; closing?: string; body?: string }
+  medium_article: { title: string; subtitle: string; sections?: { heading: string; body: string }[]; closing?: string; body?: string; sources?: string[] }
   youtube_title: string
   youtube_tags: string[]
   episode_description?: string
@@ -239,6 +239,8 @@ export default function PodcastEngine() {
     }
   }
 
+  const [deepBusy, setDeepBusy] = useState<null | 'medium' | 'newsletter'>(null)
+  const [deepErr, setDeepErr] = useState('')
   const [kitSaved, setKitSaved] = useState(false)
   const [transcriptSaved, setTranscriptSaved] = useState(false)
   const [showMedia, setShowMedia] = useState(false)
@@ -344,6 +346,28 @@ export default function PodcastEngine() {
       setError('Connection error — check Railway is running')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Deep, on-demand regeneration of the two heavy deliverables:
+  //  • medium  — runs live web research → journalism with real numbers + her stories
+  //  • newsletter — pulls her past episodes → weaves the bigger picture
+  const regenDeep = async (kind: 'medium' | 'newsletter') => {
+    if (!transcript.trim() || !result) return
+    setDeepBusy(kind); setDeepErr('')
+    try {
+      const res = await fetch('/api/podcast', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: kind, transcript, episodeNumber, guestName, title: result.title, core_takeaway: result.core_takeaway }),
+      })
+      const d = await res.json()
+      if (kind === 'medium' && d.medium_article) setResult(r => (r ? { ...r, medium_article: d.medium_article } : r))
+      else if (kind === 'newsletter' && (d.newsletter_body || d.newsletter_subject)) setResult(r => (r ? { ...r, newsletter_subject: d.newsletter_subject ?? r.newsletter_subject, newsletter_body: d.newsletter_body ?? r.newsletter_body } : r))
+      else setDeepErr(d.error ?? 'Came back empty — try again')
+    } catch {
+      setDeepErr('Connection error — try again')
+    } finally {
+      setDeepBusy(null)
     }
   }
 
@@ -608,6 +632,14 @@ export default function PodcastEngine() {
 
           {/* Medium Article — formatted from sections (no raw ### symbols) */}
           <Section title="✍️ Medium Article (researched + long-form)">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+              <button onClick={() => regenDeep('medium')} disabled={deepBusy === 'medium'}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '9px', border: 'none', background: deepBusy === 'medium' ? 'var(--border)' : 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: deepBusy === 'medium' ? 'default' : 'pointer' }}>
+                {deepBusy === 'medium' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Researching + writing (~2 min)…</> : '📰 Write the deep researched article'}
+              </button>
+              <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>Runs live research → real numbers + your stories, journalism-style.</span>
+            </div>
+            {deepErr && deepBusy !== 'medium' && <p style={{ fontSize: '12px', color: 'var(--hot-pink)', marginBottom: '8px' }}>{deepErr}</p>}
             {result.medium_article && (
               <>
                 <Field label="Article Title" value={result.medium_article.title} />
@@ -631,6 +663,12 @@ export default function PodcastEngine() {
                     ) : (
                       <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{result.medium_article.body}</p>
                     )}
+                    {!!result.medium_article.sources?.length && (
+                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
+                        <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>Sources</p>
+                        {result.medium_article.sources.map((s, i) => <p key={i} style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6, wordBreak: 'break-word' }}>{i + 1}. {s}</p>)}
+                      </div>
+                    )}
                   </div>
                 </div>
               </>
@@ -639,6 +677,14 @@ export default function PodcastEngine() {
 
           {/* Newsletter */}
           <Section title="📧 Newsletter (Substack)">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+              <button onClick={() => regenDeep('newsletter')} disabled={deepBusy === 'newsletter'}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '9px', border: 'none', background: deepBusy === 'newsletter' ? 'var(--border)' : 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: deepBusy === 'newsletter' ? 'default' : 'pointer' }}>
+                {deepBusy === 'newsletter' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Writing…</> : '✉️ Write the newsletter (weaves past episodes)'}
+              </button>
+              <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>Pulls your past episodes to connect the bigger picture.</span>
+            </div>
+            {deepErr && deepBusy !== 'newsletter' && <p style={{ fontSize: '12px', color: 'var(--hot-pink)', marginBottom: '8px' }}>{deepErr}</p>}
             <Field label="Subject Line" value={result.newsletter_subject} />
             {result.newsletter_body && <Field label="Full Issue" value={result.newsletter_body} />}
           </Section>

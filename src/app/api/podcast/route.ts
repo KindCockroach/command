@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CRAFT_RULES } from '@/lib/craft'
-import { fableText } from '@/lib/fable'
+import { fableText, researchWithWeb } from '@/lib/fable'
+import { getAllNotes } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
+
+// Pull a compact digest of her PAST episodes so the newsletter can weave the
+// bigger picture across the show. Reads saved transcripts + kits from Notes,
+// newest first, excluding the current episode's title.
+function priorEpisodes(excludeTitle?: string): string {
+  const notes = getAllNotes()
+  const eps = notes.filter(n => {
+    const t = (n.title || '').toLowerCase()
+    const isEp = n.tags?.includes('transcript') || n.tags?.includes('episode-kit') || /transcript|ep kit|episode kit|deliverables/i.test(n.title || '')
+    return isEp && (!excludeTitle || !t.includes(excludeTitle.toLowerCase().slice(0, 24)))
+  }).slice(0, 6)
+  if (!eps.length) return ''
+  return eps.map(n => {
+    const body = (n.body || '').replace(/\s+/g, ' ').trim().slice(0, 500)
+    return `- ${n.title.replace(/^[^A-Za-z0-9]+/, '')}: ${body}…`
+  }).join('\n')
+}
 
 // Where every episode CTA sends people: the SHOW, on the platforms it lives on.
 const SHOW_LINKS = {
@@ -15,8 +33,87 @@ const SHOW_LINKS = {
 const OPT_IN = 'aimomeducation.com'
 
 export async function POST(req: NextRequest) {
-  const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast' } = await req.json()
+  const body = await req.json()
+  const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast', action, title, core_takeaway } = body
   if (!transcript) return NextResponse.json({ error: 'transcript required' }, { status: 400 })
+
+  // ── DEEP MEDIUM ARTICLE (on demand) — borderline journalism ─────────────────
+  // Runs live web research for REAL numbers/studies on the episode's topic, then
+  // writes a newspaper-style piece: 4-5 sub-headline sections that each carry a
+  // real figure or finding, HER stories woven in to make the point, sources at end.
+  if (action === 'medium') {
+    const clip = String(transcript).slice(0, 120000)
+    let research = ''
+    try {
+      research = await researchWithWeb({
+        maxSearches: 6, maxTokens: 3000,
+        instructions: `You are RISE's research desk. The host just recorded a podcast on the topic below. Search the live web for REAL, current numbers, studies, and reporting that speak to THIS topic — the kind a journalist would cite (Pew, BLS, peer-reviewed studies, established outlets). Return a plain list: [statistic/finding] — [source name] — [full URL] — [one line of what it shows]. Real sources only; mark anything shaky "VERIFY:". 8-14 of the strongest.`,
+        input: `Topic of the episode: ${title || core_takeaway || 'see transcript'}\n\nTranscript (for what she actually argued):\n${clip.slice(0, 12000)}`,
+      })
+    } catch { /* research best-effort; article can still run on her stories */ }
+
+    const mInstr = `You are Mandi Beck's ghostwriter, writing a MEDIUM ARTICLE that reads like real journalism — a newspaper feature, not a blog post. It takes the argument she made on this episode and builds it out with evidence.
+
+RULES:
+- 900-1300 words. Journalistic register: authoritative, specific, human. Not salesy, not a listicle.
+- 4-5 SECTION HEADINGS, and each heading must carry a real NUMBER or a research finding (e.g. "Half of new grads are chasing jobs that won't exist in a decade"). Headings are claims backed by data, never vague labels.
+- Weave REAL research (the sources below) INTO the piece — cite the source inline as a journalist would ("according to Pew…", "BLS data shows…"). Never invent a number; if you don't have a real one for a point, make the point without a fake figure.
+- Weave HER OWN STORIES from the transcript through the article — they are the human thread that articulates the point. Her lived detail + the hard data, braided together.
+- End with a "Sources" section: numbered, each "Publication — headline" then the URL.
+- Her voice underneath the journalism: warm, plain, unafraid. Show, don't preach.
+
+${research ? `REAL RESEARCH TO USE (cite these; never state one as something she said on the episode):\n${research}\n` : 'No external research came back — build it from her argument and stories; do not fabricate statistics.\n'}
+
+Obey the craft laws for how lines are built.
+${CRAFT_RULES}`
+
+    const mSchema = `Return ONLY valid JSON:
+{
+  "title": "the article headline — a claim, addressed to the reader, ideally carrying the through-line",
+  "subtitle": "one-sentence deck under the title",
+  "sections": [ { "heading": "section heading that carries a real number/finding", "body": "2-4 rich paragraphs: research cited inline + her story woven in" } ],
+  "closing": "closing paragraph in her voice that invites the reader to the podcast",
+  "sources": ["Publication — headline — https://url", "..."]
+}`
+    try {
+      const raw = await fableText({ instructions: mInstr, input: `EPISODE TITLE: ${title || '(untitled)'}\nTRANSCRIPT:\n${clip}\n\n${mSchema}`, maxTokens: 8000, json: true, useClaude: true })
+      let medium_article
+      try { medium_article = JSON.parse(raw) } catch { const m = raw.match(/\{[\s\S]*\}/); medium_article = m ? JSON.parse(m[0]) : null }
+      if (!medium_article) throw new Error('Could not parse the article')
+      return NextResponse.json({ medium_article })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : 'Medium article failed' }, { status: 500 })
+    }
+  }
+
+  // ── NEWSLETTER (on demand) — shorter, weaves the bigger picture ─────────────
+  if (action === 'newsletter') {
+    const clip = String(transcript).slice(0, 120000)
+    const prior = priorEpisodes(title)
+    const nInstr = `You are Mandi Beck writing this week's SUBSTACK NEWSLETTER off her latest episode. Shorter than an article — 350-550 words — and its job is to connect THIS episode to the BIGGER PICTURE of the show.
+
+RULES:
+- Open on the one true thing from this episode (her real takeaway), in her voice.
+- WEAVE IN references to her PAST episodes below — call back to a theme or moment from an earlier one and show how it connects to this week. This is the point of the newsletter: the throughline across the show, not a recap of one episode.
+- Warm, plain, personal — a letter to a friend who's been following along. Short paragraphs.
+- Address the reader (you/your), never a wall of "I". Close by inviting her to the full episode.
+- No fabricated facts. If you reference a past episode, only use what's in the digest below.
+
+${prior ? `HER PAST EPISODES (weave a real callback from one or two of these):\n${prior}\n` : 'No past episodes on file — write it strong on this one alone, gesturing to "the show" generally.\n'}
+
+Obey the craft laws.
+${CRAFT_RULES}`
+    const nSchema = `Return ONLY valid JSON: { "newsletter_subject": "a subject line that gets opened", "newsletter_body": "the full 350-550 word issue, markdown ok" }`
+    try {
+      const raw = await fableText({ instructions: nInstr, input: `THIS EPISODE ("${title || 'latest'}"):\n${clip}\n\n${nSchema}`, maxTokens: 3000, json: true, useClaude: true })
+      let out
+      try { out = JSON.parse(raw) } catch { const m = raw.match(/\{[\s\S]*\}/); out = m ? JSON.parse(m[0]) : null }
+      if (!out) throw new Error('Could not parse the newsletter')
+      return NextResponse.json({ newsletter_subject: out.newsletter_subject, newsletter_body: out.newsletter_body })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : 'Newsletter failed' }, { status: 500 })
+    }
+  }
 
   // Read the WHOLE episode — Fable's context is huge. (The old 8-9k cap meant the
   // model never saw the last third of an episode, where the real takeaway usually lands.)
