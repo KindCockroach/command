@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { createContent, createTask, getAllBrandAccounts, getWatchContext, getAudienceContext } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
+import { fableText } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
-
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 // One transcript → three distinct post types:
 // 1. FACELESS: Greg-style direct hook, no avatar, points to the podcast for answers
@@ -20,8 +18,8 @@ export async function POST(req: NextRequest) {
   const avatarAccounts = accounts.filter(a => a.avatar_id)
   const watch = getWatchContext()
 
-  const res = await client.responses.create({
-    model: 'gpt-4o',
+  const raw = await fableText({
+    useClaude: true, json: true, maxTokens: 6000, effort: 'high',
     instructions: `From ONE podcast transcript, produce THREE distinct posts. Each is a different machine:
 
 1. "faceless" — direct-response style (Greg's school: volume ads that look like content). A scroll-stopping hook in the first line, zero fluff, no face needed — the visual is a bold text-on-background or b-roll (Mandi will attach her own hook visual from her Media library). The CTA points to the PODCAST as the place the answers live ("Full breakdown on the AI Mom Podcast — episode in bio" style, comment-keyword CTA, never links in caption).
@@ -34,19 +32,21 @@ ${watch}
 ${getAudienceContext(accounts.find(a => a.id === 'aimomatwork')?.audience_id)}
 ${CRAFT_RULES}
 
+⛔ HARD RULE FOR EVERY "onscreen_text" AND "hook": it is a BOLD CLAIM, never a question. NO question hooks — no "Ever feel like…?", "Are you…?", "What if…?". You already know the answer, so state it straight (Law 2a). If your first line ends in a question mark, rewrite it as a declarative claim before returning.
+
 Return ONLY valid JSON:
 {
   "posts": [
-    { "kind": "faceless", "account_id": "...", "title": "...", "hook": "the Greg-style opening line", "caption": "full caption, CTA points to the podcast, comment-keyword", "hashtags": "15-20", "onscreen_text": "bold overlay line(s)", "visual_note": "what the hook visual should be (she'll attach her own from Media)" },
-    { "kind": "avatar_clip", "account_id": "...", "title": "...", "script": "the exact 20-40s spoken script for the avatar", "caption": "caption for the clip", "hashtags": "15-20", "onscreen_text": "overlay beats, newline-separated" },
-    { "kind": "trending", "account_id": "...", "title": "...", "caption": "full caption", "hashtags": "15-20", "onscreen_text": "overlay beats", "trend_ref": "which winning pattern this rides", "diy_todo": "EXACTLY what Mandi films (shot list) OR the Higgsfield prompt to generate", "diy_kind": "film | higgsfield" }
+    { "kind": "faceless", "account_id": "...", "title": "...", "hook": "the Greg-style opening line — a bold CLAIM, not a question", "caption": "full caption, CTA points to the podcast, comment-keyword", "hashtags": "15-20", "onscreen_text": "bold overlay line(s) — a CLAIM that stops the scroll, NEVER a question", "visual_note": "what the hook visual should be (she'll attach her own from Media)" },
+    { "kind": "avatar_clip", "account_id": "...", "title": "...", "script": "the exact 20-40s spoken script for the avatar", "caption": "caption for the clip", "hashtags": "15-20", "onscreen_text": "overlay beats, newline-separated — claims, not questions" },
+    { "kind": "trending", "account_id": "...", "title": "...", "caption": "full caption", "hashtags": "15-20", "onscreen_text": "overlay beats — claims, not questions", "trend_ref": "which winning pattern this rides", "diy_todo": "EXACTLY what Mandi films (shot list) OR the Higgsfield prompt to generate", "diy_kind": "film | higgsfield" }
   ]
 }`,
-    input: `EPISODE${episodeTitle ? `: ${episodeTitle}` : ''} — TRANSCRIPT (first ~8000 chars):\n${String(transcript).slice(0, 8000)}`,
+    input: `EPISODE${episodeTitle ? `: ${episodeTitle}` : ''} — TRANSCRIPT:\n${String(transcript).slice(0, 40000)}`,
   })
 
   try {
-    const parsed = JSON.parse(res.output_text.match(/\{[\s\S]*\}/)![0])
+    const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)![0])
     const created: Array<{ kind: string; id: number; account: string }> = []
     for (const p of parsed.posts ?? []) {
       const acct = accounts.find(a => a.id === p.account_id)
