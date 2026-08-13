@@ -8,6 +8,7 @@ interface Deliverables {
   title: string
   subtitle: string
   questions?: string[]
+  chapters?: string[]
   headlines: string[]
   description: string
   seo_description: string
@@ -279,7 +280,8 @@ export default function PodcastEngine() {
       `\n## SEO Description\n${d.seo_description}`,
       `\n## Keywords\n${(d.keywords ?? []).join(', ')}`,
       `\n## Show Notes\n${d.description}`,
-      d.questions?.length ? `\n## Questions we explore\n${d.questions.map(q => `- ${q}`).join('\n')}` : '',
+      d.questions?.length ? `\n## Key questions we ask\n${d.questions.map(q => `- ${q}`).join('\n')}` : '',
+      d.chapters?.length ? `\n## Chapters / timestamps\n${d.chapters.join('\n')}` : '',
       `\n## Pull Quotes\n${(d.pull_quotes ?? []).map(q => `> "${q}"`).join('\n')}`,
       `\n## Reels Scripts\n${(d.reels_scripts ?? []).map((s, i) => `### Reel ${i + 1} (${s.platform})\nHOOK: ${s.hook}\nBODY: ${s.body}\nCTA: ${s.cta}`).join('\n\n')}`,
       `\n## Newsletter (Substack)\nSubject: ${d.newsletter_subject}\n\n${d.newsletter_body ?? ''}`,
@@ -338,7 +340,7 @@ export default function PodcastEngine() {
       const res = await fetch('/api/podcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript, episodeNumber, guestName }),
+        body: JSON.stringify({ transcript, episodeNumber, guestName, timestamps }),
       })
       const data = await res.json()
       if (data.deliverables) {
@@ -521,12 +523,25 @@ export default function PodcastEngine() {
             {(result.questions?.length ?? 0) > 0 && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>❓ Questions we explore</p>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>❓ Key questions we ask</p>
                   <CopyBtn text={(result.questions ?? []).map(q => `• ${q}`).join('\n')} label="Copy all" />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {result.questions!.map((q, i) => (
                     <p key={i} style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, padding: '6px 10px', background: 'var(--surface-raised)', borderRadius: '8px', borderLeft: '3px solid var(--purple)' }}>{q}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {(result.chapters?.length ?? 0) > 0 && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>⏱ Chapters (tied to the title)</p>
+                  <CopyBtn text={(result.chapters ?? []).join('\n')} label="Copy all" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  {result.chapters!.map((c, i) => (
+                    <p key={i} style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, padding: '5px 10px', background: 'var(--surface-raised)', borderRadius: '8px', fontVariantNumeric: 'tabular-nums' }}>{c}</p>
                   ))}
                 </div>
               </div>

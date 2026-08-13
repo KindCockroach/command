@@ -54,7 +54,7 @@ More from AI Mom:
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast', action, title, core_takeaway } = body
+  const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast', action, title, core_takeaway, timestamps } = body
   if (!transcript) return NextResponse.json({ error: 'transcript required' }, { status: 400 })
 
   // ── DEEP MEDIUM ARTICLE (on demand) — borderline journalism ─────────────────
@@ -150,7 +150,7 @@ HOST: Mandi Beck — AI Mom. Warm, tangential, self-aware, philosophical, plain-
 EPISODE: ${episodeNumber ? `#${episodeNumber}` : 'TBD'}
 GUEST: ${guestName ?? 'None — solo episode'}
 ${researched ? `\nSUPPORTING SOURCES (further-reading ONLY — real sources that back claims Mandi already made. Use them ONLY as citations/links in the Medium article's further-reading. NEVER state one of these specifics as something discussed in the episode, NEVER put them in headlines, quotes, show notes, reels, or the episode description, NEVER speak them in her voice):\n${researched}\n` : ''}
-FULL TRANSCRIPT (this is the source of truth — everything you write must come from HERE):
+${timestamps && String(timestamps).trim() ? `TIMESTAMPS (real timecodes from Riverside — use THESE for the "chapters" field; never invent times):\n${String(timestamps).trim()}\n` : ''}FULL TRANSCRIPT (this is the source of truth — everything you write must come from HERE):
 ${clip}`
 
   const instructions = `You are the podcast production engine for RISE Station — Mandi Beck's AI content operating system. You turn ONE episode into every deliverable, in MANDI'S OWN VOICE.
@@ -177,9 +177,10 @@ ${CRAFT_RULES}`
 {
   "core_takeaway": "the ONE real thesis of this episode, in Mandi's framing — the argument she actually builds, not the topic. One or two sentences.",
   "emotional_spine": "the story or wound at the center — who it's about, what happened, why it matters to her. One or two sentences.",
-  "title": "punchy episode title (under 60 chars) — TRUE to the core_takeaway. ADDRESS THE LISTENER: use 'you/your', never 'I/my/me'. It talks TO her, not about Mandi. (e.g. NOT 'I'm the AI Mom and AI Can't Raise My Kids' → 'AI Is Useful, But It Still Can't Tell You How to Raise Your Kids')",
+  "title": "episode title (under 60 chars) that speaks to the LISTENER'S PAIN POINT DIRECTLY — the real decision or worry she's carrying, in the plain words she'd whisper or type into a search bar. Name the actual dilemma, not a clever theme. ADDRESS HER: 'you/your', never 'I/my/me'. GOOD (names the pain): 'Homeschool or Public School?' / 'AI Is Useful, But It Can't Tell You How to Raise Your Kids'. BAD (vague theme): 'Embracing Uncertainty' / 'The Future of Learning'. If the episode is about a fork she's agonizing over, the title can BE that fork.",
   "subtitle": "one sentence that makes someone hit play — reflects the real takeaway, not a generic topic",
-  "questions": ["the real questions THIS episode asks/answers (many are literally asked near the end) — 3-6, in her words"],
+  "questions": ["the KEY questions you actually ASK in this episode — the ones the listener is asking herself too (several are literally posed in the episode). 3-6, in her words, addressed to the listener where natural."],
+  "chapters": ["timestamped chapter markers tied to the episode's arc, each 'MM:SS — short chapter title'. RULES: use ONLY real timecodes — from the TIMESTAMPS block if provided, else from timecodes embedded in the transcript. If NO real times exist anywhere, return the chapter TITLES in order with an empty time (e.g. ' — Homeschool or public school') and NEVER invent clock times. Chapter titles should echo the title's pain where relevant."],
   "headlines": ["5 scroll-stopping options — each ADDRESSED TO THE LISTENER (you/your), NOT the host (I/my); each answerable by core_takeaway and honoring emotional_spine; none writable from the title alone"],
   "description": "3-paragraph show notes in Mandi's voice — open on the emotional spine (the real story), land the core takeaway, why it matters. Under 300 words. Her warm, tangential voice.",
   "seo_description": "150-character search meta description",
