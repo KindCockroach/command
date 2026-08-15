@@ -20,13 +20,18 @@ export default function CommanderChat() {
   const [shredInput, setShredInput] = useState<string | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     try { const s = localStorage.getItem(STORAGE_KEY); if (s) { const p = JSON.parse(s); if (Array.isArray(p)) setMessages(p) } } catch { /* fresh */ }
   }, [])
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-40))) } catch { /* non-fatal */ }
-    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Scroll ONLY inside the chat's message list — never the page. scrollIntoView
+    // was yanking the whole window down so Mandi landed below the chat and had to
+    // scroll back up; setting the list's own scrollTop keeps the page put.
+    const el = listRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [messages, loading])
 
   const upload = async (f: File) => {
@@ -155,7 +160,7 @@ export default function CommanderChat() {
         )}
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div ref={listRef} style={{ flex: 1, overflow: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <div style={bubble('assistant')}>{GREETING}</div>
         {messages.map((m, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '82%' }}>
@@ -223,9 +228,9 @@ export default function CommanderChat() {
         </button>
         <textarea value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-          placeholder="Talk to me, or drop something in… (Enter to send)"
-          rows={1}
-          style={{ flex: 1, resize: 'none', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px', fontFamily: 'inherit', lineHeight: 1.5, maxHeight: '120px', outline: 'none' }} />
+          placeholder="Talk to me, or drop something in… (Shift+Enter for a new line)"
+          rows={4}
+          style={{ flex: 1, resize: 'vertical', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px', fontFamily: 'inherit', lineHeight: 1.5, minHeight: '96px', maxHeight: '300px', outline: 'none' }} />
         <button onClick={send} disabled={loading || (!input.trim() && !attach)}
           style={{ padding: '10px 14px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', cursor: loading || (!input.trim() && !attach) ? 'default' : 'pointer', opacity: (!input.trim() && !attach) ? 0.5 : 1, display: 'flex', alignItems: 'center', fontWeight: 800 }}>
           {loading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={14} />}
