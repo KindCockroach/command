@@ -6,6 +6,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { ContentPiece } from '@/lib/db'
+import { effectiveStatus } from '@/lib/contentStatus'
 import ContentCard from './ContentCard'
 import EditModal from './EditModal'
 import AddModal from './AddModal'
@@ -26,14 +27,10 @@ export default function KanbanBoard({ initialContent }: Props) {
   const [activeId, setActiveId] = useState<number | null>(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
-  // A post isn't "Ready to Publish" until it has real media attached — a caption
-  // with no image/video lives in "Being Built" no matter its stored status.
-  const hasMedia = (c: ContentPiece) => !!(c.media_url || (c.media_urls && c.media_urls.length))
-  const byStatus = (s: string) => {
-    if (s === 'ready') return content.filter(c => c.status === 'ready' && hasMedia(c))
-    if (s === 'in_progress') return content.filter(c => c.status === 'in_progress' || (c.status === 'ready' && !hasMedia(c)))
-    return content.filter(c => c.status === s)
-  }
+  // Lane membership follows effectiveStatus: a "ready" card with no media falls
+  // back to "Being Built" (see lib/contentStatus). Single source of truth shared
+  // with the phone Dashboard counts and the Ready-to-Post scroller.
+  const byStatus = (s: string) => content.filter(c => effectiveStatus(c) === s)
 
   const handleDragEnd = useCallback(async (e: DragEndEvent) => {
     setActiveId(null)

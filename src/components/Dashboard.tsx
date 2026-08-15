@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { ContentPiece } from '@/lib/db'
+import { effectiveStatus } from '@/lib/contentStatus'
 import AccountsPanel from './AccountsPanel'
 import DailyBriefingPanel from './DailyBriefing'
 import ProjectsPanel from './ProjectsPanel'
@@ -69,10 +70,12 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('cc-theme', 'light') }
   }
 
+  // Counts follow effectiveStatus so a "ready" post with no media is counted
+  // under Being Built, not Ready to Publish (see lib/contentStatus).
   const recalc = (c: ContentPiece[]) => ({
-    ideas: c.filter(x => x.status === 'idea').length,
-    inProgress: c.filter(x => x.status === 'in_progress').length,
-    ready: c.filter(x => x.status === 'ready').length,
+    ideas: c.filter(x => effectiveStatus(x) === 'idea').length,
+    inProgress: c.filter(x => effectiveStatus(x) === 'in_progress').length,
+    ready: c.filter(x => effectiveStatus(x) === 'ready').length,
     totalActive: c.length,
   })
 

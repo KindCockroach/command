@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink, ArrowRight, Trash2, Download, Pause, FolderPlus, Eye } from 'lucide-react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
+import { effectiveStatus } from '@/lib/contentStatus'
 import { PlatformPreviewModal } from './AccountsPanel'
 
 // One-by-one review scroller for a pipeline lane — arrows, full content view.
@@ -15,10 +16,18 @@ export default function ContentScroller({ status, label, onClose }: { status: st
   const [preview, setPreview] = useState(false)
 
   useEffect(() => {
+    // Pull the whole active feed and filter by effectiveStatus (not the raw
+    // stored status) so the Ready lane only ever shows posts that actually have
+    // media — a caption with no image/video stays in Being Built where it can
+    // get its image gen + Canva/CapCut pass. See lib/contentStatus.
     Promise.all([
-      fetch(`/api/content?status=${status}`).then(r => r.json()),
+      fetch('/api/content').then(r => r.json()),
       fetch('/api/accounts').then(r => r.json()),
-    ]).then(([c, a]) => { setItems(c); setAccounts(a); setLoading(false) }).catch(() => setLoading(false))
+    ]).then(([c, a]) => {
+      const active = (c as ContentPiece[]).filter(x => !['published', 'archived'].includes(x.status))
+      setItems(active.filter(x => effectiveStatus(x) === status))
+      setAccounts(a); setLoading(false)
+    }).catch(() => setLoading(false))
   }, [status])
 
   const next = useCallback(() => setI(x => Math.min(x + 1, items.length - 1)), [items.length])
