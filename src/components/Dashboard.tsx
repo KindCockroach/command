@@ -25,7 +25,7 @@ import AuditPanel from './AuditPanel'
 import AudiencePanel from './AudiencePanel'
 import GoalsPanel from './GoalsPanel'
 import ContentScroller from './ContentScroller'
-import { Lightbulb, Loader2, CheckCircle2, Archive, LayoutGrid, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target } from 'lucide-react'
+import { Lightbulb, Loader2, CheckCircle2, Archive, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
@@ -82,7 +82,8 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
   const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode; accent?: boolean }[] = [
     { id: 'command',    label: 'Daily Command', icon: <Zap size={12} />, accent: true },
     { id: 'goals',      label: 'Goals',         icon: <Target size={12} /> },
-    { id: 'pipeline',   label: 'Content',       icon: <LayoutGrid size={12} /> },
+    // Content tab merged into Daily Command (the Work Queue). Old 'pipeline' Kanban
+    // view still renders if navigated to, but it's no longer in the nav.
     { id: 'projects',   label: 'Projects',      icon: <FolderKanban size={12} /> },
     { id: 'tasks',      label: 'Tasks',         icon: <CheckSquare size={12} /> },
     { id: 'assistants', label: 'Assistants',    icon: <Bot size={12} /> },

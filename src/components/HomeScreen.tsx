@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Settings2, X, ChevronUp, ChevronDown, Check } from 'lucide-react'
 import DailyCommand from './DailyCommand'
 import CommanderChat from './CommanderChat'
+import CommandQueue from './CommandQueue'
 import GoalsPace from './GoalsPace'
 import ResearchBrief from './ResearchBrief'
 import GoalsPanel from './GoalsPanel'
@@ -19,6 +20,7 @@ import StoryStudio from './StoryStudio'
 // ── The widget registry — every tab available as a homescreen widget ──────────
 // DailyCommand stays the anchor widget (quick capture + brief + tasks + fire).
 const WIDGETS: { id: string; label: string; emoji: string; render: () => React.ReactNode }[] = [
+  { id: 'queue',      label: 'Work Queue',      emoji: '✅', render: () => <CommandQueue /> },
   { id: 'commander',  label: 'The Commander',   emoji: '⚡', render: () => <CommanderChat /> },
   { id: 'research',   label: 'Daily Briefing',  emoji: '🔬', render: () => <ResearchBrief /> },
   { id: 'goalspace',  label: 'Goals & Pace',    emoji: '🎯', render: () => <GoalsPace /> },
@@ -36,7 +38,7 @@ const WIDGETS: { id: string; label: string; emoji: string; render: () => React.R
 ]
 
 const STORAGE_KEY = 'rise-home-widgets-v1'
-const DEFAULT_LAYOUT = ['commander', 'research', 'goalspace']   // Commander, Daily Briefing, Goals & Pace
+const DEFAULT_LAYOUT = ['queue', 'commander', 'research', 'goalspace']   // Work Queue (the merged content tab) on top, then Commander, Briefing, Goals
 
 // The customizable homescreen: pick which widgets show and in what order,
 // so Daily Command bends to the current focus (launch mode, research season…).
@@ -59,6 +61,12 @@ export default function HomeScreen() {
             const extras = ids.filter(id => id !== 'command' && !want.includes(id))
             ids = [...want, ...extras]
             localStorage.setItem('rise-home-v2', '1')
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
+          }
+          // v3: Content tab merged into Daily Command — pin the Work Queue on top.
+          if (!localStorage.getItem('rise-home-v3')) {
+            ids = ['queue', ...ids.filter(id => id !== 'queue')]
+            localStorage.setItem('rise-home-v3', '1')
             localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
           }
           setLayout(ids)
