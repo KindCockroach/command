@@ -67,11 +67,14 @@ TEACHING (when a post educates). Hand over ONE real, usable tool IN the post —
 INFORMATION (when a post shares something interesting, e.g. a woman in history). Lead with the untold detail, not the résumé. One subject, one reason she matters, told deep. Show the cost, not just the trophy. Land it on the woman scrolling — the courage or reframe SHE gets. End on a line she'd screenshot. CTA carries it forward (name/nominate/claim), never pivots to a pitch.
 
 SHAPE — format dictates anatomy; never mix shapes in one post:
-• VIDEO/REEL: on-screen text = ONE hook line only (never slides); script = spoken evidence, no emojis/labels/stage cues; video prompt = motion + scene, 9:16 (16:9 YouTube), NO text baked into frames (captions ride on top).
+• AVATAR / TALKING-HEAD VIDEO (she speaks to camera, OR a video was dropped onto the card): on-screen text = NONE — leave it EMPTY. The spoken words ARE the hook; a talking video that already shows a person needs no text overlay stamped on it. script = exactly the words she says (spoken evidence, no emojis/labels/stage cues); the written hook lives in the caption's first line, not on the frame. NEVER put on-screen text on an avatar/dropped video.
+• SILENT REEL / B-ROLL (no one speaking — motion + a text overlay carries it): on-screen text = ONE hook line only (never slides); script = optional VO; video prompt = motion + scene, 9:16 (16:9 YouTube), NO text baked into frames (captions ride on top).
 • CAROUSEL: on-screen text = numbered slides ("Slide 1: …"), 5-8, a progression, each standalone in Canva; NO script.
 • SINGLE IMAGE: image prompt = 1:1 with the hook rendered legibly into it; no slides, no script.
 • CAPTION is post-ready every format: headline first line, gap last line, hashtags at the very end, nothing else — no labels, no slide text, no script. Copy-paste-and-post.
 • Mix formats across an account; each post obeys exactly one shape.
+
+YOUTUBE IS ITS OWN ANIMAL — write for a viewer CHOOSING what to watch, never a scroller half-reading a feed. Never recycle an IG caption as a YouTube title or description; that's the "garbage" failure. The TITLE must earn the click: a specific benefit or an open loop, the payoff front-loaded in the first few words, concrete and curiosity-driving — never a vague label, a topic, or a pretty one-liner. The description's first two lines must hook BEFORE the fold (that's all a viewer sees) — say plainly what they'll GET and why to keep watching, then the fuller 150-300 words. YouTube rewards clarity about the payoff + curiosity, not aesthetics. A talking-head/avatar video for YouTube = captivating TITLE + hooking DESCRIPTION + the spoken script — and NO on-screen text.
 
 LENGTH — right-size to the platform; long enough to deliver the value, short enough to waste nothing. Never pad, never truncate the point. IG caption tight (~50-125 words, one point); Reel/TikTok/Shorts script 15-40s spoken; carousel 5-8 slides; Medium 600-1000 words with real subheads (never a thin stub); newsletter/Substack 400-700 words, one idea + one tip; email 150-350 words, one CTA; YouTube description 150-300 words; Threads/X under 280.
 `.trim()

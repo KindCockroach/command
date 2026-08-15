@@ -32,17 +32,20 @@ export async function POST(req: NextRequest) {
   const voice = account
     ? `Account: ${account.handle} (${account.brand_name}). Tone: ${account.tone}. Mission: ${account.mission}. ${account.notes ? `⚠ RULES: ${account.notes}` : ''} ${getAudienceContext(account.audience_id)}`
     : 'Voice: Mandi Beck — warm, plain, no fluff.'
+  // This is ALWAYS an avatar/talking-head video (her voice → captioned avatar),
+  // so it gets NO on-screen text — the spoken words are the hook (craft SHAPE law).
+  // The written hook lives in the caption's first line instead.
   let onscreen = '', caption = '', hashtags = '', title = 'Voice clip'
   try {
     const out = await fableText({
       maxTokens: 1800,
       useClaude: true,
       json: true,
-      instructions: `${craftFor(accountId)}\n\n${voice}\n\nMandi recorded the spoken words below (a real voice clip that will become a captioned avatar reel). Write the POST that ships with it. Return ONLY valid JSON:\n{ "title": "short internal title", "onscreen_text": "the HOOK — a STATEMENT, never a question (law 2a)", "caption": "spaced caption: headline first line carries the golden thread, real line breaks, NO CTA in growth phase, never restates the on-screen hook", "hashtags": "12-20 single-word hashtags, space-separated, camelCase multi-word ideas" }`,
+      instructions: `${craftFor(accountId)}\n\n${voice}\n\nMandi recorded the spoken words below — a real voice clip that becomes a CAPTIONED AVATAR VIDEO of her talking. This is a talking-head video, so it gets NO on-screen text overlay; the written hook goes in the caption's first line. Write the POST that ships with it. Return ONLY valid JSON:\n{ "title": "short internal title", "caption": "spaced caption: headline first line IS the hook (carries the golden thread), real line breaks, NO CTA in growth phase", "hashtags": "12-20 single-word hashtags, space-separated, camelCase multi-word ideas" }`,
       input: `SPOKEN WORDS (the audio):\n${transcript.slice(0, 6000)}`,
     })
     const p = JSON.parse(out.match(/\{[\s\S]*\}/)![0])
-    onscreen = p.onscreen_text || ''; caption = p.caption || ''; hashtags = p.hashtags || ''; title = p.title || title
+    caption = p.caption || ''; hashtags = p.hashtags || ''; title = p.title || title
   } catch { /* still create the card with the transcript as script */ }
 
   // 3) Create the card with the audio attached so HeyGen lip-syncs her real voice

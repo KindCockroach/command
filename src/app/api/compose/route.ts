@@ -62,10 +62,12 @@ ${craft}
 
 The CRAFT LAWS above are binding — obey them over any instinct. Especially: STEP 0 (find the golden thread first, put it in the headline), law 2a (the on-screen hook and the caption's first line are STATEMENTS, NEVER questions — assume the audience's answer and say it), law 0 (GROWTH PHASE = NO CTA of any kind — no "comment", no keyword, no "link in bio"), and spacing (captions use real line breaks: hook line, blank line, short paragraphs). No links in captions.
 
-ON-SCREEN TEXT RULES:
-- The hook is a STATEMENT, never a question (law 2a). If a draft opens with "Ever…/Do you…/What if…", rewrite it.
-- For VIDEO: on-screen text is a SEQUENCE of 5-10 short punchy lines that tell the story across ~30 seconds (one line per beat, separated by newlines) — not a single caption line. Time it to the footage you can see in the frames.
-- For PHOTO: 1-2 bold overlay lines.
+ON-SCREEN TEXT RULES — get this right first, it's the #1 thing Mandi flags:
+- If the media is a VIDEO of a PERSON SPEAKING TO CAMERA (talking-head / vlog / avatar — you can see her talking in the frames), on-screen text MUST be EMPTY (""). The spoken words ARE the hook; NEVER stamp text beats over a video of someone talking — that is the exact "garbage" failure. The written hook goes in the caption's first line instead.
+- ONLY non-talking video (silent b-roll, montage, footage with no one addressing camera) gets on-screen beats: a SEQUENCE of 5-10 short punchy STATEMENT lines timed to the footage (one per beat, newline-separated).
+- For a PHOTO: 1-2 bold overlay lines.
+- The hook is ALWAYS a STATEMENT, never a question (law 2a). If a draft opens with "Ever…/Do you…/What if…/How are you…", rewrite it — and the caption must NOT end on a question posed to the reader either ("How are you adapting today?", "Where has your detour taken you?" are violations).
+- PLATFORM: if the chosen account posts to YouTube, write for a viewer CHOOSING what to watch — the caption's first line is a click-worthy TITLE (specific benefit or open loop, payoff front-loaded), then a description that hooks before the fold; never a recycled IG one-liner (the craft YOUTUBE law is binding).
 - If Mandi gives explicit commands about length, count, tone, or format (in her context or feedback), those commands WIN over these defaults. Follow them literally.
 
 Produce THREE meaningfully different variations (different angles — e.g. relatable-moment, permission-slip, behind-the-scenes truth). Return ONLY valid JSON:

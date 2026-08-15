@@ -194,6 +194,13 @@ export async function POST(req: NextRequest) {
     // so a media object WITHOUT `type` makes their API throw "Cannot read properties of undefined
     // (reading 'includes')". Always send an explicit type derived from the URL extension.
     const mediaType = (url: string): string => (/\.(mp4|mov|webm|m4v)(\?|$)/i.test(url) ? 'video/mp4' : 'image/jpeg')
+    // Send the WHOLE carousel, in order. media_urls holds every slide; media_url is
+    // only the primary/first one. Using media_url alone posted just slide 1 to GHL
+    // even when 6 images were attached — send them all, deduped, order preserved.
+    const carousel = (piece.media_urls && piece.media_urls.length)
+      ? piece.media_urls
+      : (piece.media_url ? [piece.media_url] : [])
+    const mediaItems = Array.from(new Set(carousel.filter(Boolean))).map(url => ({ url, type: mediaType(url) }))
     // Auto-schedule into the next open 5/day slot unless an explicit time was passed
     const effectiveSchedule = scheduleAt || (autoSchedule ? nextScheduleSlot(piece.account_id) : null)
     const res = await fetch(`${GHL_BASE}/social-media-posting/${locationId}/posts`, {
@@ -203,7 +210,7 @@ export async function POST(req: NextRequest) {
         accountIds: targetIds,
         ...(userId ? { userId } : {}),
         summary,
-        media: piece.media_url ? [{ url: piece.media_url, type: mediaType(piece.media_url) }] : [],
+        media: mediaItems,
         status: effectiveSchedule ? 'scheduled' : 'draft',
         scheduleDate: effectiveSchedule ?? undefined,
         type: 'post',

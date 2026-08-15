@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink, ArrowRight, Trash2, Download, Pause, FolderPlus, Eye } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLink, ArrowRight, Trash2, Download, Pause, FolderPlus, Eye, ThumbsDown } from 'lucide-react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
 import { effectiveStatus } from '@/lib/contentStatus'
 import { PlatformPreviewModal } from './AccountsPanel'
@@ -14,6 +14,10 @@ export default function ContentScroller({ status, label, onClose }: { status: st
   const [approving, setApproving] = useState(false)
   const [copied, setCopied] = useState(false)
   const [preview, setPreview] = useState(false)
+  const [showDecline, setShowDecline] = useState(false)
+  const [declineReason, setDeclineReason] = useState('')
+  const [declining, setDeclining] = useState(false)
+  const [learnedFlash, setLearnedFlash] = useState<string | null>(null)
 
   useEffect(() => {
     // Pull the whole active feed and filter by effectiveStatus (not the raw
@@ -42,6 +46,9 @@ export default function ContentScroller({ status, label, onClose }: { status: st
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [next, prev, onClose])
+
+  // Moving to another card closes any open decline box (don't carry a reason over).
+  useEffect(() => { setShowDecline(false); setDeclineReason('') }, [i])
 
   const p = items[i]
   const acct = p ? accounts.find(a => a.id === p.account_id) : null
@@ -93,6 +100,36 @@ export default function ContentScroller({ status, label, onClose }: { status: st
     if (!confirm(`Delete "${p.title}"? This can't be undone.`)) return
     await fetch(`/api/content?id=${p.id}`, { method: 'DELETE' })
     dropCurrent()
+  }
+
+  // Quick-tap reasons for declining — tapping one appends it to the reason box.
+  const DECLINE_CHIPS = ['Off-brand voice', 'Wrong topic for this account', 'Wrong format for this account', 'Too salesy', "Not my story / didn't happen", "Weak hook — doesn't stop the scroll", 'Tells instead of shows']
+
+  // Decline & teach — send the reason so it becomes a durable rule on this
+  // account's DNA (every future generator obeys it), then drop the card.
+  const decline = async () => {
+    if (!p || !declineReason.trim()) return
+    const id = p.id
+    setDeclining(true)
+    try {
+      const res = await fetch('/api/content/decline', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: id, reason: declineReason }),
+      })
+      const d = await res.json().catch(() => ({}))
+      setShowDecline(false); setDeclineReason('')
+      if (d.learnedRule) {
+        setLearnedFlash(d.learnedRule)
+        setTimeout(() => {
+          setLearnedFlash(null)
+          setItems(prev2 => prev2.filter(x => x.id !== id))
+          setI(x => Math.min(x, Math.max(items.length - 2, 0)))
+        }, 1800)
+      } else {
+        setItems(prev2 => prev2.filter(x => x.id !== id))
+        setI(x => Math.min(x, Math.max(items.length - 2, 0)))
+      }
+    } finally { setDeclining(false) }
   }
 
   const openOnAccount = () => {
@@ -181,7 +218,29 @@ export default function ContentScroller({ status, label, onClose }: { status: st
         </div>
 
         {p && (
-          <div style={{ display: 'flex', gap: '8px', padding: '12px 18px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          <div style={{ borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          {/* Decline & teach — the reason becomes a permanent rule for this account */}
+          {showDecline && (
+            <div style={{ padding: '12px 18px 0' }}>
+              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#E05252', marginBottom: '7px' }}>Why is this wrong? It becomes a rule this account won&apos;t break again.</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                {DECLINE_CHIPS.map(c => (
+                  <button key={c} onClick={() => setDeclineReason(r => r ? `${r}; ${c}` : c)}
+                    style={{ fontSize: '11px', fontWeight: 700, padding: '5px 10px', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+              <textarea value={declineReason} onChange={e => setDeclineReason(e.target.value)} rows={2}
+                placeholder="Tap a reason above or write your own…"
+                style={{ width: '100%', fontSize: '12px', padding: '9px 11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+              <button onClick={decline} disabled={declining || !declineReason.trim()}
+                style={{ width: '100%', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '9px', border: 'none', background: '#E05252', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: declining || !declineReason.trim() ? 'default' : 'pointer', opacity: declining || !declineReason.trim() ? 0.55 : 1 }}>
+                {declining ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Teaching this account…</> : <><ThumbsDown size={12} /> Decline &amp; teach this account</>}
+              </button>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '8px', padding: '12px 18px', flexShrink: 0 }}>
             {status !== 'ready' && (
               <button onClick={moveForward}
                 style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: acct?.color ?? 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>
@@ -222,10 +281,20 @@ export default function ContentScroller({ status, label, onClose }: { status: st
               style={{ display: 'flex', alignItems: 'center', padding: '11px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer' }}>
               <Pause size={13} />
             </button>
-            <button onClick={remove} title="Delete this card"
+            <button onClick={() => setShowDecline(v => !v)} title="Decline & teach — tell it why this is wrong"
+              style={{ display: 'flex', alignItems: 'center', padding: '11px 12px', borderRadius: '10px', border: `1px solid ${showDecline ? '#E05252' : 'var(--border)'}`, background: showDecline ? 'rgba(224,82,82,0.08)' : 'var(--surface)', color: '#E05252', cursor: 'pointer' }}>
+              <ThumbsDown size={13} />
+            </button>
+            <button onClick={remove} title="Delete this card (no teaching)"
               style={{ display: 'flex', alignItems: 'center', padding: '11px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: '#d05', cursor: 'pointer' }}>
               <Trash2 size={13} />
             </button>
+          </div>
+          </div>
+        )}
+        {learnedFlash && (
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '14px 16px', background: '#1F7A54', color: '#fff', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', zIndex: 3 }}>
+            <CheckCircle2 size={15} /> Learned for this account: {learnedFlash}
           </div>
         )}
       </div>

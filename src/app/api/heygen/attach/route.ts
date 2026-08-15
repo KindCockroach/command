@@ -7,6 +7,19 @@ export const maxDuration = 300
 
 const BASE = 'https://api.heygen.com'
 
+// AI Mom Mandi's HeyGen talking photo. The podcast (@aimompodcast) and the
+// YouTube channel (AImom888) ALWAYS render as this face — hardwired so a blank
+// or misconfigured avatar record can never fall back to the wrong (aimomatwork)
+// default. Both "wear the AI Mom Mandi face" per Mandi's instruction.
+const AI_MOM_MANDI_PHOTO = '0367dcabf68840bea6f310a557f45fae'
+function wearsAiMomMandi(account: { id?: string; handle?: string; platform?: string } | null): boolean {
+  if (!account) return false
+  if (account.id === 'aimompodcast') return true
+  const handle = (account.handle ?? '').toLowerCase()
+  const platform = (account.platform ?? '').toLowerCase()
+  return platform === 'youtube' || account.id === 'aimom888' || handle.includes('aimom888')
+}
+
 // HeyGen sometimes returns an empty body or an HTML error page (rate limit,
 // outage, bad key). Reading .json() on that throws and crashes the route with an
 // empty response — which the client then chokes on ("Unexpected end of JSON
@@ -32,7 +45,9 @@ export async function POST(req: NextRequest) {
     // Resolve the avatar via the trinity: account.avatar_id → avatar record
     const account = piece.account_id ? getBrandAccount(piece.account_id) : null
     const avatar = getAllAvatars().find(a => a.id === (account?.avatar_id ?? '')) ?? getAllAvatars().find(a => a.id === 'mandi')
-    const photoId = avatar?.heygen_photo_id || process.env.HEYGEN_PHOTO_DEFAULT
+    // Podcast + YouTube ALWAYS wear the AI Mom Mandi face (hardwired, never the
+    // aimomatwork fallback); every other account uses its own avatar's photo.
+    const photoId = wearsAiMomMandi(account) ? AI_MOM_MANDI_PHOTO : (avatar?.heygen_photo_id || process.env.HEYGEN_PHOTO_DEFAULT)
     if (!photoId) {
       return NextResponse.json({ error: `No HeyGen talking photo for ${account?.handle ?? 'this account'} — wire AI Mom Mandi (Avatars) or set one in the account editor (🎭).` }, { status: 400 })
     }

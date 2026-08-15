@@ -97,13 +97,31 @@ export default function UniversalCapture() {
       const folder = f.type.startsWith('video') ? 'videos'
         : f.type.startsWith('audio') ? 'audio'
         : f.type.startsWith('image') ? 'images' : 'files'
+      const ct = f.type || 'application/octet-stream'
+
+      // Presigned direct-to-R2 PUT first so big videos bypass the server's
+      // request-body limit — buffering a large video THROUGH the server OOMs on
+      // Railway, which is exactly the "Something went wrong" on dropped videos.
+      // Fall back to a through-server multipart upload if the direct PUT can't run.
+      try {
+        const pre = await fetch('/api/upload', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: f.name, contentType: ct, folder }),
+        })
+        const pd = await pre.json().catch(() => ({}))
+        if (pre.ok && pd.uploadUrl && pd.publicUrl) {
+          const put = await fetch(pd.uploadUrl, { method: 'PUT', headers: { 'Content-Type': ct }, body: f })
+          if (put.ok) return { publicUrl: pd.publicUrl as string, fileType: f.type, fileName: f.name }
+        }
+      } catch { /* fall through to multipart */ }
 
       const fd = new FormData()
       fd.append('file', f)
       fd.append('folder', folder)
       const res = await fetch('/api/upload', { method: 'POST', body: fd })
-      const { publicUrl } = await res.json()
-      return { publicUrl, fileType: f.type, fileName: f.name }
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.publicUrl) throw new Error(d.error || `Couldn't upload ${f.name} — it may be too large.`)
+      return { publicUrl: d.publicUrl as string, fileType: f.type, fileName: f.name }
     } finally {
       setUploading(false)
     }
@@ -141,8 +159,9 @@ export default function UniversalCapture() {
       const data = await res.json()
       if (data.classification) { setResult(data.classification); setAnswers({}) }
       else setError('Could not read that — try adding a bit more context')
-    } catch {
-      setError('Something went wrong. Try again.')
+    } catch (e) {
+      // Surface the real reason (usually the upload) instead of a blank "Something went wrong".
+      setError(e instanceof Error ? e.message : 'Something went wrong. Try again.')
     } finally {
       setLoading(false)
     }
@@ -250,7 +269,7 @@ export default function UniversalCapture() {
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <button onClick={() => classify()} disabled={loading || uploading || (!input.trim() && !file)}
           style={{ flex: 1, padding: '11px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: (!input.trim() && !file) ? 0.5 : 1 }}>
-          {loading || uploading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> {uploading ? 'Uploading...' : 'Analyzing...'}</> : <><Sparkles size={14} /> Let the station decide</>}
+          {loading || uploading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> {uploading ? 'Uploading...' : 'Analyzing...'}</> : <><Sparkles size={14} /> Go</>}
         </button>
         <p style={{ fontSize: '11px', color: 'var(--text-subtle)', whiteSpace: 'nowrap' }}>⌘ + Enter</p>
       </div>
