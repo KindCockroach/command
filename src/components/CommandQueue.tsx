@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
 import { hasMedia } from '@/lib/contentStatus'
-import { CheckCircle2, RefreshCw, Camera, Video, ArrowRight, Sparkles, MessageCircleQuestion } from 'lucide-react'
+import { CheckCircle2, RefreshCw, Camera, Video, ArrowRight, Sparkles, MessageCircleQuestion, MessageCircle } from 'lucide-react'
+import PostChat from './PostChat'
 
 // The merged Content tab: Daily Command IS the content surface now. A prioritized
 // work queue — approvals first, then the ideas that are alive and need finishing —
@@ -16,6 +17,7 @@ export default function CommandQueue() {
   const [accounts, setAccounts] = useState<BrandAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<number | null>(null)
+  const [chatting, setChatting] = useState<ContentPiece | null>(null)
 
   const load = useCallback(() => {
     Promise.all([
@@ -160,6 +162,11 @@ export default function CommandQueue() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 800, color: 'var(--purple)' }}>{step.icon} Next: {step.label}</span>
                 <div style={{ flex: 1 }} />
+                <button onClick={() => setChatting(p)}
+                  title="Talk it through with the Commander — answer its questions, give direction, watch the post come together"
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 11px', borderRadius: '9px', border: '1px solid var(--purple)', background: 'var(--purple-light)', color: 'var(--purple)', fontWeight: 800, fontSize: '11px', cursor: 'pointer' }}>
+                  <MessageCircle size={12} /> Talk it through
+                </button>
                 <button onClick={() => polish(p)} disabled={busy === p.id}
                   title="Rewrite this post's copy to your voice"
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 11px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
@@ -177,6 +184,15 @@ export default function CommandQueue() {
           <p style={{ fontSize: '12px', color: 'var(--text-subtle)', padding: '4px 2px' }}>No open ideas. Drop a thought or a photo to the Commander above and it lands here.</p>
         )}
       </section>
+
+      {chatting && (
+        <PostChat
+          post={chatting}
+          account={acct(chatting.account_id)}
+          onClose={() => setChatting(null)}
+          onChanged={updated => setPosts(prev => prev.map(x => x.id === updated.id ? updated : x))}
+        />
+      )}
 
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </div>
