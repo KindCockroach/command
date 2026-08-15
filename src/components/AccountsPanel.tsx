@@ -615,6 +615,22 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
     } finally { setRegenerating(false) }
   }
 
+  // Clean up copy — one click rewrites the WHOLE post's copy (caption + on-screen
+  // text) to the craft bar in the account's voice. Snapshots for undo.
+  const [polishing, setPolishing] = useState(false)
+  const polish = async () => {
+    setPolishing(true); setRecapErr('')
+    try {
+      localStorage.setItem(`undo-${post.id}`, JSON.stringify({ title: post.title, onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '' }))
+      const res = await fetch('/api/content/polish', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: post.id }),
+      })
+      if (res.ok) { setUndoAvail(true); onChanged?.() }
+      else { const d = await res.json().catch(() => ({})); setRecapErr(d.error || `clean-up failed (${res.status})`) }
+    } finally { setPolishing(false) }
+  }
+
   // Recaption — rewrite ONLY the caption in place. feedback undefined = 🔁 fresh
   // variation; feedback string = follow it AND learn from it. Snapshots for undo.
   const recaption = async (feedback?: string) => {
@@ -1267,6 +1283,13 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
               {post.script && <Section label="🎬 Script (spoken — build, does not post)" text={post.script} bold />}
               {post.onscreen_text && <Section label="📱 On-Screen Text / Slides (build, does not post)" text={post.onscreen_text} bold />}
               <Section label="✅ Caption — this is what posts" text={post.description} />
+              {(post.description || post.onscreen_text) && (
+                <button onClick={polish} disabled={polishing}
+                  title="Rewrite this post's copy to your voice — proper spacing, real hook, no question, format-correct on-screen text. You finish the images."
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '11px', borderRadius: '10px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '13px', cursor: polishing ? 'default' : 'pointer', opacity: polishing ? 0.75 : 1, marginTop: '6px' }}>
+                  {polishing ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Cleaning up the copy…</> : <>🧹 Clean up copy</>}
+                </button>
+              )}
               {post.description && (
                 <div style={{ marginTop: '-2px' }}>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
