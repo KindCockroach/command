@@ -79,7 +79,13 @@ export default function CommanderChat() {
   }
 
   const runAction = async (key: string, a: Action, media?: Attach | null) => {
-    const p = a.payload
+    // The action comes from an LLM, so the shape isn't guaranteed. Normally fields
+    // live under `payload`, but the model sometimes drops them at the top level (or
+    // emits payload:null). Merge both so p.title etc. resolve either way — otherwise
+    // `p.title` on an undefined payload throws and shows "failed — try again" for a
+    // request that never even left the browser.
+    const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object'
+    const p: Record<string, unknown> = { ...(isObj(a) ? a : {}), ...(isObj(a.payload) ? a.payload : {}) }
     const str = (v: unknown, d = '') => (typeof v === 'string' ? v : v == null ? d : String(v))
     const arr = (v: unknown) => (Array.isArray(v) ? v : [])
     const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || `a${Date.now()}`
@@ -132,7 +138,10 @@ export default function CommanderChat() {
         setActStatus(s => ({ ...s, [key]: 'unknown action' }))
       }
       window.dispatchEvent(new CustomEvent('rise-data-changed', { detail: { type: a.type } }))
-    } catch { setActStatus(s => ({ ...s, [key]: 'failed — try again' })) }
+    } catch (e) {
+      console.error('[commander action failed]', a.type, e)
+      setActStatus(s => ({ ...s, [key]: 'failed — try again' }))
+    }
   }
 
   const bubble = (role: 'user' | 'assistant') => ({

@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { Loader2, Copy, CheckCircle2, ChevronDown, ChevronUp, Mic, Zap } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Loader2, Copy, CheckCircle2, ChevronDown, ChevronUp, Mic, Zap, Save, ImageIcon, PenLine, Sparkles } from 'lucide-react'
 
 interface Deliverables {
   core_takeaway?: string
@@ -14,7 +14,7 @@ interface Deliverables {
   seo_description: string
   keywords: string[]
   pull_quotes: string[]
-  reels_scripts: { hook: string; body: string; cta: string; platform: string }[]
+  reels_scripts: { hook: string; script?: string; body: string; cta: string; platform: string }[]
   newsletter_subject: string
   newsletter_body?: string
   medium_article: { title: string; subtitle: string; sections?: { heading: string; body: string }[]; closing?: string; body?: string; sources?: string[] }
@@ -125,6 +125,36 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
   )
 }
 
+// A generated caption + Copy + Save to Notes. Saved notes are tagged `caption`
+// (and `podcast` + the episode) so they're findable via Notes search for "caption".
+function CaptionBox({ caption, saveTitle, saveTags }: { caption: string; saveTitle: string; saveTags: string[] }) {
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const save = async () => {
+    setSaving(true)
+    try {
+      await fetch('/api/notes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: saveTitle, body: caption, category: 'script', source: 'rise', tags: saveTags }),
+      })
+      setSaved(true)
+    } catch { /* best-effort */ } finally { setSaving(false) }
+  }
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--surface-raised)', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{caption}</p>
+      <div style={{ display: 'flex', gap: '6px' }}>
+        <CopyBtn text={caption} />
+        <button onClick={save} disabled={saving || saved}
+          style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: saved ? '#EAF7F0' : 'var(--surface)', cursor: saved ? 'default' : 'pointer', fontSize: '11px', fontWeight: 600, color: saved ? '#2E8B60' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+          {saved ? <CheckCircle2 size={11} /> : <Save size={11} />}
+          {saved ? 'Saved to Notes' : saving ? 'Saving…' : 'Save to Notes'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function PodcastEngine() {
   const [transcript, setTranscript] = useState('')
   const [episodeNumber, setEpisodeNumber] = useState('')
@@ -173,6 +203,7 @@ export default function PodcastEngine() {
       // big episodes bypass the server's request-body limit; fall back to a
       // through-server multipart upload if the direct PUT can't be used.
       let publicUrl = ''
+      let presignNote = '' // why the fast direct-to-R2 path didn't take, for diagnostics
       try {
         const pre = await fetch('/api/upload', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -182,18 +213,27 @@ export default function PodcastEngine() {
         if (pre.ok && pd.uploadUrl && pd.publicUrl) {
           const put = await fetch(pd.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'audio/mpeg' }, body: file })
           if (put.ok) publicUrl = pd.publicUrl
+          else presignNote = `direct upload returned ${put.status}`
+        } else {
+          presignNote = pd.error || `presign returned ${pre.status}`
         }
-      } catch { /* fall through to multipart */ }
+      } catch (e) {
+        // A CORS block surfaces here as a TypeError — the direct PUT never lands.
+        presignNote = `direct upload blocked (${e instanceof Error ? e.message : 'network/CORS'})`
+      }
 
       if (!publicUrl) {
         const fd = new FormData()
         fd.append('file', file)
         fd.append('folder', 'audio')
-        const up = await fetch('/api/upload', { method: 'POST', body: fd })
-        const upd = await up.json().catch(() => ({}))
-        if (!up.ok || !upd.publicUrl) {
+        const up = await fetch('/api/upload', { method: 'POST', body: fd }).catch(() => null)
+        const upd = up ? await up.json().catch(() => ({})) : {}
+        if (!up || !up.ok || !upd.publicUrl) {
           setAudioState('error')
-          setAudioMsg(upd.error || 'Upload failed — try again, or use “Pull from Media” if it saved.')
+          const tooBig = file.size > 40 * 1048576
+          const sizeHint = tooBig ? ` This episode is ${mb}MB — likely too big for the server fallback; the direct-to-R2 path needs to work.` : ''
+          const why = presignNote ? ` (${presignNote}${up ? `; server path ${up.status}` : '; server path unreachable'})` : ''
+          setAudioMsg(upd.error || `Upload failed${why}.${sizeHint} Try again, or use “Pull from Media” if it saved.`)
           return
         }
         publicUrl = upd.publicUrl
@@ -254,6 +294,111 @@ export default function PodcastEngine() {
   const [pullingKey, setPullingKey] = useState<string | null>(null)
   const [pullErr, setPullErr] = useState('')
 
+  // Captions + per-quote actions + pin images (kept out of the big kit so they can be
+  // regenerated freely). epCaption = the whole-episode "why you'd listen" caption.
+  const [epCaption, setEpCaption] = useState('')
+  const [epCapBusy, setEpCapBusy] = useState(false)
+  const [epVariety, setEpVariety] = useState(0)
+  const [quoteCap, setQuoteCap] = useState<Record<number, string>>({})
+  const [quoteCapBusy, setQuoteCapBusy] = useState<number | null>(null)
+  const [quotePost, setQuotePost] = useState<Record<number, string>>({})
+  const [quotePostBusy, setQuotePostBusy] = useState<number | null>(null)
+  const [pinImg, setPinImg] = useState<Record<number, string>>({})
+  const [pinBusy, setPinBusy] = useState<number | null>(null)
+  const [pinErr, setPinErr] = useState<Record<number, string>>({})
+
+  const epTag = episodeNumber ? `ep-${episodeNumber}` : 'unnumbered'
+
+  // Whole-episode caption: short "why you'd listen" + a rotating tune-in CTA. Each
+  // press gives a fresh variation (epVariety bumps the CTA + reroll).
+  const genEpisodeCaption = async () => {
+    if (!result) return
+    setEpCapBusy(true)
+    try {
+      const r = await fetch('/api/podcast/caption', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'episode', title: result.title, takeaway: result.core_takeaway ?? result.subtitle ?? '', variety: epVariety }),
+      })
+      const d = await r.json()
+      if (d.caption) { setEpCaption(d.caption); setEpVariety(v => v + 1) }
+    } catch { /* leave prior caption in place */ } finally { setEpCapBusy(false) }
+  }
+
+  // A quote is already a great hook — turn it into a caption on tap.
+  const writeQuoteCaption = async (i: number, quote: string) => {
+    setQuoteCapBusy(i)
+    try {
+      const r = await fetch('/api/podcast/caption', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'quote', quote, title: result?.title ?? '' }),
+      })
+      const d = await r.json()
+      if (d.caption) setQuoteCap(m => ({ ...m, [i]: d.caption }))
+    } catch { /* ignore */ } finally { setQuoteCapBusy(null) }
+  }
+
+  // …or send the quote (verbatim hook) through the River to become a post-card.
+  const makePostFromQuote = async (i: number, quote: string) => {
+    setQuotePostBusy(i)
+    setQuotePost(m => ({ ...m, [i]: '…' }))
+    try {
+      const input = `PODCAST QUOTE — use this VERBATIM line as the hook (it's Mandi's own words, already a great hook):\n"${quote}"\n\nEPISODE: ${result?.title ?? ''}\nCONTEXT: ${result?.core_takeaway ?? result?.seo_description ?? ''}`
+      const r = await fetch('/api/river', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, accountId: 'aimompodcast', source: 'podcast-quote' }),
+      })
+      const d = await r.json()
+      setQuotePost(m => ({ ...m, [i]: r.ok && d.piece ? `✓ Post drafted for ${d.account?.handle ?? '@aimompodcast'} — approve in Accounts` : (d.error || 'couldn\'t draft') }))
+    } catch { setQuotePost(m => ({ ...m, [i]: 'failed — try again' })) } finally { setQuotePostBusy(null) }
+  }
+
+  const genPinImage = async (i: number, p: { title: string; description: string; image_prompt?: string }) => {
+    setPinBusy(i); setPinErr(m => ({ ...m, [i]: '' }))
+    try {
+      const r = await fetch('/api/podcast/pin-image', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: p.image_prompt || p.description, title: p.title }),
+      })
+      const d = await r.json()
+      if (d.url) setPinImg(m => ({ ...m, [i]: d.url })); else setPinErr(m => ({ ...m, [i]: d.error || 'failed' }))
+    } catch { setPinErr(m => ({ ...m, [i]: 'failed' })) } finally { setPinBusy(null) }
+  }
+
+  // ── Persistence: keep the last kit + inputs so she can leave and come back
+  // without regenerating. Restore once on mount; skip the first save so we never
+  // clobber stored data with the empty initial state before restore lands.
+  const STORE_KEY = 'rise-podcast-engine-v1'
+  const firstPersist = useRef(true)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORE_KEY)
+      if (!raw) return
+      const s = JSON.parse(raw)
+      if (s.result) setResult(s.result)
+      if (typeof s.transcript === 'string') setTranscript(s.transcript)
+      if (typeof s.episodeNumber === 'string') setEpisodeNumber(s.episodeNumber)
+      if (typeof s.guestName === 'string') setGuestName(s.guestName)
+      if (typeof s.timestamps === 'string') setTimestamps(s.timestamps)
+      if (typeof s.epCaption === 'string') setEpCaption(s.epCaption)
+      if (s.quoteCap && typeof s.quoteCap === 'object') setQuoteCap(s.quoteCap)
+      if (s.pinImg && typeof s.pinImg === 'object') setPinImg(s.pinImg)
+    } catch { /* corrupt/absent — start fresh */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useEffect(() => {
+    if (firstPersist.current) { firstPersist.current = false; return }
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ result, transcript, episodeNumber, guestName, timestamps, epCaption, quoteCap, pinImg }))
+    } catch { /* quota or private mode — non-fatal */ }
+  }, [result, transcript, episodeNumber, guestName, timestamps, epCaption, quoteCap, pinImg])
+
+  const clearKit = () => {
+    if (typeof window !== 'undefined' && !window.confirm('Clear this episode and its deliverables from the page? Anything you saved to Notes stays.')) return
+    setResult(null); setTranscript(''); setEpisodeNumber(''); setGuestName(''); setTimestamps('')
+    setEpCaption(''); setEpVariety(0); setQuoteCap({}); setQuotePost({}); setPinImg({}); setPinErr({}); setError(null); setKitSaved(false)
+    try { localStorage.removeItem(STORE_KEY) } catch { /* ignore */ }
+  }
+
   const loadAudioLib = async () => {
     setShowMedia(v => !v)
     if (audioLib.length) return
@@ -276,7 +421,8 @@ export default function PodcastEngine() {
 
   // Upload an audio file to Media (R2), returning its public URL. Presigned direct
   // PUT first (bypasses the request-body limit), multipart fallback.
-  const uploadAudioToMedia = async (file: File): Promise<string> => {
+  const uploadAudioToMedia = async (file: File): Promise<{ url: string; error?: string }> => {
+    let note = ''
     try {
       const pre = await fetch('/api/upload', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -285,13 +431,15 @@ export default function PodcastEngine() {
       const pd = await pre.json().catch(() => ({}))
       if (pre.ok && pd.uploadUrl && pd.publicUrl) {
         const put = await fetch(pd.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'audio/mpeg' }, body: file })
-        if (put.ok) return pd.publicUrl
-      }
-    } catch { /* fall through */ }
+        if (put.ok) return { url: pd.publicUrl }
+        note = `direct upload ${put.status}`
+      } else note = pd.error || `presign ${pre.status}`
+    } catch (e) { note = `direct upload blocked (${e instanceof Error ? e.message : 'CORS'})` }
     const fd = new FormData(); fd.append('file', file); fd.append('folder', 'audio')
-    const up = await fetch('/api/upload', { method: 'POST', body: fd })
-    const upd = await up.json().catch(() => ({}))
-    return up.ok && upd.publicUrl ? upd.publicUrl : ''
+    const up = await fetch('/api/upload', { method: 'POST', body: fd }).catch(() => null)
+    const upd = up ? await up.json().catch(() => ({})) : {}
+    if (up && up.ok && upd.publicUrl) return { url: upd.publicUrl }
+    return { url: '', error: `${note}${up ? `; server ${up.status}` : '; server unreachable'}` }
   }
 
   // ONE-TAP QUICK REEL — audio → /api/clip does it all: transcribe, write the post
@@ -315,8 +463,8 @@ export default function PodcastEngine() {
   }
   const quickReelFromFile = async (file: File) => {
     setReelKey('drop'); setReelState('working'); setReelMsg(`Uploading ${file.name}…`)
-    const url = await uploadAudioToMedia(file)
-    if (!url) { setReelState('error'); setReelMsg('Upload failed — try again.'); setReelKey(null); return }
+    const { url, error } = await uploadAudioToMedia(file)
+    if (!url) { setReelState('error'); setReelMsg(`Upload failed${error ? ` (${error})` : ''} — try again.`); setReelKey(null); return }
     await quickReel(url, 'drop')
   }
 
@@ -332,7 +480,7 @@ export default function PodcastEngine() {
       d.questions?.length ? `\n## Key questions we ask\n${d.questions.map(q => `- ${q}`).join('\n')}` : '',
       d.chapters?.length ? `\n## Chapters / timestamps\n${d.chapters.join('\n')}` : '',
       `\n## Pull Quotes\n${(d.pull_quotes ?? []).map(q => `> "${q}"`).join('\n')}`,
-      `\n## Reels Scripts\n${(d.reels_scripts ?? []).map((s, i) => `### Reel ${i + 1} (${s.platform})\nHOOK: ${s.hook}\nBODY: ${s.body}\nCTA: ${s.cta}`).join('\n\n')}`,
+      `\n## Reels Scripts\n${(d.reels_scripts ?? []).map((s, i) => `### Reel ${i + 1} (${s.platform})\nHOOK: ${s.hook}${s.script ? `\nSCRIPT (record word-for-word): ${s.script}` : ''}\nVISUAL/BODY: ${s.body}\nCTA: ${s.cta}`).join('\n\n')}`,
       `\n## Newsletter (Substack)\nSubject: ${d.newsletter_subject}\n\n${d.newsletter_body ?? ''}`,
       d.medium_article ? `\n## Medium Article\n# ${d.medium_article.title}\n*${d.medium_article.subtitle}*\n\n${mediumBody(d.medium_article)}` : '',
       `\n## Episode description (YouTube / Spotify / Apple — same everywhere)\n${d.episode_description ?? ''}`,
@@ -547,6 +695,15 @@ export default function PodcastEngine() {
       {result && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
+          {/* This kit is restored automatically on return — no re-generating. Start fresh when you're done. */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>💾 This episode stays here when you leave — come back anytime to keep working. No re-generating.</span>
+            <button onClick={clearKit}
+              style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '7px', padding: '6px 11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              🆕 Start new episode
+            </button>
+          </div>
+
           {/* Kit saved confirmation */}
           {kitSaved && (
             <div style={{ background: 'rgba(61,170,124,0.08)', border: '1px solid rgba(61,170,124,0.3)', borderRadius: '10px', padding: '10px 14px', fontSize: '12px', color: '#3DAA7C', fontWeight: 600 }}>
@@ -575,6 +732,23 @@ export default function PodcastEngine() {
               <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>If this misses the point, regenerate — everything below is built from this.</p>
             </div>
           )}
+
+          {/* ✍️ Episode caption — short "why you'd listen" + a tune-in CTA. Regenerate for variations. */}
+          <div style={{ border: '1px solid var(--purple)', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ padding: '10px 14px', background: 'var(--purple-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--purple)' }}>✍️ Episode caption — short, why you&rsquo;d listen + tune-in CTA</span>
+              <button onClick={genEpisodeCaption} disabled={epCapBusy}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '8px', border: 'none', background: 'var(--purple)', cursor: epCapBusy ? 'default' : 'pointer', fontSize: '11px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>
+                {epCapBusy ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <PenLine size={12} />}
+                {epCapBusy ? 'Writing…' : epCaption ? 'Regenerate caption' : 'Write caption'}
+              </button>
+            </div>
+            <div style={{ padding: '12px 14px' }}>
+              {epCaption
+                ? <CaptionBox caption={epCaption} saveTitle={`📝 Caption — ${result.title}`} saveTags={['caption', 'captions', 'podcast', epTag]} />
+                : <p style={{ fontSize: '12px', color: 'var(--text-subtle)', lineHeight: 1.5 }}>A short caption that paraphrases why someone would want this episode, ending in a rotating &ldquo;tune in / follow along / on Spotify, YouTube &amp; Apple — link in bio&rdquo; CTA. Hit <strong>Write caption</strong>, then <strong>Regenerate</strong> for a fresh variation. Save any you like to Notes (search &ldquo;caption&rdquo;).</p>}
+            </div>
+          </div>
 
           {/* ⭐ TOP — listen, rate & review (before she scrolls) */}
           <ShareCard links={result.show_links} />
@@ -631,12 +805,33 @@ export default function PodcastEngine() {
             ))}
           </Section>
 
-          {/* Pull Quotes */}
-          <Section title="💬 Pull Quotes (for graphics + social)">
+          {/* Pull Quotes — your own words are your best hooks */}
+          <Section title="💬 Pull Quotes (your words = your best hooks)">
+            <p style={{ fontSize: '11px', color: 'var(--text-subtle)', marginBottom: '2px' }}>These are lifted verbatim from your episode. Write a caption around one, or send it through the River as a post — the quote becomes the hook.</p>
             {result.pull_quotes?.map((q, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', background: 'var(--surface-raised)', borderRadius: '8px' }}>
-                <p style={{ fontSize: '13px', color: 'var(--text)', fontStyle: 'italic', lineHeight: 1.5 }}>"{q}"</p>
-                <CopyBtn text={`"${q}"`} />
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 12px', background: 'var(--surface-raised)', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text)', fontStyle: 'italic', lineHeight: 1.5 }}>&ldquo;{q}&rdquo;</p>
+                  <CopyBtn text={`"${q}"`} />
+                </div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <button onClick={() => writeQuoteCaption(i, q)} disabled={quoteCapBusy === i}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--purple)', background: 'var(--surface)', cursor: quoteCapBusy === i ? 'default' : 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--purple)' }}>
+                    {quoteCapBusy === i ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <PenLine size={11} />}
+                    {quoteCapBusy === i ? 'Writing…' : 'Write caption'}
+                  </button>
+                  <button onClick={() => makePostFromQuote(i, q)} disabled={quotePostBusy === i}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '6px', border: 'none', background: 'var(--purple)', cursor: quotePostBusy === i ? 'default' : 'pointer', fontSize: '11px', fontWeight: 700, color: '#fff' }}>
+                    {quotePostBusy === i ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={11} />}
+                    {quotePostBusy === i ? 'Drafting…' : 'Generate post'}
+                  </button>
+                  {quotePost[i] && quotePost[i] !== '…' && (
+                    <span style={{ fontSize: '11px', color: quotePost[i].startsWith('✓') ? '#2E8B60' : '#C0392B', alignSelf: 'center' }}>{quotePost[i]}</span>
+                  )}
+                </div>
+                {quoteCap[i] && (
+                  <CaptionBox caption={quoteCap[i]} saveTitle={`📝 Caption — ${result.title} (quote ${i + 1})`} saveTags={['caption', 'captions', 'podcast', epTag]} />
+                )}
               </div>
             ))}
           </Section>
@@ -656,11 +851,20 @@ export default function PodcastEngine() {
               <div key={i} style={{ border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
                 <div style={{ padding: '10px 14px', background: 'var(--purple-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--purple)' }}>{s.platform}</span>
-                  <CopyBtn text={`${s.hook}\n\n${s.body}\n\n${s.cta}`} />
+                  <CopyBtn text={`${s.hook}\n\n${s.script ?? s.body}\n\n${s.cta}`} />
                 </div>
                 <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div><p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', marginBottom: '3px' }}>Hook</p><p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{s.hook}</p></div>
-                  <div><p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', marginBottom: '3px' }}>Body</p><p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{s.body}</p></div>
+                  <div><p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', marginBottom: '3px' }}>Hook (on-screen)</p><p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{s.hook}</p></div>
+                  {s.script && (
+                    <div style={{ border: '1px solid var(--purple)', borderRadius: '8px', padding: '9px 11px', background: 'var(--surface-raised)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <p style={{ fontSize: '10px', fontWeight: 800, color: 'var(--purple)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎙 Script — record this, word for word</p>
+                        <CopyBtn text={s.script} />
+                      </div>
+                      <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{s.script}</p>
+                    </div>
+                  )}
+                  <div><p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', marginBottom: '3px' }}>{s.script ? 'Visual / framing' : 'Body'}</p><p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{s.body}</p></div>
                   <div style={{ padding: '8px 10px', background: 'var(--purple-light)', borderRadius: '6px' }}><p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--purple)', marginBottom: '2px' }}>CTA</p><p style={{ fontSize: '12px', color: 'var(--text)' }}>{s.cta}</p></div>
                 </div>
               </div>
@@ -783,7 +987,7 @@ export default function PodcastEngine() {
 
           {/* Pinterest */}
           <Section title="📌 Pinterest Pins">
-            <p style={{ fontSize: '11px', color: 'var(--text-subtle)', marginBottom: '2px' }}>Visual generation for these pins is coming — the image prompt is ready on each.</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-subtle)', marginBottom: '2px' }}>Each pin has a suggested image. Hit <strong>Generate image</strong> to make a tall 2:3 pin visual (saved to Media).</p>
             {result.pinterest_pins?.map((p, i) => (
               <div key={i} style={{ padding: '10px 12px', background: 'var(--surface-raised)', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -791,7 +995,28 @@ export default function PodcastEngine() {
                   <CopyBtn text={`${p.title}\n\n${p.description}`} />
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{p.description}</p>
-                {p.image_prompt && <p style={{ fontSize: '11px', color: 'var(--text-subtle)', lineHeight: 1.5, marginTop: '5px', fontStyle: 'italic' }}>🎨 {p.image_prompt}</p>}
+                {p.image_prompt && <p style={{ fontSize: '11px', color: 'var(--text-subtle)', lineHeight: 1.5, marginTop: '5px', fontStyle: 'italic' }}>🎨 Suggested image: {p.image_prompt}</p>}
+                {pinImg[i] ? (
+                  <div style={{ marginTop: '8px' }}>
+                    <img src={pinImg[i]} alt={p.title} style={{ width: '140px', borderRadius: '8px', border: '1px solid var(--border)', display: 'block' }} />
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '5px' }}>
+                      <CopyBtn text={pinImg[i]} label="Copy image URL" />
+                      <button onClick={() => genPinImage(i, p)} disabled={pinBusy === i}
+                        style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 10px', cursor: pinBusy === i ? 'default' : 'pointer' }}>
+                        {pinBusy === i ? 'Regenerating…' : 'Regenerate'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button onClick={() => genPinImage(i, p)} disabled={pinBusy === i}
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 11px', borderRadius: '7px', border: '1px solid var(--purple)', background: 'var(--surface)', cursor: pinBusy === i ? 'default' : 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--purple)' }}>
+                      {pinBusy === i ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <ImageIcon size={12} />}
+                      {pinBusy === i ? 'Generating…' : 'Generate image'}
+                    </button>
+                    {pinErr[i] && <span style={{ fontSize: '11px', color: '#C0392B' }}>{pinErr[i]}</span>}
+                  </div>
+                )}
               </div>
             ))}
           </Section>

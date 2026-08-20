@@ -61,6 +61,16 @@ export async function setBucketCors(): Promise<boolean> {
   return true
 }
 
+// Ensure the bucket allows direct browser PUTs, once per server process. Big
+// episodes upload straight to R2 via a presigned URL, which the browser blocks
+// unless the bucket has CORS. Best-effort and cached so it runs at most once and
+// never breaks an upload if the token can't set bucket config.
+let corsEnsured: Promise<boolean> | null = null
+export function ensureCors(): Promise<boolean> {
+  if (!corsEnsured) corsEnsured = setBucketCors().catch(() => false)
+  return corsEnsured
+}
+
 /** Upload bytes to R2 from the server (no browser CORS involved) */
 export async function putObject(key: string, body: Uint8Array | Buffer, contentType: string): Promise<boolean> {
   const client = r2Client()

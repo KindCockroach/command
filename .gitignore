@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 pnpm-lock.yaml
 pnpm-workspace.yaml
+
+# local secrets / runtime data
+data/canva-tokens.json
+data/usage.json

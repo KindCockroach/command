@@ -9,6 +9,43 @@ interface Message {
   ts: number
 }
 
+type Account = { id: string; handle?: string; brand_name?: string }
+
+// --- Post-command routing -------------------------------------------------
+// A clear command like "Carousel for mandijoybeck ..." should CREATE A DRAFT
+// on the account card (via /api/compose → /api/content), not just log a note.
+// Detection is deliberately conservative so ordinary questions aren't hijacked.
+const TYPE_RE = /\b(post|posts|carousel|carousels|reel|reels|story|stories|slide|slides|caption|captions)\b/i
+const VERB_RE = /\b(make|create|draft|write|compose|build|generate|need|want|give me|turn)\b/i
+
+function detectPostCommand(text: string): boolean {
+  const t = text.trim()
+  if (!TYPE_RE.test(t)) return false
+  const firstWord = t.split(/\s+/)[0] ?? ''
+  // Route only on a real command: "for <account>", a creation verb, or the
+  // message literally starting with the content type ("Carousel for ...").
+  return /\bfor\s+@?\w/i.test(t) || VERB_RE.test(t) || TYPE_RE.test(firstWord)
+}
+
+const norm = (s?: string) => (s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
+
+// Fuzzy-match the named account against the roster (id / handle / brand name).
+// "mandijoybeck" → the "mandijoy" (@mandij0y) account via longest substring hit.
+function resolveAccount(text: string, accounts: Account[]): string | null {
+  const nt = norm(text)
+  let best: string | null = null
+  let bestLen = 0
+  for (const a of accounts) {
+    const toks = [a.id, (a.handle ?? '').replace(/@/g, ''), a.brand_name]
+      .map(norm)
+      .filter(x => x.length >= 4)
+    for (const tok of toks) {
+      if (nt.includes(tok) && tok.length > bestLen) { best = a.id; bestLen = tok.length }
+    }
+  }
+  return best
+}
+
 const STATION_PROMPT = `You are the RISE Station AI — the central intelligence of Mandi Beck's content and business operating system.
 
 WHO YOU ARE: A brilliant, warm, direct AI advisor who knows everything about Mandi's business and speaks like a trusted partner, not a tool. You are powered by her Command Center and you have full context on her world.
@@ -38,6 +75,61 @@ export default function StationChat() {
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
   const convNoteId = useRef<number | null>(null)
+  const accountsRef = useRef<Account[] | null>(null)
+
+  const getAccounts = async (): Promise<Account[]> => {
+    if (accountsRef.current) return accountsRef.current
+    try {
+      const r = await fetch('/api/accounts')
+      const a = await r.json()
+      accountsRef.current = Array.isArray(a) ? a : []
+    } catch { accountsRef.current = [] }
+    return accountsRef.current
+  }
+
+  // Compose a real draft for the given account and file it onto the account card.
+  const runPostCommand = async (text: string, accountId: string | null): Promise<Message> => {
+    const ts = Date.now()
+    try {
+      const res = await fetch('/api/compose', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ context: text, forceAccountId: accountId ?? undefined }),
+      })
+      const d = await res.json()
+      const v = d?.variations?.[0]
+      if (d?.error || !v) {
+        return { role: 'ai', text: `I tried to compose that but hit a snag: ${d?.error ?? 'no draft came back'}. Want me to try again, or open Add Post on the card?`, ts }
+      }
+      const acct = d.account as Account | null
+      const label = acct?.handle ?? d.account_id
+      // File the top variation as a ready draft — same shape as Add Post's "file".
+      await fetch('/api/content', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: (v.onscreen_text ?? '').slice(0, 60) || `Post — ${label ?? ''}`,
+          description: v.caption,
+          status: 'ready',
+          type: 'image',
+          platforms: ['instagram'],
+          tags: ['station-chat', d.account_id],
+          account_id: d.account_id,
+          onscreen_text: v.onscreen_text,
+          hashtags: v.hashtags,
+          river_source: 'station-chat',
+        }),
+      })
+      const others = (d.variations.slice(1) as { angle?: string }[])
+        .map((x, i) => `${i + 2}. ${x.angle ?? 'variation'}`).join(' · ')
+      const matchNote = accountId ? '' : `\n\n(I picked ${label} — say the account name if you meant another.)`
+      return {
+        role: 'ai',
+        text: `✅ Draft created for ${label} — it's on the account card as a ready post.${matchNote}\n\n📱 On-screen:\n${v.onscreen_text}\n\n📝 ${v.caption}${others ? `\n\nAlso composed: ${others}. Want one of those instead?` : ''}`,
+        ts,
+      }
+    } catch {
+      return { role: 'ai', text: 'Compose failed to reach the server — check your env variables, then try again.', ts }
+    }
+  }
 
   // Log the whole conversation to Notes (one growing note per session)
   const logConversation = async (turns: Message[]) => {
@@ -92,6 +184,15 @@ export default function StationChat() {
     setLoading(true)
 
     try {
+      // Clear post command ("Carousel for mandijoybeck ...") → create a real draft,
+      // not a chat reply + note. Images still go through the vision chat below.
+      if (text && !image && detectPostCommand(text)) {
+        const accountId = resolveAccount(text, await getAccounts())
+        const aiMsg = await runPostCommand(text, accountId)
+        setMessages(m => [...m, aiMsg])
+        return
+      }
+
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -48,31 +48,63 @@ export default function FileUpload({ folder = 'uploads', onUploaded, accept, lab
 
   const upload = useCallback(async (file: File) => {
     setError(''); setUploading(true); setProgress(0); setUploaded(null)
-    try {
-      // 1. Get presigned URL from our API
+
+    // Send bytes with an upload-progress bar. Used for both the server multipart
+    // POST and the direct-to-R2 PUT.
+    const send = (method: string, url: string, body: XMLHttpRequestBodyInit, headers?: Record<string, string>) =>
+      new Promise<XMLHttpRequest>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open(method, url)
+        if (headers) for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v)
+        xhr.upload.onprogress = e => { if (e.lengthComputable) setProgress(Math.round(e.loaded / e.total * 100)) }
+        xhr.onload = () => xhr.status < 300 ? resolve(xhr) : reject(new Error(`HTTP ${xhr.status}`))
+        xhr.onerror = () => reject(new Error('Network error during upload'))
+        xhr.send(body)
+      })
+
+    // Server path: multipart to our API, which relays to R2. No browser CORS
+    // involved — works even when the R2 bucket has no CORS rule. (Don't set
+    // Content-Type; the browser adds the multipart boundary.)
+    const viaServer = async () => {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('folder', folder)
+      const xhr = await send('POST', '/api/upload', fd)
+      return JSON.parse(xhr.responseText) as { publicUrl: string; key: string }
+    }
+
+    // Direct path: presigned URL, then browser PUTs straight to R2. Needed for
+    // big files (server would buffer + OOM), but requires the bucket to allow
+    // cross-origin PUT from this site.
+    const viaDirect = async () => {
       const res = await fetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename: file.name, contentType: file.type, folder }),
       })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error ?? 'Failed to get upload URL')
-      }
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Failed to get upload URL')
       const { uploadUrl, publicUrl, key } = await res.json()
+      await send('PUT', uploadUrl, file, { 'Content-Type': file.type })
+      return { publicUrl, key }
+    }
 
-      // 2. PUT directly to R2 (browser → R2, bypasses our server)
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.open('PUT', uploadUrl)
-        xhr.setRequestHeader('Content-Type', file.type)
-        xhr.upload.onprogress = e => { if (e.lengthComputable) setProgress(Math.round(e.loaded / e.total * 100)) }
-        xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`))
-        xhr.onerror = () => reject(new Error('Network error during upload'))
-        xhr.send(file)
-      })
-
-      const result: UploadedFile = { name: file.name, publicUrl, key, type: fileCategory(file.type), size: file.size }
+    const SERVER_LIMIT = 60 * 1024 * 1024 // ≤60MB goes through our server (no R2 CORS needed); above that, straight to R2
+    try {
+      let out: { publicUrl: string; key: string }
+      if (file.size <= SERVER_LIMIT) {
+        // Small/medium files: server relay avoids R2's browser-CORS requirement.
+        // Fall back to the direct path only if the server rejects it.
+        try { out = await viaServer() }
+        catch { setProgress(0); out = await viaDirect() }
+      } else {
+        // Big files must stream straight to R2 to avoid OOMing the server.
+        try { out = await viaDirect() }
+        catch (e) {
+          const origin = typeof location !== 'undefined' ? location.origin : 'this site'
+          throw new Error(`${e instanceof Error ? e.message : 'Upload failed'} — files over 60MB upload directly to Cloudflare R2, which needs a bucket CORS rule allowing PUT from ${origin}.`)
+        }
+      }
+      const result: UploadedFile = { name: file.name, publicUrl: out.publicUrl, key: out.key, type: fileCategory(file.type), size: file.size }
       setUploaded(result)
       onUploaded?.(result)
     } catch (e) {
@@ -139,7 +171,7 @@ export default function FileUpload({ folder = 'uploads', onUploaded, accept, lab
         )}
       </div>
 
-      {error && <p style={{ fontSize: '12px', color: '#e05', marginTop: '6px' }}>⚠ {error} — check that R2 credentials are set in .env.local</p>}
+      {error && <p style={{ fontSize: '12px', color: '#e05', marginTop: '6px' }}>⚠ {error}</p>}
 
       <input ref={inputRef} type="file" accept={accept} onChange={onFileChange} style={{ display: 'none' }} />
 

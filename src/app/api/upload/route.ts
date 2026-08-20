@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { putObject, getUploadUrl, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
+import { putObject, getUploadUrl, getPublicUrl, isR2Configured, mediaKey, ensureCors } from '@/lib/r2'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -43,6 +43,10 @@ export async function POST(req: NextRequest) {
   }
   const ext = filename.split('.').pop() ?? 'bin'
   const key = mediaKey(folder, filename, ext)
+  // Allow the browser's direct PUT through CORS before handing back the URL —
+  // otherwise big episodes get blocked and fall back to the server path, which
+  // OOMs/413s on full-length files. Best-effort; runs at most once per process.
+  await ensureCors()
   const uploadUrl = await getUploadUrl(key, ct)
   if (!uploadUrl) return NextResponse.json({ error: 'Failed to generate upload URL' }, { status: 500 })
   return NextResponse.json({ uploadUrl, publicUrl: getPublicUrl(key), key })

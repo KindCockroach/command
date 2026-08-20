@@ -163,6 +163,8 @@ Then make EVERY asset serve the takeaway and honor the spine. TEST: if a headlin
 
 ⚑ GROUND EVERYTHING IN WHAT SHE SAID. Every fact, number, name, place, and quote must come from the transcript. Do NOT import outside statistics, institutions, or place names into headlines, pull_quotes, show notes, reels, keywords, or the episode description — those come ONLY from her words. "pull_quotes" must be VERBATIM (or near-verbatim) lines from the transcript — never paraphrased or invented. If she gave a number ("50% less than lawns", "4,000 residents, 1,200 data centers"), use HER number, not one from research.
 
+⚑ HER OWN LINES ARE THE HOOK STANDARD. The verbatim lines she says (the pull_quotes) are the BEST hooks in this whole kit — raw, specific, human, unrepeatable. Notice them. Before you write any hook (headlines, reels, titles, the caption), first find her 6-8 most striking verbatim lines, then write every hook to SOUND LIKE THOSE — her cadence, her exact plain words, her wry specificity — not a marketer's polish. When one of her actual lines already IS a great hook, USE IT verbatim rather than inventing a smoother one. The test for any hook: could it be dropped back into her mouth mid-episode and sound exactly like her? If not, rewrite it from her lines.
+
 ⚑ HEADLINES PROMISE WHAT THE EPISODE DELIVERS. Every headline and reel hook must be answerable BY her actual takeaway — never promise a technical exposé or facts-deep-dive she didn't give. A hook still STOPS A THUMB (a bold claim, a scene, a provocation from HER argument) — but it must be TRUE to this episode. Banned lazy defaults: "The future of X", "Why X matters", "5 ways to…", "How AI is changing…", "The truth about…".
 
 ⚑ RESEARCH IS SUBORDINATE. The supporting sources above are a further-reading layer for the Medium article only. They support claims she already made; they never replace her argument, never appear in her voice, never become the story.
@@ -187,9 +189,9 @@ ${CRAFT_RULES}`
   "keywords": ["5 keywords drawn from what she actually discussed"],
   "pull_quotes": ["6 VERBATIM (or near-verbatim) lines she ACTUALLY said — the most striking, quotable, human ones. Copy them from the transcript; never invent or paraphrase into a marketer's line."],
   "reels_scripts": [
-    {"hook": "ONE-line hook at the doctrine bar", "body": "15-30 sec middle", "cta": "comment-trigger CTA", "platform": "Instagram Reels"},
-    {"hook": "different angle", "body": "...", "cta": "...", "platform": "TikTok"},
-    {"hook": "third angle", "body": "...", "cta": "...", "platform": "YouTube Shorts"}
+    {"hook": "ONE-line hook at the doctrine bar — in HER voice, ideally lifted from or built on a real line she said", "script": "the EXACT word-for-word voiceover Mandi records over the video — 15-30 seconds spoken (~40-75 words), built from her VERBATIM transcript lines (the hook can open it), written to be read aloud as-is with natural line breaks. This is the thing she reads on camera; it must sound exactly like her, not a summary of her.", "body": "1-2 sentence note on the visual/framing idea for this reel (what's on screen, the vibe) — NOT spoken", "cta": "comment-trigger CTA", "platform": "Instagram Reels"},
+    {"hook": "different angle from her lines", "script": "...", "body": "...", "cta": "...", "platform": "TikTok"},
+    {"hook": "third angle from her lines", "script": "...", "body": "...", "cta": "...", "platform": "YouTube Shorts"}
   ],
   "medium_article": {
     "title": "curiosity-driven Medium title — TRUE to the core_takeaway",

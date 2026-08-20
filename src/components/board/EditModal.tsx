@@ -779,7 +779,7 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
           <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'rgba(232,68,138,0.06)', border: '1px solid rgba(232,68,138,0.2)' }}>
               <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--hot-pink)', marginBottom: '4px' }}>☁️ Cloudflare R2 Storage</p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>Files upload directly to R2 — bypassing this server entirely. Videos, images, and audio are stored in your Cloudflare account and served via CDN.</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>Videos, images, and audio are stored in your Cloudflare account and served via CDN. Files up to 60MB relay through the server; larger files stream straight to R2.</p>
             </div>
 
             {/* Generated visual preview */}
@@ -884,7 +884,17 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
               <FileUpload
                 folder="content"
                 label="Drop your video, audio, or image here"
-                onUploaded={f => { set('file_path', f.publicUrl); set('type', f.type === 'audio' ? 'podcast' : f.type === 'video' ? 'video' : f.type === 'image' ? 'image' : form.type) }}
+                onUploaded={f => {
+                  set('file_path', f.publicUrl)
+                  set('type', f.type === 'audio' ? 'podcast' : f.type === 'video' ? 'video' : f.type === 'image' ? 'image' : form.type)
+                  // A video/image uploaded here IS the post's publishable media —
+                  // wire it to media_url/media_urls (what the card + GHL publish use),
+                  // not only file_path. Audio stays a source file (file_path).
+                  if (f.type === 'video' || f.type === 'image') {
+                    set('media_url', f.publicUrl)
+                    set('media_urls', [...(((form.media_urls ?? []) as string[]).filter(u => u !== f.publicUrl)), f.publicUrl])
+                  }
+                }}
               />
             </div>
 
