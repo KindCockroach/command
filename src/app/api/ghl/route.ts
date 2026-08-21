@@ -31,7 +31,7 @@ type GhlSocialAccount = { id?: string; _id?: string; oauthId?: string; platform?
 
 // Auto-schedule: 2 posting slots per day, per account, in America/Chicago (Central)
 // — mid-morning + evening. Add/adjust pairs here to change the daily cadence.
-const SLOT_TIMES: Array<[number, number]> = [[10, 0], [19, 0]]
+const SLOT_TIMES: Array<[number, number]> = [[9, 0], [17, 0]]
 
 // Given a Chicago wall-clock time, return the correct UTC ISO (handles CST/CDT automatically)
 function chicagoIso(y: number, moZero: number, d: number, hh: number, mm: number): string {
