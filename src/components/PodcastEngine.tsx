@@ -223,17 +223,20 @@ export default function PodcastEngine() {
       }
 
       if (!publicUrl) {
-        const fd = new FormData()
-        fd.append('file', file)
-        fd.append('folder', 'audio')
-        const up = await fetch('/api/upload', { method: 'POST', body: fd }).catch(() => null)
+        // Raw-binary relay through the server — no multipart parsing to choke on.
+        const up = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'x-filename': file.name, 'x-folder': 'audio', 'Content-Type': file.type || 'application/octet-stream' },
+          body: file,
+        }).catch(() => null)
         const upd = up ? await up.json().catch(() => ({})) : {}
         if (!up || !up.ok || !upd.publicUrl) {
           setAudioState('error')
-          const tooBig = file.size > 40 * 1048576
-          const sizeHint = tooBig ? ` This episode is ${mb}MB — likely too big for the server fallback; the direct-to-R2 path needs to work.` : ''
-          const why = presignNote ? ` (${presignNote}${up ? `; server path ${up.status}` : '; server path unreachable'})` : ''
-          setAudioMsg(upd.error || `Upload failed${why}.${sizeHint} Try again, or use “Pull from Media” if it saved.`)
+          const tooBig = file.size > 90 * 1048576
+          const sizeHint = tooBig ? ` This episode is ${mb}MB — that may exceed the server relay limit; the direct-to-R2 path (bucket CORS) is needed for very large files.` : ''
+          const serverWhy = up ? (upd.error || `server ${up.status}`) : 'server unreachable'
+          const why = presignNote ? `${presignNote}; ${serverWhy}` : serverWhy
+          setAudioMsg(`Upload failed (${why}).${sizeHint} Try again, or use “Pull from Media” if it saved.`)
           return
         }
         publicUrl = upd.publicUrl
@@ -435,11 +438,15 @@ export default function PodcastEngine() {
         note = `direct upload ${put.status}`
       } else note = pd.error || `presign ${pre.status}`
     } catch (e) { note = `direct upload blocked (${e instanceof Error ? e.message : 'CORS'})` }
-    const fd = new FormData(); fd.append('file', file); fd.append('folder', 'audio')
-    const up = await fetch('/api/upload', { method: 'POST', body: fd }).catch(() => null)
+    // Fallback: raw-binary relay through the server (reliable — no multipart parsing).
+    const up = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'x-filename': file.name, 'x-folder': 'audio', 'Content-Type': file.type || 'application/octet-stream' },
+      body: file,
+    }).catch(() => null)
     const upd = up ? await up.json().catch(() => ({})) : {}
     if (up && up.ok && upd.publicUrl) return { url: upd.publicUrl }
-    return { url: '', error: `${note}${up ? `; server ${up.status}` : '; server unreachable'}` }
+    return { url: '', error: `${note}; ${up ? (upd.error || `server ${up.status}`) : 'server unreachable'}` }
   }
 
   // ONE-TAP QUICK REEL — audio → /api/clip does it all: transcribe, write the post

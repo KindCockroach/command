@@ -1121,22 +1121,26 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
             </div>
           )}
 
-          {/* ⬇ Canva Bulk Create export — slide lines as CSV (carousels only) */}
+          {/* ⬇ Canva Bulk Create export — on EVERY post: slide rows for carousels, one row for single posts */}
           {(() => {
             const slideLines = (post.onscreen_text ?? '').split('\n').map(l => l.replace(/^\s*Slide\s*\d+\s*[:.\-–]\s*/i, '').trim()).filter(Boolean)
-            if (slideLines.length < 2) return null
+            const isCarousel = slideLines.length >= 2
+            const imgs = (post.media_urls?.length ? post.media_urls : (post.media_url ? [post.media_url] : []))
+              .filter(u => !/\.(mp4|mov|webm|m4v)(\?|$)/i.test(u))
             const exportCsv = async () => {
-              const base = post.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40)
-              const esc = (v: string) => `"${v.replace(/"/g, '""')}"`
-              const csv = ['slide,text', ...slideLines.map((l, idx) => `${idx + 1},${esc(l)}`)].join('\n')
+              const base = post.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40) || 'post'
+              const esc = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`
+              // Carousel → one row per slide (text + matching image if there is one).
+              // Single post → one row with the post's fields, ready to map to a template.
+              const csv = isCarousel
+                ? ['slide,text,image_url', ...slideLines.map((l, idx) => `${idx + 1},${esc(l)},${esc(imgs[idx] ?? '')}`)].join('\n')
+                : ['on_screen_text,caption,hashtags,image_url', [esc(post.onscreen_text ?? ''), esc(post.description ?? ''), esc(post.hashtags ?? ''), esc(imgs[0] ?? '')].join(',')].join('\n')
               const a = document.createElement('a')
               a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-              a.download = `${base}-slides.csv`
+              a.download = `${base}-canva.csv`
               a.click()
               URL.revokeObjectURL(a.href)
-              // Also pull down any generated image(s) as JPG so she has the slide art in hand
-              const imgs = (post.media_urls?.length ? post.media_urls : (post.media_url ? [post.media_url] : []))
-                .filter(u => !/\.(mp4|mov|webm|m4v)(\?|$)/i.test(u))
+              // Also pull down the generated image(s) as JPG so she has the art in hand
               for (let i = 0; i < imgs.length; i++) {
                 try {
                   const blob = await (await fetch(imgs[i])).blob()
@@ -1149,9 +1153,9 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
               }
             }
             return (
-              <button onClick={exportCsv} title="Downloads the slide lines (CSV) AND the generated image(s) as JPG, ready for Canva Bulk Create"
+              <button onClick={exportCsv} title="Download a Canva Bulk Create CSV (+ any generated images) for this post"
                 style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
-                ⬇ Export for Canva ({slideLines.length} slides{(post.media_urls?.length || post.media_url) ? ' + image' : ''})
+                ⬇ Export for Canva ({isCarousel ? `${slideLines.length} slides` : '1 row'}{imgs.length ? ` + ${imgs.length > 1 ? imgs.length + ' images' : 'image'}` : ''})
               </button>
             )
           })()}
@@ -1596,7 +1600,7 @@ export default function AccountsPanel() {
       // Surface WHY it didn't schedule instead of failing silently.
       let msg = ''
       if (d.scheduled && d.note) msg = `⚠ ${d.note}`
-      else if (d.scheduled) msg = `✓ Scheduled in GHL${d.scheduledAt ? ` · ${new Date(d.scheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}`
+      else if (d.scheduled) msg = `✓ Scheduled in GHL${typeof d.mediaCount === 'number' && d.mediaCount > 0 ? ` · ${d.mediaCount} image${d.mediaCount > 1 ? 's' : ''} sent` : ''}${d.scheduledAt ? ` · ${new Date(d.scheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}`
       else if (d.paused) msg = '⏸ Approved & queued — GHL auto-publish is PAUSED (set GHL_AUTOPUBLISH_PAUSED=false in Railway to resume).'
       else if (d.configured === false) msg = '⏸ Approved & queued — GHL isn\'t connected yet (add GHL_API_KEY + GHL_LOCATION_ID).'
       else if (d.queued) msg = `⚠ Approved but NOT scheduled — ${d.note || 'GHL didn\'t accept it. Re-approve after fixing.'}`

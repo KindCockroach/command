@@ -17,22 +17,44 @@ export async function POST(req: NextRequest) {
 
   const contentType = req.headers.get('content-type') ?? ''
 
-  if (contentType.includes('multipart/form-data')) {
-    const form = await req.formData()
-    const file = form.get('file')
-    const folder = (form.get('folder') as string) || 'uploads'
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: 'file field required' }, { status: 400 })
-    }
-    const ext = (file.name.split('.').pop() ?? 'bin').toLowerCase()
-    const key = mediaKey(folder, file.name, ext)
+  // RAW binary relay: client sends the file bytes as the request body with an
+  // `x-filename` header (no multipart wrapper). This is the MOST RELIABLE server
+  // path — it skips FormData parsing (whose failures surface as bare 500s) and is
+  // the fallback whenever the browser can't PUT straight to R2 (the token is
+  // object-scoped, so bucket CORS can't be set programmatically).
+  const rawName = req.headers.get('x-filename')
+  if (rawName) {
+    const folder = req.headers.get('x-folder') || 'uploads'
+    const ext = (rawName.split('.').pop() ?? 'bin').toLowerCase()
+    const key = mediaKey(folder, rawName, ext)
     try {
-      const bytes = Buffer.from(await file.arrayBuffer())
-      const ok = await putObject(key, bytes, file.type || 'application/octet-stream')
-      if (!ok) return NextResponse.json({ error: 'Upload to storage failed' }, { status: 500 })
+      const bytes = Buffer.from(await req.arrayBuffer())
+      if (!bytes.length) return NextResponse.json({ error: 'empty body — nothing to upload' }, { status: 400 })
+      const ok = await putObject(key, bytes, contentType || 'application/octet-stream')
+      if (!ok) return NextResponse.json({ error: 'storage rejected the file (R2 write failed)' }, { status: 502 })
       return NextResponse.json({ publicUrl: getPublicUrl(key), key })
     } catch (e) {
-      return NextResponse.json({ error: `Upload failed: ${e instanceof Error ? e.message : 'storage error'}` }, { status: 502 })
+      return NextResponse.json({ error: `relay failed: ${e instanceof Error ? e.message : 'read/storage error'}` }, { status: 500 })
+    }
+  }
+
+  if (contentType.includes('multipart/form-data')) {
+    try {
+      const form = await req.formData()
+      const file = form.get('file')
+      const folder = (form.get('folder') as string) || 'uploads'
+      if (!(file instanceof File)) {
+        return NextResponse.json({ error: 'file field required' }, { status: 400 })
+      }
+      const ext = (file.name.split('.').pop() ?? 'bin').toLowerCase()
+      const key = mediaKey(folder, file.name, ext)
+      const bytes = Buffer.from(await file.arrayBuffer())
+      const ok = await putObject(key, bytes, file.type || 'application/octet-stream')
+      if (!ok) return NextResponse.json({ error: 'storage rejected the file (R2 write failed)' }, { status: 502 })
+      return NextResponse.json({ publicUrl: getPublicUrl(key), key })
+    } catch (e) {
+      // Includes FormData parse failures (the old bare-500 cause) — now with a reason.
+      return NextResponse.json({ error: `multipart upload failed: ${e instanceof Error ? e.message : 'parse/storage error'}` }, { status: 500 })
     }
   }
 

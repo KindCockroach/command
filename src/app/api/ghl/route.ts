@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
     // If we couldn't capture an id, GHL's shape changed — surface its keys so we can
     // fix the probe, and flag that we can't verify it went live.
     const idNote = ghlPostId ? undefined : `Pushed to GHL, but couldn't read the post id (can't verify it's live). GHL returned keys: ${Object.keys(data || {}).join(', ')}${data?.post ? ` · post.{${Object.keys(data.post).join(',')}}` : ''}`
-    return NextResponse.json({ configured: true, scheduled: true, scheduledAt: effectiveSchedule, ghl_post_id: ghlPostId, note: idNote, raw: ghlPostId ? undefined : data, content: updated })
+    return NextResponse.json({ configured: true, scheduled: true, scheduledAt: effectiveSchedule, ghl_post_id: ghlPostId, mediaCount: mediaItems.length, note: idNote, raw: ghlPostId ? undefined : data, content: updated })
   } catch (e) {
     // Network/GHL error — keep the approval so it isn't silently lost.
     const updated = updateContent(piece.id, { status: 'approved' })
