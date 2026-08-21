@@ -9,7 +9,7 @@ const GHL_BASE = 'https://services.leadconnectorhq.com'
 // ── PUBLISH KILL SWITCH ──────────────────────────────────────────────────────
 // Was paused 2026-08-08 during account-restriction cleanup; RESUMED now that the
 // Room30 triggers are gone and positioning is cleaned up. Auto-publish is LIVE by
-// default — approvals push to GHL and schedule into the 5/day slots. To pause
+// default — approvals push to GHL and schedule into the 2/day slots. To pause
 // again (e.g. a new restriction scare), set GHL_AUTOPUBLISH_PAUSED=true in Railway.
 const AUTO_PUBLISH_PAUSED = process.env.GHL_AUTOPUBLISH_PAUSED === 'true'
 
@@ -29,8 +29,9 @@ function ghlHeaders(token: string) {
 
 type GhlSocialAccount = { id?: string; _id?: string; oauthId?: string; platform?: string; type?: string; name?: string; username?: string }
 
-// Auto-schedule: 5 posting slots per day, per account, in America/Chicago (Central)
-const SLOT_TIMES: Array<[number, number]> = [[7, 0], [10, 0], [12, 0], [16, 0], [19, 0]]
+// Auto-schedule: 2 posting slots per day, per account, in America/Chicago (Central)
+// — mid-morning + evening. Add/adjust pairs here to change the daily cadence.
+const SLOT_TIMES: Array<[number, number]> = [[10, 0], [19, 0]]
 
 // Given a Chicago wall-clock time, return the correct UTC ISO (handles CST/CDT automatically)
 function chicagoIso(y: number, moZero: number, d: number, hh: number, mm: number): string {
@@ -42,7 +43,7 @@ function chicagoIso(y: number, moZero: number, d: number, hh: number, mm: number
   return new Date(guess - (asChicago - guess)).toISOString()
 }
 
-// Next open 5/day slot for this account that isn't already taken and is in the future
+// Next open 2/day slot for this account that isn't already taken and is in the future
 function nextScheduleSlot(accountId: string | null | undefined): string {
   const taken = new Set(getAllContent().filter(c => c.account_id === accountId && c.scheduled_at).map(c => c.scheduled_at as string))
   const now = Date.now()
