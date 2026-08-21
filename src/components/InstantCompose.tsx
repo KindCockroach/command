@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, Loader2, Copy, CheckCircle2, UploadCloud, X } from 'lucide-react'
+import { withHashtags } from '@/lib/hashtags'
 
 type Variation = { angle: string; onscreen_text: string; caption: string; hashtags: string }
 type ComposeResult = {
@@ -195,7 +196,7 @@ export default function InstantCompose({ lockedAccount }: { lockedAccount?: Lock
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: v.onscreen_text.slice(0, 60) || `Media post — ${result.account?.handle ?? ''}`,
-          description: v.caption,
+          description: withHashtags(v.caption, v.hashtags),
           status: 'ready',
           type: file?.type.startsWith('video') ? 'video' : 'image',
           platforms: ['instagram'],

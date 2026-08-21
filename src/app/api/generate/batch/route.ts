@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createContent, getBrandAccount, getWatchContext, getAudienceContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
 import { fableText, fableHooks } from '@/lib/fable'
+import { capHashtags } from '@/lib/hashtags'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -162,13 +163,6 @@ ADDITIONALLY every item must include:
 - "onscreen_text": the exact text overlay (or opening on-screen line for video) shown on the visual — short, bold, scroll-stopping. It MUST be a DIFFERENT line than the caption's first line (two-hooks rule) — never the same words.`
 
 // House rule: never more than 5 hashtags on anything, no matter what the model returns
-function capHashtags(raw: string): string {
-  const tags = String(raw || '').split(/\s+/).filter(t => t.startsWith('#'))
-  const rest = String(raw || '').split(/\s+/).filter(t => t && !t.startsWith('#'))
-  const source = tags.length ? tags : rest.map(t => `#${t.replace(/[^A-Za-z0-9]/g, '')}`).filter(t => t.length > 1)
-  return source.slice(0, 5).join(' ')
-}
-
 function buildNotes(item: Record<string, string>, type: string): string {
   const extras: string[] = [`Type: ${type}`]
   if (item.hashtags) extras.push(`Hashtags: ${item.hashtags}`)

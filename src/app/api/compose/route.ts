@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAllBrandAccounts, getWatchContext, createNote, audienceLine, getLoreContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
+import { capHashtags } from '@/lib/hashtags'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -77,7 +78,7 @@ Produce THREE meaningfully different variations (different angles — e.g. relat
   "story_summary": "2-3 sentence summary of the story/moment for the archive",
   "media_read": "1-2 sentences: what you actually see in the media (or 'no visual provided')",
   "variations": [
-    { "angle": "short label", "onscreen_text": "overlay line(s) — a STATEMENT hook, never a question; newline-separated beats for video", "caption": "full spaced caption (real line breaks; headline first line carries the golden thread; NO CTA during growth phase)", "hashtags": "12-20 single-word hashtags, space-separated, camelCase multi-word ideas" },
+    { "angle": "short label", "onscreen_text": "overlay line(s) — a STATEMENT hook, never a question; newline-separated beats for video", "caption": "full spaced caption (real line breaks; headline first line carries the golden thread; NO CTA during growth phase)", "hashtags": "EXACTLY 3-5 hashtags (never more than 5), space-separated, single #word each, most relevant first" },
     { ... }, { ... }
   ]
 }`,
@@ -85,6 +86,10 @@ Produce THREE meaningfully different variations (different angles — e.g. relat
 
   try {
     const parsed = JSON.parse(output.match(/\{[\s\S]*\}/)![0])
+    // Enforce the ≤5 hashtag rule regardless of what the model returned.
+    if (Array.isArray(parsed.variations)) {
+      for (const v of parsed.variations) v.hashtags = capHashtags(String(v.hashtags ?? ''))
+    }
     // Archive the story/context to Notes — future content fuel (skip re-archiving on refinements)
     if (!previous) {
       try {

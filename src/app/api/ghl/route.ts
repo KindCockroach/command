@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllContent, updateContent, getBrandAccount } from '@/lib/db'
+import { withHashtags } from '@/lib/hashtags'
 
 export const dynamic = 'force-dynamic'
 
@@ -188,8 +189,9 @@ export async function POST(req: NextRequest) {
     }
 
     const { userId } = await fetchGhlUserId(token!, locationId!)
-    // Body is now post-ready (caption + hashtags inline); only append the hashtags field if the body lacks them
-    const summary = (piece.description ?? '').includes('#') ? (piece.description ?? '') : [piece.description, piece.hashtags].filter(Boolean).join('\n\n')
+    // Body is now post-ready (caption + hashtags inline). If the caption lacks
+    // hashtags, append up to 5 from the hashtags field so no post ships without them.
+    const summary = withHashtags(piece.description ?? '', piece.hashtags ?? '')
     // GHL categorizes each media item by its MIME type (it does `type.includes('image'|'video')`),
     // so a media object WITHOUT `type` makes their API throw "Cannot read properties of undefined
     // (reading 'includes')". Always send an explicit type derived from the URL extension.
