@@ -223,7 +223,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ configured: true, queued: true, content: updated, note: `Approved — but GHL didn't accept the post: ${data?.message ?? 'rejected'}. Fix it in GHL, then re-approve to schedule.`, detail: data })
     }
     // GHL wraps the created post id under different keys across API versions — probe the known shapes
-    const ghlPostId = data?.post?.id ?? data?.post?._id ?? data?.post?.postId ?? data?.id ?? data?._id ?? data?.postId ?? data?.results?.id ?? data?.results?.post?.id ?? data?.data?.id ?? data?.data?._id ?? data?.data?.post?.id ?? null
+    const ghlPostId = data?.post?.id ?? data?.post?._id ?? data?.post?.postId ?? data?.id ?? data?._id ?? data?.postId ?? data?.results?.id ?? data?.results?._id ?? data?.results?.post?.id ?? data?.results?.post?._id ?? data?.data?.id ?? data?.data?._id ?? data?.data?.post?.id ?? data?.data?.post?._id ?? null
     const updated = updateContent(piece.id, {
       status: 'scheduled',
       ghl_post_id: ghlPostId,
