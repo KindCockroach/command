@@ -103,9 +103,14 @@ const MANDIJOY_TRUTH = `
 • This is NOT an "inner child / confidence / parts work" niche account. Those are her MODALITIES — the healing tools she TEACHES (on YouTube + AI Mom), never the identity of @mandij0y. Never frame a @mandij0y post as inner-child/parts-work content.
 • @mandij0y is her personal presence: her real life, her joy, honest human moments, shared warmly. No offers, no keyword CTA, no sell. Give, connect, be a person.`
 
+// Her personal accounts — @mandij0y (IG) and Amanda Beck (FB) — are SEPARATE
+// (different platforms + audiences) but BOTH personal. Add the FB slug here once
+// it's in the roster.
+const PERSONAL_ACCOUNT_IDS = new Set(['mandijoy', 'amandabeck', 'mandijoybeck'])
+
 export function craftFor(accountId?: string | null): string {
   let base = CRAFT_RULES
   if (accountId === 'aimompodcast') base = `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}`
-  else if (accountId === 'mandijoy') base = `${CRAFT_RULES}\n${MANDIJOY_TRUTH}`
+  else if (accountId && PERSONAL_ACCOUNT_IDS.has(accountId)) base = `${CRAFT_RULES}\n${MANDIJOY_TRUTH}`
   return `${base}${getVoiceLessonsContext()}`
 }
