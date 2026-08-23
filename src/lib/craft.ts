@@ -93,7 +93,19 @@ AI MOM PODCAST CONSTITUTION (non-negotiable, overrides generic instructions):
 
 /** Craft rules for a given account (adds the podcast constitution for @aimompodcast,
  *  plus the voice lessons Mandi has taught by rewriting machine output). */
+// @mandij0y (and "Amanda Beck") is PERSONAL — corrected per Mandi directly. This
+// OVERRIDES any stored topic/niche/mission on the account record (which still reads
+// the old "inner child / parts work" tagline until the Accounts tab is updated).
+const MANDIJOY_TRUTH = `
+
+⚠ @mandij0y / "Amanda Beck" — PERSONAL ACCOUNT. This overrides the account's stored topic, mission, or "niche" entirely:
+• Audience = people who ALREADY know and love her — her real circle. You are NOT converting strangers, NOT pitching, NOT testing angles, NOT running a funnel here. Write like she's talking to friends who already care about her.
+• This is NOT an "inner child / confidence / parts work" niche account. Those are her MODALITIES — the healing tools she TEACHES (on YouTube + AI Mom), never the identity of @mandij0y. Never frame a @mandij0y post as inner-child/parts-work content.
+• @mandij0y is her personal presence: her real life, her joy, honest human moments, shared warmly. No offers, no keyword CTA, no sell. Give, connect, be a person.`
+
 export function craftFor(accountId?: string | null): string {
-  const base = accountId === 'aimompodcast' ? `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}` : CRAFT_RULES
+  let base = CRAFT_RULES
+  if (accountId === 'aimompodcast') base = `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}`
+  else if (accountId === 'mandijoy') base = `${CRAFT_RULES}\n${MANDIJOY_TRUTH}`
   return `${base}${getVoiceLessonsContext()}`
 }
