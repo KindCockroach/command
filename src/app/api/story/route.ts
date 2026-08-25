@@ -54,13 +54,22 @@ Return a JSON object with ALL of these fields:
 
   try {
     const response = await fableText({
-      useClaude: true, json: true, maxTokens: 4000,
+      // This asks for a LOT (Medium article + 2 captions + 5 slides + stand-up bit +
+      // more). 4000 tokens truncated the JSON mid-output, so JSON.parse threw and the
+      // whole kit came back empty. 16000 gives it room to finish.
+      useClaude: true, json: true, maxTokens: 16000,
       instructions: 'You are a master storyteller and ruthless editor. Specific beats general every time. If a line could belong to anyone, it belongs to no one — cut it. Return only valid JSON.',
       input: prompt,
     })
 
     const raw = response.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
-    const result = JSON.parse(raw)
+    let result
+    try { result = JSON.parse(raw) }
+    catch {
+      const m = raw.match(/\{[\s\S]*\}/)
+      if (!m) throw new Error('Story output was not valid JSON (likely truncated)')
+      result = JSON.parse(m[0])
+    }
     return NextResponse.json(result)
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Story processing failed' }, { status: 500 })

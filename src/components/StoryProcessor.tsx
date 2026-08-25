@@ -60,9 +60,10 @@ export default function StoryProcessor() {
   const [title, setTitle] = useState('')
   const [processing, setProcessing] = useState(false)
   const [result, setResult] = useState<StoryResult | null>(null)
-  const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done'>('idle')
+  const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [riverMsg, setRiverMsg] = useState('')
   const [answerTarget, setAnswerTarget] = useState('')
+  const [storyErr, setStoryErr] = useState('')
 
   const sendToRiver = async () => {
     if (!result) return
@@ -76,16 +77,19 @@ export default function StoryProcessor() {
       const d = await res.json()
       if (d.complete && d.account) {
         setRiverMsg(`✓ Complete post filed under ${d.account.emoji} ${d.account.handle} — flip its card in Accounts to approve.`)
+        setRiverStatus('done')
       } else if (d.account) {
         setRiverMsg(`Filed under ${d.account.handle} — it needs: ${(d.open_questions ?? []).join(' · ') || (d.needs ?? []).join(', ')}`)
         setAnswerTarget(d.account.id)
+        setRiverStatus('done')
       } else {
-        setRiverMsg(d.error ? `River error: ${d.error}` : 'Filed to the pipeline.')
+        // No account/piece = nothing was filed. Report it honestly (was showing green "Filed").
+        setRiverMsg(d.error ? `Couldn't file it: ${d.error}` : 'The River couldn\'t sort this — try Process again, then resend.')
+        setRiverStatus('error')
       }
-      setRiverStatus('done')
     } catch {
-      setRiverMsg('River connection failed — story is still processed above.')
-      setRiverStatus('done')
+      setRiverMsg('River connection failed — the story is still processed above.')
+      setRiverStatus('error')
     }
   }
 
@@ -104,9 +108,18 @@ export default function StoryProcessor() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ freeWrite, title }),
       })
-      setResult(await res.json())
+      const d = await res.json()
+      // Don't render an error object as an empty kit — surface the failure instead.
+      if (!res.ok || d.error || !(d.summary || d.final_summary || d.instagram_caption_1)) {
+        setResult(null)
+        setStoryErr(d.error || 'The story came back empty — long ones sometimes need a second try. Hit Process again.')
+      } else {
+        setResult(d)
+        setStoryErr('')
+      }
     } catch {
-      // ignore
+      setResult(null)
+      setStoryErr('Connection issue while processing — try again.')
     } finally {
       setProcessing(false)
     }
@@ -147,6 +160,9 @@ export default function StoryProcessor() {
           style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: (!freeWrite.trim() || processing) ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: '13px', background: (!freeWrite.trim() || processing) ? 'var(--border)' : 'var(--hot-pink)', color: '#fff', fontFamily: 'inherit' }}>
           {processing ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Processing your story...</> : <><Sparkles size={14} /> Process This Story</>}
         </button>
+        {storyErr && (
+          <p style={{ marginTop: '10px', fontSize: '12px', fontWeight: 600, color: '#C0392B', background: 'rgba(224,82,82,0.08)', border: '1px solid rgba(224,82,82,0.25)', borderRadius: '8px', padding: '9px 12px', lineHeight: 1.5 }}>{storyErr}</p>
+        )}
       </div>
 
       {result && (
@@ -158,8 +174,8 @@ export default function StoryProcessor() {
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{riverMsg || 'Sorts this story to the best account and composes the final post-card, ready for your approval.'}</p>
             </div>
             <button onClick={sendToRiver} disabled={riverStatus === 'sending'}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: 'none', background: riverStatus === 'done' ? '#3daa7c' : 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
-              {riverStatus === 'sending' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Sorting…</> : riverStatus === 'done' ? <><CheckCheck size={13} /> Filed</> : <><Sparkles size={13} /> Compose & File</>}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: 'none', background: riverStatus === 'done' ? '#3daa7c' : riverStatus === 'error' ? '#E05252' : 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
+              {riverStatus === 'sending' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Sorting…</> : riverStatus === 'done' ? <><CheckCheck size={13} /> Filed</> : riverStatus === 'error' ? <><Sparkles size={13} /> Try again</> : <><Sparkles size={13} /> Compose & File</>}
             </button>
             {answerTarget && (
               <button onClick={() => { localStorage.setItem('station-flip-account', answerTarget); window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'accounts' } })) }}
