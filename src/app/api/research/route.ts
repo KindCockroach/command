@@ -44,7 +44,10 @@ async function runDig(topic: string, accountId?: string | null, save?: boolean) 
     : ''
 
   const raw = await researchWithWeb({
-    maxSearches: 10,
+    // 6 (was 10): 10 web searches + adaptive thinking could push the run past the
+    // 300s platform cap, killing it with no result ("nothing came up"). 6 keeps it
+    // deep enough while finishing in time.
+    maxSearches: 6,
     maxTokens: 4000,
     instructions: `You are RISE's research desk — a rigorous, intelligent researcher for Mandi Beck. Search the live web deeply on the topic given. Prefer primary sources: peer-reviewed research, .gov/.edu, established journalism — over blogs and content farms. Real facts only; flag anything uncertain with "VERIFY:".${accountCtx}
 
@@ -114,7 +117,7 @@ export async function POST(req: NextRequest) {
       if (existing) return NextResponse.json({ brief: existing, cached: true })
 
       const raw = await researchWithWeb({
-        maxSearches: 10,
+        maxSearches: 6, // was 10 — keep the daily brief under the 300s platform cap so it doesn't time out to nothing
         instructions: `You are RISE's research desk — a very intelligent reader curating for Mandi Beck: mom of four, AI educator, host of AI Mom Podcast, building AI-powered content businesses. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Chicago' })}.
 
 Search the live web and pick the 3-5 articles she MUST be aware of today across: (1) AI news — real developments, not hype cycles; (2) the job market — especially how AI is reshaping work; (3) nationwide trends in education relevant to report on. The bar: does this inform her economic awareness, or is it something she'd speak to on the podcast? Skip press releases, listicles, and anything a week stale unless it's still the story.
