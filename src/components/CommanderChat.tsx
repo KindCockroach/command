@@ -58,7 +58,13 @@ export default function CommanderChat() {
         body: JSON.stringify({ messages: next.map(m => ({ role: m.role, content: m.content })), attachment: sentAttach }),
       })
       const d = await res.json()
-      setMessages(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Something glitched — say that again?', actions: Array.isArray(d.actions) ? d.actions : [], attach: sentAttach }])
+      const actions: Action[] = Array.isArray(d.actions) ? d.actions : []
+      setMessages(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Something glitched — say that again?', actions, attach: sentAttach }])
+      // JUST DO IT for posts: if the proposed actions are only post-composition,
+      // run them automatically — no tap. (Other actions still wait for a tap.)
+      const mi = next.length // index of the assistant message just appended
+      const postOnly = actions.length > 0 && actions.every(a => a.type === 'compose_post' || a.type === 'compose_posts')
+      if (postOnly) await runAllActions(mi, actions, sentAttach)
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: 'Connection hiccup — try that once more.' }])
     } finally { setLoading(false) }
@@ -106,6 +112,22 @@ export default function CommanderChat() {
         const r = await post('/api/river', { input: str(p.brief), accountId: str(p.account_id), source: 'commander-chat', mediaUrl: media?.url, mediaType: media?.type })
         const d = await r.json()
         setActStatus(s => ({ ...s, [key]: r.ok && d.piece ? `✓ Composed for ${d.account?.handle ?? str(p.account_id)}${media ? ' (media attached)' : ''} — approve in Accounts` : 'couldn\'t compose' }))
+      } else if (a.type === 'compose_posts') {
+        // SEVERAL lines → SEVERAL posts. One post per brief (or per line if she just
+        // pasted lines). This is the fix for "I gave it 5 lines and got 1 post."
+        const briefs = (arr(p.briefs).length ? arr(p.briefs) : str(p.brief || p.input).split(/\r?\n+/))
+          .map(b => str(b).trim()).filter(Boolean)
+        const accountId = str(p.account_id)
+        let ok = 0
+        for (let i = 0; i < briefs.length; i++) {
+          setActStatus(s => ({ ...s, [key]: `… composing ${i + 1}/${briefs.length}` }))
+          // eslint-disable-next-line no-await-in-loop
+          const r = await post('/api/river', { input: briefs[i], accountId, source: 'commander-chat', mediaUrl: media?.url, mediaType: media?.type })
+          // eslint-disable-next-line no-await-in-loop
+          const d = await r.json().catch(() => ({}))
+          if (r.ok && d.piece) ok++
+        }
+        setActStatus(s => ({ ...s, [key]: ok ? `✓ ${ok} post${ok > 1 ? 's' : ''} composed — approve in Accounts` : 'couldn\'t compose these' }))
       } else if (a.type === 'create_audience') {
         const name = str(p.name, 'New Audience')
         const r = await post('/api/audiences', {
