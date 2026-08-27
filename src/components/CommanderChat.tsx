@@ -3,7 +3,28 @@ import { useState, useRef, useEffect } from 'react'
 import { Loader2, Send, Paperclip, X } from 'lucide-react'
 import CommanderModal from './CommanderModal'
 
-type Action = { type: string; label: string; payload: Record<string, unknown> }
+type Action = { type: string; label?: string; payload: Record<string, unknown> }
+
+// The model sometimes omits `label`, which rendered an empty bubble. Always have text.
+function actionLabel(a: Action): string {
+  if (a.label && a.label.trim()) return a.label
+  const briefs = a.payload?.briefs
+  const n = Array.isArray(briefs) ? briefs.length : 0
+  switch (a.type) {
+    case 'compose_post': return 'Compose post'
+    case 'compose_posts': return n ? `Compose ${n} posts` : 'Compose posts'
+    case 'store_note': return 'Save to Notes'
+    case 'create_task': return 'Add task'
+    case 'create_audience': return 'Add audience'
+    case 'create_goal': return 'Add goal'
+    case 'create_project': return 'Start project'
+    case 'create_event': return 'Add to calendar'
+    case 'meta_post': return 'Make it meta'
+    case 'manifesto_story': return 'Before / after'
+    case 'shred': return 'Tear it up across accounts'
+    default: return 'Run'
+  }
+}
 type Attach = { url: string; type: string; name: string }
 type Msg = { role: 'user' | 'assistant'; content: string; actions?: Action[]; attach?: Attach | null }
 
@@ -60,11 +81,18 @@ export default function CommanderChat() {
       const d = await res.json()
       const actions: Action[] = Array.isArray(d.actions) ? d.actions : []
       setMessages(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Something glitched — say that again?', actions, attach: sentAttach }])
-      // JUST DO IT for posts: if the proposed actions are only post-composition,
-      // run them automatically — no tap. (Other actions still wait for a tap.)
+      // JUST DO IT for posts: auto-run any post-composition actions — no tap needed.
+      // Runs only the post actions (so a tacked-on meta_post offer still waits for a tap).
       const mi = next.length // index of the assistant message just appended
-      const postOnly = actions.length > 0 && actions.every(a => a.type === 'compose_post' || a.type === 'compose_posts')
-      if (postOnly) await runAllActions(mi, actions, sentAttach)
+      const postActions = actions.map((a, ai) => ({ a, ai })).filter(x => x.a.type === 'compose_post' || x.a.type === 'compose_posts')
+      if (postActions.length) {
+        setQueueRunning(mi)
+        for (const { a, ai } of postActions) {
+          // eslint-disable-next-line no-await-in-loop
+          await runAction(`${mi}-${ai}`, a, sentAttach)
+        }
+        setQueueRunning(null)
+      }
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: 'Connection hiccup — try that once more.' }])
     } finally { setLoading(false) }
@@ -219,7 +247,7 @@ export default function CommanderChat() {
                   return (
                     <button key={ai} onClick={() => runAction(key, a, m.attach)} disabled={st === '…' || (!!done && st.startsWith('✓'))}
                       style={{ fontSize: '12px', fontWeight: 700, padding: '6px 11px', borderRadius: '9px', border: '1px solid var(--purple)', cursor: st === '…' ? 'default' : 'pointer', background: done && st.startsWith('✓') ? '#EAF7F0' : 'var(--surface)', color: done && st.startsWith('✓') ? '#2E8B60' : 'var(--purple)' }}>
-                      {st === '…' ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite', display: 'inline', verticalAlign: 'middle' }} /> working…</> : done ? st : a.label}
+                      {st === '…' ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite', display: 'inline', verticalAlign: 'middle' }} /> working…</> : done ? st : actionLabel(a)}
                     </button>
                   )
                 })}
