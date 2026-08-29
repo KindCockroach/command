@@ -3,6 +3,7 @@ import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, creat
 import type { ContentType, EventKind, BrandAccount } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
+import { capHashtags } from '@/lib/hashtags'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -206,13 +207,22 @@ Return ONLY valid JSON:
   const acctPlatform = verdict.account_id ? accounts.find(a => a.id === verdict.account_id)?.platform : undefined
   const isYouTube = (acctPlatform ?? '').toLowerCase() === 'youtube'
   const rawType = (verdict.content_type as ContentType) || (mediaUrl ? 'image' : 'post')
+  const finalType = isYouTube ? 'video' : rawType
+  // SAFETY NET — never ship a hook-less card (the #1033 bug: composer returned a
+  // caption but no on-screen text, so the card had empty slides). A talking-head /
+  // avatar video legitimately has no on-screen text; every other format needs at
+  // least a hook, so backfill it from the caption's first line when it's missing.
+  let onscreen = verdict.onscreen_text || ''
+  if (complete && !onscreen.trim() && finalType !== 'video' && !mediaUrl) {
+    onscreen = (verdict.body || '').split('\n').map((s: string) => s.trim()).find(Boolean) || ''
+  }
   const piece = createContent({
     title: verdict.title || 'River capture',
     // A parked item has no finished caption yet — keep the caption box EMPTY and
     // stash the raw brief in notes, so "this is what posts" never shows meta text.
     description: complete ? verdict.body : '',
     status: complete ? 'ready' : 'idea',
-    type: isYouTube ? 'video' : rawType,
+    type: finalType,
     platforms: verdict.account_id ? [accounts.find(a => a.id === verdict.account_id)?.platform.toLowerCase() ?? 'instagram'] : [],
     tags: ['river', source ?? 'capture'],
     // Keep meta/analysis OUT of notes and the caption. The routing rationale is
@@ -224,8 +234,8 @@ Return ONLY valid JSON:
     media_url: mediaUrl || '',
     media_urls: mediaUrl ? [mediaUrl] : [],
     image_prompt: mediaUrl ? '' : (verdict.image_prompt || ''),
-    onscreen_text: verdict.onscreen_text || '',
-    hashtags: verdict.hashtags || '',
+    onscreen_text: onscreen,
+    hashtags: capHashtags(verdict.hashtags || ''),
     open_questions: complete ? [] : (verdict.open_questions ?? []),
     river_source: source ?? 'capture',
     source_context: String(input ?? ''),
