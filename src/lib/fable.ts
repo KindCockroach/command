@@ -100,26 +100,48 @@ export async function fableText(opts: {
 // ── The Commander — Mandi's conversational partner, on Claude Fable 5 ─────────
 // A real back-and-forth thinker. Content generation stays on cheap 4o; THIS is the
 // high-value reasoning surface, so it gets the most capable model.
-export async function commanderChat(system: string, messages: { role: 'user' | 'assistant'; content: unknown }[], maxTokens = 4000): Promise<string> {
+export async function commanderChat(system: string, messages: { role: 'user' | 'assistant'; content: unknown }[], maxTokens = 16000): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — add it in Railway so the Commander can think.')
+  // STREAM the reply. A long turn (a multi-slide carousel + its ```actions``` block)
+  // plus adaptive thinking used to blow past the old 4000 cap and truncate — cutting
+  // the buttons off ("tap to queue" with nothing to tap, replies ending mid-word).
+  // Streaming keeps the connection alive and lets big replies finish inside the timeout.
   const res = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
-    // effort:'medium' keeps a chat partner snappy (high made it overthink + run long,
-    // which combined with the old 1600 cap cut replies off mid-sentence).
-    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages }),
+    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages, stream: true }),
   })
-  const data = (await res.json()) as AnthropicResponse
-  if (!res.ok) throw new Error(`Commander API error (${res.status}): ${data?.error?.message ?? 'unknown error'}`)
-  logUsage({
-    provider: 'anthropic',
-    model: COMMANDER_MODEL,
-    kind: 'commander',
-    inputTokens: data.usage?.input_tokens ?? 0,
-    outputTokens: data.usage?.output_tokens ?? 0,
-  })
-  return (data.content ?? []).filter(b => b.type === 'text' && typeof b.text === 'string').map(b => b.text as string).join('').trim()
+  if (!res.ok || !res.body) {
+    let msg = 'unknown error'
+    try { msg = ((await res.json()) as AnthropicResponse)?.error?.message ?? msg } catch { /* non-JSON */ }
+    throw new Error(`Commander API error (${res.status}): ${msg}`)
+  }
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buf = '', text = '', inTok = 0, outTok = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buf += decoder.decode(value, { stream: true })
+    const lines = buf.split('\n')
+    buf = lines.pop() ?? ''
+    for (const line of lines) {
+      const s = line.trim()
+      if (!s.startsWith('data:')) continue
+      const payload = s.slice(5).trim()
+      if (!payload || payload === '[DONE]') continue
+      try {
+        const evt = JSON.parse(payload)
+        if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') text += evt.delta.text
+        else if (evt.type === 'message_start') inTok = evt.message?.usage?.input_tokens ?? 0
+        else if (evt.type === 'message_delta' && evt.usage?.output_tokens != null) outTok = evt.usage.output_tokens
+        else if (evt.type === 'error') throw new Error(evt.error?.message ?? 'stream error')
+      } catch (e) { if (e instanceof Error && e.message !== 'Unexpected end of JSON input') { /* skip partial */ } }
+    }
+  }
+  logUsage({ provider: 'anthropic', model: COMMANDER_MODEL, kind: 'commander', inputTokens: inTok, outputTokens: outTok })
+  return text.trim()
 }
 
 // ── The Hook Writer — Claude Fable 5 on the two hardest lines ─────────────────

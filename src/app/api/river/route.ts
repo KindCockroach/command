@@ -81,7 +81,10 @@ export async function POST(req: NextRequest) {
     : ''
 
   const triage = await fableText({
-    maxTokens: 4000,
+    // 8000 (was 4000): a full carousel (8-9 slides of on-screen text + a rich
+    // caption) as JSON overran 4000, truncating the JSON → parse fail → the card
+    // came back as "couldn't compose." 8000 lets a full carousel finish.
+    maxTokens: 8000,
     effort: 'medium',
     useClaude: true, // Opus writes the caption (text drops); image drops fall back to 4o vision
     imageUrl: isStillImage ? mediaUrl : undefined,
