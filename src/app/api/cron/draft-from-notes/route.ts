@@ -38,7 +38,9 @@ async function run(req: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (secret && key !== secret) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const origin = new URL(req.url).origin
+  // Call the River on the internal loopback, NOT the public URL — Railway's edge
+  // refuses a container looping back through its own public hostname ("fetch failed").
+  const base = `http://127.0.0.1:${process.env.PORT || 3000}`
   const cutoff = Date.now() - WINDOW_DAYS * 86400000
   const candidates = getAllNotes()
     .filter(isDraftableIdea)
@@ -52,7 +54,7 @@ async function run(req: NextRequest) {
   // Sequentially — one River call at a time (no stampede, gentle on cost/rate).
   for (const n of candidates) {
     try {
-      const res = await fetch(`${origin}/api/river`, {
+      const res = await fetch(`${base}/api/river`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input: `${n.title}\n\n${n.body}`, source: 'daily-notes' }),
       })
