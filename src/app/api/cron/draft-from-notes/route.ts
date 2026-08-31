@@ -18,7 +18,11 @@ export const maxDuration = 300
 // stories, trend finds). Only skip things that aren't postable ideas: raw episode
 // transcripts, finished episode kits, and already-finished drafts awaiting approval.
 const SKIP_TAGS = ['transcript', 'episode-kit', 'deliverables', 'needs-approval', 'medium', 'newsletter', 'substack', 'auto-drafted']
-const WINDOW_DAYS = 3   // "recent" = notes created in the last N days
+// A DRAFTING QUEUE, not a snapshot: any idea you drop waits its turn and is drafted
+// OLDEST-FIRST, so leftovers from a heavy day get picked up on the next run before
+// newer ideas — nothing is lost. The window is just a safety cap so the ancient
+// backlog never floods in; 30 days = ~12 M/W/F runs of runway per idea.
+const WINDOW_DAYS = 30  // an un-drafted idea stays eligible for ~30 days
 const MAX_IDEAS = 3     // cap IDEAS per run — each fans across the accounts it serves
 
 // Is this a note worth drafting a post from? Includes her ideas, Commander-saved
@@ -48,7 +52,9 @@ async function run(req: NextRequest) {
   const candidates = getAllNotes()
     .filter(isDraftableIdea)
     .filter(n => new Date(n.created_at).getTime() >= cutoff)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    // OLDEST first — leftovers from a heavy day get drafted before newer ideas, so
+    // nothing waiting in the queue ever starves. FIFO.
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .slice(0, cap)
 
   // For ONE idea: SHRED it across accounts (Commander plan) → COMPOSE each placement.
