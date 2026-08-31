@@ -14,18 +14,22 @@ export const maxDuration = 300
 // Trigger it daily by hitting:  /api/cron/draft-from-notes?key=YOUR_CRON_SECRET
 // (set CRON_SECRET in Railway; if it's unset the endpoint still runs, unprotected.)
 
-const RISE_TAGS = ['research', 'transcript', 'episode-kit', 'deliverables', 'media', 'media-story', 'trends-source', 'river-research', '1-30', 'conversation', 'needs-approval', 'medium', 'newsletter', 'substack', 'auto-drafted']
+// Draft from BOTH Mandi's own notes AND RISE-generated IDEAS (research briefs, media
+// stories, trend finds). Only skip things that aren't postable ideas: raw episode
+// transcripts, finished episode kits, and already-finished drafts awaiting approval.
+const SKIP_TAGS = ['transcript', 'episode-kit', 'deliverables', 'needs-approval', 'medium', 'newsletter', 'substack', 'auto-drafted']
 const WINDOW_DAYS = 3   // "recent" = notes created in the last N days
 const MAX_PER_RUN = 6   // cap posts per run (cost + volume guard)
 
-// Is this a note Mandi WROTE (an idea to draft from) vs something RISE generated?
-function isMineIdea(n: Note): boolean {
+// Is this a note worth drafting a post from? Includes her ideas, Commander-saved
+// notes, AND RISE's own idea fodder (🔬 research, 📎 media stories, 📡 trends).
+// Excludes only non-ideas: raw transcripts (📄), episode kits (🎙), finished deliverables.
+function isDraftableIdea(n: Note): boolean {
   if (n.archived) return false
-  if (n.source === 'rise') return false
   const tags = n.tags ?? []
-  if (RISE_TAGS.some(t => tags.includes(t))) return false
-  if (/transcript|research:|deliverables|media story|ep kit|episode kit|daily brief/i.test(n.title || '')) return false
-  if (/^\s*[🔬🔍📄🎙📊🧠📎✨🎧🗞📡]/u.test(n.title || '')) return false
+  if (SKIP_TAGS.some(t => tags.includes(t))) return false
+  if (/transcript|deliverables|ep kit|episode kit/i.test(n.title || '')) return false
+  if (/^\s*[📄🎙]/u.test(n.title || '')) return false   // skip raw transcript / episode kit only
   return (n.body || '').trim().length >= 40  // enough substance to build a post from
 }
 
@@ -37,7 +41,7 @@ async function run(req: NextRequest) {
   const origin = new URL(req.url).origin
   const cutoff = Date.now() - WINDOW_DAYS * 86400000
   const candidates = getAllNotes()
-    .filter(isMineIdea)
+    .filter(isDraftableIdea)
     .filter(n => new Date(n.created_at).getTime() >= cutoff)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, MAX_PER_RUN)
