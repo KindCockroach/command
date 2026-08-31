@@ -1,5 +1,5 @@
 {
-  "next_id": 22,
+  "next_id": 25,
   "intake_log": [
     {
       "id": 1782790893508,
@@ -13,6 +13,82 @@
     }
   ],
   "content": [
+    {
+      "id": 24,
+      "title": "AI Parenting Myth",
+      "description": "In the midst of technological buzz, one thing remains steadfast: AI won't step into your shoes as a parent.\n\nSure, algorithms can suggest, streamline, and enhance how we organize our homes and lives. But the essence of raising a child? That's a dance AI can't perform.\n\nCreating a safe environment for kids to explore, learn, and grow is rooted in presence and attention. It's about recognizing their unspoken questions and responding with the wisdom only lived experiences afford.\n\nIn a world rapidly evolving with AI, stay present. Human connection is irreplaceable.\n\nLet's plug in and stay human.",
+      "status": "ready",
+      "type": "video",
+      "platforms": [
+        "instagram"
+      ],
+      "tags": [
+        "river",
+        "commander-chat"
+      ],
+      "transcript": "",
+      "notes": "",
+      "file_path": "",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-08-27T20:32:32.102Z",
+      "updated_at": "2026-08-27T20:32:32.102Z",
+      "published_at": null,
+      "project_id": null,
+      "account_id": "aimompodcast",
+      "image_prompt": "A mother sitting in a cozy living room, her laptop open on a table with a gentle glow from the screen, while her child plays with blocks on the carpet. A sense of warmth and human connection fills the space.",
+      "script": "",
+      "onscreen_text": "AI won't raise your kids for you.",
+      "hashtags": "#AIParenting #ParentingInTheDigitalAge #TechAndParenting #AttentionPresence #HumanConnection #StayHuman #ConnectionNotReplacement",
+      "media_url": "",
+      "media_urls": [],
+      "audio_url": "",
+      "ghl_post_id": null,
+      "scheduled_at": null,
+      "open_questions": [],
+      "river_source": "commander-chat",
+      "source_context": "AI wont raise your kids for you"
+    },
+    {
+      "id": 22,
+      "title": "Curious Witness",
+      "description": "In our whirlwind of schedules and tech, we often overlook the treasures in front of us — like mornings spent with our kids. Let's become curious witnesses to the world they see, finding joy in breakfast giggles or their inventive stories at the dinner table. Embrace these moments not as tasks or predictions for their future, but as the gifts they are today.\n\nThe magic lies in these unexpected turns and genuine discoveries with them. \n\nLet's plug in and stay human.",
+      "status": "idea",
+      "type": "video",
+      "platforms": [
+        "instagram"
+      ],
+      "tags": [
+        "clip",
+        "one-drop"
+      ],
+      "transcript": "",
+      "notes": "",
+      "file_path": "https://pub-8852064bf7444c3ab0959d9ec0ca51b0.r2.dev/clips/certainty-to-curiosity-08da27.wav",
+      "thumbnail_url": "",
+      "sort_order": 0,
+      "created_at": "2026-08-15T16:36:21.626Z",
+      "updated_at": "2026-08-15T20:29:04.292Z",
+      "published_at": null,
+      "project_id": null,
+      "account_id": "aimompodcast",
+      "image_prompt": "",
+      "script": "from predictive certainty about the future to becoming the curious witness of the present.",
+      "onscreen_text": "",
+      "hashtags": "#jobs #education #AI #presence #attention #humanity #wonder",
+      "media_url": "https://pub-8852064bf7444c3ab0959d9ec0ca51b0.r2.dev/post-media/curious-witness-heygen-521917.mp4",
+      "media_urls": [
+        "https://pub-8852064bf7444c3ab0959d9ec0ca51b0.r2.dev/post-media/curious-witness-heygen-521917.mp4"
+      ],
+      "audio_url": "",
+      "ghl_post_id": null,
+      "scheduled_at": null,
+      "open_questions": [],
+      "river_source": "clip",
+      "source_context": "",
+      "heygen_video_id": "31b936e93ff341829849adcdf613af39",
+      "heygen_video_url": "https://pub-8852064bf7444c3ab0959d9ec0ca51b0.r2.dev/post-media/curious-witness-heygen-521917.mp4"
+    },
     {
       "project_id": null,
       "id": 7,
@@ -597,16 +673,16 @@
       "color": "#F2A65A",
       "emoji": "✨",
       "brand_name": "Mandi Joy",
-      "topic": "Inner child, confidence, parts work",
+      "topic": "Personal — my real life, joy, and honest moments",
       "bio": "✨Embrace your extraordinary✨\nAnd your inner child\nYour daily reminder to play more, laugh louder, and overcome your discomfort around people",
-      "mission": "Spread joy, confidence, and self-esteem. Invite strangers to dance in public.",
-      "content_format": "Dancing in public, inner child parts work, personal shares",
-      "underlying_message": "You have what it takes to enjoy your days no matter what is going on.",
-      "problem_message": "I was super sad for a long time",
-      "solution_message": "Gratitude changed everything.",
-      "transformation": "From down and out to up and about — one story at a time",
+      "mission": "Be myself with the people who already know and love me. Share joy and real life — not converting anyone.",
+      "content_format": "Personal shares — my life, joy, honest human moments",
+      "underlying_message": "You already know me — here is my real life.",
+      "problem_message": "",
+      "solution_message": "",
+      "transformation": "",
       "the_how": "One story at a time",
-      "tone": "Light, fresh, joyful",
+      "tone": "Warm, real, joyful — like talking to friends",
       "beliefs": [
         "Inner Child healing is real",
         "HEB (Human Emotional Behavior) drives everything",
@@ -619,7 +695,8 @@
         "Why is no one talking about your pleasure threshold?!",
         "I used to hate that version of me until I did this",
         "Loving your cringy self is the poor man's ayahuasca"
-      ]
+      ],
+      "notes": "PERSONAL account (@mandij0y / Amanda Beck). Audience = people who already know & love me — not converting, not testing, no offers, no funnel. Inner-child / confidence / parts-work are MODALITIES I teach on YouTube + AI Mom, NEVER this account’s identity."
     },
     {
       "id": "empoweredsupermom",
@@ -820,7 +897,8 @@
         "Moms are the most creative problem solvers on earth."
       ],
       "hooks": [],
-      "notes": "CONTENT BOUNDARY (non-negotiable): This channel is ONLY about paying jobs, job training, and educational tools in the age of AI. Mandi's personal AI journey appears solely as entertainment/context woven lightly in — never the subject. DO NOT talk about AI avatars, avatar businesses, Room30, or influencer/creator monetization here. No sales asks — pure give. CONSTITUTION: This is NOT a podcast about AI — it is about becoming better WITNESSES in the age of AI. The real brand is ATTENTION. Never teach AI for AI's sake; always reveal something about PEOPLE. Arc: begin with what they think they're here for (jobs/school/prompts/fear) → reveal what they're actually here for (attention/wonder/presence/discernment/humanity) → end with ONE unforgettable revelation, not advice. Voice: a wise friend, a philosopher doing laundry, a woman changing her mind in public — never an expert or futurist. Humor from big ideas colliding with ordinary motherhood. Signature endings (sparingly): \"Let's plug in and stay human.\" / \"Bring the people who knew you were weird before AI.\" Final rule: don't predict the future — help people become humans who can meet it."
+      "notes": "CONTENT BOUNDARY (non-negotiable): This channel is ONLY about paying jobs, job training, and educational tools in the age of AI. Mandi's personal AI journey appears solely as entertainment/context woven lightly in — never the subject. DO NOT talk about AI avatars, avatar businesses, Room30, or influencer/creator monetization here. No sales asks — pure give. CONSTITUTION: This is NOT a podcast about AI — it is about becoming better WITNESSES in the age of AI. The real brand is ATTENTION. Never teach AI for AI's sake; always reveal something about PEOPLE. Arc: begin with what they think they're here for (jobs/school/prompts/fear) → reveal what they're actually here for (attention/wonder/presence/discernment/humanity) → end with ONE unforgettable revelation, not advice. Voice: a wise friend, a philosopher doing laundry, a woman changing her mind in public — never an expert or futurist. Humor from big ideas colliding with ordinary motherhood. Signature endings (sparingly): \"Let's plug in and stay human.\" / \"Bring the people who knew you were weird before AI.\" Final rule: don't predict the future — help people become humans who can meet it.",
+      "avatar_id": "mandi"
     },
     {
       "id": "airevealsus",
@@ -1070,7 +1148,7 @@
         "Stop spending [time] on [task]. This AI tool does it in [faster time]."
       ],
       "ctaTemplate": "Comment AI and I'll send you the exact tool + how I use it as a mom of 4.",
-      "heygen_photo_id": "",
+      "heygen_photo_id": "0367dcabf68840bea6f310a557f45fae",
       "elevenlabs_voice_id": "",
       "created_at": "2026-07-31T19:39:24.705Z",
       "updated_at": "2026-07-31T19:39:24.705Z"
