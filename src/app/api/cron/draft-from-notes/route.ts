@@ -41,12 +41,15 @@ async function run(req: NextRequest) {
   // Call the River on the internal loopback, NOT the public URL — Railway's edge
   // refuses a container looping back through its own public hostname ("fetch failed").
   const base = `http://127.0.0.1:${process.env.PORT || 3000}`
+  // Optional ?limit=N override (for a small/cheap test run); capped at MAX_PER_RUN.
+  const limitParam = Number(new URL(req.url).searchParams.get('limit'))
+  const cap = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, MAX_PER_RUN) : MAX_PER_RUN
   const cutoff = Date.now() - WINDOW_DAYS * 86400000
   const candidates = getAllNotes()
     .filter(isDraftableIdea)
     .filter(n => new Date(n.created_at).getTime() >= cutoff)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, MAX_PER_RUN)
+    .slice(0, cap)
 
   const drafted: Array<{ note: string; account?: string; postId?: number; status?: string }> = []
   const skipped: Array<{ note: string; why: string }> = []
