@@ -19,7 +19,7 @@ export const maxDuration = 300
 // transcripts, finished episode kits, and already-finished drafts awaiting approval.
 const SKIP_TAGS = ['transcript', 'episode-kit', 'deliverables', 'needs-approval', 'medium', 'newsletter', 'substack', 'auto-drafted']
 const WINDOW_DAYS = 3   // "recent" = notes created in the last N days
-const MAX_PER_RUN = 6   // cap posts per run (cost + volume guard)
+const MAX_IDEAS = 3     // cap IDEAS per run — each fans across the accounts it serves
 
 // Is this a note worth drafting a post from? Includes her ideas, Commander-saved
 // notes, AND RISE's own idea fodder (🔬 research, 📎 media stories, 📡 trends).
@@ -38,12 +38,12 @@ async function run(req: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (secret && key !== secret) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  // Call the River on the internal loopback, NOT the public URL — Railway's edge
-  // refuses a container looping back through its own public hostname ("fetch failed").
+  // Call RISE's own routes on the internal loopback, NOT the public URL — Railway's
+  // edge refuses a container looping back through its own public hostname.
   const base = `http://127.0.0.1:${process.env.PORT || 3000}`
-  // Optional ?limit=N override (for a small/cheap test run); capped at MAX_PER_RUN.
+  // Optional ?limit=N override (for a small/cheap test run); capped at MAX_IDEAS.
   const limitParam = Number(new URL(req.url).searchParams.get('limit'))
-  const cap = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, MAX_PER_RUN) : MAX_PER_RUN
+  const cap = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, MAX_IDEAS) : MAX_IDEAS
   const cutoff = Date.now() - WINDOW_DAYS * 86400000
   const candidates = getAllNotes()
     .filter(isDraftableIdea)
@@ -51,40 +51,46 @@ async function run(req: NextRequest) {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, cap)
 
-  const drafted: Array<{ note: string; account?: string; postId?: number; status?: string }> = []
-  const skipped: Array<{ note: string; why: string }> = []
-
-  // Sequentially — one River call at a time (no stampede, gentle on cost/rate).
-  for (const n of candidates) {
+  // For ONE idea: SHRED it across accounts (Commander plan) → COMPOSE each placement.
+  // Returns the posts it created (or a skip reason).
+  const draftIdea = async (n: Note) => {
     try {
-      const res = await fetch(`${base}/api/river`, {
+      const planRes = await fetch(`${base}/api/commander`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: `${n.title}\n\n${n.body}`, source: 'daily-notes' }),
+        body: JSON.stringify({ mode: 'plan', input: `${n.title}\n\n${n.body}` }),
       })
-      const d = await res.json().catch(() => ({}))
-      if (res.ok && d.kind === 'content' && d.piece) {
-        drafted.push({ note: n.title, account: d.account?.handle ?? d.piece.account_id, postId: d.piece.id, status: d.piece.status })
-        // Mark it so tomorrow's run never re-drafts the same note.
-        updateNote(n.id, { tags: [...(n.tags ?? []), 'auto-drafted'] })
-      } else if (res.ok && d.kind && d.kind !== 'content') {
-        // River decided it was a task/event/note, not a post — tag it done anyway.
-        skipped.push({ note: n.title, why: `River filed it as a ${d.kind}, not a post` })
-        updateNote(n.id, { tags: [...(n.tags ?? []), 'auto-drafted'] })
-      } else {
-        skipped.push({ note: n.title, why: d.error || 'River returned nothing' })
-      }
+      const plan = await planRes.json().catch(() => ({}))
+      const shreds = Array.isArray(plan.shreds) ? plan.shreds : []
+      if (!shreds.length) return { note: n.title, posts: [] as { id: number; handle: string }[], why: plan.error || 'nothing to place across accounts' }
+
+      const compRes = await fetch(`${base}/api/commander`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'compose', shreds }),
+      })
+      const comp = await compRes.json().catch(() => ({}))
+      const posts = Array.isArray(comp.created) ? comp.created.map((c: { id: number; handle: string }) => ({ id: c.id, handle: c.handle })) : []
+      if (posts.length) updateNote(n.id, { tags: [...(n.tags ?? []), 'auto-drafted'] })
+      return { note: n.title, posts, why: posts.length ? undefined : (comp.error || 'compose produced nothing') }
     } catch (e) {
-      skipped.push({ note: n.title, why: e instanceof Error ? e.message : 'compose failed' })
+      return { note: n.title, posts: [] as { id: number; handle: string }[], why: e instanceof Error ? e.message : 'draft failed' }
     }
   }
 
+  // Run the (≤3) ideas in PARALLEL so their composes overlap and the whole run fits
+  // inside the 300s function limit — capped at 3 ideas, so peak concurrency stays low.
+  const results = await Promise.all(candidates.map(draftIdea))
+  const drafted = results.filter(r => r.posts.length)
+  const skipped = results.filter(r => !r.posts.length).map(r => ({ note: r.note, why: r.why ?? 'skipped' }))
+  const postCount = drafted.reduce((sum, r) => sum + r.posts.length, 0)
+
   return NextResponse.json({
     ran_at: new Date().toISOString(),
-    considered: candidates.length,
-    drafted_count: drafted.length,
-    drafted,
+    ideas_considered: candidates.length,
+    ideas_drafted: drafted.length,
+    posts_created: postCount,
+    drafted: drafted.map(r => ({ idea: r.note, posts: r.posts })),
     skipped,
-    note: drafted.length ? 'Drafts are in Accounts, ready to approve.' : 'No new notes to draft today.',
+    note: postCount ? `${postCount} posts across ${drafted.length} ideas — all in Accounts, ready to approve.` : 'No new ideas to draft today.',
   })
 }
 

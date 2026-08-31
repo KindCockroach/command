@@ -94,6 +94,8 @@ Return ONLY valid JSON:
       try {
         const out = await fableText({
           maxTokens: 2000,
+          useClaude: true,
+          json: true,
           instructions: `Write ONE complete, ready-to-post piece for ${acct.handle} (${acct.brand_name}) in ITS voice.
 ACCOUNT: ${acct.topic}. Tone: ${acct.tone}. Message: ${acct.underlying_message}. Format: ${acct.content_format || 'mixed'}.${acct.notes ? ` ⚠ RULES (obey literally): ${acct.notes}` : ''}
 THE FORMAT FOR THIS POST: ${p.format} — obey the SHAPE law for that format.
