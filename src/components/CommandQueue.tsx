@@ -12,12 +12,40 @@ import PostChat from './PostChat'
 
 const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2, planned: 3, paused: 4 }
 
+// Rough REACH READ — a heuristic, not a promise. Rewards the things that actually
+// travel on IG: a carousel/reel over a single image, a STATEMENT hook (not a
+// question), a specific number or quote, and her own words. Used to rank "what's
+// worth finishing first" and to show a one-word read on each card.
+function reachScore(p: ContentPiece, isHers: boolean): number {
+  let s = 42
+  const firstHook = (p.onscreen_text || '').split('\n')[0]?.trim() || ''
+  if (p.type === 'carousel') s += 18
+  else if (p.type === 'video') s += 12
+  else if (p.type === 'image') s += 6
+  if (firstHook) s += firstHook.endsWith('?') ? -10 : 12 // statement hook beats a question
+  const text = `${firstHook} ${p.description ?? ''}`
+  if (/\d/.test(text)) s += 8            // a real number
+  if (/["“”]/.test(text)) s += 6          // a real quote
+  if (isHers) s += 10                     // her own words = authentic
+  if (p.open_questions?.length) s -= 6    // still has unanswered gaps
+  return Math.max(5, Math.min(98, s))
+}
+function reachRead(score: number): { label: string; color: string; bg: string } {
+  if (score >= 74) return { label: '🔥 High potential', color: '#C2410C', bg: '#FFF1E8' }
+  if (score >= 58) return { label: '📈 Strong', color: '#2E8B60', bg: '#E8F7F1' }
+  if (score >= 46) return { label: 'Solid', color: '#6B7280', bg: '#F3F4F6' }
+  return { label: '✏️ Sharpen the hook', color: '#9333EA', bg: 'var(--purple-light)' }
+}
+
 export default function CommandQueue() {
   const [posts, setPosts] = useState<ContentPiece[]>([])
   const [accounts, setAccounts] = useState<BrandAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<number | null>(null)
   const [chatting, setChatting] = useState<ContentPiece | null>(null)
+  const [fAccount, setFAccount] = useState('')  // filter: account id
+  const [fType, setFType] = useState('')         // filter: media/content type
+  const [fSearch, setFSearch] = useState('')     // filter: shared root / keyword
 
   const load = useCallback(() => {
     Promise.all([
@@ -41,11 +69,24 @@ export default function CommandQueue() {
     .filter(p => hasMedia(p) && (p.description ?? '').trim())
     .sort((a, b) => rank(a) - rank(b) || recency(b) - recency(a))
 
-  // Everything that still needs a step: her newest notes first (source_context =
-  // something SHE handed the Commander), then background ideas, within account priority.
-  const develop = posts
+  // Everything that still needs a step, ranked by REACH READ (highest-potential
+  // first) so "what to produce next" is the strongest post, not just the newest.
+  const developAll = posts
     .filter(p => !(hasMedia(p) && (p.description ?? '').trim()))
-    .sort((a, b) => rank(a) - rank(b) || (hers(b) ? 1 : 0) - (hers(a) ? 1 : 0) || recency(b) - recency(a))
+    .sort((a, b) => reachScore(b, hers(b)) - reachScore(a, hers(a)) || rank(a) - rank(b) || recency(b) - recency(a))
+
+  // Filters: account, media type, and a shared-root/keyword search (matches title,
+  // her words, or the shaped caption — so all variants of one story surface together).
+  const q = fSearch.trim().toLowerCase()
+  const develop = developAll.filter(p => {
+    if (fAccount && p.account_id !== fAccount) return false
+    if (fType && p.type !== fType) return false
+    if (q && !`${p.title ?? ''} ${p.source_context ?? ''} ${p.description ?? ''} ${p.onscreen_text ?? ''}`.toLowerCase().includes(q)) return false
+    return true
+  })
+  const typeOptions = Array.from(new Set(developAll.map(p => p.type).filter(Boolean)))
+  const acctOptions = Array.from(new Set(developAll.map(p => p.account_id).filter(Boolean))) as string[]
+  const filtersOn = !!(fAccount || fType || q)
 
   const approve = async (p: ContentPiece) => {
     setBusy(p.id)
@@ -128,17 +169,46 @@ export default function CommandQueue() {
       <section style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '13px', fontWeight: 900, color: 'var(--purple)' }}>🔥 Alive — finish these</span>
-          <span style={{ fontSize: '10px', fontWeight: 800, padding: '1px 8px', borderRadius: '10px', background: 'var(--purple-light)', color: 'var(--purple)' }}>{develop.length}</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>your latest ideas — one step from ready</span>
+          <span style={{ fontSize: '10px', fontWeight: 800, padding: '1px 8px', borderRadius: '10px', background: 'var(--purple-light)', color: 'var(--purple)' }}>{develop.length}{filtersOn ? ` / ${developAll.length}` : ''}</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>top 5 by reach — filter to focus a batch</span>
         </div>
-        {develop.slice(0, 15).map(p => {
+
+        {/* Filter bar: shared root (search), account, media type */}
+        {developAll.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <input value={fSearch} onChange={e => setFSearch(e.target.value)} placeholder="🔎 shared root / keyword (e.g. Dolly)"
+              style={{ flex: '1 1 160px', minWidth: 0, padding: '7px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '12px', outline: 'none' }} />
+            <select value={fAccount} onChange={e => setFAccount(e.target.value)}
+              style={{ padding: '7px 8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '12px', cursor: 'pointer' }}>
+              <option value="">All accounts</option>
+              {acctOptions.map(id => <option key={id} value={id}>{acct(id)?.handle ?? id}</option>)}
+            </select>
+            <select value={fType} onChange={e => setFType(e.target.value)}
+              style={{ padding: '7px 8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '12px', cursor: 'pointer' }}>
+              <option value="">All media</option>
+              {typeOptions.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+            </select>
+            {filtersOn && (
+              <button onClick={() => { setFSearch(''); setFAccount(''); setFType('') }}
+                style={{ padding: '7px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>Clear</button>
+            )}
+          </div>
+        )}
+        {develop.length > 5 && (
+          <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>Showing the 5 highest-reach of {develop.length}{filtersOn ? ' matching' : ''} — filter above to work a specific root, account, or media type.</p>
+        )}
+
+        {develop.slice(0, 5).map(p => {
           const step = nextStep(p)
+          const read = reachRead(reachScore(p, hers(p)))
           return (
             <div key={p.id} style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 <AccChip p={p} />
                 {hers(p) && <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 7px', borderRadius: '9px', background: 'var(--purple-light)', color: 'var(--purple)' }}>YOUR NOTE</span>}
                 <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase' }}>{p.type.replace(/_/g, ' ')}</span>
+                <span title="Rough reach read — rewards carousels/reels, statement hooks, real numbers/quotes, and your own words. A guide, not a guarantee."
+                  style={{ fontSize: '9px', fontWeight: 800, padding: '2px 7px', borderRadius: '9px', background: read.bg, color: read.color }}>{read.label}</span>
               </div>
               <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.3 }}>{p.title}</p>
               {hers(p) && (
@@ -181,7 +251,9 @@ export default function CommandQueue() {
           )
         })}
         {develop.length === 0 && (
-          <p style={{ fontSize: '12px', color: 'var(--text-subtle)', padding: '4px 2px' }}>No open ideas. Drop a thought or a photo to the Commander above and it lands here.</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-subtle)', padding: '4px 2px' }}>
+            {filtersOn ? 'Nothing matches that filter — clear it to see the rest.' : 'No open ideas. Drop a thought or a photo to the Commander above and it lands here.'}
+          </p>
         )}
       </section>
 

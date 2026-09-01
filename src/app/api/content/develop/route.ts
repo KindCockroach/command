@@ -63,11 +63,18 @@ Only include keys in "updates" that you actually changed. If you changed nothing
     const output = await fableText({
       instructions: 'You are a warm creative partner finishing one social post with the author. Reply briefly AND edit the post. Return only valid JSON.',
       input: prompt,
-      maxTokens: 2500,
+      // 8000 (was 2500): a full multi-slide carousel edit + the reply overran 2500,
+      // truncating the JSON so `.match()` returned null → "Cannot read properties of
+      // null (reading '0')". 8000 lets a whole carousel edit come back intact.
+      maxTokens: 8000,
       useClaude: true,
       json: true,
     })
-    const parsed = JSON.parse(output.match(/\{[\s\S]*\}/)![0]) as { reply?: string; updates?: Record<string, unknown> }
+    const jsonMatch = output.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      return NextResponse.json({ error: "I couldn't shape that into an edit — try one change at a time, or rephrase it." }, { status: 502 })
+    }
+    const parsed = JSON.parse(jsonMatch[0]) as { reply?: string; updates?: Record<string, unknown> }
     const u = parsed.updates ?? {}
     const patch: Record<string, unknown> = {}
     if (typeof u.title === 'string') patch.title = u.title
