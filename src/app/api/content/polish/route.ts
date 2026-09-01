@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllContent, updateContent, getBrandAccount, getAudienceContext } from '@/lib/db'
+import { capHashtags, withHashtags } from '@/lib/hashtags'
 import { craftFor } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
 
@@ -48,23 +49,31 @@ Title: ${piece.title}
 On-screen: ${piece.onscreen_text ?? '(none)'}
 ${piece.script ? `Script: ${piece.script}\n` : ''}Caption: ${piece.description ?? '(none)'}
 
-Return ONLY valid JSON: { "title": "short internal title", "onscreen_text": "per the FORMAT rule above", "caption": "the full cleaned-up, properly spaced caption", "hashtags": "8-20 single-word hashtags space-separated" }`
+Return ONLY valid JSON: { "title": "short internal title", "onscreen_text": "per the FORMAT rule above", "caption": "the full cleaned-up, properly spaced caption (do NOT put hashtags in the caption body)", "hashtags": "EXACTLY 3-5 single-word hashtags, space-separated, most relevant first" }`
 
   try {
     const output = await fableText({
       instructions: 'You clean up an existing social post\'s copy to the craft laws, in the author\'s voice, inventing no new facts. Return only valid JSON.',
       input: prompt,
-      maxTokens: 2500,
+      // 8000 (was 2500): a full carousel clean-up overran 2500 and truncated the JSON.
+      maxTokens: 8000,
       useClaude: true,
       json: true,
     })
-    const parsed = JSON.parse(output.match(/\{[\s\S]*\}/)![0])
+    const jsonMatch = output.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return NextResponse.json({ error: "Couldn't clean that up — try again." }, { status: 502 })
+    const parsed = JSON.parse(jsonMatch[0])
+    // Cap hashtags to 5 and MERGE them into the caption, so cleaning up copy actually
+    // puts hashtags in the caption (they were being stashed in a separate field the
+    // caption never showed). withHashtags leaves a caption that already has tags alone.
+    const cappedTags = capHashtags(parsed.hashtags ?? piece.hashtags ?? '')
+    const cleanedCaption = parsed.caption ?? piece.description ?? ''
     const updated = updateContent(piece.id, {
       title: parsed.title || piece.title,
       // A talking/avatar video NEVER carries on-screen text, whatever the model returns.
       onscreen_text: isVideo ? '' : (parsed.onscreen_text ?? piece.onscreen_text),
-      description: parsed.caption ?? piece.description,
-      hashtags: parsed.hashtags ?? piece.hashtags,
+      description: withHashtags(cleanedCaption, cappedTags),
+      hashtags: cappedTags,
     })
     return NextResponse.json({ polished: true, content: updated })
   } catch (e) {
