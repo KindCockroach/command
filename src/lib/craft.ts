@@ -75,7 +75,9 @@ SHAPE — format dictates anatomy; never mix shapes in one post:
 • SINGLE IMAGE: image prompt = 1:1 with the hook rendered legibly into it; no slides, no script.
 • CAPTION is post-ready every format: headline first line, gap last line, hashtags at the very end, nothing else — no labels, no slide text, no script. Copy-paste-and-post.
 
-HASHTAGS — every post ends with 3-5 (never more), IN the caption itself (its own line at the very bottom — not a hidden field). Make them WORK, don't pad. Use a MIX of reach tiers, not five giant saturated tags: at most ONE broad tag, then two mid-size tags specific to the theme, then one or two NICHE tags that name the exact community/subculture this post belongs to (the small, true ones are where a from-zero account actually gets discovered). Every tag must be relevant to THIS post's real subject — NEVER a generic pile like #love #inspiration #life #motivation #viral that drops it into a billion unrelated posts and kills reach. camelCase multi-word tags (#raisingReaders, not #raisingreaders). If unsure a tag is relevant, cut it — 3 sharp beats 5 vague.
+HASHTAGS — every post ends with 3-5 (never more), IN the caption itself (its own line at the very bottom — not a hidden field). They are for DISCOVERY, not decoration, so EVERY tag must be a REAL, CATEGORICAL tag that thousands of people already search, follow, or browse — a topic, niche, community, or public figure: #dollyparton, #earlyliteracy, #consciousparenting, #womeninbusiness, #adhdinwomen, #homeschooling, #aiforbeginners. THE TEST before you keep a tag: do tens of thousands of OTHER posts already use it? If not, it reaches no one — cut it.
+⛔ NEVER INVENT A HASHTAG. No clever slogans, no cute wordplay, no phrase pulled from this post's own copy — #KnowYourEngine, #TheCabinRemembers, #TellThemAGoodStory, #GiveFromWhereYouveBeen are BANNED: they have ~zero posts, nobody searches them, they reach nobody. A hashtag is a category you JOIN, never a caption you shrink.
+Use a MIX of reach tiers: at most ONE broad tag, two mid-size tags specific to the theme, and one or two smaller NICHE tags that name the exact community this post belongs to (the small, true ones are where a from-zero account gets discovered). Never a generic vanity pile (#love #inspiration #life #motivation #viral). camelCase multi-word tags for readability (#raisingReaders). 3 real categories beat 5 clever ones every time.
 • Mix formats across an account; each post obeys exactly one shape.
 
 YOUTUBE IS ITS OWN ANIMAL — write for a viewer CHOOSING what to watch, never a scroller half-reading a feed. Never recycle an IG caption as a YouTube title or description; that's the "garbage" failure. The TITLE must earn the click: a specific benefit or an open loop, the payoff front-loaded in the first few words, concrete and curiosity-driving — never a vague label, a topic, or a pretty one-liner. The description's first two lines must hook BEFORE the fold (that's all a viewer sees) — say plainly what they'll GET and why to keep watching, then the fuller 150-300 words. YouTube rewards clarity about the payoff + curiosity, not aesthetics. A talking-head/avatar video for YouTube = captivating TITLE + hooking DESCRIPTION + the spoken script — and NO on-screen text.
@@ -112,9 +114,34 @@ const MANDIJOY_TRUTH = `
 // it's in the roster.
 const PERSONAL_ACCOUNT_IDS = new Set(['mandijoy', 'amandabeck', 'mandijoybeck'])
 
+// Locked categorical hashtag pools per account — REAL, searched tags (topics,
+// niches, communities, public figures), never invented slogans. Generation draws
+// 3-5 from the account's pool; it may swap ONE for a more post-specific tag as long
+// as it's a real category people browse. Edit these to tune an account's discovery.
+const ACCOUNT_HASHTAGS: Record<string, string[]> = {
+  content4queens: ['#MotivationForWomen', '#SuccessMindset', '#WomenInBusiness', '#FemaleEntrepreneur', '#WomenSupportingWomen', '#MoneyMindset', '#SheHustles'],
+  aimomatwork: ['#AIForMoms', '#AITools', '#WorkFromHomeMom', '#MomEntrepreneur', '#AIForBeginners', '#ProductivityTips'],
+  aimompodcast: ['#AIForBeginners', '#ParentingInTheDigitalAge', '#AIExplained', '#FutureOfWork', '#TechForParents', '#AIandKids', '#ConcernedParents'],
+  airevealsus: ['#ArtificialIntelligence', '#AIAndHumanity', '#Consciousness', '#SelfDiscovery', '#TechAndSociety', '#PhilosophyOfMind'],
+  homeschool4humans: ['#Homeschooling', '#Unschooling', '#Worldschooling', '#HomeschoolMom', '#ChildLedLearning', '#EarlyLiteracy'],
+  onetangledmind: ['#ADHDinWomen', '#ADHDWomen', '#Neurodivergent', '#ADHDBrain', '#ADHDLife', '#MentalHealthMatters'],
+  sage: ['#AIForBusiness', '#AITools', '#Automation', '#SmallBusinessTips', '#NoCode', '#Entrepreneurship'],
+  empoweredsupermom: ['#GentleParenting', '#NervousSystemRegulation', '#ConsciousParenting', '#MomLife', '#EmotionalRegulation', '#ParentingTips'],
+  philosophicalmom: ['#Stoicism', '#Philosophy', '#Mindfulness', '#Motherhood', '#DeepThinking'],
+  art4thefeminine: ['#DivineFeminine', '#FeminineEnergy', '#WomenInArt', '#SacredFeminine', '#ArtByWomen'],
+  survivethedome: ['#Preparedness', '#Prepping', '#SelfReliance', '#FamilyPreparedness', '#Homesteading'],
+  mandijoybeck: ['#UnapologeticallyWoman', '#WomensStories', '#SelfDiscovery', '#Authenticity', '#HealingJourney'],
+  youradhdnature: ['#ADHD', '#ADHDLife', '#Mindfulness', '#ADHDSupport', '#Neurodivergent'],
+  theadderalleffect: ['#ADHD', '#ADHDMotivation', '#GoalSetting', '#Mindset', '#Productivity'],
+}
+
 export function craftFor(accountId?: string | null): string {
   let base = CRAFT_RULES
   if (accountId === 'aimompodcast') base = `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}`
   else if (accountId && PERSONAL_ACCOUNT_IDS.has(accountId)) base = `${CRAFT_RULES}\n${MANDIJOY_TRUTH}`
-  return `${base}${getVoiceLessonsContext()}`
+  const pool = accountId ? ACCOUNT_HASHTAGS[accountId] : undefined
+  const tagLine = pool
+    ? `\n\nHASHTAG POOL for this account — draw your 3-5 from these REAL categories (you may swap at most ONE for a more post-specific tag, but it must be a real category people search, never an invented slogan): ${pool.join(' ')}`
+    : ''
+  return `${base}${tagLine}${getVoiceLessonsContext()}`
 }
