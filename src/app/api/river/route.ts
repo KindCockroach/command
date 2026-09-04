@@ -3,7 +3,7 @@ import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, creat
 import type { ContentType, EventKind, BrandAccount } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
-import { capHashtags } from '@/lib/hashtags'
+import { capHashtags, withHashtags } from '@/lib/hashtags'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -216,11 +216,13 @@ Return ONLY valid JSON:
   if (complete && !onscreen.trim() && finalType !== 'video' && !mediaUrl) {
     onscreen = (verdict.body || '').split('\n').map((s: string) => s.trim()).find(Boolean) || ''
   }
+  const cappedTags = capHashtags(verdict.hashtags || '')
   const piece = createContent({
     title: verdict.title || 'River capture',
     // A parked item has no finished caption yet — keep the caption box EMPTY and
     // stash the raw brief in notes, so "this is what posts" never shows meta text.
-    description: complete ? verdict.body : '',
+    // When complete, the hashtags ride INSIDE the caption (caption box), not a hidden field.
+    description: complete ? withHashtags(verdict.body || '', cappedTags) : '',
     status: complete ? 'ready' : 'idea',
     type: finalType,
     platforms: verdict.account_id ? [accounts.find(a => a.id === verdict.account_id)?.platform.toLowerCase() ?? 'instagram'] : [],
@@ -235,7 +237,7 @@ Return ONLY valid JSON:
     media_urls: mediaUrl ? [mediaUrl] : [],
     image_prompt: mediaUrl ? '' : (verdict.image_prompt || ''),
     onscreen_text: onscreen,
-    hashtags: capHashtags(verdict.hashtags || ''),
+    hashtags: cappedTags,
     open_questions: complete ? [] : (verdict.open_questions ?? []),
     river_source: source ?? 'capture',
     source_context: String(input ?? ''),
