@@ -1430,12 +1430,17 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
             </div>
           )}
 
-          {/* Action bar — approve / decline */}
+          {/* Action bar — approve (auto-publish via GHL) / posted (I did it natively) / decline */}
           {isPending && !hasQuestions && (
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => onApprove(post)} disabled={approving}
+              <button onClick={() => onApprove(post)} disabled={approving || marking}
                 style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: approving ? 0.7 : 1 }}>
                 {approving ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Approving…</> : <><CheckCircle2 size={14} /> Approve</>}
+              </button>
+              <button onClick={markPosted} disabled={marking || approving}
+                title="I already posted this natively — mark it posted and clear it from the queue (no GHL)"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid #3DAA7C', background: 'transparent', color: '#3DAA7C', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: marking ? 0.7 : 1 }}>
+                {marking ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : '📤'} Posted
               </button>
               <button onClick={() => setShowDecline(v => !v)}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid #E05252', background: showDecline ? 'rgba(224,82,82,0.08)' : 'transparent', color: '#E05252', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>

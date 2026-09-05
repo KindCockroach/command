@@ -81,8 +81,12 @@ async function run(req: NextRequest) {
       })
       const comp = await compRes.json().catch(() => ({}))
       const posts = Array.isArray(comp.created) ? comp.created.map((c: { id: number; handle: string }) => ({ id: c.id, handle: c.handle })) : []
-      if (posts.length) updateNote(n.id, { tags: [...(n.tags ?? []), 'auto-drafted'] })
-      return { note: n.title, posts, why: posts.length ? undefined : (comp.error || 'compose produced nothing') }
+      // Tag it 'auto-drafted' after ANY attempt — even when it produced nothing (a
+      // personal/raw note the shred can't fan across accounts). Otherwise those
+      // un-postable notes sit at the top of the queue forever and starve the real
+      // ideas behind them, run after run.
+      updateNote(n.id, { tags: [...(n.tags ?? []), 'auto-drafted'] })
+      return { note: n.title, posts, why: posts.length ? undefined : (comp.error || 'nothing to place across accounts (personal/raw note)') }
     } catch (e) {
       return { note: n.title, posts: [] as { id: number; handle: string }[], why: e instanceof Error ? e.message : 'draft failed' }
     }
