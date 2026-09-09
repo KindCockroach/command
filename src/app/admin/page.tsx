@@ -30,7 +30,7 @@ const GROUPS: { title: string; note?: string; links: { label: string; href: stri
     title: '📣 Caption Writer — the $27 funnel',
     note: 'Live on aiworksforher.com',
     links: [
-      { label: 'Homepage (3 doors)', href: `${SITE}/`, sub: 'AI Works For You hub' },
+      { label: 'Homepage (3 doors)', href: `${SITE}/`, sub: 'AI Works For Her hub' },
       { label: 'Seen — Invisible Annie', href: `${SITE}/seen`, sub: 'ad running here' },
       { label: 'Queen — Content-Chasing Camille', href: `${SITE}/queen` },
       { label: 'Caption Writer — working moms', href: `${SITE}/captionwriter` },

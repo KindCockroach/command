@@ -7,7 +7,7 @@ import { MetaPixel } from '@/components/funnel/shared'
 // visitors to the three Caption Writer doors and teases the Caption Keeper.
 // (The private Command Center moved to /station.)
 export const metadata: Metadata = {
-  title: 'AI Works For You — Find Your Golden Thread · by AI Mom',
+  title: 'AI Works For Her — Find Your Golden Thread · by AI Mom',
   description:
     'Find your golden thread and stop the scroll. Caption Writer turns your real life into captions in your voice — find the story that ties it all together, align your message, and say it well. Raw life in → meaningful message out.',
 }
@@ -41,7 +41,7 @@ export default function Home() {
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">AI WORKS FOR YOU · BY AI MOM</p>
+          <p className="eyebrow">AI WORKS FOR HER · BY AI MOM</p>
           <h1>Find your golden thread and stop the scroll.</h1>
           <p className="sub">
             Your life is full of stories worth telling &mdash; Caption Writer helps you find the one
@@ -92,7 +92,7 @@ export default function Home() {
       </section>
 
       <footer className="foot">
-        <div className="wrap">AI Works For You · by AI Mom</div>
+        <div className="wrap">AI Works For Her · by AI Mom</div>
       </footer>
     </main>
   )
