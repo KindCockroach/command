@@ -104,7 +104,7 @@ const WORKFLOWS: Workflow[] = [
     prompt: `You are a social media strategist performing a viral content autopsy. When I paste a viral post or describe one, you will:
 1. STRIP THE FORMAT: Identify the hook type, emotional trigger, visual structure, and CTA mechanic — separate from the topic
 2. NAME THE FORMULA: Give it a short name (e.g. "The Pain Mirror" or "The Dollar Proof")
-3. REBUILD IT: Rewrite it 3 times — once as AI Mom (Mandi, warm mom energy), once as Gator (bold swamp creature AI advisor), once as Sage (minimalist productivity) — all pointing to aiworksforyou.co
+3. REBUILD IT: Rewrite it 3 times — once as AI Mom (Mandi, warm mom energy), once as Gator (bold swamp creature AI advisor), once as Sage (minimalist productivity) — all pointing to aiworksforher.com
 4. GIVE THE SAVE TRIGGER: What should the CTA be to maximize saves and comments?
 
 Ask me to paste or describe the viral post I want to autopsy.`,
@@ -124,7 +124,7 @@ Ask me to paste or describe the viral post I want to autopsy.`,
 4. PUBLIC REPLY: What Mandi should comment publicly when someone triggers it (1 sentence, creates social proof loop)
 5. FOLLOW-UP DM (optional): If they don't click within 24hrs, what's the follow-up message?
 
-The offer destination is aiworksforyou.co. Ask me what the content piece is about and what I'm offering.`,
+The offer destination is aiworksforher.com. Ask me what the content piece is about and what I'm offering.`,
   },
   {
     id: 'carousel_save_machine',

@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
 
-// Public homepage for aiworksforyou.co — the AI Mom "start here" hub. Routes
+// Public homepage for aiworksforher.com — the AI Mom "start here" hub. Routes
 // visitors to the three Caption Writer doors and teases the Caption Keeper.
 // (The private Command Center moved to /station.)
 export const metadata: Metadata = {

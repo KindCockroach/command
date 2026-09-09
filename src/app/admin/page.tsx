@@ -22,13 +22,13 @@ type Summary = {
 }
 type Payload = { summary: Summary; keys: Record<string, boolean | string> }
 
-const SITE = 'https://rise.aiworksforyou.co'
+const SITE = 'https://aiworksforher.com'
 
 // One place for every link across the businesses. Edit here to add/remove.
 const GROUPS: { title: string; note?: string; links: { label: string; href: string; sub?: string }[] }[] = [
   {
     title: '📣 Caption Writer — the $27 funnel',
-    note: 'Live on rise.aiworksforyou.co',
+    note: 'Live on aiworksforher.com',
     links: [
       { label: 'Homepage (3 doors)', href: `${SITE}/`, sub: 'AI Works For You hub' },
       { label: 'Seen — Invisible Annie', href: `${SITE}/seen`, sub: 'ad running here' },
