@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { CRAFT_RULES } from '@/lib/craft'
 import { fableText, researchWithWeb } from '@/lib/fable'
 import { getAllNotes } from '@/lib/db'
+import { parseKit } from '@/lib/jsonkit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -54,7 +55,7 @@ More from AI Mom:
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast', action, title, core_takeaway, timestamps } = body
+  const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast', action, title, core_takeaway, timestamps, steer } = body
   if (!transcript) return NextResponse.json({ error: 'transcript required' }, { status: 400 })
 
   // ── DEEP MEDIUM ARTICLE (on demand) — borderline journalism ─────────────────
@@ -97,8 +98,7 @@ ${CRAFT_RULES}`
 }`
     try {
       const raw = await fableText({ instructions: mInstr, input: `EPISODE TITLE: ${title || '(untitled)'}\nTRANSCRIPT:\n${clip}\n\n${mSchema}`, maxTokens: 8000, json: true, useClaude: true })
-      let medium_article
-      try { medium_article = JSON.parse(raw) } catch { const m = raw.match(/\{[\s\S]*\}/); medium_article = m ? JSON.parse(m[0]) : null }
+      const medium_article = await parseKit(raw)
       if (!medium_article) throw new Error('Could not parse the article')
       return NextResponse.json({ medium_article })
     } catch (e) {
@@ -126,8 +126,7 @@ ${CRAFT_RULES}`
     const nSchema = `Return ONLY valid JSON: { "newsletter_subject": "a subject line that gets opened", "newsletter_body": "the full 350-550 word issue, markdown ok" }`
     try {
       const raw = await fableText({ instructions: nInstr, input: `THIS EPISODE ("${title || 'latest'}"):\n${clip}\n\n${nSchema}`, maxTokens: 3000, json: true, useClaude: true })
-      let out
-      try { out = JSON.parse(raw) } catch { const m = raw.match(/\{[\s\S]*\}/); out = m ? JSON.parse(m[0]) : null }
+      const out = await parseKit(raw)
       if (!out) throw new Error('Could not parse the newsletter')
       return NextResponse.json({ newsletter_subject: out.newsletter_subject, newsletter_body: out.newsletter_body })
     } catch (e) {
@@ -149,27 +148,31 @@ ${CRAFT_RULES}`
 HOST: Mandi Beck — AI Mom. Warm, tangential, self-aware, philosophical, plain-spoken — a mom at the window, NOT a tech-bro explainer. This is HER show; write AS her.
 EPISODE: ${episodeNumber ? `#${episodeNumber}` : 'TBD'}
 GUEST: ${guestName ?? 'None — solo episode'}
+${steer && String(steer).trim() ? `\n⚑ HOST STEER FOR THIS REBUILD (highest priority — do exactly this): ${String(steer).trim()}\n` : ''}
 ${researched ? `\nSUPPORTING SOURCES (further-reading ONLY — real sources that back claims Mandi already made. Use them ONLY as citations/links in the Medium article's further-reading. NEVER state one of these specifics as something discussed in the episode, NEVER put them in headlines, quotes, show notes, reels, or the episode description, NEVER speak them in her voice):\n${researched}\n` : ''}
 ${timestamps && String(timestamps).trim() ? `TIMESTAMPS (real timecodes from Riverside — use THESE for the "chapters" field; never invent times):\n${String(timestamps).trim()}\n` : ''}FULL TRANSCRIPT (this is the source of truth — everything you write must come from HERE):
 ${clip}`
 
   const instructions = `You are the podcast production engine for RISE Station — Mandi Beck's AI content operating system. You turn ONE episode into every deliverable, in MANDI'S OWN VOICE.
 
-⚑ UNDERSTAND THE EPISODE FIRST. Before writing anything, read the whole transcript and lock three things (you'll return them):
-1. THE ONE TAKEAWAY — the host's actual thesis, in HER framing, not the generic topic. (This episode's topic is "AI and water," but its TAKEAWAY is a specific argument she builds. Find the real argument.)
-2. THE EMOTIONAL SPINE — the story or wound at the center (who it's about, what actually happened, why it matters to her).
+⚑ UNDERSTAND THE EPISODE FIRST. Before writing anything, read the whole transcript and lock four things (you'll return them):
+1. THE TAKEAWAY — the tangible, retellable thing the LISTENER walks away WITH, with the ACTUAL SPECIFICS NAMED. Pull the real doors she listed — the employers, the program, the numbers, by name — and make THOSE the takeaway so the listener can write them down. Do NOT summarize them ("four real paid doors") and do NOT lead with the philosophy — the opinion is the heart, not this. (e.g. "Three named employers paying your kid to learn AI and then hiring them, plus the one program where you pay to learn to make AI work for you" — not "the future of work is changing" and not "it's about who you are.")
+2. THE HEART — the ARGUMENT the episode makes, as a claim about the LISTENER or the world she should walk away believing. It is NOT about Mandi. ⛔ Anything about the HOST — her money, her family/partner, her ADHD, her accounts, her feelings — is NOT the heart; that is the DEEPER CURRENT (#4) and goes ONLY in producer_feedback.deeper_current. (e.g. "The value you add is shifting from what you can produce to how you think — and it shows up first in your relationships, not your prompt game.") Ground any ethereal line per GROUND THE ETHEREAL below.
 3. HER REAL LINES — the 6-8 most striking things she ACTUALLY said, verbatim.
-Then make EVERY asset serve the takeaway and honor the spine. TEST: if a headline, quote, or reel could have been written from the episode's TITLE alone — without reading the transcript — it FAILS. Rewrite it so it could only have come from THIS episode.
+4. THE DEEPER CURRENT (PRIVATE) — the personal wound or reflection running under the episode, about MANDI, that she'd want to sit with but NOT publish. Capture it ONLY in producer_feedback.deeper_current — never in the takeaway, heart, title, or any public asset.
+Then make EVERY asset serve the TAKEAWAY (the tangible thing) and honor the HEART (the argument). TEST: if a headline, quote, or reel could have been written from the episode's TITLE alone — without reading the transcript — it FAILS. Rewrite it so it could only have come from THIS episode.
 
-⚑ GROUND EVERYTHING IN WHAT SHE SAID. Every fact, number, name, place, and quote must come from the transcript. Do NOT import outside statistics, institutions, or place names into headlines, pull_quotes, show notes, reels, keywords, or the episode description — those come ONLY from her words. "pull_quotes" must be VERBATIM (or near-verbatim) lines from the transcript — never paraphrased or invented. If she gave a number ("50% less than lawns", "4,000 residents, 1,200 data centers"), use HER number, not one from research.
+⚑ GROUND EVERYTHING IN WHAT SHE SAID — AND LEAD WITH THE CONCRETE. Every fact, number, name, and place must come from the transcript — but when she DID name something real (an employer, a program, a tool, a number, who's hiring / paying / training in AI or skilled labor), that specific is GOLD: put it FRONT AND CENTER in the takeaway, title, and headlines — don't soften it into a theme. Use HER exact number and HER exact names ("50% less than lawns", "three employers", the program's real name), never a figure swapped in from elsewhere. Do NOT fabricate a statistic, institution, or name she didn't give; if a detail is fuzzy in the transcript, prefix "VERIFY:" rather than inventing it. "pull_quotes" must be VERBATIM (or near-verbatim) lines from the transcript — never paraphrased or invented.
 
 ⚑ HER OWN LINES ARE THE HOOK STANDARD. The verbatim lines she says (the pull_quotes) are the BEST hooks in this whole kit — raw, specific, human, unrepeatable. Notice them. Before you write any hook (headlines, reels, titles, the caption), first find her 6-8 most striking verbatim lines, then write every hook to SOUND LIKE THOSE — her cadence, her exact plain words, her wry specificity — not a marketer's polish. When one of her actual lines already IS a great hook, USE IT verbatim rather than inventing a smoother one. The test for any hook: could it be dropped back into her mouth mid-episode and sound exactly like her? If not, rewrite it from her lines.
 
-⚑ HEADLINES PROMISE WHAT THE EPISODE DELIVERS. Every headline and reel hook must be answerable BY her actual takeaway — never promise a technical exposé or facts-deep-dive she didn't give. A hook still STOPS A THUMB (a bold claim, a scene, a provocation from HER argument) — but it must be TRUE to this episode. Banned lazy defaults: "The future of X", "Why X matters", "5 ways to…", "How AI is changing…", "The truth about…".
+⚑ HEADLINES PROMISE WHAT THE EPISODE DELIVERS — AND SPECIFICITY WINS. Every headline and reel hook must be answerable BY the takeaway and true to what she actually gave. When she gave concrete goods (named employers, a program, a number, a list), a headline that NAMES them beats a mood every time — "3 Employers That Will Pay Your Kid to Learn AI" beats "The future of work is changing." A hook still STOPS A THUMB, but earn it with the real specific, not a vague promise. Banned lazy defaults: "The future of X", "Why X matters", "How AI is changing…", "The truth about…". A bare "N ways to…" is fine ONLY when it names N real, specific things from the episode.
 
 ⚑ RESEARCH IS SUBORDINATE. The supporting sources above are a further-reading layer for the Medium article only. They support claims she already made; they never replace her argument, never appear in her voice, never become the story.
 
-⚑ VOICE. Warm, human, a little tangential, philosophical, self-aware, funny when it lands. Never corporate, never "arm you with the facts", never explainer-bro. If a line sounds like a content marketer wrote it, rewrite it as her.
+⚑ VOICE — A BLEND: FACTS + PAIN + WARMTH. Lead with the listener's real pain and the hard facts together, then let her warmth carry them — warm, human, a little tangential, self-aware, funny when it lands. Facts are WELCOME here (this is the correction to the old rule): naming who's hiring, what pays, where to learn is a gift, not "corporate." The plain true line is the goal — "Maybe you didn't overcomplicate AI. It's just hard." What we still avoid: hype, "game-changer" cliché, and lines a content marketer would write. Give her the information AND the recognition; never pick just one.
+
+⚑ GROUND THE ETHEREAL. Mandi thinks in big, ethereal statements — true, but they don't LAND without a concrete example. Whenever a line is abstract ("getting professional at being you", "you'll make money on how you think, not what you produce", "value comes from who you are"), anchor it to a specific, real example from the episode or the real world so it means something. Abstract claim → concrete instance, every time. An ungrounded philosophical line is a draft, not a deliverable.
 
 Obey the craft laws below for HOW every line is built. Return ONLY valid JSON — no markdown fences, no explanation.
 
@@ -177,13 +180,13 @@ ${CRAFT_RULES}`
 
   const schema = `Return this exact JSON:
 {
-  "core_takeaway": "the ONE real thesis of this episode, in Mandi's framing — the argument she actually builds, not the topic. One or two sentences.",
-  "emotional_spine": "the story or wound at the center — who it's about, what happened, why it matters to her. One or two sentences.",
-  "title": "episode title (under 60 chars) that speaks to the LISTENER'S PAIN POINT DIRECTLY — the real decision or worry she's carrying, in the plain words she'd whisper or type into a search bar. Name the actual dilemma, not a clever theme. ADDRESS HER: 'you/your', never 'I/my/me'. GOOD (names the pain): 'Homeschool or Public School?' / 'AI Is Useful, But It Can't Tell You How to Raise Your Kids'. BAD (vague theme): 'Embracing Uncertainty' / 'The Future of Learning'. If the episode is about a fork she's agonizing over, the title can BE that fork.",
+  "core_takeaway": "the TANGIBLE, RETELLABLE thing the listener GETS — and you must NAME THE ACTUAL SPECIFICS from the transcript, not summarize them. If she named four paid doors into AI work, NAME the four (the employers, the program, by name); if she gave numbers, give the numbers. The listener has to be able to WRITE THEM DOWN and repeat them to a friend the same day. ⛔ Do NOT lead with the philosophy/opinion ('getting professional at being you', 'it's who you are') — that is the HEART, never the takeaway. One or two sentences, all concrete. (e.g. 'Three employers — [name], [name], [name] — that pay your kid to learn AI and then hire them, plus [program name], where you pay to learn to make AI work for you.')",
+  "heart_argument": "the HEART — the ARGUMENT the episode makes, stated as a claim about the LISTENER or the world that she should walk away believing. A THESIS, not a feeling. ⛔ HARD RULE: if your sentence names Mandi, her money/mortgage/utilities, her partner or family, her ADHD, her accounts, or how she FEELS, it is WRONG and belongs in producer_feedback.deeper_current — NOT here. The heart is what's TRUE for the listener, never a fact about the host. Ground any ethereal claim in a concrete example. (e.g. 'The value you add is shifting from what you can produce to how you think — and it shows up first in the quality of your relationships, not your prompt game.')",
+  "title": "episode title (under 60 chars). ⛔ NO METAPHORS, NO POETRY, NO ABSTRACTIONS — a title a stranger scrolls past because it needs context has FAILED (banned example, do not echo its style: 'The lifeboat's already here. You still have to get in.'). HARD REQUIREMENT: the title must contain at least one CONCRETE noun from the episode — a real job, employer, program, number, place, role, or a named decision — the thing she'd type into a search bar. LEAD WITH THE LISTENER'S PAIN + THE CONCRETE PAYOFF. When the episode named real specifics, NAME them in the title — that is always the strongest title. ADDRESS HER: 'you/your', never 'I/my/me'. An OPINION or IMAGE is not a title. GOOD (concrete, searchable): '3 Employers That Will Hire Your Grad' / 'Where to Learn AI When You're Behind' / 'The Jobs Paying Your Kid to Learn AI'. OK (a real fork): 'Homeschool or Public School?'. BANNED (metaphor / vague theme / opinion): 'The lifeboat's already here' / 'Embracing Uncertainty' / 'The Future of Learning' / 'Be Unapologetically You'.",
   "subtitle": "one sentence that makes someone hit play — reflects the real takeaway, not a generic topic",
   "questions": ["the KEY questions you actually ASK in this episode — the ones the listener is asking herself too (several are literally posed in the episode). 3-6, in her words, addressed to the listener where natural."],
   "chapters": ["timestamped chapter markers tied to the episode's arc, each 'MM:SS — short chapter title'. RULES: use ONLY real timecodes — from the TIMESTAMPS block if provided, else from timecodes embedded in the transcript. If NO real times exist anywhere, return the chapter TITLES in order with an empty time (e.g. ' — Homeschool or public school') and NEVER invent clock times. Chapter titles should echo the title's pain where relevant."],
-  "headlines": ["5 scroll-stopping options — each ADDRESSED TO THE LISTENER (you/your), NOT the host (I/my); each answerable by core_takeaway and honoring emotional_spine; none writable from the title alone"],
+  "headlines": ["5 scroll-stopping options — each ADDRESSED TO THE LISTENER (you/your), NOT the host (I/my); each answerable by core_takeaway and honoring heart_argument; none writable from the title alone"],
   "description": "3-paragraph show notes in Mandi's voice — open on the emotional spine (the real story), land the core takeaway, why it matters. Under 300 words. Her warm, tangential voice.",
   "seo_description": "150-character search meta description",
   "keywords": ["5 keywords drawn from what she actually discussed"],
@@ -210,7 +213,7 @@ ${CRAFT_RULES}`
     {"title": "pin title", "description": "keyword-rich pin description", "image_prompt": "a detailed, ready-to-generate visual prompt for this pin — warm, on-brand, no text baked in"}
   ],
   "resources": [
-    {"name": "tool / book / study / person mentioned in the episode", "url": "the real link if known or a best-guess official URL (else empty string)", "note": "one line on what it is"}
+    {"name": "tool / book / study / person / EMPLOYER / PROGRAM mentioned in the episode — lead with the concrete ones that ARE the takeaway (the hiring employers, the program she named)", "url": "the real link if known or a best-guess official URL (else empty string; prefix the note with 'VERIFY:' if the URL is a guess)", "note": "one line on what it is and how it points back to the takeaway"}
   ],
   "ad_reads": {
     "pre_roll": "15-sec SPOKEN invite in Mandi's voice to follow AI Mom Podcast on Apple, Spotify, or YouTube. Warm, pure-give. You MAY say '${OPT_IN}' aloud to invite them to join the list. No other URLs.",
@@ -223,6 +226,7 @@ ${CRAFT_RULES}`
   "producer_feedback": {
     "overall_grade": "JUST the letter grade, nothing else — e.g. \\"A-\\", \\"B+\\", \\"C\\"",
     "verdict": "one honest sentence — the verdict on this episode",
+    "deeper_current": "PRIVATE — for Mandi only, NEVER published anywhere in this kit. The personal wound or reflection running under the money/jobs talk: what this episode is really about for HER. Name it gently and honestly, as something for her to sit with. (e.g. 'Underneath the money talk is an older wound — the kid who felt rejected — now taking hard inventory of which relationships actually stayed, and what matters more.')",
     "strengths": ["3 specific strengths"],
     "topic_drift": "did she stay on topic or wander? specific moments.",
     "depth_gaps": "what was mentioned but under-covered — what listeners wanted more of",
@@ -239,12 +243,8 @@ ${CRAFT_RULES}`
     // it's ignored on the Opus path (JSON is enforced by the prompt) but kicks in if
     // ANTHROPIC_API_KEY is missing and we drop back to gpt-4o.
     const raw = await fableText({ instructions, input: `${context}\n\n${schema}`, maxTokens: 16000, effort: 'high', json: true, useClaude: true })
-    let deliverables
-    try { deliverables = JSON.parse(raw) } catch {
-      const match = raw.match(/\{[\s\S]*\}/)
-      if (!match) throw new Error('No JSON found')
-      deliverables = JSON.parse(match[0])
-    }
+    const deliverables = await parseKit(raw)
+    if (!deliverables) throw new Error('The kit came back malformed and could not be repaired — hit Generate Everything again.')
     deliverables.show_links = SHOW_LINKS
     deliverables.opt_in = OPT_IN
     deliverables.links_footer = LINKS_FOOTER

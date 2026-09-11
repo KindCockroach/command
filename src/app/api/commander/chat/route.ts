@@ -90,6 +90,10 @@ YOUR HANDS — you can propose actions she taps to run (post actions run on thei
 \`\`\`actions
 [ { "type": "store_note", "label": "Store to Notes", "payload": { "title": "short title", "body": "the text" } } ]
 \`\`\`
+⛔ CRITICAL OUTPUT RULES for actions:
+1. Propose actions ONLY as that plain \`\`\`actions fenced JSON block. NEVER use XML or tool-call syntax — no <invoke>, no <parameter>, no "artifacts", no <function_calls>, no application/vnd.ant.code. Those are NOT available here; if you emit them her buttons break and she sees raw code.
+2. NEVER write the word "Button" or "Button:" in your prose — the button renders itself FROM the \`\`\`actions block. If you offer to do something, you MUST include the real \`\`\`actions block; if you're not including a block, don't mention a button at all.
+3. HANDS BOUNDARY: your actions only touch posts, notes, tasks, projects, audiences, goals, calendar. You do NOT have hands on the Podcast tab's episode kit — that kit is edited by the Commander INSIDE the Podcast tab. If she asks you to change/replace the podcast show kit, tell her to use the Commander panel on the Podcast tab (it can rewrite any field); the most you can do here is save text to Notes.
 Supported action types (only propose what she clearly wants — one or two at most, never spam):
 - store_note — payload { title, body }. For "store this / save this / note this."
 - create_task — payload { title, notes?, priority? ("urgent"|"high"|"medium"|"low"), due_date? ("YYYY-MM-DD") }. For "remind me / I need to."
@@ -138,12 +142,38 @@ Be the calm, smart partner behind the whole beast. Keep her pointed at what matt
     // Split the reply from the optional actions block.
     let reply = raw
     let actions: unknown[] = []
+    const tryArray = (s: string) => { try { const p = JSON.parse(s.trim()); if (Array.isArray(p)) actions = p } catch { /* ignore malformed */ } }
+
+    // Recover the actions array from whatever shape the model used, in priority order:
+    //  1. the intended ```actions fence
+    //  2. leaked tool XML — <parameter name="content">[ … ]</parameter> (with/without antml: prefix)
+    //  3. a ```json fence whose payload is an array
+    //  4. a bare JSON array left at the very end of the message
     const m = raw.match(/```actions\s*([\s\S]*?)```/i)
-    if (m) {
-      reply = raw.slice(0, m.index).trim()
-      try { const parsed = JSON.parse(m[1].trim()); if (Array.isArray(parsed)) actions = parsed } catch { /* ignore malformed */ }
+    if (m) tryArray(m[1])
+    if (!actions.length) {
+      const contentParam = raw.match(/<(?:antml:)?parameter\s+name="content">\s*([\s\S]*?)<\/(?:antml:)?parameter>/i)
+      if (contentParam) tryArray(contentParam[1])
     }
-    return NextResponse.json({ reply: reply || raw, actions })
+    if (!actions.length) {
+      for (const jm of raw.matchAll(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/gi)) { tryArray(jm[1]); if (actions.length) break }
+    }
+    if (!actions.length) {
+      const trailing = raw.match(/(\[\s*\{[\s\S]*\}\s*\])\s*$/)
+      if (trailing) tryArray(trailing[1])
+    }
+    // Scrub every action carrier + dangling "Button:" label out of what she reads.
+    reply = raw
+      .replace(/```actions[\s\S]*?```/gi, '')
+      .replace(/<(?:antml:)?invoke[\s\S]*?<\/(?:antml:)?invoke>/gi, '')            // whole leaked invoke block, JSON and all
+      .replace(/<(?:antml:)?parameter\s+name="[^"]*">[\s\S]*?<\/(?:antml:)?parameter>/gi, '') // stray parameter block
+      .replace(/<\/?(?:antml:)?(?:invoke|function_calls|parameter)[^>]*>/gi, '')   // leftover open/close tags
+      .replace(/```(?:json)?\s*\[[\s\S]*?\]\s*```/gi, '')                          // a json-fenced actions array
+      .replace(/(\[\s*\{[\s\S]*\}\s*\])\s*$/g, '')                                 // a bare trailing actions array
+      .replace(/\s*Button\s*:?\s*$/i, '')                                          // dangling "Button:" label
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+    return NextResponse.json({ reply: reply || 'Done.', actions })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Commander is unavailable' }, { status: 502 })
   }

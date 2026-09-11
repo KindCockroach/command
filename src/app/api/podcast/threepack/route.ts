@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createContent, createTask, getAllBrandAccounts, getWatchContext, getAudienceContext } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
+import { parseKit } from '@/lib/jsonkit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -48,11 +49,11 @@ Return ONLY valid JSON:
   })
 
   try {
-    const jsonMatch = raw.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return NextResponse.json({ error: 'The writer returned no usable posts — try again (a very short clip can confuse the 3-pack; for a short clip use "Quick Reel" instead).' }, { status: 502 })
-    const parsed = JSON.parse(jsonMatch[0])
+    const parsed = await parseKit(raw)
+    if (!parsed) return NextResponse.json({ error: 'The writer returned no usable posts — try again (a very short clip can confuse the 3-pack; for a short clip use "Quick Reel" instead).' }, { status: 502 })
     const created: Array<{ kind: string; id: number; account: string }> = []
-    for (const p of parsed.posts ?? []) {
+    const posts = (Array.isArray(parsed.posts) ? parsed.posts : []) as Array<Record<string, string>>
+    for (const p of posts) {
       const acct = accounts.find(a => a.id === p.account_id)
       const piece = createContent({
         title: p.title,

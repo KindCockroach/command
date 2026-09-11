@@ -4,6 +4,7 @@ import { Loader2, Copy, CheckCircle2, ChevronDown, ChevronUp, Mic, Zap, Save, Im
 
 interface Deliverables {
   core_takeaway?: string
+  heart_argument?: string
   emotional_spine?: string
   title: string
   subtitle: string
@@ -33,6 +34,7 @@ interface Deliverables {
   producer_feedback: {
     overall_grade: string
     verdict?: string
+    deeper_current?: string
     strengths: string[]
     topic_drift: string
     depth_gaps: string
@@ -173,6 +175,14 @@ export default function PodcastEngine() {
   const [reelKey, setReelKey] = useState<string | null>(null)
   const [packState, setPackState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
   const [packMsg, setPackMsg] = useState('')
+
+  // 🧭 Commander — talk to the kit. Eyes on the whole result; hands to edit any field
+  // or steer a full rebuild. Merges surgical `updates` into result; a `regenerate_all`
+  // reply re-runs Generate Everything with her steer.
+  const [cmdMsgs, setCmdMsgs] = useState<{ role: 'user' | 'commander'; text: string }[]>([])
+  const [cmdInput, setCmdInput] = useState('')
+  const [cmdBusy, setCmdBusy] = useState(false)
+  const cmdScrollRef = useRef<HTMLDivElement | null>(null)
 
   // One transcript → faceless + avatar clip + trending (with DIY to-do)
   const threePack = async () => {
@@ -534,7 +544,7 @@ export default function PodcastEngine() {
     } catch { /* best-effort */ }
   }
 
-  const generate = async () => {
+  const generate = async (steer?: string) => {
     if (!transcript.trim()) return
     setLoading(true)
     setError(null)
@@ -544,7 +554,7 @@ export default function PodcastEngine() {
       const res = await fetch('/api/podcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript, episodeNumber, guestName, timestamps }),
+        body: JSON.stringify({ transcript, episodeNumber, guestName, timestamps, steer }),
       })
       const data = await res.json()
       if (data.deliverables) {
@@ -557,6 +567,52 @@ export default function PodcastEngine() {
       setError('Connection error — check Railway is running')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Merge the Commander's surgical `updates` into the current kit. Top-level fields
+  // replace wholesale; the three nested objects merge so a partial edit (e.g. just
+  // deeper_current) keeps the sibling sub-fields intact.
+  const mergeUpdates = (updates: Partial<Deliverables>) => {
+    setResult(prev => {
+      if (!prev) return prev
+      const next: Deliverables = { ...prev, ...updates }
+      if (updates.producer_feedback) next.producer_feedback = { ...prev.producer_feedback, ...updates.producer_feedback }
+      if (updates.ad_reads) next.ad_reads = { ...prev.ad_reads, ...updates.ad_reads }
+      if (updates.medium_article) next.medium_article = { ...prev.medium_article, ...updates.medium_article }
+      return next
+    })
+  }
+
+  // 🧭 Talk to the kit. Sends the whole current kit + transcript so the Commander can
+  // see everything and edit any field — or steer a full rebuild.
+  const sendCommander = async (text?: string) => {
+    const msg = (text ?? cmdInput).trim()
+    if (!msg || cmdBusy || !result) return
+    setCmdBusy(true)
+    setCmdInput('')
+    const history = cmdMsgs.slice()
+    setCmdMsgs(m => [...m, { role: 'user', text: msg }])
+    try {
+      const res = await fetch('/api/podcast/commander', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kit: result, message: msg, history, transcript, episodeNumber, guestName }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setCmdMsgs(m => [...m, { role: 'commander', text: d.error || 'That didn\'t go through — try again.' }]); return }
+      if (d.regenerate_all) {
+        setCmdMsgs(m => [...m, { role: 'commander', text: `${d.reply || 'Rebuilding the whole kit now.'}${d.steer ? `\n\n↻ Regenerating everything — steer: “${d.steer}”` : '\n\n↻ Regenerating everything…'}` }])
+        generate(d.steer || undefined)
+        return
+      }
+      if (d.updates && Object.keys(d.updates).length) mergeUpdates(d.updates as Partial<Deliverables>)
+      const changed = d.updates ? Object.keys(d.updates) : []
+      setCmdMsgs(m => [...m, { role: 'commander', text: `${d.reply || 'Done.'}${changed.length ? `\n\n✎ Updated: ${changed.join(', ')}` : ''}` }])
+    } catch {
+      setCmdMsgs(m => [...m, { role: 'commander', text: 'Connection hiccup — say that again.' }])
+    } finally {
+      setCmdBusy(false)
+      setTimeout(() => cmdScrollRef.current?.scrollTo({ top: cmdScrollRef.current.scrollHeight }), 50)
     }
   }
 
@@ -684,7 +740,7 @@ export default function PodcastEngine() {
           </div>
         </div>
 
-        <button onClick={generate} disabled={loading || !transcript.trim()}
+        <button onClick={() => generate()} disabled={loading || !transcript.trim()}
           style={{ padding: '12px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: !transcript.trim() ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
           {loading ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating all deliverables...</> : <><Zap size={15} /> Generate Everything</>}
         </button>
@@ -731,14 +787,56 @@ export default function PodcastEngine() {
           </div>
 
           {/* 🎯 What RISE heard — the extracted takeaway (quality check: did it get the episode?) */}
-          {(result.core_takeaway || result.emotional_spine) && (
+          {(result.core_takeaway || result.heart_argument || result.emotional_spine) && (
             <div style={{ border: '1px solid var(--border)', borderLeft: '3px solid #3DAA7C', borderRadius: '10px', padding: '12px 14px', background: 'var(--surface-raised)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>🎯 What RISE heard in this episode</span>
-              {result.core_takeaway && <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.55 }}><strong style={{ color: '#2E8B60' }}>Takeaway:</strong> {result.core_takeaway}</p>}
-              {result.emotional_spine && <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}><strong style={{ color: 'var(--text)' }}>Heart:</strong> {result.emotional_spine}</p>}
-              <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>If this misses the point, regenerate — everything below is built from this.</p>
+              {result.core_takeaway && <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.55 }}><strong style={{ color: '#2E8B60' }}>Takeaway (what you walk away with):</strong> {result.core_takeaway}</p>}
+              {(result.heart_argument || result.emotional_spine) && <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}><strong style={{ color: 'var(--text)' }}>Heart (the argument underneath):</strong> {result.heart_argument || result.emotional_spine}</p>}
+              <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>If this misses the point, edit it or tell the Commander below — everything else is built from this.</p>
             </div>
           )}
+
+          {/* 🧭 Commander — talk to the whole kit. Eyes on everything; hands to edit any field or rebuild. */}
+          <div style={{ border: '1px solid var(--purple)', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ padding: '10px 14px', background: 'var(--purple-light)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={14} style={{ color: 'var(--purple)' }} />
+              <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--purple)' }}>🧭 Commander — fix this kit by talking</span>
+              <span style={{ fontSize: '10px', color: 'var(--text-subtle)', marginLeft: 'auto' }}>sees the whole kit · edits any field</span>
+            </div>
+            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {cmdMsgs.length > 0 && (
+                <div ref={cmdScrollRef} style={{ maxHeight: '260px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '2px' }}>
+                  {cmdMsgs.map((m, i) => (
+                    <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '88%', background: m.role === 'user' ? 'var(--purple)' : 'var(--surface-raised)', color: m.role === 'user' ? '#fff' : 'var(--text)', border: m.role === 'user' ? 'none' : '1px solid var(--border)', borderRadius: '10px', padding: '8px 12px', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                      {m.text}
+                    </div>
+                  ))}
+                  {cmdBusy && <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-muted)' }}><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Working on it…</div>}
+                </div>
+              )}
+              {cmdMsgs.length === 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {['Redo the takeaway — name the actual employers and the program', 'The title is too abstract — make it concrete and searchable', 'Move anything personal about me into the deeper current', 'Regenerate everything, lead with the jobs and who\'s paying'].map((s, i) => (
+                    <button key={i} onClick={() => sendCommander(s)} disabled={cmdBusy}
+                      style={{ fontSize: '11px', fontWeight: 600, color: 'var(--purple)', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: '999px', padding: '5px 11px', cursor: cmdBusy ? 'default' : 'pointer', textAlign: 'left' }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                <textarea value={cmdInput} onChange={e => setCmdInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendCommander() } }}
+                  placeholder="Tell the Commander what to change — “name the 3 employers in the takeaway”, “punch up headline 2”, “regenerate everything”…"
+                  rows={2}
+                  style={{ flex: 1, resize: 'vertical', minHeight: '38px', border: '1px solid var(--border)', borderRadius: '10px', padding: '9px 12px', fontSize: '13px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)' }} />
+                <button onClick={() => sendCommander()} disabled={cmdBusy || !cmdInput.trim()}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '10px 15px', borderRadius: '10px', border: 'none', background: cmdBusy || !cmdInput.trim() ? 'var(--border)' : 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: cmdBusy || !cmdInput.trim() ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
+                  {cmdBusy ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Zap size={13} />} Send
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* ✍️ Episode caption — short "why you'd listen" + a tune-in CTA. Regenerate for variations. */}
           <div style={{ border: '1px solid var(--purple)', borderRadius: '12px', overflow: 'hidden' }}>
@@ -1054,6 +1152,14 @@ export default function PodcastEngine() {
                   <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.5, fontWeight: 600 }}>{result.producer_feedback.verdict ?? ''}</p>
                 </div>
               </div>
+
+              {result.producer_feedback.deeper_current && (
+                <div style={{ padding: '13px 15px', background: 'var(--surface-raised)', borderRadius: '10px', borderLeft: '3px solid #9B6FB0' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: '#9B6FB0', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>🕯 The deeper current · private, just for you</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.6, fontStyle: 'italic' }}>{result.producer_feedback.deeper_current}</p>
+                  <p style={{ fontSize: '10px', color: 'var(--text-subtle)', marginTop: '6px' }}>Never published. Yours to sit with.</p>
+                </div>
+              )}
 
               <div>
                 <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>What worked</p>
