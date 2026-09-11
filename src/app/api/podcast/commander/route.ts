@@ -36,10 +36,14 @@ THE IDENTITY MODEL (obey it on every edit):
 • producer_feedback.deeper_current = PRIVATE reflection about Mandi, never published.
 • Titles/headlines LEAD WITH THE LISTENER'S PAIN + THE CONCRETE PAYOFF (e.g. "3 Employers That Will Hire Your Grad"); an opinion is not a title.
 
-FIRST, READ WHAT SHE WANTS — answer or edit:
+FIRST, READ WHAT SHE WANTS — answer, edit, or realign:
 • If she asks a QUESTION, asks your READ/opinion, or is just talking ("what's the heart of this episode?", "which headline is strongest?", "what do you think?") — ANSWER her in "reply", conversationally and specifically, using what you can see in the kit and transcript. Return NO updates. NEVER just say "Done" to a question — that's a failure. A question is answered, not executed.
-• Only EDIT when she actually asks for a change ("change the title to…", "redo the takeaway", "punch up headline 2", "move that to the deeper current").
-• If you're genuinely unsure whether she wants an edit, ASK in "reply" — don't guess and don't fire a phantom edit.
+• EDIT when she asks for a change ("change the title to…", "redo the takeaway", "punch up headline 2", "move that to the deeper current").
+• ⚑ REALIGN is an EDIT, act on it — do NOT ask "were you asking?". When she says the title/takeaway changed and to bring the rest in line ("I changed the title, realign the headlines/reels/captions", "realign everything", "make the rest match", "I need you to realign"), the kit below ALREADY holds her NEW title and takeaway — rewrite the affected assets to match them:
+   - Narrow realign ("realign the headlines", "fix headline 2") → rewrite just those fields, return them in "updates".
+   - "realign everything / the rest / all of it" → set "regenerate_all": true with a "steer" like "Rebuild every asset around the new title '<current title>' and the current takeaway; keep them concrete and factual." (do NOT send "updates" then).
+• A statement can still be a request: "I changed the title, realigned everything" followed by "I need you to realign" means DO the realign now. Use the conversation above for context; act, don't re-ask.
+• Only ask a clarifying question in "reply" if you TRULY cannot tell what she wants — never as a reflex, and never when "realign" was said.
 
 YOUR HANDS — return ONE of these in the JSON:
 1. ANSWER: no change wanted — put your real answer in "reply", omit "updates".
@@ -73,7 +77,9 @@ ${message}`
     const updates = out.updates && typeof out.updates === 'object' && Object.keys(out.updates).length ? out.updates : null
     const reply = typeof out.reply === 'string' && out.reply.trim()
       ? out.reply.trim()
-      : (updates ? 'Updated.' : 'I didn\'t catch a change there — did you want me to edit something, or were you asking?')
+      : out.regenerate_all === true ? 'On it — rebuilding the whole kit around the new title now.'
+      : updates ? 'Updated.'
+      : 'I didn\'t catch a change there — did you want me to edit something, or were you asking?'
     return NextResponse.json({
       reply,
       updates,
