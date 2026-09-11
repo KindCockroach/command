@@ -791,8 +791,7 @@ export default function PodcastEngine() {
             <div style={{ border: '1px solid var(--border)', borderLeft: '3px solid #3DAA7C', borderRadius: '10px', padding: '12px 14px', background: 'var(--surface-raised)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>🎯 What RISE heard in this episode</span>
               {result.core_takeaway && <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.55 }}><strong style={{ color: '#2E8B60' }}>Takeaway (what you walk away with):</strong> {result.core_takeaway}</p>}
-              {(result.heart_argument || result.emotional_spine) && <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}><strong style={{ color: 'var(--text)' }}>Heart (the argument underneath):</strong> {result.heart_argument || result.emotional_spine}</p>}
-              <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>If this misses the point, edit it or tell the Commander below — everything else is built from this.</p>
+              <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>The kit is built from this takeaway. If it misses the point, edit it or tell the Commander below. (The argument underneath lives quietly in Producer Feedback — it shapes the writing, not the top of the kit.)</p>
             </div>
           )}
 
@@ -1152,6 +1151,14 @@ export default function PodcastEngine() {
                   <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.5, fontWeight: 600 }}>{result.producer_feedback.verdict ?? ''}</p>
                 </div>
               </div>
+
+              {(result.heart_argument || result.emotional_spine) && (
+                <div style={{ padding: '13px 15px', background: 'var(--surface-raised)', borderRadius: '10px', borderLeft: '3px solid var(--text-subtle)' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>🧵 The point underneath · shapes the writing, not the top of the kit</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.6 }}>{result.heart_argument || result.emotional_spine}</p>
+                  <p style={{ fontSize: '10px', color: 'var(--text-subtle)', marginTop: '6px' }}>The argument the facts serve — woven into the reels & description, so the kit lands instead of just informs.</p>
+                </div>
+              )}
 
               {result.producer_feedback.deeper_current && (
                 <div style={{ padding: '13px 15px', background: 'var(--surface-raised)', borderRadius: '10px', borderLeft: '3px solid #9B6FB0' }}>
