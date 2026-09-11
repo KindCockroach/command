@@ -115,14 +115,47 @@ function Section({ title, children, defaultOpen = false }: { title: string; chil
   )
 }
 
-function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+// Click-to-edit text. Read-only <p> with a subtle Edit affordance; on Edit it becomes
+// a textarea with Save/Cancel. onSave hands the new value up so the kit (and its
+// localStorage) update in place — no Commander, no re-roll, for small fixes.
+function EditableValue({ value, onSave, mono }: { value: string; onSave: (v: string) => void; mono?: boolean }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
+  const box = { fontSize: '13px', color: 'var(--text)', lineHeight: 1.6, fontFamily: mono ? 'monospace' : 'inherit', background: 'var(--surface-raised)', padding: '10px 12px', borderRadius: '8px', whiteSpace: 'pre-wrap' as const }
+  if (editing) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <textarea value={draft} onChange={e => setDraft(e.target.value)} autoFocus rows={Math.min(10, Math.max(2, Math.ceil((draft.length || 1) / 60)))}
+          style={{ ...box, color: 'var(--text)', border: '1px solid var(--purple)', resize: 'vertical', width: '100%', fontFamily: mono ? 'monospace' : 'inherit' }} />
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button onClick={() => { onSave(draft); setEditing(false) }}
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 12px', borderRadius: '6px', border: 'none', background: 'var(--purple)', color: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}><CheckCircle2 size={11} /> Save</button>
+          <button onClick={() => { setDraft(value); setEditing(false) }}
+            style={{ padding: '5px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div style={{ position: 'relative' }}>
+      <p style={box}>{value}</p>
+      <button onClick={() => setEditing(true)} title="Edit this field"
+        style={{ position: 'absolute', top: '6px', right: '6px', display: 'flex', alignItems: 'center', gap: '3px', padding: '3px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}><PenLine size={10} /> Edit</button>
+    </div>
+  )
+}
+
+function Field({ label, value, mono, onSave }: { label: string; value: string; mono?: boolean; onSave?: (v: string) => void }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
         <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>
         <CopyBtn text={value} />
       </div>
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, fontFamily: mono ? 'monospace' : 'inherit', background: 'var(--surface-raised)', padding: '10px 12px', borderRadius: '8px', whiteSpace: 'pre-wrap' }}>{value}</p>
+      {onSave
+        ? <EditableValue value={value} onSave={onSave} mono={mono} />
+        : <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, fontFamily: mono ? 'monospace' : 'inherit', background: 'var(--surface-raised)', padding: '10px 12px', borderRadius: '8px', whiteSpace: 'pre-wrap' }}>{value}</p>}
     </div>
   )
 }
@@ -570,6 +603,10 @@ export default function PodcastEngine() {
     }
   }
 
+  // Hand-edit a single kit field in place (from the inline editors). Persists via the
+  // same effect that stores the kit, so a manual fix survives leaving the tab.
+  const patch = (key: keyof Deliverables, value: string) => setResult(r => (r ? { ...r, [key]: value } : r))
+
   // Merge the Commander's surgical `updates` into the current kit. Top-level fields
   // replace wholesale; the three nested objects merge so a partial edit (e.g. just
   // deeper_current) keeps the sibling sub-fields intact.
@@ -790,8 +827,13 @@ export default function PodcastEngine() {
           {(result.core_takeaway || result.heart_argument || result.emotional_spine) && (
             <div style={{ border: '1px solid var(--border)', borderLeft: '3px solid #3DAA7C', borderRadius: '10px', padding: '12px 14px', background: 'var(--surface-raised)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>🎯 What RISE heard in this episode</span>
-              {result.core_takeaway && <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.55 }}><strong style={{ color: '#2E8B60' }}>Takeaway (what you walk away with):</strong> {result.core_takeaway}</p>}
-              <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>The kit is built from this takeaway. If it misses the point, edit it or tell the Commander below. (The argument underneath lives quietly in Producer Feedback — it shapes the writing, not the top of the kit.)</p>
+              {result.core_takeaway && (
+                <div>
+                  <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.55, marginBottom: '5px' }}><strong style={{ color: '#2E8B60' }}>Takeaway (what you walk away with):</strong></p>
+                  <EditableValue value={result.core_takeaway} onSave={v => patch('core_takeaway', v)} />
+                </div>
+              )}
+              <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>The kit is built from this takeaway. Edit it here, or tell the Commander below. (The argument underneath lives quietly in Producer Feedback — it shapes the writing, not the top of the kit.)</p>
             </div>
           )}
 
@@ -859,9 +901,9 @@ export default function PodcastEngine() {
 
           {/* Episode Identity — now holds show notes, questions, and connect links */}
           <Section title="📌 Episode Identity" defaultOpen>
-            <Field label="Title" value={result.title} />
-            <Field label="Subtitle" value={result.subtitle} />
-            <Field label="📝 Show Notes" value={result.description} />
+            <Field label="Title" value={result.title} onSave={v => patch('title', v)} />
+            <Field label="Subtitle" value={result.subtitle} onSave={v => patch('subtitle', v)} />
+            <Field label="📝 Show Notes" value={result.description} onSave={v => patch('description', v)} />
             {(result.questions?.length ?? 0) > 0 && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
@@ -888,7 +930,7 @@ export default function PodcastEngine() {
                 </div>
               </div>
             )}
-            <Field label="SEO Description (150 chars)" value={result.seo_description} />
+            <Field label="SEO Description (150 chars)" value={result.seo_description} onSave={v => patch('seo_description', v)} />
             <div>
               <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Keywords</p>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
