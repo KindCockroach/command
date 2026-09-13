@@ -480,8 +480,8 @@ function VoiceAllButton({ posts, accentColor, onDone }: { posts: ContentPiece[];
 }
 
 // ── Post card shown on the flip side ──────────────────────────────────────────
-function PostCard({ post, accentColor, onApprove, approving, approveNote, onChanged, onPreview, accounts }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; approveNote?: string; onChanged?: () => void; onPreview?: (p: ContentPiece) => void; accounts?: BrandAccount[] }) {
-  const [open, setOpen] = useState(false)
+export function PostCard({ post, accentColor, onApprove, approving, approveNote, onChanged, onPreview, accounts, defaultOpen }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; approveNote?: string; onChanged?: () => void; onPreview?: (p: ContentPiece) => void; accounts?: BrandAccount[]; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen ?? false)
   const [copied, setCopied] = useState(false)
   const [answers, setAnswers] = useState<string[]>([])
   const [completing, setCompleting] = useState(false)
@@ -650,6 +650,31 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
         setRecapErr(d.error || `rewrite failed (${res.status})`)
       }
     } finally { setRecaptioning(false) }
+  }
+
+  // Rework on-screen text — rewrite ONLY the on-screen hook/slides in place, and
+  // re-align the caption opener so the two hooks still differ. feedback undefined =
+  // fresh variation; feedback string = follow it AND learn from it. Snapshots for undo.
+  const [reworkingOnscreen, setReworkingOnscreen] = useState(false)
+  const [showOnscreenFeedback, setShowOnscreenFeedback] = useState(false)
+  const [onscreenFeedbackText, setOnscreenFeedbackText] = useState('')
+  const reworkOnscreen = async (feedback?: string) => {
+    setReworkingOnscreen(true); setRecapErr('')
+    try {
+      localStorage.setItem(`undo-${post.id}`, JSON.stringify({ title: post.title, onscreen_text: post.onscreen_text ?? '', description: post.description ?? '', hashtags: post.hashtags ?? '', image_prompt: post.image_prompt ?? '' }))
+      const res = await fetch('/api/content/rework-onscreen', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: post.id, feedback: feedback ?? '' }),
+      })
+      if (res.ok) {
+        const d = await res.json().catch(() => ({}))
+        if (Array.isArray(d.learned) && d.learned.length) setLearnedRule(d.learned.join(' · '))
+        setShowOnscreenFeedback(false); setOnscreenFeedbackText(''); setUndoAvail(true); onChanged?.()
+      } else {
+        const d = await res.json().catch(() => ({}))
+        setRecapErr(d.error || `rework failed (${res.status})`)
+      }
+    } finally { setReworkingOnscreen(false) }
   }
 
   const undoRegen = async () => {
@@ -1286,6 +1311,33 @@ function PostCard({ post, accentColor, onApprove, approving, approveNote, onChan
               )}
               {post.script && <Section label="🎬 Script (spoken — build, does not post)" text={post.script} bold />}
               {post.onscreen_text && <Section label="📱 On-Screen Text / Slides (build, does not post)" text={post.onscreen_text} bold />}
+              {post.onscreen_text && (
+                <div style={{ marginTop: '-2px' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <button onClick={() => reworkOnscreen()} disabled={reworkingOnscreen}
+                      title="Give me another on-screen hook — a fresh angle, no feedback needed. Re-aligns the caption so the two hooks still differ."
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                      {reworkingOnscreen && !showOnscreenFeedback ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <span style={{ fontSize: '13px' }}>🔁</span>} Another on-screen hook
+                    </button>
+                    <button onClick={() => setShowOnscreenFeedback(v => !v)} disabled={reworkingOnscreen}
+                      title="Tell it how to rework the on-screen text — it rewrites the hook, re-aligns the caption, and learns your taste"
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '9px', border: '1px solid rgba(124,58,237,0.4)', background: showOnscreenFeedback ? 'rgba(124,58,237,0.1)' : 'rgba(124,58,237,0.06)', color: '#7C3AED', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                      💬 Rework on-screen text
+                    </button>
+                  </div>
+                  {showOnscreenFeedback && (
+                    <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <textarea value={onscreenFeedbackText} onChange={e => setOnscreenFeedbackText(e.target.value)} rows={2}
+                        placeholder="How should the on-screen text change? e.g. 'lead with the year', 'shorter, punchier', 'make slide 1 the part about her mandrel'"
+                        style={{ width: '100%', padding: '9px 11px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.5 }} />
+                      <button onClick={() => reworkOnscreen(onscreenFeedbackText)} disabled={reworkingOnscreen || !onscreenFeedbackText.trim()}
+                        style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '9px', border: 'none', background: '#7C3AED', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: onscreenFeedbackText.trim() ? 'pointer' : 'not-allowed', opacity: onscreenFeedbackText.trim() ? 1 : 0.6 }}>
+                        {reworkingOnscreen ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Reworking & learning…</> : <>✨ Rework on-screen text &amp; learn my taste</>}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               <Section label="✅ Caption — this is what posts" text={post.description} />
               {(post.description || post.onscreen_text) && (
                 <button onClick={polish} disabled={polishing}

@@ -2,8 +2,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
 import { hasMedia } from '@/lib/contentStatus'
-import { CheckCircle2, RefreshCw, Camera, Video, ArrowRight, Sparkles, MessageCircleQuestion, MessageCircle } from 'lucide-react'
+import { CheckCircle2, RefreshCw, Camera, Video, ArrowRight, Sparkles, MessageCircleQuestion, MessageCircle, X, ExternalLink } from 'lucide-react'
 import PostChat from './PostChat'
+import { PostCard } from './AccountsPanel'
 
 // The merged Content tab: Daily Command IS the content surface now. A prioritized
 // work queue — approvals first, then the ideas that are alive and need finishing —
@@ -43,6 +44,7 @@ export default function CommandQueue() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<number | null>(null)
   const [chatting, setChatting] = useState<ContentPiece | null>(null)
+  const [working, setWorking] = useState<ContentPiece | null>(null)  // open the full post card inline (no nav away)
   const [fAccount, setFAccount] = useState('')  // filter: account id
   const [fType, setFType] = useState('')         // filter: media/content type
   const [fSearch, setFSearch] = useState('')     // filter: shared root / keyword
@@ -59,6 +61,15 @@ export default function CommandQueue() {
     }).catch(() => setLoading(false))
   }, [])
   useEffect(() => { load() }, [load])
+
+  // Keep the inline post card in sync with fresh data after edits/reworks; if the
+  // post left the active set (approved/declined/archived), close the card.
+  useEffect(() => {
+    if (!working) return
+    const latest = posts.find(p => p.id === working.id)
+    if (!latest) { setWorking(null); return }
+    if (latest !== working) setWorking(latest)
+  }, [posts])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const acct = (id?: string | null) => accounts.find(a => a.id === id) || null
   const rank = (p: ContentPiece) => PRIORITY_RANK[acct(p.account_id)?.priority ?? 'low'] ?? 5
@@ -102,6 +113,10 @@ export default function CommandQueue() {
       if (r.ok) load()
     } finally { setBusy(null) }
   }
+  // Open the post's full account card right here — no navigating away.
+  const openInline = (p: ContentPiece) => setWorking(p)
+  // Secondary: jump to the whole account view (the old behavior), for when she
+  // wants the surrounding context of every post on that account.
   const openOnAccount = (p: ContentPiece) => {
     if (p.account_id) localStorage.setItem('station-flip-account', p.account_id)
     window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'accounts' } }))
@@ -157,7 +172,8 @@ export default function CommandQueue() {
                   style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px', borderRadius: '9px', border: 'none', background: '#2E8B60', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: busy === p.id ? 0.7 : 1 }}>
                   {busy === p.id ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <CheckCircle2 size={14} />} Approve
                 </button>
-                <button onClick={() => openOnAccount(p)}
+                <button onClick={() => openInline(p)}
+                  title="Open this post's card right here to edit or fine-tune before approving"
                   style={{ padding: '9px 12px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>Open</button>
               </div>
             </div>
@@ -242,7 +258,8 @@ export default function CommandQueue() {
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 11px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
                   {busy === p.id ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : '🧹'} Clean up copy
                 </button>
-                <button onClick={() => openOnAccount(p)}
+                <button onClick={() => openInline(p)}
+                  title="Open this post's full card right here — edit the on-screen text, rework it, clean up the copy, add media — without leaving the Command Center"
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 11px', borderRadius: '9px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '11px', cursor: 'pointer' }}>
                   Open to finish <ArrowRight size={12} />
                 </button>
@@ -264,6 +281,40 @@ export default function CommandQueue() {
           onClose={() => setChatting(null)}
           onChanged={updated => setPosts(prev => prev.map(x => x.id === updated.id ? updated : x))}
         />
+      )}
+
+      {/* Inline post card — the real account card, worked right here in the Command
+          Center. Edit on-screen text, rework it, clean up copy, add media, approve —
+          no navigating away and losing your place. */}
+      {working && (
+        <div onClick={() => setWorking(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(20,14,24,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '4vh 14px 40px' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: '600px', background: 'var(--bg)', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 24px 60px rgba(0,0,0,0.35)', padding: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                <span style={{ fontSize: '13px', fontWeight: 900, color: 'var(--text)' }}>Work this post</span>
+                <AccChip p={working} />
+              </div>
+              <button onClick={() => setWorking(null)} title="Close" style={{ border: 'none', background: 'var(--surface-raised)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-muted)', padding: '6px', display: 'flex' }}><X size={16} /></button>
+            </div>
+
+            <PostCard
+              post={working}
+              accentColor={acct(working.account_id)?.color || 'var(--purple)'}
+              onApprove={p => { approve(p); setWorking(null) }}
+              approving={busy === working.id}
+              onChanged={load}
+              accounts={accounts}
+              defaultOpen
+            />
+
+            <button onClick={() => openOnAccount(working)}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', margin: '12px auto 2px', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+              <ExternalLink size={12} /> Open the full account view
+            </button>
+          </div>
+        </div>
       )}
 
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
