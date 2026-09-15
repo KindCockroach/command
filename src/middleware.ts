@@ -16,6 +16,7 @@ function isPublic(path: string): boolean {
   if (path === '/journal') return true
   if (path === '/reset' || path === '/cheatcode' || path === '/workshop') return true // public session pages (+ /workshop redirect)
   if (path === '/insait') return true // private $10 Reset (unlisted, no-index)
+  if (path === '/bethereforher' || path === '/bethereforher/library') return true // Be There For Her product
   if (path === '/lite' || path === '/lite/welcome') return true
   if (/^\/(seen|queen|captionwriter)\/welcome$/.test(path)) return true
   if (path === '/api/journal-waitlist') return true // public waitlist form
@@ -23,6 +24,19 @@ function isPublic(path: string): boolean {
 }
 
 export function middleware(req: NextRequest) {
+  // Domain routing: bethereforher.com serves the "Be There For Her" product at
+  // its root. Runs before the STATION_KEY gate so it always applies.
+  const host = (req.headers.get('host') || '').toLowerCase()
+  if (host === 'bethereforher.com' || host === 'www.bethereforher.com') {
+    const p = req.nextUrl.pathname
+    if (p === '/' || p === '/bethereforher') {
+      const u = req.nextUrl.clone(); u.pathname = '/bethereforher'; return NextResponse.rewrite(u)
+    }
+    if (p === '/library' || p === '/bethereforher/library') {
+      const u = req.nextUrl.clone(); u.pathname = '/bethereforher/library'; return NextResponse.rewrite(u)
+    }
+  }
+
   // Lock is off until you set a key.
   if (!KEY) return NextResponse.next()
 
@@ -57,6 +71,6 @@ export function middleware(req: NextRequest) {
 // Run on everything except Next internals and static asset files.
 export const config = {
   matcher: [
-    '/((?!_next/|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|css|js|woff|woff2|ttf|map)).*)',
+    '/((?!_next/|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|css|js|woff|woff2|ttf|map|mp3|wav|m4a)).*)',
   ],
 }
