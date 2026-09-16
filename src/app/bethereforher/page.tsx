@@ -2,12 +2,13 @@ export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import { MetaPixel, BuyButton, salesCss } from '@/components/funnel/shared'
+import WaitlistForm from '@/components/funnel/WaitlistForm'
 import { MEDS, PREVIEW_FILE } from './meds'
 
 export const metadata: Metadata = {
   title: 'Be There For Her — Inner-Child Meditations by Mandi',
   description:
-    'You’ve spent your whole life being there for everyone else. There’s a little girl inside you still waiting for someone to be there for her. Seven guided meditations to become the safe place you always needed.',
+    'You’ve spent your whole life being there for everyone else. There’s a little girl inside you still waiting for someone to be there for her. Guided meditations in Mandi’s real voice — become the safe place you always needed.',
 }
 
 const CHECKOUT = process.env.NEXT_PUBLIC_BETHEREFORHER_CHECKOUT || '#'
@@ -25,12 +26,12 @@ export default function BeThereForHer() {
           <h1>You&rsquo;ve spent your whole life being there for everyone else.</h1>
           <p className="sub">
             There&rsquo;s a little girl inside you who&rsquo;s still waiting for someone to be there
-            for <em>her</em>. These seven meditations are how you finally become that person &mdash; the
+            for <em>her</em>. These meditations are how you finally become that person &mdash; the
             safe, steady, unshakeable place she needed all along. In your ears, in your own time,
             whenever the ache shows up.
           </p>
           <BuyButton href={CHECKOUT} label="Come home to her — $9" />
-          <p className="preview-label">Listen free — &ldquo;The Little You&rdquo;:</p>
+          <p className="preview-label">Listen free &mdash; &ldquo;The Little You&rdquo;:</p>
           <audio controls preload="none" src={PREVIEW_FILE} className="preview" />
         </div>
       </section>
@@ -52,7 +53,7 @@ export default function BeThereForHer() {
       <section className="what">
         <div className="wrap">
           <h2>What&rsquo;s inside</h2>
-          <p className="lead">Seven guided meditations, in Mandi&rsquo;s voice:</p>
+          <p className="lead">Guided meditations, in Mandi&rsquo;s voice:</p>
           <ol className="medlist">
             {MEDS.map((m) => (
               <li key={m.n}>
@@ -66,9 +67,40 @@ export default function BeThereForHer() {
         </div>
       </section>
 
+      <section className="product">
+        <div className="wrap">
+          <p className="ptag">Not an app. Not a robot. <span className="arw">Me.</span></p>
+          <p className="psub">Real voice · recorded slow · in a quiet room</p>
+          <p>Every meditation is my own voice &mdash; the same way I once walked a whole cohort of women
+            through this work, years ago. No AI narration. No stock calm-lady. Just a real woman who
+            has done her own inner-child healing, sitting with you while you do yours.</p>
+        </div>
+      </section>
+
       <section className="midcta">
         <div className="wrap">
           <BuyButton href={CHECKOUT} label="Bring her home — $9" />
+        </div>
+      </section>
+
+      <section className="bump">
+        <div className="wrap">
+          <div className="bumpcard">
+            <p className="bumpsell">Add the <strong>Box Breathing Pack</strong> at checkout &mdash; <strong>+$7</strong></p>
+            <p className="bumpsmall">Two real breathwork sessions to settle your nervous system in about 90
+              seconds &mdash; for the moments the ache shows up and you need to come back to your body fast.
+              One checkbox on the payment page.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="optin">
+        <div className="wrap">
+          <p className="eyebrow2">START FREE</p>
+          <h2>Not ready yet? Take one on me.</h2>
+          <p className="osub">Leave your email and I&rsquo;ll send you &ldquo;The Little You&rdquo; to keep &mdash;
+            plus a gentle new practice now and then. No pressure, no spam. Just a place to begin.</p>
+          <WaitlistForm cta="Send me the free meditation" source="bethereforher-free" showNote={false} />
         </div>
       </section>
 
@@ -77,8 +109,28 @@ export default function BeThereForHer() {
           <h2>Who it&rsquo;s for</h2>
           <p>The woman who&rsquo;s done everything right and still feels the ache. Who&rsquo;s ready to
             stop abandoning herself. Who doesn&rsquo;t want to be fixed &mdash; she wants to be held.</p>
-          <p className="guarantee">Listen to all seven. If they don&rsquo;t land, email me and
+          <p className="guarantee">Listen to all of them. If they don&rsquo;t land, email me and
             I&rsquo;ll refund you &mdash; no story required. Your healing shouldn&rsquo;t come with a risk.</p>
+        </div>
+      </section>
+
+      <section className="band faq">
+        <div className="wrap">
+          <h2>Questions</h2>
+          <dl>
+            <dt>How do I listen after I buy?</dt>
+            <dd>You get instant access to a private page with every meditation. Press play right there, or
+              download them to your phone and listen anywhere &mdash; the car, the bath, the dark at 2am.</dd>
+            <dt>Is this really your voice?</dt>
+            <dd>Yes. Every word is me, recorded slow and real. Not AI, not a stranger.</dd>
+            <dt>Do I need any experience with meditation?</dt>
+            <dd>None. Press play, close your eyes, and follow along. I do the rest.</dd>
+            <dt>Is it a subscription?</dt>
+            <dd>No &mdash; one payment, yours to keep forever. (If you want a new meditation every week, a
+              membership is coming; you can join when it opens.)</dd>
+            <dt>What if it&rsquo;s not for me?</dt>
+            <dd>Email me and I&rsquo;ll refund you. Simple as that.</dd>
+          </dl>
         </div>
       </section>
 
@@ -106,4 +158,23 @@ const extraCss = `
 .bthf .medlist .ml { font-size:15px; color:#6a6280; }
 .bthf .bonus { font-size:16px; background:#f6edf3; border:1px solid #e6cfe0; border-radius:12px; padding:14px 16px; margin-top:18px; }
 .bthf .guarantee { font-size:15px; color:#6a6280; font-style:italic; margin-top:18px; }
+
+/* Opt-in (dark) */
+.bthf .optin { background:linear-gradient(160deg,#3a2352,var(--nebula) 68%,var(--pink)); color:#fff; }
+.bthf .optin .eyebrow2 { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--ember); margin:0 0 8px; }
+.bthf .optin h2 { color:#fff; }
+.bthf .optin .osub { font-size:18px; color:#f3ecf7; max-width:60ch; margin:0 0 6px; }
+.bthf .optin .wl-form { display:flex; flex-direction:column; gap:12px; margin-top:14px; max-width:520px; }
+.bthf .optin .wl-row { display:grid; grid-template-columns:1fr 1.3fr; gap:12px; }
+.bthf .optin .wl-form input { width:100%; box-sizing:border-box; padding:14px 16px; border-radius:12px;
+  border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.96); color:var(--midnight);
+  font-size:16px; font-family:inherit; }
+.bthf .optin .wl-form input:focus { outline:none; border-color:var(--ember); box-shadow:0 0 0 3px rgba(242,166,90,0.35); }
+.bthf .optin .wl-form button { background:var(--ember); color:var(--midnight); font-weight:800; font-size:17px;
+  border:none; cursor:pointer; padding:15px 26px; border-radius:999px; }
+.bthf .optin .wl-fine { font-size:13px; opacity:0.85; margin:2px 0 0; color:#f3ecf7; }
+.bthf .optin .wl-error { color:#ffd7c2; font-size:14px; margin:0; }
+.bthf .optin .wl-done { background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.4);
+  border-radius:14px; padding:20px 22px; font-size:18px; margin-top:8px; }
+@media (max-width:560px){ .bthf .optin .wl-row { grid-template-columns:1fr; } }
 `
