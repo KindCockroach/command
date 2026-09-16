@@ -1,7 +1,11 @@
 export const dynamic = 'force-dynamic'
 
+import type { Metadata } from 'next'
 import { PurchasePixel } from '@/components/funnel/shared'
 import { MEDS } from '../meds'
+
+// Buyer-only content — keep it out of search results.
+export const metadata: Metadata = { robots: { index: false, follow: false } }
 
 // Buyer delivery page. Reached after checkout (GHL redirect →
 // bethereforher.com/library?k=KEY). Soft-gated by BETHEREFORHER_KEY: if that env

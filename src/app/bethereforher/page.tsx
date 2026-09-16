@@ -5,10 +5,15 @@ import { MetaPixel, BuyButton, salesCss } from '@/components/funnel/shared'
 import FreeOptin from './FreeOptin'
 import { MEDS, PREVIEW_FILE } from './meds'
 
+const TITLE = 'Be There For Her — Inner-Child Meditations by Mandi'
+const DESC =
+  'You’ve spent your whole life being there for everyone else. There’s a little girl inside you still waiting for someone to be there for her. Guided meditations in Mandi’s real voice — become the safe place you always needed.'
+
 export const metadata: Metadata = {
-  title: 'Be There For Her — Inner-Child Meditations by Mandi',
-  description:
-    'You’ve spent your whole life being there for everyone else. There’s a little girl inside you still waiting for someone to be there for her. Guided meditations in Mandi’s real voice — become the safe place you always needed.',
+  title: TITLE,
+  description: DESC,
+  openGraph: { title: TITLE, description: DESC, type: 'website', siteName: 'Be There For Her' },
+  twitter: { card: 'summary_large_image', title: TITLE, description: DESC },
 }
 
 const CHECKOUT = process.env.NEXT_PUBLIC_BETHEREFORHER_CHECKOUT || '#'
