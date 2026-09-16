@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import { MetaPixel, BuyButton, salesCss } from '@/components/funnel/shared'
-import WaitlistForm from '@/components/funnel/WaitlistForm'
+import FreeOptin from './FreeOptin'
 import { MEDS, PREVIEW_FILE } from './meds'
 
 export const metadata: Metadata = {
@@ -98,9 +98,9 @@ export default function BeThereForHer() {
         <div className="wrap">
           <p className="eyebrow2">START FREE</p>
           <h2>Not ready yet? Take one on me.</h2>
-          <p className="osub">Leave your email and I&rsquo;ll send you &ldquo;The Little You&rdquo; to keep &mdash;
+          <p className="osub">Leave your email and &ldquo;The Little You&rdquo; is yours to keep, right now &mdash;
             plus a gentle new practice now and then. No pressure, no spam. Just a place to begin.</p>
-          <WaitlistForm cta="Send me the free meditation" source="bethereforher-free" showNote={false} />
+          <FreeOptin />
         </div>
       </section>
 
@@ -164,17 +164,20 @@ const extraCss = `
 .bthf .optin .eyebrow2 { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--ember); margin:0 0 8px; }
 .bthf .optin h2 { color:#fff; }
 .bthf .optin .osub { font-size:18px; color:#f3ecf7; max-width:60ch; margin:0 0 6px; }
-.bthf .optin .wl-form { display:flex; flex-direction:column; gap:12px; margin-top:14px; max-width:520px; }
-.bthf .optin .wl-row { display:grid; grid-template-columns:1fr 1.3fr; gap:12px; }
-.bthf .optin .wl-form input { width:100%; box-sizing:border-box; padding:14px 16px; border-radius:12px;
+.bthf .optin .fo-form { display:grid; grid-template-columns:1fr auto; gap:12px; margin-top:14px; max-width:560px; align-items:start; }
+.bthf .optin .fo-form input { box-sizing:border-box; padding:15px 16px; border-radius:12px;
   border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.96); color:var(--midnight);
   font-size:16px; font-family:inherit; }
-.bthf .optin .wl-form input:focus { outline:none; border-color:var(--ember); box-shadow:0 0 0 3px rgba(242,166,90,0.35); }
-.bthf .optin .wl-form button { background:var(--ember); color:var(--midnight); font-weight:800; font-size:17px;
-  border:none; cursor:pointer; padding:15px 26px; border-radius:999px; }
-.bthf .optin .wl-fine { font-size:13px; opacity:0.85; margin:2px 0 0; color:#f3ecf7; }
-.bthf .optin .wl-error { color:#ffd7c2; font-size:14px; margin:0; }
-.bthf .optin .wl-done { background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.4);
-  border-radius:14px; padding:20px 22px; font-size:18px; margin-top:8px; }
-@media (max-width:560px){ .bthf .optin .wl-row { grid-template-columns:1fr; } }
+.bthf .optin .fo-form input:focus { outline:none; border-color:var(--ember); box-shadow:0 0 0 3px rgba(242,166,90,0.35); }
+.bthf .optin .fo-form button { background:var(--ember); color:var(--midnight); font-weight:800; font-size:16px;
+  border:none; cursor:pointer; padding:15px 24px; border-radius:999px; white-space:nowrap; }
+.bthf .optin .fo-form button:disabled { opacity:0.7; cursor:default; }
+.bthf .optin .fo-fine { grid-column:1 / -1; font-size:13px; opacity:0.85; margin:2px 0 0; color:#f3ecf7; }
+.bthf .optin .fo-err { grid-column:1 / -1; color:#ffd7c2; font-size:14px; margin:0; }
+.bthf .optin .fo-done { background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.4);
+  border-radius:16px; padding:22px 24px; margin-top:8px; display:flex; flex-direction:column; gap:12px; max-width:560px; }
+.bthf .optin .fo-done p { font-size:18px; color:#fff; margin:0; }
+.bthf .optin .fo-done audio { width:100%; }
+.bthf .optin .fo-dl { color:var(--ember); font-weight:800; text-decoration:none; }
+@media (max-width:560px){ .bthf .optin .fo-form { grid-template-columns:1fr; } }
 `
