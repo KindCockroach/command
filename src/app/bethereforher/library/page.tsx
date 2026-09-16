@@ -78,7 +78,7 @@ export default async function Library({
 }
 
 const css = `
-.lib { --midnight:#171C3A; --nebula:#5A4FCF; --pink:#D98AB7; --ember:#F2A65A; --light:#F5EFE6;
+.lib { --midnight:#3c2a37; --nebula:#9b6a86; --pink:#cf8aa0; --ember:#d98c5f; --light:#F4E9DB;
   background:var(--light); color:var(--midnight); min-height:100vh; margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.6; }
 .lib .wrap { max-width:680px; margin:0 auto; padding:52px 22px 90px; }
@@ -86,16 +86,16 @@ const css = `
 .lib h1 { font-family:Georgia,serif; font-size:clamp(30px,5vw,40px); margin:8px 0 12px; }
 .lib .sub { font-size:18px; color:#4a4560; margin:0 0 28px; }
 .lib .meds { list-style:none; padding:0; margin:0; }
-.lib .meds li { background:#fff; border:1px solid #e7e0d3; border-radius:16px; padding:18px 20px; margin:14px 0; }
+.lib .meds li { background:#FBF3EA; border:1px solid #e6d6c4; border-radius:16px; padding:18px 20px; margin:14px 0; }
 .lib .head { display:flex; flex-direction:column; gap:2px; margin-bottom:10px; }
 .lib .mt { font-family:Georgia,serif; font-size:20px; font-weight:700; }
 .lib .ml { font-size:14px; color:#6a6280; }
 .lib .meds audio { width:100%; }
 .lib .dl { display:inline-block; margin-top:8px; font-size:14px; font-weight:700; color:var(--nebula); text-decoration:none; }
-.lib .guide { background:#f6edf3; border:1px solid #e6cfe0; border-radius:16px; padding:20px 22px; margin-top:26px; }
+.lib .guide { background:#F3E4D3; border:1px solid #e6cdb6; border-radius:16px; padding:20px 22px; margin-top:26px; }
 .lib .guide h2 { font-family:Georgia,serif; font-size:22px; margin:0 0 12px; }
 .lib .guide ul { list-style:none; padding:0; margin:0; }
-.lib .guide li { padding:7px 0; border-top:1px solid #e6cfe0; font-size:15px; }
+.lib .guide li { padding:7px 0; border-top:1px solid #e6cdb6; font-size:15px; }
 .lib .guide li:first-child { border-top:none; }
 .lib .foot { text-align:center; font-family:Georgia,serif; font-style:italic; font-size:19px; color:var(--nebula); margin-top:30px; }
 .lib .locked { text-align:center; padding-top:110px; }

@@ -150,7 +150,28 @@ export default function BeThereForHer() {
 }
 
 const extraCss = `
-.bthf .preview-label { font-size:14px; color:#e7e2f2; margin:22px 0 8px; letter-spacing:.3px; }
+/* ── Cozy, warm palette for Be There For Her (overrides shared salesCss) ── */
+.sales.bthf{ --light:#F4E9DB; --midnight:#3c2a37; --nebula:#9b6a86; --pink:#cf8aa0; --ember:#d98c5f;
+  color:#463640; background:#F4E9DB; }
+.bthf .hero{ background:linear-gradient(165deg,#382634 0%,#6b3f52 58%,#a86a72 100%); }
+.bthf .hero h1{ color:#fdf3ea; }
+.bthf .hero .sub{ color:#f2e2d7; }
+.bthf .hero .sub strong,.bthf .hero strong{ color:#fff; }
+.bthf h1,.bthf h2{ color:#3c2a37; }
+.bthf .band,.bthf .band.faq{ background:#FBF3EA; }
+.bthf .what,.bthf .proof{ background:#F4E9DB; }
+.bthf .lead{ color:#5a4a52; }
+.bthf blockquote{ background:#3c2a37; border-left-color:#d98c5f; }
+.bthf .product{ background:linear-gradient(160deg,#382634,#5f3a4f 68%,#a86a72); }
+.bthf .product .psub,.bthf .product .ptag .arw{ color:#f0c9a3; }
+.bthf .final{ background:linear-gradient(160deg,#a86a72,#d5a279); }
+.bthf .final h2{ color:#402a34; }
+.bthf .buy{ background:linear-gradient(135deg,#c96f7e,#d98c5f); color:#fff; box-shadow:0 10px 26px rgba(110,55,64,.32); }
+.bthf .tagline{ color:#402a34; opacity:.85; }
+.bthf .bumpcard{ background:#F6EBDC; border-color:#d3a488; }
+.bthf .bumpsell strong{ color:#b26a52; }
+
+.bthf .preview-label { font-size:14px; color:#f2e2d7; margin:22px 0 8px; letter-spacing:.3px; }
 .bthf audio.preview { width:100%; max-width:420px; }
 .bthf .medlist { list-style:none; counter-reset:med; padding:0; margin:18px 0; }
 .bthf .medlist li { counter-increment:med; display:flex; flex-direction:column; gap:2px;
@@ -161,11 +182,11 @@ const extraCss = `
   font-family:Georgia,serif; font-weight:700; display:grid; place-items:center; font-size:15px; }
 .bthf .medlist .mt { font-family:Georgia,serif; font-size:19px; font-weight:700; color:var(--midnight); }
 .bthf .medlist .ml { font-size:15px; color:#6a6280; }
-.bthf .bonus { font-size:16px; background:#f6edf3; border:1px solid #e6cfe0; border-radius:12px; padding:14px 16px; margin-top:18px; }
-.bthf .guarantee { font-size:15px; color:#6a6280; font-style:italic; margin-top:18px; }
+.bthf .bonus { font-size:16px; background:#F3E4D3; border:1px solid #e6cdb6; border-radius:12px; padding:14px 16px; margin-top:18px; color:#4a3a42; }
+.bthf .guarantee { font-size:15px; color:#7a6a72; font-style:italic; margin-top:18px; }
 
-/* Opt-in (dark) */
-.bthf .optin { background:linear-gradient(160deg,#3a2352,var(--nebula) 68%,var(--pink)); color:#fff; }
+/* Opt-in (warm candlelit) */
+.bthf .optin { background:linear-gradient(160deg,#4a2f44,#8a5470 66%,#cf8aa0); color:#fff; }
 .bthf .optin .eyebrow2 { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--ember); margin:0 0 8px; }
 .bthf .optin h2 { color:#fff; }
 .bthf .optin .osub { font-size:18px; color:#f3ecf7; max-width:60ch; margin:0 0 6px; }
