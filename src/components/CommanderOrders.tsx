@@ -24,7 +24,7 @@ export default function CommanderOrders() {
   useEffect(() => { load() }, [load])
 
   return (
-    <div className="rise-float" style={{ borderRadius: '16px', border: '1px solid var(--border)', background: 'linear-gradient(160deg, var(--surface), var(--surface-raised))', overflow: 'hidden' }}>
+    <div className="rise-magic" style={{ borderRadius: '16px', border: '1px solid var(--border)', background: 'linear-gradient(160deg, var(--surface), var(--surface-raised))' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '13px 16px', borderBottom: '1px solid var(--border)' }}>
         <span style={{ fontSize: '18px' }}>⚡</span>
         <div style={{ flex: 1, minWidth: 0 }}>

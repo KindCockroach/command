@@ -121,9 +121,59 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
   background: var(--sheen); pointer-events: none;
 }
 .rise-tactile:active:not(:disabled) { box-shadow: 0 2px 6px -2px rgba(42,26,46,0.35), inset 0 1px 2px rgba(0,0,0,0.16); }
+
+/* ── .rise-magic — the hero windows levitate with a colored, shimmering glow ────
+   A purple→pink aura pools beneath (it's "powered by AI"), gently breathing so the
+   shadow sparkles. Lifts higher on hover. box-shadow isn't clipped by overflow.   */
+.rise-magic {
+  animation: riseGlow 4.6s ease-in-out infinite;
+  transition: transform .26s cubic-bezier(.2,.8,.2,1);
+}
+.rise-magic:hover { transform: translateY(-4px); }
+@keyframes riseGlow {
+  0%, 100% {
+    box-shadow:
+      0 24px 50px -14px rgba(107,45,110,0.34),
+      0 12px 26px -12px rgba(232,68,138,0.20),
+      0 4px 10px rgba(42,26,46,0.13);
+  }
+  50% {
+    box-shadow:
+      0 32px 64px -14px rgba(107,45,110,0.46),
+      0 18px 38px -12px rgba(232,68,138,0.32),
+      0 4px 12px rgba(42,26,46,0.15);
+  }
+}
+:root:not([data-theme="light"]) .rise-magic, :root[data-theme="dark"] .rise-magic { animation-name: riseGlowDark; }
+@keyframes riseGlowDark {
+  0%, 100% { box-shadow: 0 24px 50px -14px rgba(150,90,200,0.42), 0 12px 26px -12px rgba(232,68,138,0.26), 0 4px 10px rgba(0,0,0,0.5); }
+  50%      { box-shadow: 0 34px 66px -14px rgba(150,90,200,0.55), 0 18px 38px -12px rgba(232,68,138,0.38), 0 4px 12px rgba(0,0,0,0.55); }
+}
+
+/* Tiny twinkling sparkles drifting in the glow beneath the hero windows. */
+.rise-magic { position: relative; }
+.rise-magic::before {
+  content: '';
+  position: absolute; left: 6%; right: 6%; bottom: -18px; height: 30px;
+  pointer-events: none; z-index: -1;
+  background:
+    radial-gradient(2px 2px at 12% 40%, rgba(255,255,255,0.9), transparent 60%),
+    radial-gradient(1.5px 1.5px at 30% 70%, rgba(232,68,138,0.9), transparent 60%),
+    radial-gradient(2px 2px at 52% 30%, rgba(255,255,255,0.85), transparent 60%),
+    radial-gradient(1.5px 1.5px at 72% 65%, rgba(150,90,220,0.9), transparent 60%),
+    radial-gradient(2px 2px at 88% 45%, rgba(255,255,255,0.85), transparent 60%);
+  animation: riseSparkle 3.4s ease-in-out infinite;
+}
+@keyframes riseSparkle {
+  0%, 100% { opacity: 0.35; transform: translateY(0) scale(1); }
+  50%      { opacity: 0.9;  transform: translateY(2px) scale(1.04); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .rise-float, button { transition: none; }
-  .rise-float:hover, button:active:not(:disabled) { transform: none; }
+  .rise-float, button, .rise-magic { transition: none; animation: none; }
+  .rise-float:hover, button:active:not(:disabled), .rise-magic:hover { transform: none; }
+  .rise-magic { box-shadow: var(--shadow-float); }
+  .rise-magic::before { display: none; }
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }

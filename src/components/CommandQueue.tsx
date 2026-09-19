@@ -187,7 +187,7 @@ export default function CommandQueue() {
         const read = reachRead(reachScore(p, hers(p)))
         const step = nextStep(p)
         return (
-          <div className="rise-float" style={{ borderRadius: '16px', border: `1.5px solid ${next.kind === 'ship' ? '#2E8B60' : 'var(--purple)'}`, background: 'var(--surface)', boxShadow: 'var(--shadow-float)', overflow: 'hidden' }}>
+          <div className="rise-magic" style={{ borderRadius: '16px', border: `1.5px solid ${next.kind === 'ship' ? '#2E8B60' : 'var(--purple)'}`, background: 'var(--surface)', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', background: next.kind === 'ship' ? 'rgba(46,139,96,0.08)' : 'var(--purple-light)' }}>
               <span style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.04em', textTransform: 'uppercase', color: next.kind === 'ship' ? '#2E8B60' : 'var(--purple)' }}>
                 {next.kind === 'ship' ? '✅ Ship this next' : '🔥 Finish this next'}
