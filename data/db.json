@@ -629,7 +629,15 @@
       "updated_at": "2026-06-30T07:32:45.072Z"
     }
   ],
-  "waitlist": [],
+  "waitlist": [
+    {
+      "id": 1,
+      "email": "test@example.com",
+      "name": "",
+      "source": "bethereforher-free",
+      "created_at": "2026-09-16T02:33:25.134Z"
+    }
+  ],
   "brand_accounts": [
     {
       "id": "aimomatwork",
