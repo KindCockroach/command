@@ -131,11 +131,17 @@ export type VisionEntry = {
   updated_at: string
 }
 
+export type CommanderOrders = {
+  generated_at: string
+  doing: string[]                                               // what she's handling autonomously
+  your_move: { title: string; why: string; where?: string }[]   // human-only tasks, cash-ranked
+}
 export type DailyCommand = {
   date: string       // YYYY-MM-DD
   top3: string[]
   energy: 'low' | 'medium' | 'high' | ''
   notes: string
+  orders?: CommanderOrders   // the Commander's "Your move" briefing, cached once/day
   updated_at: string
 }
 

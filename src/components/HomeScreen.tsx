@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Settings2, X, ChevronUp, ChevronDown, Check } from 'lucide-react'
 import DailyCommand from './DailyCommand'
 import CommanderChat from './CommanderChat'
+import CommanderOrders from './CommanderOrders'
 import CommandQueue from './CommandQueue'
 import GoalsPace from './GoalsPace'
 import ResearchBrief from './ResearchBrief'
@@ -20,6 +21,7 @@ import StoryStudio from './StoryStudio'
 // ── The widget registry — every tab available as a homescreen widget ──────────
 // DailyCommand stays the anchor widget (quick capture + brief + tasks + fire).
 const WIDGETS: { id: string; label: string; emoji: string; render: () => React.ReactNode }[] = [
+  { id: 'yourmove',   label: 'Your Move',       emoji: '⚡', render: () => <CommanderOrders /> },
   { id: 'queue',      label: 'Work Queue',      emoji: '✅', render: () => <CommandQueue /> },
   { id: 'commander',  label: 'The Commander',   emoji: '⚡', render: () => <CommanderChat /> },
   { id: 'research',   label: 'Daily Briefing',  emoji: '🔬', render: () => <ResearchBrief /> },
@@ -38,7 +40,7 @@ const WIDGETS: { id: string; label: string; emoji: string; render: () => React.R
 ]
 
 const STORAGE_KEY = 'rise-home-widgets-v1'
-const DEFAULT_LAYOUT = ['queue', 'commander', 'research', 'goalspace']   // Work Queue (the merged content tab) on top, then Commander, Briefing, Goals
+const DEFAULT_LAYOUT = ['yourmove', 'queue', 'commander', 'research', 'goalspace']   // Your Move (partner briefing) → Work Queue → Commander → Briefing → Goals
 
 // The customizable homescreen: pick which widgets show and in what order,
 // so Daily Command bends to the current focus (launch mode, research season…).
@@ -67,6 +69,12 @@ export default function HomeScreen() {
           if (!localStorage.getItem('rise-home-v3')) {
             ids = ['queue', ...ids.filter(id => id !== 'queue')]
             localStorage.setItem('rise-home-v3', '1')
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
+          }
+          // v4: the Commander's "Your Move" briefing pins to the very top.
+          if (!localStorage.getItem('rise-home-v4')) {
+            ids = ['yourmove', ...ids.filter(id => id !== 'yourmove')]
+            localStorage.setItem('rise-home-v4', '1')
             localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
           }
           setLayout(ids)
