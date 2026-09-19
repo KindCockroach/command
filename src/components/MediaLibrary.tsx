@@ -70,6 +70,21 @@ export default function MediaLibrary() {
       setClipMsg(`✓ Post #${d.piece.id} created in ${clipAccounts.find(a => a.id === clipAcct)?.handle || clipAcct} · ${d.transcriptWords} words${d.heygen?.started ? ' · captioned avatar rendering (lands on the card)' : d.heygen?.error ? ` · (avatar render: ${d.heygen.error} — click Make avatar video on the card)` : ''}. Approve it in Accounts.`)
     } else { setClipState('error'); setClipMsg(d.error || 'Could not build the reel.') }
   }
+  // Drop a finished VIDEO → transcribe → River auto-routes + writes on-screen + caption
+  // → attaches the video → ready post. No account picked = RISE routes it.
+  const [vpState, setVpState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
+  const [vpMsg, setVpMsg] = useState('')
+  const makeVideoPost = async (f: MediaFile) => {
+    setVpState('working'); setVpMsg('Transcribing → routing to the right account → writing your on-screen hook + caption…')
+    const d = await fetch('/api/video', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoUrl: f.url }),
+    }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+    if (d.piece) {
+      setVpState('done')
+      setVpMsg(`✓ Post #${d.piece.id} written for ${d.account?.handle || 'the best-fit account'} · ${d.transcriptWords} words. On-screen text + caption are on the card — approve it in Accounts (add the on-screen line in CapCut).`)
+    } else { setVpState('error'); setVpMsg(d.error || 'Could not write the post.') }
+  }
   const [filter, setFilter] = useState<'all' | 'video' | 'audio' | 'image'>('all')
   const [search, setSearch] = useState('')
   const [preview, setPreview] = useState<MediaFile | null>(null)
@@ -344,6 +359,18 @@ export default function MediaLibrary() {
                 </button>
                 {sent && <p style={{ fontSize: '11px', marginTop: '5px', textAlign: 'center', color: '#3DAA7C', fontWeight: 600 }}>{sent}</p>}
                 <p style={{ fontSize: '10px', color: 'var(--text-subtle)', textAlign: 'center', marginTop: '4px' }}>Composes 3 ready posts from this media. (Full Send &amp; Shredder work on written stories, not raw files.)</p>
+              </div>
+            )}
+
+            {preview.type === 'video' && (
+              <div style={{ marginBottom: '10px', paddingBottom: '12px', borderBottom: '1px dashed var(--border)' }}>
+                <button onClick={() => makeVideoPost(preview)} disabled={vpState === 'working'}
+                  className="rise-tactile"
+                  style={{ width: '100%', padding: '12px', background: vpState === 'done' ? '#3DAA7C' : 'var(--purple)', color: '#fff', border: 'none', borderRadius: '11px', fontSize: '13px', fontWeight: 800, cursor: vpState === 'working' ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  {vpState === 'working' ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Writing your post…</> : <><Sparkles size={14} /> ✍️ Write post from this video</>}
+                </button>
+                {vpMsg && <p style={{ fontSize: '11px', marginTop: '7px', textAlign: 'center', lineHeight: 1.5, color: vpState === 'error' ? '#E05252' : vpState === 'done' ? '#3DAA7C' : 'var(--purple)', fontWeight: 600 }}>{vpMsg}</p>}
+                {vpState !== 'working' && <p style={{ fontSize: '10px', color: 'var(--text-subtle)', textAlign: 'center', marginTop: '4px' }}>RISE hears your words, routes it to the account it fits, and writes the on-screen hook + caption. You add the on-screen line in CapCut.</p>}
               </div>
             )}
 
