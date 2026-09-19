@@ -1558,6 +1558,8 @@ export default function AccountsPanel() {
   const [audienceNames, setAudienceNames] = useState<Record<string, string>>({})
   const [content, setContent] = useState<ContentPiece[]>([])
   const [flipped, setFlipped] = useState<string | null>(null)
+  const [focusMode, setFocusMode] = useState(true)   // one account at a time (default) vs full grid
+  const [focusIdx, setFocusIdx] = useState(0)
   const [approvingId, setApprovingId] = useState<number | null>(null)
   const [approveNotes, setApproveNotes] = useState<Record<number, string>>({})
   const [ghlConfigured, setGhlConfigured] = useState<boolean | null>(null)
@@ -1868,9 +1870,36 @@ export default function AccountsPanel() {
         ))}
       </div>
 
+      {/* One-at-a-time pager (default) vs full grid */}
+      {sorted.length > 0 && (() => {
+        const idx = Math.min(focusIdx, sorted.length - 1)
+        const cur = sorted[idx]
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {focusMode ? (
+              <>
+                <button onClick={() => setFocusIdx(i => (i - 1 + sorted.length) % sorted.length)} title="Previous account"
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>‹ Prev</button>
+                <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
+                  <span style={{ fontSize: '13px', fontWeight: 900, color: cur.color || 'var(--text)' }}>{cur.emoji} {cur.handle}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-subtle)', marginLeft: '8px' }}>{idx + 1} of {sorted.length}</span>
+                </div>
+                <button onClick={() => setFocusIdx(i => (i + 1) % sorted.length)} title="Next account"
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>Next ›</button>
+                <button onClick={() => setFocusMode(false)} title="See all accounts at once"
+                  style={{ padding: '8px 11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>⊞ Grid</button>
+              </>
+            ) : (
+              <button onClick={() => setFocusMode(true)} title="Focus one account at a time"
+                style={{ marginLeft: 'auto', padding: '8px 11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>◱ Focus one at a time</button>
+            )}
+          </div>
+        )
+      })()}
+
       {/* Account cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-        {sorted.map(acct => {
+      <div className={focusMode ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3'}>
+        {(focusMode ? sorted.slice(Math.min(focusIdx, sorted.length - 1), Math.min(focusIdx, sorted.length - 1) + 1) : sorted).map(acct => {
           const s = STATUS_CONFIG[acct.status]
           const posts = postsFor(acct.id)
           const queued = posts.filter(p => ['idea', 'in_progress', 'ready', 'held'].includes(p.status))
