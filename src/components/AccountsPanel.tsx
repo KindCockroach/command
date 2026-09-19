@@ -1911,8 +1911,8 @@ export default function AccountsPanel() {
           // ── FRONT of card (flip side renders as a layered overlay below) ──
           return (
             <div key={acct.id} onClick={() => selectMode ? toggleSelect(acct.id) : setFlipped(acct.id)}
-              className="rounded-xl border p-4 flex flex-col gap-3 cursor-pointer transition-transform hover:scale-[1.01]"
-              style={{ background: 'var(--surface)', borderColor: selectMode && selected.has(acct.id) ? 'var(--purple)' : 'var(--border)', borderWidth: selectMode && selected.has(acct.id) ? '2px' : '1px', boxShadow: 'var(--shadow-sm)', position: 'relative' }}>
+              className="rise-float rounded-xl border p-4 flex flex-col gap-3 cursor-pointer"
+              style={{ background: 'var(--surface)', borderColor: selectMode && selected.has(acct.id) ? 'var(--purple)' : 'var(--border)', borderWidth: selectMode && selected.has(acct.id) ? '2px' : '1px', boxShadow: 'var(--shadow-float)', position: 'relative' }}>
               {selectMode && (
                 <div style={{ position: 'absolute', top: '10px', right: '10px', width: '20px', height: '20px', borderRadius: '6px', border: selected.has(acct.id) ? 'none' : '2px solid var(--border)', background: selected.has(acct.id) ? 'var(--purple)' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
                   {selected.has(acct.id) && <CheckCircle2 size={13} color="#fff" />}

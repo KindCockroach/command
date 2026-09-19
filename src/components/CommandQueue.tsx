@@ -187,7 +187,7 @@ export default function CommandQueue() {
         const read = reachRead(reachScore(p, hers(p)))
         const step = nextStep(p)
         return (
-          <div style={{ borderRadius: '16px', border: `1.5px solid ${next.kind === 'ship' ? '#2E8B60' : 'var(--purple)'}`, background: 'var(--surface)', boxShadow: '0 6px 22px rgba(90,79,207,0.10)', overflow: 'hidden' }}>
+          <div className="rise-float" style={{ borderRadius: '16px', border: `1.5px solid ${next.kind === 'ship' ? '#2E8B60' : 'var(--purple)'}`, background: 'var(--surface)', boxShadow: 'var(--shadow-float)', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', background: next.kind === 'ship' ? 'rgba(46,139,96,0.08)' : 'var(--purple-light)' }}>
               <span style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.04em', textTransform: 'uppercase', color: next.kind === 'ship' ? '#2E8B60' : 'var(--purple)' }}>
                 {next.kind === 'ship' ? '✅ Ship this next' : '🔥 Finish this next'}
@@ -231,7 +231,7 @@ export default function CommandQueue() {
               {/* Actions */}
               {next.kind === 'ship' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <button onClick={() => approve(p)} disabled={busy === p.id} style={btn('#2E8B60')}>
+                  <button className="rise-tactile" onClick={() => approve(p)} disabled={busy === p.id} style={btn('#2E8B60')}>
                     {busy === p.id ? <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={15} />} Approve &amp; ship it
                   </button>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -246,7 +246,7 @@ export default function CommandQueue() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 800, color: 'var(--purple)', marginBottom: '2px' }}>{step.icon} Next: {step.label}</div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => setChatting(p)} style={{ ...btn('var(--purple)'), flex: 1 }}><MessageCircle size={15} /> Talk it through</button>
+                    <button className="rise-tactile" onClick={() => setChatting(p)} style={{ ...btn('var(--purple)'), flex: 1 }}><MessageCircle size={15} /> Talk it through</button>
                     <button onClick={() => openInline(p)} title="Open the full card to finish it" style={{ ...ghostBtn }}>Finish <ArrowRight size={13} /></button>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>

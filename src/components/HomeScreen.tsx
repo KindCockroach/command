@@ -138,7 +138,7 @@ export default function HomeScreen() {
         const w = WIDGETS.find(x => x.id === id)
         if (!w) return null
         return (
-          <div key={id} style={{ position: 'relative' }}>
+          <div key={id} className="rise-float" style={{ position: 'relative', borderRadius: '16px' }}>
             {editing && (
               <div style={{ position: 'absolute', top: '-10px', right: '10px', zIndex: 5, display: 'flex', gap: '4px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '3px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', padding: '2px 6px' }}>{w.emoji} {w.label}</span>

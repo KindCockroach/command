@@ -46,9 +46,15 @@
   --ready-color:    #3DAA7C;
   --ready-bg:       #E8F7F1;
 
-  --shadow-sm: 0 1px 3px rgba(42,26,46,0.07), 0 1px 2px rgba(42,26,46,0.04);
-  --shadow-md: 0 4px 16px rgba(42,26,46,0.10), 0 2px 6px rgba(42,26,46,0.05);
-  --shadow-lg: 0 16px 48px rgba(42,26,46,0.14), 0 4px 12px rgba(42,26,46,0.06);
+  --shadow-sm: 0 2px 6px rgba(42,26,46,0.10), 0 1px 2px rgba(42,26,46,0.06);
+  --shadow-md: 0 8px 24px rgba(42,26,46,0.13), 0 3px 8px rgba(42,26,46,0.07);
+  --shadow-lg: 0 24px 60px rgba(42,26,46,0.18), 0 8px 18px rgba(42,26,46,0.10);
+  /* The "floating app icon" shadow — a soft pool of shadow BENEATH the card, so it
+     reads as lifted off the page. Used by .rise-float. */
+  --shadow-float: 0 16px 34px -8px rgba(42,26,46,0.24), 0 6px 14px -6px rgba(42,26,46,0.14);
+  --shadow-float-hover: 0 26px 50px -10px rgba(42,26,46,0.30), 0 12px 22px -8px rgba(42,26,46,0.18);
+  /* Glossy top highlight for tactile buttons */
+  --sheen: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 55%);
 }
 
 /* ── Dark theme (data-theme="dark") ─────────────────────────────────────────
@@ -71,9 +77,12 @@
   --progress-bg:    rgba(107,45,110,0.18);
   --ready-bg:       rgba(61,170,124,0.12);
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
-  --shadow-lg: 0 16px 48px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-sm: 0 2px 6px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.35);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.55), 0 3px 8px rgba(0,0,0,0.35);
+  --shadow-lg: 0 24px 60px rgba(0,0,0,0.65), 0 8px 18px rgba(0,0,0,0.45);
+  --shadow-float: 0 18px 38px -8px rgba(0,0,0,0.62), 0 8px 16px -6px rgba(0,0,0,0.45);
+  --shadow-float-hover: 0 28px 54px -10px rgba(0,0,0,0.7), 0 14px 24px -8px rgba(0,0,0,0.5);
+  --sheen: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0) 55%);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -88,6 +97,33 @@ body {
 
 .font-display {
   font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* ── Dimensional / floating treatment — "powered by AI, feels like magic" ──────
+   .rise-float lifts a card off the page with a soft pool of shadow beneath and a
+   gentle rise on hover. Every button gets a real tactile press. .rise-tactile adds
+   an early-2010s glossy top-highlight + lifted shadow for primary actions.        */
+.rise-float {
+  box-shadow: var(--shadow-float);
+  transition: box-shadow .24s cubic-bezier(.2,.8,.2,1), transform .24s cubic-bezier(.2,.8,.2,1);
+}
+.rise-float:hover { box-shadow: var(--shadow-float-hover); transform: translateY(-3px); }
+
+button { transition: transform .09s ease, box-shadow .16s ease, filter .16s ease; }
+button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
+
+.rise-tactile {
+  position: relative;
+  box-shadow: 0 6px 14px -4px rgba(42,26,46,0.35), 0 2px 4px rgba(42,26,46,0.18), inset 0 1px 0 rgba(255,255,255,0.28);
+}
+.rise-tactile::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: var(--sheen); pointer-events: none;
+}
+.rise-tactile:active:not(:disabled) { box-shadow: 0 2px 6px -2px rgba(42,26,46,0.35), inset 0 1px 2px rgba(0,0,0,0.16); }
+@media (prefers-reduced-motion: reduce) {
+  .rise-float, button { transition: none; }
+  .rise-float:hover, button:active:not(:disabled) { transform: none; }
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
