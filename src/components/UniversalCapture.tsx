@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
+import VideoDraftPanel from './VideoDraftPanel'
 import { Sparkles, Loader2, Upload, X, ArrowRight, CheckCircle2, FileText, Video, Music, Image, Link, Brain } from 'lucide-react'
 
 interface PlannedAction {
@@ -67,6 +68,7 @@ export default function UniversalCapture() {
   const [executing, setExecuting] = useState(false)
   const [executedResults, setExecutedResults] = useState<string[] | null>(null)
   const [uploadedFile, setUploadedFile] = useState<{ url: string; type: string } | null>(null)
+  const [videoDraft, setVideoDraft] = useState<{ url: string; name: string } | null>(null)
 
   // "You do it." — the CEO executes its own plan and leaves a review task
   const youDoIt = async () => {
@@ -145,6 +147,15 @@ export default function UniversalCapture() {
       let fileData: { publicUrl: string; fileType: string; fileName: string } | null = null
       if (file) fileData = await uploadFile(file)
       setUploadedFile(fileData ? { url: fileData.publicUrl, type: fileData.fileType } : null)
+
+      // A dropped VIDEO gets the clean transcribe-first draft panel (3-5 hooks,
+      // title, caption, real hashtags, transcript) — NOT the generic "content
+      // angles" verdict that guesses from the filename.
+      if (fileData && (fileData.fileType?.startsWith('video') || /\.(mp4|mov|webm|m4v)$/i.test(fileData.fileName || ''))) {
+        setVideoDraft({ url: fileData.publicUrl, name: fileData.fileName })
+        setLoading(false)
+        return
+      }
 
       const res = await fetch('/api/intake/smart', {
         method: 'POST',
@@ -278,6 +289,12 @@ export default function UniversalCapture() {
         <div style={{ padding: '12px', background: '#FEF5EA', borderRadius: '10px', fontSize: '13px', color: '#F2A65A', fontWeight: 600 }}>
           ⚠ {error}
         </div>
+      )}
+
+      {/* Dropped a video → the clean transcribe-first draft (hooks/title/caption/hashtags) */}
+      {videoDraft && (
+        <VideoDraftPanel videoUrl={videoDraft.url} fileName={videoDraft.name}
+          onClose={() => { setVideoDraft(null); setFile(null); setInput(''); setSubmitted(null); setUploadedFile(null) }} />
       )}
 
       {/* 📥 RECEIVED — instant proof RISE has what she gave it, formatted & separated */}
