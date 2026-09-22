@@ -482,6 +482,19 @@ function VoiceAllButton({ posts, accentColor, onDone }: { posts: ContentPiece[];
 // ── Post card shown on the flip side ──────────────────────────────────────────
 export function PostCard({ post, accentColor, onApprove, approving, approveNote, onChanged, onPreview, accounts, defaultOpen }: { post: ContentPiece; accentColor: string; onApprove: (p: ContentPiece) => void; approving: boolean; approveNote?: string; onChanged?: () => void; onPreview?: (p: ContentPiece) => void; accounts?: BrandAccount[]; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen ?? false)
+  // THE ONE JOB — every post declares what it's FOR before it's written (rule #4).
+  const POST_JOBS = [
+    { id: 'reach', label: 'GET IN FRONT OF NEW WOMEN', hint: 'reach people who don’t follow you yet', color: '#2E8B60' },
+    { id: 'authority', label: 'STOP BEING SEEN AS A PEER', hint: 'shift from peer to the one to learn from', color: '#7C3AED' },
+    { id: 'dms', label: 'TURN WATCHERS INTO DMs', hint: 'convert the ones already watching', color: '#E8448A' },
+  ]
+  const [showJob, setShowJob] = useState(false)
+  const [jobSaving, setJobSaving] = useState(false)
+  const setJob = async (job: string) => {
+    setJobSaving(true); setShowJob(false)
+    try { await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, post_job: job }) }); onChanged?.() } finally { setJobSaving(false) }
+  }
+  const curJob = POST_JOBS.find(j => j.id === post.post_job)
   const [copied, setCopied] = useState(false)
   const [answers, setAnswers] = useState<string[]>([])
   const [completing, setCompleting] = useState(false)
@@ -1023,6 +1036,32 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
 
       {open && (
         <div style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* ⭐ THE ONE JOB — big & bold, first thing on every card (rule #4) */}
+          <div style={{ borderRadius: '12px', border: `2px solid ${curJob ? curJob.color : 'var(--border)'}`, background: curJob ? `${curJob.color}12` : 'var(--surface)', padding: '11px 13px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: '8.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>This post&apos;s job</p>
+                {curJob
+                  ? <p style={{ fontSize: '16px', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: 1.15, color: curJob.color }}>{curJob.label}</p>
+                  : <p style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-muted)' }}>⚠ Pick this post&apos;s job</p>}
+              </div>
+              <button onClick={() => setShowJob(v => !v)} disabled={jobSaving}
+                style={{ flexShrink: 0, padding: '6px 11px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '11px', cursor: 'pointer' }}>
+                {jobSaving ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : curJob ? 'Change' : 'Set job'}
+              </button>
+            </div>
+            {showJob && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '9px' }}>
+                {POST_JOBS.map(j => (
+                  <button key={j.id} onClick={() => setJob(j.id)}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '9px 11px', borderRadius: '9px', border: `1.5px solid ${post.post_job === j.id ? j.color : 'var(--border)'}`, background: post.post_job === j.id ? `${j.color}12` : 'var(--surface)', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 900, color: j.color }}>{j.label}</span>
+                    <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>{j.hint}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {/* Undo regeneration — restore the version from before the last regenerate */}
           {undoAvail && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px 12px', background: 'rgba(242,166,90,0.1)', border: '1px solid rgba(242,166,90,0.35)', borderRadius: '8px' }}>

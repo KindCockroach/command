@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, RefreshCw, Check, ChevronDown, ChevronUp, X, Wand2 } from 'lucide-react'
 
-type Draft = { transcript: string; title: string; hooks: string[]; caption: string; hashtags: string[] }
+type Shot = { type: string; shot: string }
+type Draft = { transcript: string; title: string; hooks: string[]; caption: string; hashtags: string[]; script: string; footage: Shot[]; keywords: string[] }
 type Acct = { id: string; handle: string; status: string }
 
 // The clean video-post review panel. Drop a video → RISE transcribes it and writes
@@ -52,7 +53,7 @@ export default function VideoDraftPanel({ videoUrl, fileName, onClose }: { video
     setSaving(true); setSaved('')
     fetch('/api/video', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ save: true, videoUrl, title: draft.title, onscreen: draft.hooks[hookIdx] || '', caption: draft.caption, hashtags: draft.hashtags, accountId: account || undefined }),
+      body: JSON.stringify({ save: true, videoUrl, title: draft.title, onscreen: draft.hooks[hookIdx] || '', caption: draft.caption, hashtags: draft.hashtags, keywords: draft.keywords, script: draft.script, footage: draft.footage, accountId: account || undefined }),
     }).then(r => r.json())
       .then(d => { if (d.piece) setSaved(`✓ Saved as post #${d.piece.id}${account ? ` in ${accounts.find(a => a.id === account)?.handle || account} — ready to approve` : ' — assign an account on the card'}. Video renamed to the title.`); else setSaved(d.error || 'Save failed') })
       .catch(() => setSaved('Connection error'))
@@ -112,6 +113,37 @@ export default function VideoDraftPanel({ videoUrl, fileName, onClose }: { video
                 {draft.hashtags.map((t, i) => <span key={i} style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', background: 'var(--purple-light)', color: 'var(--purple)' }}>{t.startsWith('#') ? t : `#${t}`}</span>)}
               </div>
             </div>
+
+            {/* KEYWORDS */}
+            {draft.keywords?.length > 0 && (
+              <div>
+                <p style={label}>Keywords (SEO / discovery)</p>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.6 }}>{draft.keywords.join(' · ')}</p>
+              </div>
+            )}
+
+            {/* SCRIPT */}
+            {draft.script && (
+              <div>
+                <p style={label}>Script (say this / voiceover)</p>
+                <div style={{ ...box, fontSize: '13px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{draft.script}</div>
+              </div>
+            )}
+
+            {/* FOOTAGE / B-ROLL */}
+            {draft.footage?.length > 0 && (
+              <div>
+                <p style={label}>Footage &amp; B-roll to intercut</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  {draft.footage.map((f, i) => (
+                    <div key={i} style={{ ...box, display: 'flex', gap: '8px', alignItems: 'flex-start', padding: '8px 11px' }}>
+                      <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', padding: '2px 7px', borderRadius: '20px', background: 'var(--purple-light)', color: 'var(--purple)', whiteSpace: 'nowrap', flexShrink: 0, marginTop: '1px' }}>{f.type || 'b-roll'}</span>
+                      <span style={{ fontSize: '12.5px', color: 'var(--text)', lineHeight: 1.45 }}>{f.shot}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* TRANSCRIPT */}
             <div>

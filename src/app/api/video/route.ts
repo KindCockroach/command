@@ -17,23 +17,27 @@ export const maxDuration = 300
 //   { transcript, feedback?, titleFirst? }        → re-draft only (no transcribe)
 //   { save:true, videoUrl, title, onscreen, caption, hashtags, accountId? } → create card
 
-type Draft = { title: string; hooks: string[]; caption: string; hashtags: string[] }
+type Shot = { type: string; shot: string }
+type Draft = { title: string; hooks: string[]; caption: string; hashtags: string[]; script: string; footage: Shot[]; keywords: string[] }
 
 async function writeDraft(transcript: string, opts: { feedback?: string; titleFirst?: boolean; accountId?: string }): Promise<Draft> {
-  const instructions = `You are writing a social post FROM a short VIDEO Mandi filmed — her real footage, her own voice. Work ONLY from what she actually SAYS in the transcript. Do not invent a topic she didn't talk about.
+  const instructions = `You are COMPILING a complete, ready-to-edit social post FROM a short VIDEO Mandi filmed — her real footage, her own voice. Work ONLY from what she actually SAYS in the transcript. Do not invent a topic she didn't talk about. Her job was to film; YOUR job is to compile everything else so she can edit + approve.
 
 ${craftFor(opts.accountId)}
 
-Produce, in her voice:
+Produce, in her voice — the WHOLE package:
 - "title": ONE strong title — a claim addressed to the viewer, true to what she said.
-- "hooks": 3-5 DISTINCT on-screen hook options — each a bold STATEMENT (never a question), the overlay line that stops the scroll. Different angles on the same golden thread from her words.
-- "caption": ONE ready-to-post caption, spaced with real line breaks, in her voice; it must NOT just restate a hook. ${opts.titleFirst ? 'The caption\'s FIRST sentence MUST BE the title, verbatim.' : ''}
-- "hashtags": 3-5 REAL, relevant hashtags actually used in this niche (no spam, no banned tags, no invented ones); camelCase any multi-word tag.
+- "hooks": 3-5 DISTINCT on-screen hook options — each a bold STATEMENT (never a question), the overlay line that stops the scroll. Different angles on the same golden thread.
+- "caption": ONE ready-to-post caption, spaced with real line breaks, in her voice; must NOT just restate a hook. ${opts.titleFirst ? 'The caption\'s FIRST sentence MUST BE the title, verbatim.' : ''}
+- "hashtags": 3-5 REAL, relevant hashtags actually used in this niche (no spam/banned/invented); camelCase multi-word.
+- "keywords": 5-8 SEO keywords/phrases for this topic (plain phrases, for discovery — NOT hashtags).
+- "script": a tightened SPOKEN version of her point in her voice — the words to say (or re-record / voiceover), ~20-40 seconds, short punchy sentences, opens on a hook, one idea, lands clean. Pull from what she said; sharpen it. No stage directions.
+- "footage": 3-5 B-ROLL / edit suggestions to intercut with her talking-head to hold attention — each { "type": "b-roll" | "talking-head" | "text-moment", "shot": "specific, filmable/find-able moment or on-screen-text beat" }. Real, capturable moments (not AI-generated).
 ${opts.feedback ? `\nAPPLY THIS FEEDBACK from Mandi (she's iterating): "${opts.feedback}"` : ''}
 
-Return ONLY valid JSON: { "title": "...", "hooks": ["...","..."], "caption": "...", "hashtags": ["...","..."] }`
+Return ONLY valid JSON: { "title": "...", "hooks": ["..."], "caption": "...", "hashtags": ["..."], "keywords": ["..."], "script": "...", "footage": [ { "type": "...", "shot": "..." } ] }`
 
-  const raw = await fableText({ useClaude: true, json: true, maxTokens: 2000, instructions, input: `HER SPOKEN WORDS (video transcript):\n${transcript.slice(0, 12000)}` })
+  const raw = await fableText({ useClaude: true, json: true, maxTokens: 3000, instructions, input: `HER SPOKEN WORDS (video transcript):\n${transcript.slice(0, 12000)}` })
   let p: Partial<Draft> = {}
   try { p = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') } catch { /* fall through */ }
   return {
@@ -41,6 +45,9 @@ Return ONLY valid JSON: { "title": "...", "hooks": ["...","..."], "caption": "..
     hooks: Array.isArray(p.hooks) ? p.hooks.filter(Boolean).slice(0, 5) : [],
     caption: typeof p.caption === 'string' ? p.caption : '',
     hashtags: Array.isArray(p.hashtags) ? p.hashtags.filter(Boolean).slice(0, 6) : [],
+    keywords: Array.isArray(p.keywords) ? p.keywords.filter(Boolean).slice(0, 8) : [],
+    script: typeof p.script === 'string' ? p.script : '',
+    footage: Array.isArray(p.footage) ? p.footage.filter((s): s is Shot => !!s && typeof s.shot === 'string').slice(0, 5) : [],
   }
 }
 
@@ -50,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   // ── SAVE — rename the video file to the title, then create the ready card ─────
   if (body.save) {
-    const { videoUrl, title, onscreen, caption, hashtags, accountId } = body
+    const { videoUrl, title, onscreen, caption, hashtags, accountId, script, keywords, footage } = body
     if (!videoUrl) return NextResponse.json({ error: 'videoUrl required' }, { status: 400 })
     // Rename the R2 object to the suggested title so it's findable in Media.
     let mediaUrl = videoUrl
@@ -72,6 +79,10 @@ export async function POST(req: NextRequest) {
       account_id: accountId || null,
       media_url: mediaUrl,
       media_urls: [mediaUrl],
+      script: typeof script === 'string' ? script : '',
+      frame_plan: Array.isArray(footage) && footage.length ? '🎥 FOOTAGE / B-ROLL:\n' + footage.map((f: Shot) => `• [${f.type || 'b-roll'}] ${f.shot}`).join('\n') : undefined,
+      notes: Array.isArray(keywords) && keywords.length ? `Keywords: ${keywords.join(', ')}` : '',
+      post_job: typeof body.post_job === 'string' ? body.post_job : undefined,
       river_source: 'video-drop',
       tags: ['video-drop'],
     })

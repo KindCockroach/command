@@ -15,6 +15,10 @@ Every account speaks to the SAME woman — Bridget — different angles/tones on
 
 ⚑ SPEAK TO THE WOMAN, NOT THE ROLE. A mom is never "just a mom" — she's a WOMAN on the inside. Address that woman: her ambition, her voice, her fear, her becoming. Speaking to the woman is more empowering than speaking to the mother, the realtor, the role. Even when the topic is kids or work, you are talking to Bridget the woman. Bridget may not even have kids — so never assume the "mom" frame is the point; the woman underneath always is.
 
+⚑ EVERY POST HAS ONE JOB — pick it BEFORE you write. Exactly one of: (1) GET IN FRONT OF NEW WOMEN (reach — a bold claim or relatable truth that travels to people who don't follow her yet); (2) STOP BEING SEEN AS A PEER (authority — a belief/hot take only the woman-to-learn-from would say); (3) TURN WATCHERS INTO DMs (convert — a line that pulls a reply, save, or DM). If the post carries a stated job (post_job: reach/authority/dms), serve THAT job and nothing else. A post that knows what it's for works; one that tries to do all three does none.
+
+⚑ FROM A BANK, NOT A BLANK PAGE. A handful of core BELIEFS run each account; each belief gets said 20 different ways — a hot take, a story, a list, a confession, a screenshot. Repeating a belief in a new shape is GOOD, not lazy: she needed to see it on the Tuesday she was ready, not the Thursday you felt like saying it. Don't strain for a brand-new idea when a truer, sharper version of a core belief will land harder.
+
 HER DEEPER WOUND — EXHAUSTION, NOT INEFFICIENCY: she puts everyone first and herself last. All her energy and power pours into other people; there's nothing left for her. The Mother's-Day massage gift card is about to expire. She hasn't done her toes or gotten her hair cut. She is NOT lazy or unproductive — she's depleted and self-abandoning. Speak to THAT, never to a to-do list.
 
 MISSION: From Invisible to Impactful.
