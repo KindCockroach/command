@@ -69,6 +69,19 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
   const addItem = () => { const t = newItem.trim(); if (!t) return; persistChecklist([...checklist, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, text: t, done: false }]); setNewItem('') }
   const deleteItem = (id: string) => persistChecklist(checklist.filter(c => c.id !== id))
 
+  // Recording scripts — live in the project (e.g. meditation scripts to record from).
+  const scripts = project.scripts ?? []
+  const [openScript, setOpenScript] = useState<string | null>(null)
+  const [addingScript, setAddingScript] = useState(false)
+  const [nsTitle, setNsTitle] = useState('')
+  const [nsBody, setNsBody] = useState('')
+  const [copiedScript, setCopiedScript] = useState<string | null>(null)
+  const persistScripts = (next: { id: string; title: string; body: string; recorded?: boolean }[]) => onUpdate(project.id, { scripts: next })
+  const addScript = () => { if (!nsTitle.trim() && !nsBody.trim()) return; persistScripts([...scripts, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, title: nsTitle.trim() || 'Untitled script', body: nsBody.trim(), recorded: false }]); setNsTitle(''); setNsBody(''); setAddingScript(false) }
+  const toggleRecorded = (id: string) => persistScripts(scripts.map(s => s.id === id ? { ...s, recorded: !s.recorded } : s))
+  const deleteScript = (id: string) => persistScripts(scripts.filter(s => s.id !== id))
+  const copyScript = (s: { id: string; body: string }) => { navigator.clipboard.writeText(s.body); setCopiedScript(s.id); setTimeout(() => setCopiedScript(null), 1500) }
+
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: `4px solid ${PRIORITY_COLORS[project.priority]}`, borderRadius: '12px' }}>
       <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }} onClick={() => setOpen(v => !v)}>
@@ -151,6 +164,43 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
                     style={{ flex: 1, padding: '8px 11px', borderRadius: '9px', border: '1px solid var(--border)', fontSize: '12.5px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
                   <button onClick={addItem} disabled={!newItem.trim()} style={{ padding: '8px 13px', borderRadius: '9px', border: 'none', background: newItem.trim() ? 'var(--purple)' : 'var(--border)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: newItem.trim() ? 'pointer' : 'default' }}>Add</button>
                 </div>
+              </div>
+
+              {/* 🎙 Recording scripts — they live IN the project */}
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '13px 14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: (scripts.length || addingScript) ? '10px' : '8px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text)' }}>🎙 Recording scripts {scripts.length > 0 && <span style={{ color: 'var(--text-subtle)', fontWeight: 700 }}>({scripts.filter(s => s.recorded).length}/{scripts.length} recorded)</span>}</p>
+                  <button onClick={() => setAddingScript(v => !v)} style={{ ...btnSt, background: 'var(--purple)', color: '#fff', fontSize: '11px', padding: '5px 11px' }}>{addingScript ? 'Close' : '+ New script'}</button>
+                </div>
+                {scripts.length === 0 && !addingScript && <p style={{ fontSize: '11.5px', color: 'var(--text-subtle)' }}>No scripts yet — add a meditation / recording script so it lives right here with the project.</p>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {scripts.map(s => (
+                    <div key={s.id} style={{ border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 11px', cursor: 'pointer' }} onClick={() => setOpenScript(o => o === s.id ? null : s.id)}>
+                        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{openScript === s.id ? '▾' : '▸'}</span>
+                        <span style={{ flex: 1, fontSize: '13px', fontWeight: 700, color: s.recorded ? 'var(--text-subtle)' : 'var(--text)', textDecoration: s.recorded ? 'line-through' : 'none' }}>{s.title}</span>
+                        {s.recorded && <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 7px', borderRadius: '20px', background: 'rgba(61,170,124,0.14)', color: '#3daa7c' }}>RECORDED</span>}
+                      </div>
+                      {openScript === s.id && (
+                        <div style={{ padding: '0 11px 11px' }}>
+                          <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.65, whiteSpace: 'pre-wrap', background: 'var(--bg)', borderRadius: '8px', padding: '12px' }}>{s.body || '(no script text yet — hit Edit on the project to add it)'}</p>
+                          <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                            <button onClick={() => copyScript(s)} style={{ ...btnSt, background: 'var(--bg)', color: 'var(--text)', fontSize: '11px' }}>{copiedScript === s.id ? '✓ Copied' : 'Copy script'}</button>
+                            <button onClick={() => toggleRecorded(s.id)} style={{ ...btnSt, background: s.recorded ? 'var(--bg)' : '#3daa7c', color: s.recorded ? 'var(--text)' : '#fff', fontSize: '11px' }}>{s.recorded ? 'Mark unrecorded' : '✓ Mark recorded'}</button>
+                            <button onClick={() => deleteScript(s.id)} style={{ ...btnSt, background: 'rgba(220,0,0,0.08)', color: '#e05', fontSize: '11px' }}>Delete</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {addingScript && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginTop: '9px' }}>
+                    <input value={nsTitle} onChange={e => setNsTitle(e.target.value)} placeholder="Script title (e.g. &quot;Inner Child — I've Got You&quot;)" style={inputSt} />
+                    <textarea value={nsBody} onChange={e => setNsBody(e.target.value)} rows={6} placeholder="Paste or write the meditation script to record from…" style={{ ...inputSt, resize: 'vertical', lineHeight: 1.6 }} />
+                    <button onClick={addScript} style={{ ...btnSt, background: 'var(--purple)', color: '#fff', alignSelf: 'flex-start' }}>Save script</button>
+                  </div>
+                )}
               </div>
 
               {project.notes && <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{project.notes}</p>}

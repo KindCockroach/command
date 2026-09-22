@@ -71,6 +71,7 @@ export type ProjectPriority = 'urgent' | 'high' | 'medium' | 'low'
 export type ProjectLabel = 'series' | 'biz_dev' | 'new_account' | 'launch' | 'general'
 
 export type ChecklistItem = { id: string; text: string; done: boolean }
+export type ProjectScript = { id: string; title: string; body: string; recorded?: boolean }
 
 export type Project = {
   id: number
@@ -85,6 +86,7 @@ export type Project = {
   assistant: string
   progress: number  // 0-100
   checklist?: ChecklistItem[]   // the step-by-step to get this project done
+  scripts?: ProjectScript[]     // recording scripts that live in the project (e.g. meditations)
   created_at: string
   updated_at: string
 }
