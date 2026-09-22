@@ -1560,6 +1560,7 @@ export default function AccountsPanel() {
   const [flipped, setFlipped] = useState<string | null>(null)
   const [focusMode, setFocusMode] = useState(true)   // one account at a time (default) vs full grid
   const [focusIdx, setFocusIdx] = useState(0)
+  const [reordering, setReordering] = useState(false)   // grid + up/down arrows to set custom scroll order
   const [approvingId, setApprovingId] = useState<number | null>(null)
   const [approveNotes, setApproveNotes] = useState<Record<number, string>>({})
   const [ghlConfigured, setGhlConfigured] = useState<boolean | null>(null)
@@ -1675,7 +1676,20 @@ export default function AccountsPanel() {
 
   const sorted = [...accounts]
     .filter(a => filter === 'all' || a.status === filter)
-    .sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
+    // Mandi's custom order first (sort_order), then priority as the fallback.
+    .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999) || PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
+
+  // Reorder: swap an account with its neighbor and persist the new order (only the
+  // accounts whose position changed get PATCHed).
+  const moveAcct = async (acctId: string, dir: -1 | 1) => {
+    const cur = [...sorted]
+    const i = cur.findIndex(a => a.id === acctId); const j = i + dir
+    if (i < 0 || j < 0 || j >= cur.length) return
+    ;[cur[i], cur[j]] = [cur[j], cur[i]]
+    const changed = cur.map((a, idx) => ({ a, idx })).filter(({ a, idx }) => a.sort_order !== idx)
+    setAccounts(prev => prev.map(a => { const k = cur.findIndex(o => o.id === a.id); return k >= 0 ? { ...a, sort_order: k } : a }))
+    await Promise.all(changed.map(({ a, idx }) => fetch('/api/accounts', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id, sort_order: idx }) }))).catch(() => {})
+  }
 
   const counts = {
     all: accounts.length,
@@ -1801,9 +1815,9 @@ export default function AccountsPanel() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-[20px] font-bold" style={{ color: 'var(--cosmic-midnight)' }}>Accounts</h1>
-          <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Click a card to flip it — see queued posts, approve them, track what&apos;s live. Pencil to edit purpose &amp; brand DNA.
+          <h1 className="font-display" style={{ fontSize: '30px', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.1, background: 'linear-gradient(115deg, var(--purple), var(--hot-pink))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Your Accounts</h1>
+          <p className="mt-1" style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
+            One woman, many rooms. Tap a card to flip it and work its queue.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -1876,7 +1890,13 @@ export default function AccountsPanel() {
         const cur = sorted[idx]
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {focusMode ? (
+            {reordering ? (
+              <>
+                <span style={{ flex: 1, fontSize: '12px', fontWeight: 700, color: 'var(--purple)' }}>↕ Set your scroll order — use the ↑ ↓ on each card</span>
+                <button onClick={() => setReordering(false)} className="rise-tactile"
+                  style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}>✓ Done</button>
+              </>
+            ) : focusMode ? (
               <>
                 <button onClick={() => setFocusIdx(i => (i - 1 + sorted.length) % sorted.length)} title="Previous account"
                   style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>‹ Prev</button>
@@ -1886,12 +1906,18 @@ export default function AccountsPanel() {
                 </div>
                 <button onClick={() => setFocusIdx(i => (i + 1) % sorted.length)} title="Next account"
                   style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>Next ›</button>
+                <button onClick={() => { setReordering(true); setFocusMode(false) }} title="Reorder how they scroll"
+                  style={{ padding: '8px 11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>↕ Reorder</button>
                 <button onClick={() => setFocusMode(false)} title="See all accounts at once"
                   style={{ padding: '8px 11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>⊞ Grid</button>
               </>
             ) : (
-              <button onClick={() => setFocusMode(true)} title="Focus one account at a time"
-                style={{ marginLeft: 'auto', padding: '8px 11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>◱ Focus one at a time</button>
+              <>
+                <button onClick={() => { setReordering(true) }} title="Reorder how they scroll"
+                  style={{ padding: '8px 11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>↕ Reorder</button>
+                <button onClick={() => setFocusMode(true)} title="Focus one account at a time"
+                  style={{ marginLeft: 'auto', padding: '8px 11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>◱ Focus one at a time</button>
+              </>
             )}
           </div>
         )
@@ -1910,9 +1936,17 @@ export default function AccountsPanel() {
 
           // ── FRONT of card (flip side renders as a layered overlay below) ──
           return (
-            <div key={acct.id} onClick={() => selectMode ? toggleSelect(acct.id) : setFlipped(acct.id)}
-              className="rise-float rounded-xl border p-4 flex flex-col gap-3 cursor-pointer"
-              style={{ background: 'var(--surface)', borderColor: selectMode && selected.has(acct.id) ? 'var(--purple)' : 'var(--border)', borderWidth: selectMode && selected.has(acct.id) ? '2px' : '1px', boxShadow: 'var(--shadow-float)', position: 'relative' }}>
+            <div key={acct.id} onClick={() => { if (reordering) return; selectMode ? toggleSelect(acct.id) : setFlipped(acct.id) }}
+              className="rise-float rounded-xl border p-4 flex flex-col gap-3"
+              style={{ background: 'var(--surface)', borderColor: reordering ? 'var(--purple)' : selectMode && selected.has(acct.id) ? 'var(--purple)' : 'var(--border)', borderWidth: (reordering || (selectMode && selected.has(acct.id))) ? '2px' : '1px', boxShadow: 'var(--shadow-float)', position: 'relative', cursor: reordering ? 'default' : 'pointer' }}>
+              {reordering && (
+                <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px', zIndex: 3 }}>
+                  <button onClick={e => { e.stopPropagation(); moveAcct(acct.id, -1) }} title="Move up"
+                    style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--purple)', background: 'var(--surface)', color: 'var(--purple)', fontWeight: 900, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↑</button>
+                  <button onClick={e => { e.stopPropagation(); moveAcct(acct.id, 1) }} title="Move down"
+                    style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid var(--purple)', background: 'var(--surface)', color: 'var(--purple)', fontWeight: 900, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↓</button>
+                </div>
+              )}
               {selectMode && (
                 <div style={{ position: 'absolute', top: '10px', right: '10px', width: '20px', height: '20px', borderRadius: '6px', border: selected.has(acct.id) ? 'none' : '2px solid var(--border)', background: selected.has(acct.id) ? 'var(--purple)' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
                   {selected.has(acct.id) && <CheckCircle2 size={13} color="#fff" />}
@@ -2003,16 +2037,10 @@ export default function AccountsPanel() {
         })}
       </div>
 
-      {/* Security reminder */}
-      <div className="rounded-xl border p-4 flex items-start gap-3" style={{ background: 'var(--nebula-light)', borderColor: 'var(--electric-nebula)' }}>
-        <Lock size={15} style={{ color: 'var(--electric-nebula)', flexShrink: 0, marginTop: 1 }} />
-        <div>
-          <p className="text-[12px] font-semibold" style={{ color: 'var(--electric-nebula)' }}>Security reminder</p>
-          <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Passwords are never stored here. Use a password manager and 2FA on every account. Approving a post here only sends it to your GoHighLevel scheduler.
-          </p>
-        </div>
-      </div>
+      {/* Security — a quiet footnote, not a billboard */}
+      <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontSize: '10.5px', color: 'var(--text-subtle)', opacity: 0.75, marginTop: '4px' }}>
+        <Lock size={10} /> Passwords never live here — approving only sends to your scheduler.
+      </p>
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </div>
   )

@@ -151,6 +151,7 @@ export type BrandAccount = {
   platform: string
   status: 'active' | 'restricted' | 'planned' | 'paused'
   priority: 'high' | 'medium' | 'low'
+  sort_order?: number   // Mandi's custom scroll order (lower = first); falls back to priority
   color: string
   emoji: string
   // Brand DNA from Excel
