@@ -741,6 +741,8 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
   }
 
   const [moving, setMoving] = useState(false)
+  const [showNotes, setShowNotes] = useState(false)
+  const [showContext, setShowContext] = useState(false)
   const [showMove, setShowMove] = useState(false)
   const [showDup, setShowDup] = useState(false)
   const [duping, setDuping] = useState(false)
@@ -1340,42 +1342,47 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
               )}
               <Section label="✅ Caption — this is what posts" text={post.description} />
               {(post.description || post.onscreen_text) && (
-                <button onClick={polish} disabled={polishing}
-                  title="Rewrite this post's copy to your voice — proper spacing, real hook, no question, format-correct on-screen text. You finish the images."
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '11px', borderRadius: '10px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '13px', cursor: polishing ? 'default' : 'pointer', opacity: polishing ? 0.75 : 1, marginTop: '6px' }}>
-                  {polishing ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Cleaning up the copy…</> : <>🧹 Clean up copy</>}
-                </button>
-              )}
-              {post.description && (
-                <div style={{ marginTop: '-2px' }}>
+                <div style={{ marginTop: '6px', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 11px', background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)' }}>Rework the copy</p>
+                  <textarea value={feedbackText} onChange={e => setFeedbackText(e.target.value)} rows={2}
+                    placeholder="Tell it what to change (optional) — e.g. 'less analytical, open on the fig-tree scene, give it a real arc'"
+                    style={{ width: '100%', padding: '9px 11px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.5 }} />
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button onClick={() => recaption()} disabled={recaptioning}
-                      title="Give me another caption — a fresh angle, no feedback needed"
-                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
-                      {recaptioning && !showFeedback ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <span style={{ fontSize: '13px' }}>🔁</span>} Another caption
+                    <button onClick={() => recaption(feedbackText)} disabled={recaptioning || !feedbackText.trim()}
+                      title="Rewrite the caption to your feedback — and learn your taste for next time"
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 13px', borderRadius: '9px', border: 'none', background: '#7C3AED', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: feedbackText.trim() ? 'pointer' : 'not-allowed', opacity: feedbackText.trim() ? 1 : 0.55 }}>
+                      {recaptioning && feedbackText.trim() ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : '💬'} Send feedback
                     </button>
-                    <button onClick={() => setShowFeedback(v => !v)} disabled={recaptioning}
-                      title="Tell it what to change — it rewrites the caption and learns your taste for next time"
-                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '9px', border: '1px solid rgba(124,58,237,0.4)', background: showFeedback ? 'rgba(124,58,237,0.1)' : 'rgba(124,58,237,0.06)', color: '#7C3AED', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
-                      💬 Rewrite with feedback
+                    <button onClick={() => recaption()} disabled={recaptioning}
+                      title="A fresh take on the caption — new angle, no feedback needed"
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 13px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                      🔁 Another caption
+                    </button>
+                    <button onClick={polish} disabled={polishing}
+                      title="Reshape the FORMAT — proper spacing, a real hook, and a true arc (open → turn → land). Keeps your meaning; makes it flow."
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 13px', borderRadius: '9px', border: `1px solid ${accentColor}`, background: 'transparent', color: accentColor, fontWeight: 800, fontSize: '12px', cursor: polishing ? 'default' : 'pointer' }}>
+                      {polishing ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : '🪄'} Reshape &amp; give it arc
                     </button>
                   </div>
-                  {showFeedback && (
-                    <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <textarea value={feedbackText} onChange={e => setFeedbackText(e.target.value)} rows={2}
-                        placeholder="What should change? e.g. 'less analytical, more like I'm talking to a friend' or 'open with the fig tree scene'"
-                        style={{ width: '100%', padding: '9px 11px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.5 }} />
-                      <button onClick={() => recaption(feedbackText)} disabled={recaptioning || !feedbackText.trim()}
-                        style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '9px', border: 'none', background: '#7C3AED', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: feedbackText.trim() ? 'pointer' : 'not-allowed', opacity: feedbackText.trim() ? 1 : 0.6 }}>
-                        {recaptioning ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Rewriting & learning…</> : <>✨ Rewrite caption &amp; learn my taste</>}
-                      </button>
-                    </div>
-                  )}
-                  {recapErr && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '6px' }}>⚠ {recapErr}</p>}
+                  {recapErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {recapErr}</p>}
                 </div>
               )}
-              {post.notes && <Section label="🗒 Notes — context, not posted" text={post.notes} />}
-              {post.source_context && <Section label="🌱 The original — your words behind this post" text={post.source_context} />}
+              {post.notes && (
+                <div>
+                  <button onClick={() => setShowNotes(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', textAlign: 'left', padding: '8px 11px', borderRadius: '9px', border: '1px dashed var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                    {showNotes ? '▾' : '▸'} 🗒 Notes — context, not posted
+                  </button>
+                  {showNotes && <div style={{ marginTop: '6px' }}><Section label="🗒 Notes — context, not posted" text={post.notes} /></div>}
+                </div>
+              )}
+              {post.source_context && (
+                <div>
+                  <button onClick={() => setShowContext(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', textAlign: 'left', padding: '8px 11px', borderRadius: '9px', border: '1px dashed var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                    {showContext ? '▾' : '▸'} 🌱 The original — your words behind this post
+                  </button>
+                  {showContext && <div style={{ marginTop: '6px' }}><Section label="🌱 The original" text={post.source_context} /></div>}
+                </div>
+              )}
             </>
           )}
 
