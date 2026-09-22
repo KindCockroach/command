@@ -37,18 +37,27 @@ ${opts.feedback ? `\nAPPLY THIS FEEDBACK from Mandi (she's iterating): "${opts.f
 
 Return ONLY valid JSON: { "title": "...", "hooks": ["..."], "caption": "...", "hashtags": ["..."], "keywords": ["..."], "script": "...", "footage": [ { "type": "...", "shot": "..." } ] }`
 
-  const raw = await fableText({ useClaude: true, json: true, maxTokens: 3000, instructions, input: `HER SPOKEN WORDS (video transcript):\n${transcript.slice(0, 12000)}` })
-  let p: Partial<Draft> = {}
-  try { p = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') } catch { /* fall through */ }
-  return {
-    title: typeof p.title === 'string' ? p.title : '',
-    hooks: Array.isArray(p.hooks) ? p.hooks.filter(Boolean).slice(0, 5) : [],
-    caption: typeof p.caption === 'string' ? p.caption : '',
-    hashtags: Array.isArray(p.hashtags) ? p.hashtags.filter(Boolean).slice(0, 6) : [],
-    keywords: Array.isArray(p.keywords) ? p.keywords.filter(Boolean).slice(0, 8) : [],
-    script: typeof p.script === 'string' ? p.script : '',
-    footage: Array.isArray(p.footage) ? p.footage.filter((s): s is Shot => !!s && typeof s.shot === 'string').slice(0, 5) : [],
+  const input = `HER SPOKEN WORDS (video transcript):\n${transcript.slice(0, 12000)}`
+  const once = async (): Promise<Draft> => {
+    // maxTokens 8000 — the craft rules make the prompt long and adaptive thinking
+    // eats budget; 3000 left no room for the JSON output (it came back empty).
+    const raw = await fableText({ useClaude: true, json: true, maxTokens: 8000, instructions, input })
+    let p: Partial<Draft> = {}
+    try { p = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') } catch { /* fall through */ }
+    return {
+      title: typeof p.title === 'string' ? p.title : '',
+      hooks: Array.isArray(p.hooks) ? p.hooks.filter(Boolean).slice(0, 5) : [],
+      caption: typeof p.caption === 'string' ? p.caption : '',
+      hashtags: Array.isArray(p.hashtags) ? p.hashtags.filter(Boolean).slice(0, 6) : [],
+      keywords: Array.isArray(p.keywords) ? p.keywords.filter(Boolean).slice(0, 8) : [],
+      script: typeof p.script === 'string' ? p.script : '',
+      footage: Array.isArray(p.footage) ? p.footage.filter((s): s is Shot => !!s && typeof s.shot === 'string').slice(0, 5) : [],
+    }
   }
+  let d = await once()
+  // Never return blank — one retry if the writer produced nothing usable.
+  if (!d.title && !d.hooks.length && !d.caption) d = await once()
+  return d
 }
 
 export async function POST(req: NextRequest) {
@@ -92,6 +101,7 @@ export async function POST(req: NextRequest) {
   // ── RE-DRAFT — regenerate from an existing transcript (cheap, no transcribe) ──
   if (body.transcript && !body.videoUrl) {
     const draft = await writeDraft(String(body.transcript), { feedback: body.feedback, titleFirst: body.titleFirst, accountId: body.accountId })
+    if (!draft.title && !draft.hooks.length && !draft.caption) return NextResponse.json({ error: 'The writer came back empty — tap Regenerate to try again.' }, { status: 502 })
     return NextResponse.json({ transcript: body.transcript, ...draft })
   }
 
@@ -106,5 +116,6 @@ export async function POST(req: NextRequest) {
   if (!transcript) return NextResponse.json({ error: "Couldn't hear spoken words in that video — is there audio? (Silent clips can't be auto-written yet.)" }, { status: 502 })
 
   const draft = await writeDraft(transcript, { feedback: body.feedback, titleFirst: body.titleFirst, accountId: body.accountId })
+  if (!draft.title && !draft.hooks.length && !draft.caption) return NextResponse.json({ transcript, error: 'Transcribed fine, but the writer came back empty — try again.' }, { status: 502 })
   return NextResponse.json({ transcript, ...draft })
 }
