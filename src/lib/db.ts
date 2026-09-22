@@ -70,6 +70,8 @@ export type ProjectStatus = 'active' | 'paused' | 'complete' | 'archived'
 export type ProjectPriority = 'urgent' | 'high' | 'medium' | 'low'
 export type ProjectLabel = 'series' | 'biz_dev' | 'new_account' | 'launch' | 'general'
 
+export type ChecklistItem = { id: string; text: string; done: boolean }
+
 export type Project = {
   id: number
   name: string
@@ -82,6 +84,7 @@ export type Project = {
   notes: string
   assistant: string
   progress: number  // 0-100
+  checklist?: ChecklistItem[]   // the step-by-step to get this project done
   created_at: string
   updated_at: string
 }

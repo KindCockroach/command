@@ -58,6 +58,17 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
 
   const save = () => { onUpdate(project.id, draft); setEditing(false) }
 
+  // Checklist — the step-by-step. Progress auto-derives from it when it has items.
+  const [newItem, setNewItem] = useState('')
+  const checklist = project.checklist ?? []
+  const doneCount = checklist.filter(c => c.done).length
+  const pct = checklist.length ? Math.round((doneCount / checklist.length) * 100) : project.progress
+  const persistChecklist = (next: { id: string; text: string; done: boolean }[]) =>
+    onUpdate(project.id, { checklist: next, progress: next.length ? Math.round((next.filter(c => c.done).length / next.length) * 100) : project.progress })
+  const toggleItem = (id: string) => persistChecklist(checklist.map(c => c.id === id ? { ...c, done: !c.done } : c))
+  const addItem = () => { const t = newItem.trim(); if (!t) return; persistChecklist([...checklist, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, text: t, done: false }]); setNewItem('') }
+  const deleteItem = (id: string) => persistChecklist(checklist.filter(c => c.id !== id))
+
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: `4px solid ${PRIORITY_COLORS[project.priority]}`, borderRadius: '12px' }}>
       <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }} onClick={() => setOpen(v => !v)}>
@@ -69,8 +80,9 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
             {(() => { const l = LABEL_META[project.label ?? 'general']; return <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: `${l.color}18`, color: l.color, letterSpacing: '0.04em' }}>{l.name}</span> })()}
           </div>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{project.description}</p>
-          <div style={{ marginTop: '10px' }}>
-            <ProgressBar value={project.progress} />
+          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ flex: 1 }}><ProgressBar value={pct} /></div>
+            <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-subtle)', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{checklist.length ? `${doneCount}/${checklist.length}` : `${pct}%`}</span>
           </div>
         </div>
         {open ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
@@ -112,12 +124,37 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
             <div style={{ paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {project.next_action && (
                 <div style={{ background: 'rgba(232,68,138,0.07)', borderRadius: '8px', padding: '10px 12px' }}>
-                  <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--hot-pink)', marginBottom: '4px' }}>Next action</p>
+                  <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--hot-pink)', marginBottom: '4px' }}>Do this next</p>
                   <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600 }}>{project.next_action}</p>
                 </div>
               )}
+
+              {/* ✅ The checklist — the step-by-step to get this done */}
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '13px 14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: checklist.length ? '10px' : '8px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '-0.01em', color: 'var(--text)' }}>✅ Next steps</p>
+                  {checklist.length > 0 && <span style={{ fontSize: '10px', fontWeight: 800, color: pct === 100 ? '#3daa7c' : 'var(--text-subtle)' }}>{pct === 100 ? '🎉 All done' : `${doneCount} of ${checklist.length} done`}</span>}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {checklist.map(item => (
+                    <div key={item.id} className="rise-check-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', padding: '7px 8px', borderRadius: '9px' }}>
+                      <button onClick={() => toggleItem(item.id)} style={{ flexShrink: 0, marginTop: '1px', width: '19px', height: '19px', borderRadius: '6px', border: `2px solid ${item.done ? '#3daa7c' : 'var(--border)'}`, background: item.done ? '#3daa7c' : 'transparent', color: '#fff', fontSize: '11px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>{item.done ? '✓' : ''}</button>
+                      <span onClick={() => toggleItem(item.id)} style={{ flex: 1, fontSize: '13px', lineHeight: 1.45, cursor: 'pointer', color: item.done ? 'var(--text-subtle)' : 'var(--text)', textDecoration: item.done ? 'line-through' : 'none' }}>{item.text}</span>
+                      <button onClick={() => deleteItem(item.id)} title="Remove" style={{ flexShrink: 0, border: 'none', background: 'none', color: 'var(--text-subtle)', cursor: 'pointer', opacity: 0.5, fontSize: '13px', lineHeight: 1 }}>✕</button>
+                    </div>
+                  ))}
+                  {checklist.length === 0 && <p style={{ fontSize: '11.5px', color: 'var(--text-subtle)', padding: '2px 2px 6px' }}>No steps yet — add the first one below, or ask the Commander to break this project into steps.</p>}
+                </div>
+                <div style={{ display: 'flex', gap: '7px', marginTop: '9px' }}>
+                  <input value={newItem} onChange={e => setNewItem(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addItem() }}
+                    placeholder="Add a step…"
+                    style={{ flex: 1, padding: '8px 11px', borderRadius: '9px', border: '1px solid var(--border)', fontSize: '12.5px', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
+                  <button onClick={addItem} disabled={!newItem.trim()} style={{ padding: '8px 13px', borderRadius: '9px', border: 'none', background: newItem.trim() ? 'var(--purple)' : 'var(--border)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: newItem.trim() ? 'pointer' : 'default' }}>Add</button>
+                </div>
+              </div>
+
               {project.notes && <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{project.notes}</p>}
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Assistant: <strong>{project.assistant}</strong> · Progress: <strong>{project.progress}%</strong></p>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Assistant: <strong>{project.assistant}</strong> · Progress: <strong>{pct}%</strong></p>
 
               {/* Generate content */}
               <div style={{ background: 'rgba(107,45,110,0.07)', borderRadius: '10px', padding: '12px 14px' }}>
@@ -226,7 +263,10 @@ export default function ProjectsPanel() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em' }}>Projects</h2>
+        <div>
+          <h1 className="font-display" style={{ fontSize: '30px', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.1, background: 'linear-gradient(115deg, #5a4fcf, #e8448a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Your Projects</h1>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '3px' }}>Open one to see where it&apos;s at — next steps, checklist, and what&apos;s left.</p>
+        </div>
         <button onClick={() => setAdding(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', border: 'none', background: 'var(--hot-pink)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
           <Plus size={14} /> New Project
         </button>

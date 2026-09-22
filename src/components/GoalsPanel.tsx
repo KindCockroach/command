@@ -528,20 +528,24 @@ export default function GoalsPanel() {
     )
   }
 
+  const [showCalendar, setShowCalendar] = useState(false)
+  const goToProjects = () => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'projects' } }))
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Target size={20} color="#3daa7c" /> Goals
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
-            The pace-keeper. The river prioritizes these when sorting, and On-Fire flags anything falling behind.
-          </p>
+          <h1 className="font-display" style={{ fontSize: '30px', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.1, background: 'linear-gradient(115deg, #3daa7c, #5a4fcf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Your Goals</h1>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '3px' }}>Your pace, per account. RISE keeps you honest and flags what&apos;s slipping.</p>
         </div>
-        <button onClick={() => startEdit()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: 'none', background: '#3daa7c', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
-          <Plus size={13} /> New Goal
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={goToProjects} title="Open your projects and their checklists" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+            📁 Projects
+          </button>
+          <button onClick={() => startEdit()} className="rise-tactile" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: 'none', background: '#3daa7c', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}>
+            <Plus size={13} /> New Goal
+          </button>
+        </div>
       </div>
 
       {/* Summary strip */}
@@ -552,16 +556,13 @@ export default function GoalsPanel() {
             { label: 'On pace', n: active.length - behindCount, color: '#3daa7c' },
             { label: 'Behind', n: behindCount, color: behindCount ? '#e05' : 'var(--text-subtle)' },
           ].map(s => (
-            <div key={s.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+            <div key={s.label} className="rise-float" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
               <p style={{ fontSize: '24px', fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.n}</p>
               <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginTop: '4px' }}>{s.label}</p>
             </div>
           ))}
         </div>
       )}
-
-      {/* Schedule / calendar — the station knows what day and time it is */}
-      {!loading && <ScheduleCalendar goals={goals} accounts={accounts} />}
 
       {editing === 'new' && editorFor('new')}
 
@@ -575,6 +576,7 @@ export default function GoalsPanel() {
         </div>
       )}
 
+      {/* Goals first — the readable, approachable part */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {active.map(g => <GoalCard key={g.id} g={g} />)}
       </div>
@@ -586,6 +588,16 @@ export default function GoalsPanel() {
             {paused.map(g => <GoalCard key={g.id} g={g} />)}
           </div>
         </>
+      )}
+
+      {/* Posting calendar — tucked away by default so Goals reads clean */}
+      {!loading && (
+        <div>
+          <button onClick={() => setShowCalendar(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '7px', width: '100%', textAlign: 'left', padding: '11px 14px', borderRadius: '12px', border: '1px dashed var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}>
+            {showCalendar ? '▾' : '▸'} 📅 Posting calendar &amp; content suggestions
+          </button>
+          {showCalendar && <div style={{ marginTop: '12px' }}><ScheduleCalendar goals={goals} accounts={accounts} /></div>}
+        </div>
       )}
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </div>
