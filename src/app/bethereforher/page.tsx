@@ -32,7 +32,7 @@ export default function BeThereForHer() {
           <p className="sub">
             Lately you&rsquo;re moving through your days a step behind yourself &mdash; doing everything
             right, feeling everything faintly, not really sure what you&rsquo;re waiting for, but still
-            just waiting.
+            just waiting. Life takes its toll &mdash; but you&rsquo;re about to get yourself back.
           </p>
           <BuyButton href={CHECKOUT} label="Reconnect to your intuition — $9" />
           <p className="preview-label">Listen free &mdash; &ldquo;The Little You&rdquo;:</p>
@@ -48,8 +48,9 @@ export default function BeThereForHer() {
           <p className="reframe">When you override it, life slowly comes apart &mdash; so gently you almost
             don&rsquo;t notice, until you&rsquo;re standing in circumstances that don&rsquo;t feel like your
             own.</p>
-          <p>And after years of being there for everyone else, your intuition has the volume turned way
-            down. <strong>Until now.</strong></p>
+          <p>Because after years of being there for everyone else, your intuition turned its own volume way
+            down.</p>
+          <p className="untilnow"><strong>Until now.</strong></p>
           <p>This is for the woman who&rsquo;s done saying &ldquo;yes&rdquo; when she means &ldquo;no&rdquo;
             &mdash; bending over backward, under-appreciated, ignoring her own needs. You&rsquo;ve been there
             for everyone but yourself. Now it&rsquo;s time to reconnect.</p>
@@ -59,7 +60,7 @@ export default function BeThereForHer() {
       <section className="what">
         <div className="wrap">
           <h2>What&rsquo;s inside</h2>
-          <p className="lead"><strong>Reconnect To Your Intuition</strong> is a gentle 7-part listening
+          <p className="lead"><strong>Reconnect To Your Intuition</strong>{' '}is a gentle 7-part listening
             series that turns up the volume on your intuition &mdash; speaking to your inner child, because
             that&rsquo;s where your wellspring starts.</p>
           <p className="walkhead">In 10 minutes you walk away with:</p>
@@ -77,8 +78,8 @@ export default function BeThereForHer() {
               </li>
             ))}
           </ol>
-          <p className="bonus"><strong>Bonus:</strong> these audios also help you become your own resting
-            place &mdash; even when there&rsquo;s no time to sit.</p>
+          <p className="bonus"><strong>Bonus:</strong>{' '}these audios also help you become your own resting
+            place &mdash; even if there&rsquo;s no &ldquo;rest for the wicked,&rdquo; or time to sit.</p>
         </div>
       </section>
 
@@ -90,8 +91,8 @@ export default function BeThereForHer() {
           <p>After years of white-knuckling my loss, I came up empty and angry. That&rsquo;s when I found the
             power of mindful listening, parts work, and inner-child healing.</p>
           <p>I&rsquo;ve been told I have a voice that commands and an imagination that expands. So if
-            you&rsquo;ve had a hard time sitting through a meditation before, I&rsquo;m confident these will
-            feel different for you.</p>
+            you&rsquo;ve had a hard time sitting through a meditation before, I&rsquo;m confident these audios
+            will feel different for you.</p>
           <p>Please let me hold your hand and walk you through the power of your mind, to your heart, where
             you&rsquo;ll take a warm dip in the wellspring of your intuition.</p>
         </div>
@@ -106,7 +107,7 @@ export default function BeThereForHer() {
       <section className="bump">
         <div className="wrap">
           <div className="bumpcard">
-            <p className="bumpsell">Add the <strong>Box Breathing Pack</strong> at checkout &mdash; <strong>+$7</strong></p>
+            <p className="bumpsell">Add the <strong>Box Breathing Pack</strong>{' '}at checkout &mdash; <strong>+$7</strong></p>
             <p className="bumpsmall">Two real breathwork sessions to settle your nervous system in about 90
               seconds &mdash; for the moments the ache shows up and you need to come back to your body fast.
               One checkbox on the payment page.</p>
