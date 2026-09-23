@@ -34,7 +34,7 @@ export default function BeThereForHer() {
             right, feeling everything faintly, not really sure what you&rsquo;re waiting for, but still
             just waiting. Life takes its toll &mdash; but you&rsquo;re about to get yourself back.
           </p>
-          <BuyButton href={CHECKOUT} label="Reconnect to your intuition — $9" />
+          <BuyButton href={CHECKOUT} label="Listen to Your Intuition — $9" />
           <p className="preview-label">Listen free &mdash; &ldquo;The Little You&rdquo;:</p>
           <audio controls preload="none" src={PREVIEW_FILE} className="preview" />
         </div>
@@ -51,9 +51,15 @@ export default function BeThereForHer() {
           <p>Because after years of being there for everyone else, your intuition turned its own volume way
             down.</p>
           <p className="untilnow"><strong>Until now.</strong></p>
-          <p>This is for the woman who&rsquo;s done saying &ldquo;yes&rdquo; when she means &ldquo;no&rdquo;
+          <p className="callout">This is for the woman who&rsquo;s done saying &ldquo;yes&rdquo; when she means &ldquo;no&rdquo;
             &mdash; bending over backward, under-appreciated, ignoring her own needs. You&rsquo;ve been there
             for everyone but yourself. Now it&rsquo;s time to reconnect.</p>
+        </div>
+      </section>
+
+      <section className="midcta">
+        <div className="wrap">
+          <BuyButton href={CHECKOUT} label="Call your intuition 📞" />
         </div>
       </section>
 
@@ -90,17 +96,18 @@ export default function BeThereForHer() {
             and one in the heavens.</p>
           <p>After years of white-knuckling my loss, I came up empty and angry. That&rsquo;s when I found the
             power of mindful listening, parts work, and inner-child healing.</p>
-          <p>I&rsquo;ve been told I have a voice that commands and an imagination that expands. So if
-            you&rsquo;ve had a hard time sitting through a meditation before, I&rsquo;m confident these audios
-            will feel different for you.</p>
+          <p>I&rsquo;ve been told I have a voice that commands and an imagination that expands.</p>
+          <p>So if you&rsquo;ve had a hard time sitting through a meditation before, I&rsquo;m confident these
+            audios will feel different for you.</p>
           <p>Please let me hold your hand and walk you through the power of your mind, to your heart, where
             you&rsquo;ll take a warm dip in the wellspring of your intuition.</p>
+          <blockquote className="pullquote">&ldquo;I&rsquo;m here now. I&rsquo;ve got you. I&rsquo;m not leaving again.&rdquo;</blockquote>
         </div>
       </section>
 
       <section className="midcta">
         <div className="wrap">
-          <BuyButton href={CHECKOUT} label="Reconnect to your intuition — $9" />
+          <BuyButton href={CHECKOUT} label="I'm ready to meet myself again" />
         </div>
       </section>
 
@@ -143,7 +150,7 @@ export default function BeThereForHer() {
             <dd>You get instant access to a private page with every meditation. Press play right there, or
               download them to your phone and listen anywhere &mdash; the car, the bath, the dark at 2am.</dd>
             <dt>Is this really your voice?</dt>
-            <dd>Yes. Every word is me, recorded slow and real. Not AI, not a stranger.</dd>
+            <dd>Yes. Every word is me, recorded for the woman and the little girl in you.</dd>
             <dt>Do I need any experience with meditation?</dt>
             <dd>None. Press play, close your eyes, and follow along. I do the rest.</dd>
             <dt>Is it a subscription?</dt>
@@ -158,8 +165,8 @@ export default function BeThereForHer() {
 
       <section className="final">
         <div className="wrap">
-          <h2>You&rsquo;ve been there for everyone. Now reconnect to you.</h2>
-          <BuyButton href={CHECKOUT} label="Reconnect to your intuition — $9" tagline="Instant access · Listen anywhere · Yours to keep" />
+          <h2>You&rsquo;ve been there for everyone.<br />Now reconnect to yourself.</h2>
+          <BuyButton href={CHECKOUT} label="I'm ready — $9" tagline="Instant access · Listen anywhere · Yours to keep" />
           <p className="terms">Digital product &mdash; no refunds. Not a licensed therapist; these meditations
             aren&rsquo;t therapy or medical advice. Please use alongside professional care, not in place of it.</p>
         </div>
@@ -260,4 +267,16 @@ const extraCss = `
 @media (prefers-reduced-motion: reduce){
   .bthf .buy, .bthf .buy::after, .bthf .hero::before, .bthf .product::before, .bthf .final::before, .bthf .optin::before { animation:none; }
 }
+
+/* ── Emphasis + quote (batch tweaks) ── */
+.bthf .hero .eyebrow{ color:#f2d3a8; text-shadow:0 0 26px rgba(242,184,114,.8), 0 0 8px rgba(242,184,114,.55); }
+.bthf .reframe{ font-size:14px; color:#7a6a72; }
+.bthf .callout{ font-family:Georgia,serif; font-size:26px; line-height:1.42; color:var(--midnight); margin-top:8px; }
+.bthf .untilnow{ margin:6px 0 18px; }
+.bthf .product .pullquote{ margin:28px auto 0; max-width:52ch; background:rgba(255,255,255,.09);
+  border-left:3px solid var(--ember); border-radius:12px; padding:20px 24px; font-family:Georgia,serif;
+  font-style:italic; font-size:23px; line-height:1.4; color:#fdf3ea; }
+.bthf .bump{ padding-top:12px; }
+.bthf .bumpcard{ margin-top:24px; }
+@media (max-width:560px){ .bthf .callout{ font-size:22px; } .bthf .product .pullquote{ font-size:20px; } }
 `
