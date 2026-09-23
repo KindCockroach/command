@@ -232,4 +232,31 @@ const extraCss = `
 .bthf .optin .fo-done audio { width:100%; }
 .bthf .optin .fo-dl { color:var(--ember); font-weight:800; text-decoration:none; }
 @media (max-width:560px){ .bthf .optin .fo-form { grid-template-columns:1fr; } }
+
+/* ── Float + glimmer ── */
+@keyframes bthfFloat { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+@keyframes bthfSheen { 0%{ transform:translateX(-140%) rotate(10deg); } 55%,100%{ transform:translateX(260%) rotate(10deg); } }
+@keyframes bthfGlow { 0%,100%{ opacity:.45; } 50%{ opacity:.9; } }
+
+.bthf .buy{ position:relative; overflow:hidden; animation:bthfFloat 3.6s ease-in-out infinite;
+  transition:transform .25s ease, box-shadow .25s ease; }
+.bthf .buy:hover{ transform:translateY(-8px) scale(1.015); box-shadow:0 22px 46px rgba(110,55,64,.45); }
+.bthf .buy::after{ content:""; position:absolute; top:-40%; left:0; width:38%; height:180%;
+  background:linear-gradient(115deg, transparent, rgba(255,255,255,.55), transparent);
+  transform:translateX(-140%) rotate(10deg); animation:bthfSheen 4.8s ease-in-out infinite; pointer-events:none; }
+
+/* soft glimmer behind the dark sections */
+.bthf .hero, .bthf .product, .bthf .optin, .bthf .final { position:relative; overflow:hidden; }
+.bthf .hero > .wrap, .bthf .product > .wrap, .bthf .optin > .wrap, .bthf .final > .wrap { position:relative; z-index:1; }
+.bthf .hero::before, .bthf .product::before, .bthf .final::before { content:""; position:absolute; z-index:0;
+  width:70vw; height:70vw; top:-25%; right:-15%; pointer-events:none;
+  background:radial-gradient(circle, rgba(242,184,114,.20), transparent 62%);
+  animation:bthfGlow 6.5s ease-in-out infinite; }
+.bthf .optin::before { content:""; position:absolute; z-index:0; width:60vw; height:60vw; bottom:-25%; left:-15%;
+  pointer-events:none; background:radial-gradient(circle, rgba(255,255,255,.12), transparent 62%);
+  animation:bthfGlow 7.5s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce){
+  .bthf .buy, .bthf .buy::after, .bthf .hero::before, .bthf .product::before, .bthf .final::before, .bthf .optin::before { animation:none; }
+}
 `
