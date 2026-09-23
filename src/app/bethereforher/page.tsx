@@ -173,6 +173,7 @@ const extraCss = `
   color:#463640; background:#F4E9DB; }
 .bthf .hero{ background:linear-gradient(165deg,#382634 0%,#6b3f52 58%,#a86a72 100%); }
 .bthf .hero h1{ color:#fdf3ea; }
+.bthf .hero h1 em{ color:#f2b872; font-style:italic; font-size:1.12em; text-shadow:0 2px 20px rgba(242,166,90,.45); }
 .bthf .hero .sub{ color:#f2e2d7; }
 .bthf .hero .sub strong,.bthf .hero strong{ color:#fff; }
 .bthf h1,.bthf h2{ color:#3c2a37; }
