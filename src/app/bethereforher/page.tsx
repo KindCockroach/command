@@ -5,14 +5,14 @@ import { MetaPixel, BuyButton, salesCss } from '@/components/funnel/shared'
 import FreeOptin from './FreeOptin'
 import { MEDS, PREVIEW_FILE } from './meds'
 
-const TITLE = 'Be There For Her — Inner-Child Meditations by Mandi'
+const TITLE = 'Reconnect To Your Intuition — Guided Meditations by Mandi'
 const DESC =
-  'You’ve spent your whole life being there for everyone else. There’s a little girl inside you still waiting for someone to be there for her. Guided meditations in Mandi’s real voice — become the safe place you always needed.'
+  'Guided meditations in a real, warm voice for the woman who’s cared for everyone but herself. Reconnect to your intuition — become your own resting place.'
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESC,
-  openGraph: { title: TITLE, description: DESC, type: 'website', siteName: 'Be There For Her' },
+  openGraph: { title: TITLE, description: DESC, type: 'website', siteName: 'Reconnect To Your Intuition' },
   twitter: { card: 'summary_large_image', title: TITLE, description: DESC },
 }
 
@@ -27,15 +27,14 @@ export default function BeThereForHer() {
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">BE THERE FOR HER · MEDITATIONS BY MANDI</p>
-          <h1>You&rsquo;ve spent your whole life being there for everyone else.</h1>
+          <p className="eyebrow">RECONNECT WITH YOUR INTUITION</p>
+          <h1>You used to just <em>know.</em></h1>
           <p className="sub">
-            There&rsquo;s a little girl inside you who&rsquo;s still waiting for someone to be there
-            for <em>her</em>. These meditations are how you finally become that person &mdash; the
-            safe, steady, unshakeable place she needed all along. In your ears, in your own time,
-            whenever the ache shows up.
+            Lately you&rsquo;re moving through your days a step behind yourself &mdash; doing everything
+            right, feeling everything faintly, not really sure what you&rsquo;re waiting for, but still
+            just waiting.
           </p>
-          <BuyButton href={CHECKOUT} label="Come home to her — $9" />
+          <BuyButton href={CHECKOUT} label="Reconnect to your intuition — $9" />
           <p className="preview-label">Listen free &mdash; &ldquo;The Little You&rdquo;:</p>
           <audio controls preload="none" src={PREVIEW_FILE} className="preview" />
         </div>
@@ -43,22 +42,33 @@ export default function BeThereForHer() {
 
       <section className="band">
         <div className="wrap">
-          <h2>You&rsquo;re the one who holds everyone.</h2>
-          <p>Who reads the room, keeps the peace, makes it okay for everybody else. And at the end of
-            the day, when it&rsquo;s finally quiet, there&rsquo;s a tightness in your chest you
-            can&rsquo;t quite name.</p>
-          <p className="reframe">That&rsquo;s her. The younger you who learned to be good, be quiet,
-            not need too much. She never got held. She&rsquo;s been waiting &mdash; for <em>you</em>.</p>
-          <p>You don&rsquo;t need another book, another course, another expert. You need ten quiet
-            minutes and a voice that helps you go back and tell her the things she needed to hear.
-            That&rsquo;s what this is.</p>
+          <h2>Your intuition is a wellspring.</h2>
+          <p>The quiet knowing underneath everything. When you follow it, doors open &mdash; the right
+            yeses, the right people, the thing you were quietly meant for.</p>
+          <p className="reframe">When you override it, life slowly comes apart &mdash; so gently you almost
+            don&rsquo;t notice, until you&rsquo;re standing in circumstances that don&rsquo;t feel like your
+            own.</p>
+          <p>And after years of being there for everyone else, your intuition has the volume turned way
+            down. <strong>Until now.</strong></p>
+          <p>This is for the woman who&rsquo;s done saying &ldquo;yes&rdquo; when she means &ldquo;no&rdquo;
+            &mdash; bending over backward, under-appreciated, ignoring her own needs. You&rsquo;ve been there
+            for everyone but yourself. Now it&rsquo;s time to reconnect.</p>
         </div>
       </section>
 
       <section className="what">
         <div className="wrap">
           <h2>What&rsquo;s inside</h2>
-          <p className="lead">Guided meditations, in Mandi&rsquo;s voice:</p>
+          <p className="lead"><strong>Reconnect To Your Intuition</strong> is a gentle 7-part listening
+            series that turns up the volume on your intuition &mdash; speaking to your inner child, because
+            that&rsquo;s where your wellspring starts.</p>
+          <p className="walkhead">In 10 minutes you walk away with:</p>
+          <ul className="walkaway">
+            <li>A clearer connection to your intuition</li>
+            <li>Being there for her, the younger you</li>
+            <li>Time to yourself; your own needs, finally met</li>
+          </ul>
+          <p className="lead sevenhead">Seven meditations. Ten minutes of your day.</p>
           <ol className="medlist">
             {MEDS.map((m) => (
               <li key={m.n}>
@@ -67,24 +77,29 @@ export default function BeThereForHer() {
               </li>
             ))}
           </ol>
-          <p className="bonus"><strong>Bonus:</strong> a one-page <em>&ldquo;Which meditation for which
-            day&rdquo;</em> guide, so you always know which one you need.</p>
+          <p className="bonus"><strong>Bonus:</strong> these audios also help you become your own resting
+            place &mdash; even when there&rsquo;s no time to sit.</p>
         </div>
       </section>
 
       <section className="product">
         <div className="wrap">
-          <p className="ptag">Not an app. Not a robot. <span className="arw">Me.</span></p>
-          <p className="psub">Real voice · recorded slow · in a quiet room</p>
-          <p>Every meditation is my own voice &mdash; the same way I once walked a whole cohort of women
-            through this work, years ago. No AI narration. No stock calm-lady. Just a real woman who
-            has done her own inner-child healing, sitting with you while you do yours.</p>
+          <p className="ptag">Where this comes from</p>
+          <p>Hi, I&rsquo;m Mama Mandi &mdash; owner of Joyful Media, and mother to four babies here on earth
+            and one in the heavens.</p>
+          <p>After years of white-knuckling my loss, I came up empty and angry. That&rsquo;s when I found the
+            power of mindful listening, parts work, and inner-child healing.</p>
+          <p>I&rsquo;ve been told I have a voice that commands and an imagination that expands. So if
+            you&rsquo;ve had a hard time sitting through a meditation before, I&rsquo;m confident these will
+            feel different for you.</p>
+          <p>Please let me hold your hand and walk you through the power of your mind, to your heart, where
+            you&rsquo;ll take a warm dip in the wellspring of your intuition.</p>
         </div>
       </section>
 
       <section className="midcta">
         <div className="wrap">
-          <BuyButton href={CHECKOUT} label="Bring her home — $9" />
+          <BuyButton href={CHECKOUT} label="Reconnect to your intuition — $9" />
         </div>
       </section>
 
@@ -104,18 +119,18 @@ export default function BeThereForHer() {
           <p className="eyebrow2">START FREE</p>
           <h2>Not ready yet? Take one on me.</h2>
           <p className="osub">Leave your email and &ldquo;The Little You&rdquo; is yours to keep, right now &mdash;
-            plus a gentle new practice now and then. No pressure, no spam. Just a place to begin.</p>
+            a gentle first step back to yourself. No pressure, no spam. Just a place to begin.</p>
           <FreeOptin />
         </div>
       </section>
 
       <section className="proof">
         <div className="wrap">
-          <h2>Who it&rsquo;s for</h2>
-          <p>The woman who&rsquo;s done everything right and still feels the ache. Who&rsquo;s ready to
-            stop abandoning herself. Who doesn&rsquo;t want to be fixed &mdash; she wants to be held.</p>
-          <p className="guarantee">Listen to all of them. If they don&rsquo;t land, email me and
-            I&rsquo;ll refund you &mdash; no story required. Your healing shouldn&rsquo;t come with a risk.</p>
+          <h2>What changes</h2>
+          <p>You&rsquo;ll start catching the moment you talk yourself out of what you know. You&rsquo;ll hear
+            the quiet &ldquo;yes&rdquo; and the quiet &ldquo;no&rdquo; again &mdash; and trust them. You&rsquo;ll
+            stop asking everyone else what they think before you let yourself know. You&rsquo;ll feel like
+            <em> you</em> again &mdash; the one who was in there the whole time.</p>
         </div>
       </section>
 
@@ -134,15 +149,18 @@ export default function BeThereForHer() {
             <dd>No &mdash; one payment, yours to keep forever. (If you want a new meditation every week, a
               membership is coming; you can join when it opens.)</dd>
             <dt>What if it&rsquo;s not for me?</dt>
-            <dd>Email me and I&rsquo;ll refund you. Simple as that.</dd>
+            <dd>Because this is a digital product with instant access, all sales are final. So listen to the
+              free one first &mdash; &ldquo;The Little You&rdquo; &mdash; and feel my voice before you buy.</dd>
           </dl>
         </div>
       </section>
 
       <section className="final">
         <div className="wrap">
-          <h2>You&rsquo;ve been there for everyone. Start being there for her.</h2>
-          <BuyButton href={CHECKOUT} label="Come home to her — $9" tagline="Instant access · Listen anywhere · Yours to keep" />
+          <h2>You&rsquo;ve been there for everyone. Now reconnect to you.</h2>
+          <BuyButton href={CHECKOUT} label="Reconnect to your intuition — $9" tagline="Instant access · Listen anywhere · Yours to keep" />
+          <p className="terms">Digital product &mdash; no refunds. Not a licensed therapist; these meditations
+            aren&rsquo;t therapy or medical advice. Please use alongside professional care, not in place of it.</p>
         </div>
       </section>
     </main>
@@ -184,6 +202,13 @@ const extraCss = `
 .bthf .medlist .ml { font-size:15px; color:#6a6280; }
 .bthf .bonus { font-size:16px; background:#F3E4D3; border:1px solid #e6cdb6; border-radius:12px; padding:14px 16px; margin-top:18px; color:#4a3a42; }
 .bthf .guarantee { font-size:15px; color:#7a6a72; font-style:italic; margin-top:18px; }
+.bthf .walkhead { font-weight:700; color:var(--midnight); margin:18px 0 8px; }
+.bthf .walkaway { list-style:none; padding:0; margin:0 0 8px; }
+.bthf .walkaway li { position:relative; padding:8px 0 8px 28px; border-top:1px solid #e7e0d3; font-size:16px; color:#4a3a42; }
+.bthf .walkaway li:first-child { border-top:none; }
+.bthf .walkaway li::before { content:"\\2022"; position:absolute; left:6px; top:8px; color:var(--ember); font-weight:800; }
+.bthf .sevenhead { margin-top:26px; font-weight:700; color:var(--midnight); }
+.bthf .final .terms { font-size:12px; color:#5a4a52; opacity:.85; max-width:60ch; margin:16px auto 0; line-height:1.5; }
 
 /* Opt-in (warm candlelit) */
 .bthf .optin { background:linear-gradient(160deg,#4a2f44,#8a5470 66%,#cf8aa0); color:#fff; }
