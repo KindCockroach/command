@@ -8,11 +8,12 @@ import { MEDS, PREVIEW_FILE } from './meds'
 const TITLE = 'Reconnect To Your Intuition — Guided Meditations by Mandi'
 const SHARE_TITLE = 'Mindful Listening by Joyful Media'
 const DESC =
-  'Guided meditations in a real, warm voice for the woman who’s cared for everyone but herself. Reconnect to your intuition — become your own resting place.'
+  'Guided inner-child meditations and mindful listening, in a real warm voice, for the woman who’s cared for everyone but herself. Reconnect to your intuition — become your own resting place.'
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESC,
+  keywords: ['guided meditations', 'meditation', 'inner child healing', 'inner child work', 'mindful listening', 'mindfulness', 'intuition', 'reconnect with your intuition', 'meditation for women', 'self-trust', 'nervous system regulation', 'reparenting'],
   openGraph: { title: SHARE_TITLE, description: DESC, type: 'website', siteName: 'Joyful Media' },
   twitter: { card: 'summary_large_image', title: SHARE_TITLE, description: DESC },
 }
