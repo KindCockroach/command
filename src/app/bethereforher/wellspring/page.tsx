@@ -43,8 +43,7 @@ export default function Wellspring() {
             noise creeps back in. The volume on your intuition slips down. The to-do list swallows you again.</p>
           <p className="reframe">Not because you failed. Because that&rsquo;s what life does when you stop tending
             the quiet.</p>
-          <p className="callout">A wellspring doesn&rsquo;t fill you once and call it done. It keeps flowing.
-            That&rsquo;s the whole idea.</p>
+          <p className="callout">A wellspring keeps flowing. You keep flowing.</p>
         </div>
       </section>
 
