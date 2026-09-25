@@ -7,21 +7,25 @@
 
 ## 0. Welcome to Mindful Listening
 
-Okay. Here we are. Here we go. Wish us luck — and by "us," I mean me and my inner child, who was just be-boppin' around while I got set up. [...]
+Hi, I'm Mandi — and this is an audio series that helps you reconnect to your intuition. [...]
 
-Hey. I'm Mandi. This is Mindful Listening. [...]
+Some will call this meditation, and honestly, I refer to it that way too. But we do things a little differently round these parts. What you're about to experience is best described as **mindful listening.** [...]
 
-First thing — this isn't perfect meditation. If you're fidgeting right now, that's okay. If your brain's got seventeen tabs open, also okay. Mindful listening isn't about clearing your mind or doing it right. It's just a willingness to sit with yourself — and say hi to the little one who lives quietly within. She's been protecting, preventing, and perceiving you this whole time. We're just going to turn around and say hi back. [...]
+Let's drop in. [...]
+
+Find a comfortable seat. Sit up tall — or however tall you've got in you today. [...] Take a deep breath in, and count to four, all the way to the top. One… two… three… four. [...] Hold it right here. [...] Now one more little sip of air. [...] And let it out with a sigh. [...] Good. Let your breathing come back to normal. [...]
+
+And your shoulders — go ahead and let them drop. They've been up around your ears, keeping it high and tight all day. She's done enough. Let her hang out. [...]
+
+**Breathe.** That word — you'll hear me say it a lot. When I do, I'm not asking for anything fancy. Just feel the air in your nostrils. Feel your belly rise and fall. That's it. [...]
+
+Okay — so, mindful listening. [...] This isn't perfect meditation. If you're fidgeting right now, that's okay. If your brain's got seventeen tabs open, also okay. It's not about clearing your mind or doing it right. It's just a willingness to sit with yourself — and say hi to the little one who lives quietly within. She's been protecting, preventing, and perceiving you this whole time. We're just going to turn around and say hi back. [...]
 
 These are not your regular meditations. Here, we laugh. We giggle. We wiggle. All of it's allowed — and all of *you* is allowed. Every part. You're welcome here. [...]
 
-Let me teach you the one cue you'll hear me use: **breathe.** When I say it, I'm not asking for anything fancy. Just feel the air in your nostrils. Feel your belly rise and fall. That's it. [...]
+Pick the one that matches where you are today — the titles will tell you. Ten minutes. And if it gets tender, adjust as needed. You're in charge in here. [...]
 
-So — sit up tall, or don't. Let your shoulders come down; they've been up around your ears keeping it high and tight all day. She's done enough. Let her hang out. [...]
-
-Pick the meditation that matches where you are today — the titles will tell you. Ten minutes. And if it gets tender, adjust as needed. You're in charge in here. [...]
-
-That's it. That's mindful listening. When you're ready… take a sip of air. And let's begin.
+When you're ready… take a sip of air. And let's begin.
 
 ---
 
