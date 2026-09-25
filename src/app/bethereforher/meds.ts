@@ -10,4 +10,4 @@ export const MEDS = [
   { n: 7, file: '07-you-dont-have-to-earn-it.mp3', title: 'You Don’t Have to Earn It', line: 'For the part of you afraid love will leave.' },
 ] as const
 
-export const PREVIEW_FILE = '/bethereforher/02-the-little-you.m4a'
+export const PREVIEW_FILE = '/bethereforher/preview-little-you.m4a'
