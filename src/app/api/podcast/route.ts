@@ -209,6 +209,7 @@ ${CRAFT_RULES}`
   "episode_description": "ONE ready-to-post episode description (200-400 words) used identically on YouTube, Spotify, and Apple. Scene + what's inside + who it's for.",
   "youtube_title": "YouTube-optimized title",
   "youtube_tags": ["8-12 tags"],
+  "thumbnail_titles": ["5 YouTube THUMBNAIL overlay texts — 2-5 WORDS each, the big legible words that sit ON the thumbnail image (NOT a sentence, NOT the title). High tension/curiosity or a hard number pulled from THIS episode's specifics. No period, no quotes. e.g. '3 JOBS, ZERO DEGREE' / 'THE $0 START' / 'SHE ALMOST QUIT'"],
   "pinterest_pins": [
     {"title": "pin title", "description": "keyword-rich pin description", "image_prompt": "a detailed, ready-to-generate visual prompt for this pin — warm, on-brand, no text baked in"}
   ],

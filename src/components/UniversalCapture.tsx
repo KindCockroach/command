@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import VideoDraftPanel from './VideoDraftPanel'
+import { uploadBig, folderFor } from '@/lib/uploadBig'
 import { Sparkles, Loader2, Upload, X, ArrowRight, CheckCircle2, FileText, Video, Music, Image, Link, Brain } from 'lucide-react'
 
 interface PlannedAction {
@@ -60,6 +61,7 @@ export default function UniversalCapture() {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadPct, setUploadPct] = useState<number | null>(null)
   const [result, setResult] = useState<Classification | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [savedRoute, setSavedRoute] = useState<string | null>(null)
@@ -95,37 +97,15 @@ export default function UniversalCapture() {
 
   const uploadFile = async (f: File) => {
     setUploading(true)
+    setUploadPct(null)
     try {
-      const folder = f.type.startsWith('video') ? 'videos'
-        : f.type.startsWith('audio') ? 'audio'
-        : f.type.startsWith('image') ? 'images' : 'files'
-      const ct = f.type || 'application/octet-stream'
-
-      // Presigned direct-to-R2 PUT first so big videos bypass the server's
-      // request-body limit — buffering a large video THROUGH the server OOMs on
-      // Railway, which is exactly the "Something went wrong" on dropped videos.
-      // Fall back to a through-server multipart upload if the direct PUT can't run.
-      try {
-        const pre = await fetch('/api/upload', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: f.name, contentType: ct, folder }),
-        })
-        const pd = await pre.json().catch(() => ({}))
-        if (pre.ok && pd.uploadUrl && pd.publicUrl) {
-          const put = await fetch(pd.uploadUrl, { method: 'PUT', headers: { 'Content-Type': ct }, body: f })
-          if (put.ok) return { publicUrl: pd.publicUrl as string, fileType: f.type, fileName: f.name }
-        }
-      } catch { /* fall through to multipart */ }
-
-      const fd = new FormData()
-      fd.append('file', f)
-      fd.append('folder', folder)
-      const res = await fetch('/api/upload', { method: 'POST', body: fd })
-      const d = await res.json().catch(() => ({}))
-      if (!res.ok || !d.publicUrl) throw new Error(d.error || `Couldn't upload ${f.name} — it may be too large.`)
-      return { publicUrl: d.publicUrl as string, fileType: f.type, fileName: f.name }
+      // Chunked uploader — any size, no bucket CORS, no server OOM. Big files
+      // upload in parts with a live percentage; small ones go straight through.
+      const { publicUrl } = await uploadBig(f, folderFor(f), p => setUploadPct(p.pct))
+      return { publicUrl, fileType: f.type, fileName: f.name }
     } finally {
       setUploading(false)
+      setUploadPct(null)
     }
   }
 
@@ -280,7 +260,7 @@ export default function UniversalCapture() {
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <button onClick={() => classify()} disabled={loading || uploading || (!input.trim() && !file)}
           style={{ flex: 1, padding: '11px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: (!input.trim() && !file) ? 0.5 : 1 }}>
-          {loading || uploading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> {uploading ? 'Uploading...' : 'Analyzing...'}</> : <><Sparkles size={14} /> Go</>}
+          {loading || uploading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> {uploading ? `Uploading${uploadPct != null ? ` ${uploadPct}%` : '...'}` : 'Analyzing...'}</> : <><Sparkles size={14} /> Go</>}
         </button>
         <p style={{ fontSize: '11px', color: 'var(--text-subtle)', whiteSpace: 'nowrap' }}>⌘ + Enter</p>
       </div>

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { Loader2, Copy, CheckCircle2, ChevronDown, ChevronUp, Mic, Zap, Save, ImageIcon, PenLine, Sparkles } from 'lucide-react'
+import { uploadBig } from '@/lib/uploadBig'
 
 interface Deliverables {
   core_takeaway?: string
@@ -21,6 +22,7 @@ interface Deliverables {
   medium_article: { title: string; subtitle: string; sections?: { heading: string; body: string }[]; closing?: string; body?: string; sources?: string[] }
   youtube_title: string
   youtube_tags: string[]
+  thumbnail_titles?: string[]
   episode_description?: string
   pinterest_pins: { title: string; description: string; image_prompt?: string }[]
   ad_reads: { pre_roll: string; mid_roll: string; post_roll: string }
@@ -242,47 +244,17 @@ export default function PodcastEngine() {
     const mb = (file.size / 1048576).toFixed(1)
     setAudioMsg(`Saving ${file.name} (${mb}MB) to your Media library…`)
     try {
-      // 1) Store the episode to Media (R2). Prefer a PRESIGNED direct-to-R2 PUT so
-      // big episodes bypass the server's request-body limit; fall back to a
-      // through-server multipart upload if the direct PUT can't be used.
+      // 1) Store the episode to Media (R2) via the chunked uploader — ANY size,
+      // no bucket CORS, no server OOM. Big files upload in ~48MB parts with a live
+      // percentage; small ones go straight through the relay.
       let publicUrl = ''
-      let presignNote = '' // why the fast direct-to-R2 path didn't take, for diagnostics
       try {
-        const pre = await fetch('/api/upload', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: file.name, contentType: file.type || 'audio/mpeg', folder: 'audio' }),
-        })
-        const pd = await pre.json().catch(() => ({}))
-        if (pre.ok && pd.uploadUrl && pd.publicUrl) {
-          const put = await fetch(pd.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'audio/mpeg' }, body: file })
-          if (put.ok) publicUrl = pd.publicUrl
-          else presignNote = `direct upload returned ${put.status}`
-        } else {
-          presignNote = pd.error || `presign returned ${pre.status}`
-        }
+        const r = await uploadBig(file, 'audio', p => setAudioMsg(`Uploading ${file.name} (${mb}MB) — ${p.pct}%…`))
+        publicUrl = r.publicUrl
       } catch (e) {
-        // A CORS block surfaces here as a TypeError — the direct PUT never lands.
-        presignNote = `direct upload blocked (${e instanceof Error ? e.message : 'network/CORS'})`
-      }
-
-      if (!publicUrl) {
-        // Raw-binary relay through the server — no multipart parsing to choke on.
-        const up = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'x-filename': file.name, 'x-folder': 'audio', 'Content-Type': file.type || 'application/octet-stream' },
-          body: file,
-        }).catch(() => null)
-        const upd = up ? await up.json().catch(() => ({})) : {}
-        if (!up || !up.ok || !upd.publicUrl) {
-          setAudioState('error')
-          const tooBig = file.size > 90 * 1048576
-          const sizeHint = tooBig ? ` This episode is ${mb}MB — that may exceed the server relay limit; the direct-to-R2 path (bucket CORS) is needed for very large files.` : ''
-          const serverWhy = up ? (upd.error || `server ${up.status}`) : 'server unreachable'
-          const why = presignNote ? `${presignNote}; ${serverWhy}` : serverWhy
-          setAudioMsg(`Upload failed (${why}).${sizeHint} Try again, or use “Pull from Media” if it saved.`)
-          return
-        }
-        publicUrl = upd.publicUrl
+        setAudioState('error')
+        setAudioMsg(`Upload failed (${e instanceof Error ? e.message : 'unknown'}). Try again, or use “Pull from Media” if it saved.`)
+        return
       }
       const upd = { publicUrl }
       // 2) Transcribe from the stored URL — server fetches + compresses big files itself.
@@ -465,31 +437,15 @@ export default function PodcastEngine() {
     } finally { setPullingKey(null) }
   }
 
-  // Upload an audio file to Media (R2), returning its public URL. Presigned direct
-  // PUT first (bypasses the request-body limit), multipart fallback.
+  // Upload an audio/video file to Media (R2), returning its public URL. Uses the
+  // chunked uploader — any size, no bucket CORS, no server OOM.
   const uploadAudioToMedia = async (file: File): Promise<{ url: string; error?: string }> => {
-    let note = ''
     try {
-      const pre = await fetch('/api/upload', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, contentType: file.type || 'audio/mpeg', folder: 'audio' }),
-      })
-      const pd = await pre.json().catch(() => ({}))
-      if (pre.ok && pd.uploadUrl && pd.publicUrl) {
-        const put = await fetch(pd.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'audio/mpeg' }, body: file })
-        if (put.ok) return { url: pd.publicUrl }
-        note = `direct upload ${put.status}`
-      } else note = pd.error || `presign ${pre.status}`
-    } catch (e) { note = `direct upload blocked (${e instanceof Error ? e.message : 'CORS'})` }
-    // Fallback: raw-binary relay through the server (reliable — no multipart parsing).
-    const up = await fetch('/api/upload', {
-      method: 'POST',
-      headers: { 'x-filename': file.name, 'x-folder': 'audio', 'Content-Type': file.type || 'application/octet-stream' },
-      body: file,
-    }).catch(() => null)
-    const upd = up ? await up.json().catch(() => ({})) : {}
-    if (up && up.ok && upd.publicUrl) return { url: upd.publicUrl }
-    return { url: '', error: `${note}; ${up ? (upd.error || `server ${up.status}`) : 'server unreachable'}` }
+      const { publicUrl } = await uploadBig(file, 'audio')
+      return { url: publicUrl }
+    } catch (e) {
+      return { url: '', error: e instanceof Error ? e.message : 'upload failed' }
+    }
   }
 
   // ONE-TAP QUICK REEL — audio → /api/clip does it all: transcribe, write the post
@@ -535,6 +491,7 @@ export default function PodcastEngine() {
       d.medium_article ? `\n## Medium Article\n# ${d.medium_article.title}\n*${d.medium_article.subtitle}*\n\n${mediumBody(d.medium_article)}` : '',
       `\n## Episode description (YouTube / Spotify / Apple — same everywhere)\n${d.episode_description ?? ''}`,
       d.youtube_title ? `\n## YouTube title + tags\n${d.youtube_title}\nTags: ${(d.youtube_tags ?? []).join(', ')}` : '',
+      (d.thumbnail_titles?.length ?? 0) > 0 ? `\n## YouTube thumbnail titles\n${(d.thumbnail_titles ?? []).map(t => `- ${t}`).join('\n')}` : '',
       d.ad_reads ? `\n## Ad Reads\nPRE-ROLL: ${d.ad_reads.pre_roll}\n\nMID-ROLL: ${d.ad_reads.mid_roll}\n\nPOST-ROLL: ${d.ad_reads.post_roll}` : '',
       `\n## Pinterest Pins\n${(d.pinterest_pins ?? []).map(p => `- ${p.title}: ${p.description}`).join('\n')}`,
       d.manychat_trigger ? `\n## ManyChat\nTrigger: ${d.manychat_trigger}\nDM: ${d.manychat_dm}` : '',
@@ -950,6 +907,21 @@ export default function PodcastEngine() {
               </div>
             ))}
           </Section>
+
+          {/* YouTube thumbnail titles — the big words that go ON the thumbnail */}
+          {(result.thumbnail_titles?.length ?? 0) > 0 && (
+            <Section title="🖼️ YouTube Thumbnail Titles" defaultOpen>
+              <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginBottom: '6px' }}>The big, legible words to put ON the thumbnail image — 2-5 words each. Pick one.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {result.thumbnail_titles!.map((t, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', background: 'var(--surface-raised)', borderRadius: '8px', borderLeft: '3px solid #E8448A' }}>
+                    <p style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text)', letterSpacing: '0.01em', textTransform: 'uppercase', lineHeight: 1.25 }}>{t}</p>
+                    <CopyBtn text={t} />
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
 
           {/* Pull Quotes — your own words are your best hooks */}
           <Section title="💬 Pull Quotes (your words = your best hooks)">

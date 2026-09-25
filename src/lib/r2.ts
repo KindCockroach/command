@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, PutBucketCorsCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, PutBucketCorsCommand, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { randomUUID } from 'crypto'
 
@@ -86,6 +86,46 @@ export async function putObjectStream(key: string, body: NodeJS.ReadableStream, 
   if (!client) return false
   await client.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body as unknown as Uint8Array, ContentLength: contentLength, ContentType: contentType }))
   return true
+}
+
+// ── Chunked (multipart) upload ───────────────────────────────────────────────
+// The reliable big-file path: the browser slices the file into parts small enough
+// to pass through the server (under the proxy body limit), each part is streamed
+// straight into R2, then the parts are stitched server-side. No bucket CORS needed
+// (everything is same-origin to our server), and the server never holds more than
+// one part in memory — so a 137MB meditation or a 4GB video both upload without
+// OOM and without the direct-to-R2 CORS path. Uses the existing object-scoped
+// token (multipart is an object-level operation).
+export type PartTag = { PartNumber: number; ETag: string }
+
+export async function createMultipart(key: string, contentType: string): Promise<string | null> {
+  const client = r2Client()
+  if (!client) return null
+  const out = await client.send(new CreateMultipartUploadCommand({ Bucket: BUCKET, Key: key, ContentType: contentType }))
+  return out.UploadId ?? null
+}
+
+export async function uploadPart(key: string, uploadId: string, partNumber: number, body: Uint8Array | Buffer): Promise<string | null> {
+  const client = r2Client()
+  if (!client) return null
+  const out = await client.send(new UploadPartCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId, PartNumber: partNumber, Body: body }))
+  return out.ETag ?? null
+}
+
+export async function completeMultipart(key: string, uploadId: string, parts: PartTag[]): Promise<boolean> {
+  const client = r2Client()
+  if (!client) return false
+  await client.send(new CompleteMultipartUploadCommand({
+    Bucket: BUCKET, Key: key, UploadId: uploadId,
+    MultipartUpload: { Parts: parts.sort((a, b) => a.PartNumber - b.PartNumber) },
+  }))
+  return true
+}
+
+export async function abortMultipart(key: string, uploadId: string): Promise<void> {
+  const client = r2Client()
+  if (!client) return
+  await client.send(new AbortMultipartUploadCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId })).catch(() => {})
 }
 
 /** Public URL for a stored object (requires R2 public bucket or custom domain) */

@@ -35,18 +35,17 @@ async function transcribeFile(filePath: string): Promise<string> {
 // Compress an oversized file to speech-quality mono MP3, SAVE that compressed copy
 // to Media (so there's always a downloadable smaller version), then transcribe
 // (chunking if a very long episode is still over the cap).
-async function compressAndTranscribe(bytes: Buffer, origName: string): Promise<{ transcript: string; compressedUrl: string }> {
+// Core: ffmpeg reads `input` — a local file path OR an http(s) URL. For a URL,
+// ffmpeg STREAMS the source, so a huge remote video/episode is never buffered in
+// Node memory. `-vn` drops any video track, so a dropped VIDEO transcribes too.
+async function compressAndTranscribeInput(input: string, origName: string): Promise<{ transcript: string; compressedUrl: string }> {
   if (!(await hasFfmpeg())) throw new Error('ffmpeg-unavailable')
   const dir = await mkdtemp(path.join(tmpdir(), 'rise-audio-'))
   try {
-    const inExt = (origName.split('.').pop() ?? 'wav').toLowerCase()
-    const inPath = path.join(dir, `in.${inExt}`)
-    await writeFile(inPath, bytes)
-
     // 128kbps mono MP3 — voice-grade quality good enough to reuse in HeyGen /
     // published video (not just transcription). ~57MB/hour vs a ~140MB/45min WAV.
     const compPath = path.join(dir, 'compressed.mp3')
-    await run('ffmpeg', ['-y', '-i', inPath, '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '128k', compPath])
+    await run('ffmpeg', ['-y', '-i', input, '-vn', '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '128k', compPath])
 
     // Keep the compressed copy in Media — this is the "where do I get the compressed version" answer.
     let compressedUrl = ''
@@ -77,6 +76,20 @@ async function compressAndTranscribe(bytes: Buffer, origName: string): Promise<{
   }
 }
 
+// Bytes wrapper — for multipart uploads already held in memory.
+async function compressAndTranscribe(bytes: Buffer, origName: string): Promise<{ transcript: string; compressedUrl: string }> {
+  if (!(await hasFfmpeg())) throw new Error('ffmpeg-unavailable')
+  const dir = await mkdtemp(path.join(tmpdir(), 'rise-audio-in-'))
+  try {
+    const inExt = (origName.split('.').pop() ?? 'wav').toLowerCase()
+    const inPath = path.join(dir, `in.${inExt}`)
+    await writeFile(inPath, bytes)
+    return await compressAndTranscribeInput(inPath, origName)
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
 // Drop an audio file → store it in Media AND transcribe it (Whisper).
 // Oversized files are auto-compressed (and the compressed MP3 is kept in Media).
 export async function POST(req: NextRequest) {
@@ -86,26 +99,31 @@ export async function POST(req: NextRequest) {
   if (contentType.includes('application/json')) {
     const { audioUrl } = await req.json().catch(() => ({}))
     if (!audioUrl) return NextResponse.json({ error: 'audioUrl required' }, { status: 400 })
+    // A relative media-proxy URL (/api/media/…) needs an absolute base so ffmpeg
+    // (and the fetch fallback) can reach it.
+    const url = String(audioUrl).startsWith('/') ? `http://127.0.0.1:${process.env.PORT || 3000}${audioUrl}` : String(audioUrl)
+    const name = String(audioUrl).split('/').pop() || 'audio'
     try {
-      const resp = await fetch(audioUrl)
-      if (!resp.ok) return NextResponse.json({ error: `Could not fetch audio (${resp.status})` }, { status: 502 })
-      const bytes = Buffer.from(await resp.arrayBuffer())
-      const name = audioUrl.split('/').pop() || 'audio'
-      if (bytes.length <= LIMIT) {
-        const transcription = await transcribeFileFromBytes(bytes, name)
-        return NextResponse.json({ transcript: transcription })
-      }
-      // Oversized → compress, keep the compressed copy, transcribe
-      try {
-        const { transcript, compressedUrl } = await compressAndTranscribe(bytes, name)
-        return NextResponse.json({ transcript, compressedUrl, compressed: true })
-      } catch (e) {
-        const msg = e instanceof Error && e.message === 'ffmpeg-unavailable'
-          ? `That file is ${(bytes.length / 1048576).toFixed(0)}MB — over Whisper's 25MB limit and compression isn't available on the server. Grab the transcript from Riverside instead.`
-          : `Transcription failed: ${e instanceof Error ? e.message : 'unknown'}`
-        return NextResponse.json({ error: msg }, { status: 413 })
-      }
+      // ffmpeg streams the source straight from R2 — extracts audio, compresses,
+      // chunks — so ANY size and VIDEO too, without buffering the file in Node.
+      const { transcript, compressedUrl } = await compressAndTranscribeInput(url, name)
+      return NextResponse.json({ transcript, compressedUrl, compressed: true })
     } catch (e) {
+      // Only if ffmpeg is missing: fetch + Whisper for a small file (best-effort).
+      if (e instanceof Error && e.message === 'ffmpeg-unavailable') {
+        try {
+          const resp = await fetch(url)
+          if (!resp.ok) return NextResponse.json({ error: `Could not fetch audio (${resp.status})` }, { status: 502 })
+          const bytes = Buffer.from(await resp.arrayBuffer())
+          if (bytes.length <= LIMIT) {
+            const transcript = await transcribeFileFromBytes(bytes, name)
+            return NextResponse.json({ transcript })
+          }
+          return NextResponse.json({ error: `That file is ${(bytes.length / 1048576).toFixed(0)}MB — over Whisper's 25MB limit and compression isn't available on the server.` }, { status: 413 })
+        } catch (e2) {
+          return NextResponse.json({ error: `Transcription failed: ${e2 instanceof Error ? e2.message : 'unknown'}` }, { status: 502 })
+        }
+      }
       return NextResponse.json({ error: `Transcription failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
     }
   }
