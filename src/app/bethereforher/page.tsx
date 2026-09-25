@@ -6,14 +6,15 @@ import FreeOptin from './FreeOptin'
 import { MEDS, PREVIEW_FILE } from './meds'
 
 const TITLE = 'Reconnect To Your Intuition — Guided Meditations by Mandi'
+const SHARE_TITLE = 'Mindful Listening by Joyful Media'
 const DESC =
   'Guided meditations in a real, warm voice for the woman who’s cared for everyone but herself. Reconnect to your intuition — become your own resting place.'
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESC,
-  openGraph: { title: TITLE, description: DESC, type: 'website', siteName: 'Reconnect To Your Intuition' },
-  twitter: { card: 'summary_large_image', title: TITLE, description: DESC },
+  openGraph: { title: SHARE_TITLE, description: DESC, type: 'website', siteName: 'Joyful Media' },
+  twitter: { card: 'summary_large_image', title: SHARE_TITLE, description: DESC },
 }
 
 const CHECKOUT = process.env.NEXT_PUBLIC_BETHEREFORHER_CHECKOUT || '#'
