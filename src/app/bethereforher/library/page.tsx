@@ -40,10 +40,17 @@ export default async function Library({
       <style>{css}</style>
       <div className="wrap">
         <p className="eyebrow">BE THERE FOR HER · YOUR LIBRARY 🤍</p>
-        <h1>Welcome home.</h1>
+        <h1>Welcome back to your intuitive self.</h1>
         <p className="sub">All seven meditations are yours to keep. Press play right here, or download
           each one to your phone and listen anytime &mdash; in the car, in the bath, in the dark at 2am.
           There&rsquo;s no right way. Just come back to her whenever you need to.</p>
+
+        <div className="intro">
+          <h2>Welcome to Mindful Listening</h2>
+          <p>Start here. A few minutes with me &mdash; what this is, how to use it, and why you can&rsquo;t
+            do it wrong.</p>
+          <audio controls preload="none" src="/bethereforher/00-welcome.mp3" />
+        </div>
 
         <ol className="meds">
           {MEDS.map((m) => (
@@ -85,6 +92,10 @@ const css = `
 .lib .eyebrow { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--nebula); margin:0; }
 .lib h1 { font-family:Georgia,serif; font-size:clamp(30px,5vw,40px); margin:8px 0 12px; }
 .lib .sub { font-size:18px; color:#4a4560; margin:0 0 28px; }
+.lib .intro { background:linear-gradient(160deg,#4a2f44,#8a5470); color:#fdf3ea; border-radius:16px; padding:22px; margin:0 0 26px; }
+.lib .intro h2 { font-family:Georgia,serif; font-size:22px; margin:0 0 6px; color:#fff; }
+.lib .intro p { font-size:15px; color:#f3ecf7; margin:0 0 12px; }
+.lib .intro audio { width:100%; }
 .lib .meds { list-style:none; padding:0; margin:0; }
 .lib .meds li { background:#FBF3EA; border:1px solid #e6d6c4; border-radius:16px; padding:18px 20px; margin:14px 0; }
 .lib .head { display:flex; flex-direction:column; gap:2px; margin-bottom:10px; }
