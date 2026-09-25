@@ -1,84 +1,108 @@
-# Reconnect To Your Intuition — Meditation Scripts
-*In Mandi's voice. `[…]` = a pause; leave a real silence. Read slower and lower than feels natural. Leave space.*
+# Reconnect To Your Intuition — Scripts (Mandi's Voice)
+*Calibrated to Mandi's real recording. `[…]` = a real pause. Loose, warm, a little funny. Not perfect — that's the point.*
 
-> **Voice note:** I opened these with a light "love" — swap for "sweet girl," a name, or nothing. The intuition thread lands in each closing.
+> **Voice rules (the compass):** Open loose & human. Friend, not guru. Permission for imperfection up front. "**breathe**" = one-word anchor (feel the air in your nostrils, belly rising & falling). Physical gentle humor ("high and tight," "seventeen tabs," "let her hang out"). The **star induction** is yours. "This may be tender — adjust as needed." Reparenting: *"you don't have to run the show anymore, you get to just be a kid," "you'll never be alone again," "I love you, I'll see you soon."* Parts framing: *"she's been protecting, preventing, and perceiving you."* Every close returns to **intuition** — safe girl = the knowing comes back.
+
+---
+
+## 0. Welcome to Mindful Listening
+
+Okay. Here we are. Here we go. Wish us luck — and by "us," I mean me and my inner child, who was just be-boppin' around while I got set up. [...]
+
+Hey. I'm Mandi. This is Mindful Listening. [...]
+
+First thing — this isn't perfect meditation. If you're fidgeting right now, that's okay. If your brain's got seventeen tabs open, also okay. Mindful listening isn't about clearing your mind or doing it right. It's just a willingness to sit with yourself — and say hi to the little one who lives quietly within. She's been protecting, preventing, and perceiving you this whole time. We're just going to turn around and say hi back. [...]
+
+These are not your regular meditations. Here, we laugh. We giggle. We wiggle. All of it's allowed — and all of *you* is allowed. Every part. You're welcome here. [...]
+
+Let me teach you the one cue you'll hear me use: **breathe.** When I say it, I'm not asking for anything fancy. Just feel the air in your nostrils. Feel your belly rise and fall. That's it. [...]
+
+So — sit up tall, or don't. Let your shoulders come down; they've been up around your ears keeping it high and tight all day. She's done enough. Let her hang out. [...]
+
+Pick the meditation that matches where you are today — the titles will tell you. Ten minutes. And if it gets tender, adjust as needed. You're in charge in here. [...]
+
+That's it. That's mindful listening. When you're ready… take a sip of air. And let's begin.
 
 ---
 
 ## 1. Come Back to Your Body
 *A reset for when you've held it all day.*
 
-Hi, love. It's Mandi. [...]
+Hey. Okay. Here we go. [...]
 
-You don't have to fix a single thing right now. You don't have to figure anything out. You just have to be here, with me, for the next few minutes. [...]
+You've held it all day, haven't you. Everyone else's stuff, the schedule, the mental list that never ends. Set it down for ten minutes. It'll wait. Trust me, it's very good at waiting. [...]
 
-Let's start with one breath. Not a big, perfect one — just a real one. In through your nose… [...] and let it fall out of your mouth. [...] Again. In… [...] and out. [...] Good.
+Find a comfortable seat. Sit up tall — or however tall you've got in you right now. Take a deep breath in, count to four, all the way to the top. One… two… three… four. [...] Hold it here. [...] Take another sip of air. [...] And let it out with a sigh. [...] Good. Resume breathing normal.
 
-Feel the weight of your body against whatever's holding you — the chair, the bed, the floor. It's holding you. You don't have to hold yourself up for these few minutes. Let it take you. [...]
+Now — your shoulders. Go ahead and let them drop. They've been up around your ears keeping it high and tight since about seven this morning. She's done enough. Let her hang out. [...] Let your jaw unclench. It's been clenched too. [...] Let your hands go heavy. [...]
 
-Now bring one hand and rest it somewhere on your body. Your chest. Your belly. Your cheek. Wherever it wants to land. [...] This is the same hand that's done so much today, for everyone else. Let it land on *you* now. [...]
+**Breathe.** [...]
 
-Notice, without changing it — where are you holding the day? Your jaw. Your shoulders up by your ears. That spot between your eyebrows. Your chest. [...] You don't have to force it to soften. Just let it know you noticed. That someone finally noticed. [...]
+Feel the weight of you against whatever's holding you up — the chair, the bed, the floor. It's got you. You don't have to hold yourself up in here. [...]
 
-Take a breath into that exact place. [...] And as you let it go, let your shoulders come down. Just an inch. [...] Let your jaw unclench. [...] Let your hands be heavy. [...]
+Put one hand somewhere on your body. Your chest, your belly, wherever it wants to land. This is the same hand that did everything today, for everyone. Let it land on *you* now. [...]
 
-Under all the doing, there's a quieter you. She's the one who knows things before you can explain them. She's been waiting all day for a moment of your attention. [...] She's not asking you to be more. She's just glad you came back. [...]
+Underneath all the doing, there's a quieter you. She's the one who knows things before you can explain them — that little gut feeling you keep talking yourself out of. She's been waiting all day for you to come back. [...] She's not asking you to be more. She's just glad you're here. [...]
 
-Stay here with her for one more breath. [...] In… [...] and out. [...]
+**Breathe.** One more. [...]
 
-You can come back to this any time you've held it all day. It only takes a breath, a hand, and the willingness to come home to yourself. [...]
+You can come back to this anytime you've held it all day. A breath, a hand, and the willingness to come home to yourself. That's the whole trick. [...]
 
-When you're ready, open your eyes. You're here. You made it back. And I'm so glad you're here.
+When you're ready, open your eyes. You made it back. And I'm so glad you're here.
 
 ---
 
 ## 2. The Little You
 *Meet the child you were, and finally see her.*
 
-Hi, love. Let's take this one slow. [...]
+Hey. Let's take this one slow. This is a favorite of mine. [...]
 
-Close your eyes, and let a couple of breaths move through you. In… [...] out… [...] Nothing to do. Nowhere to be. [...]
+Get comfortable. Deep breath in — one, two, three, four. [...] Hold it. [...] And out with a sigh. [...] Let your shoulders come down. Let her hang out. [...]
 
-I want you to picture yourself as a little girl. Whatever age comes first — don't choose her, let her come. [...] Maybe you can see what she's wearing. Her hair. The look on her face. [...]
+We're going to take a little journey behind your eyelids. Close your eyes — and here's a funny thing: your eyeballs still have a depth field. So see if you can look into your eyelids, as far ahead as your eyes can focus, into the dark. [...]
 
-Just look at her for a moment. [...] She doesn't know yet everything you know now. She doesn't know how it turns out. She's just… her. [...]
+**Breathe.** [...]
 
-Notice what she needed, back then, that she didn't get. To be seen. To be told she wasn't too much. To have someone kneel down to her level and really *look*. [...]
+Now use your imagination, and find a tiny star. Like the first star of the night — that one that might be Venus, might be Mars, who knows. [...] Watch it start to glow brighter. Getting closer. [...] Brighter. Closer. [...] And let that star bloom into light — and in the light, a small child appears. [...]
 
-So do that now. In your mind, get down to her level. [...] Look her in the eyes. And tell her — *I see you.* [...] *I've been looking for you.* [...]
+Take a minute here. Recall what you looked like when you were little. Think of your favorite childhood photo. [...] And now see that little girl, standing in the light, in front of you. [...]
 
-She might not trust it at first. That's okay. She learned not to. [...] You don't have to convince her. You just have to keep showing up. [...]
+Go to her. See her looking back at you — with wonder, and delight. [...] Kneel down. Hold out your hand. She may take it. [...]
 
-If it feels right, let her come closer. Maybe she climbs into your lap. Maybe she just stands near. However she'll let you. [...]
+And say to her: *Hi. It has been such a long, long, long time.* [...] *And I know that's extra long for you — when you're a kid, everything feels like forever.* [...] *It's so good to see you. Look at your smile. You are so bright.* [...]
 
-And whisper to her the thing you most needed to hear: *You didn't do anything wrong. You were always enough. I'm here now.* [...]
+This may be tender. Adjust as needed. She is so patient. So happy you're here. [...]
 
-That little girl is where your knowing lives. Every time you abandoned her, you turned your own intuition down. Every time you turn back toward her, it comes back up. [...]
+Hold her hand in yours — feel it, hold your own hand — and tell her: *I'm sorry it took me so long to talk to you. I'm here now. And you will never be alone again.* [...] *You don't have to run the show anymore. You get to just be a kid.* [...]
 
-Stay with her one more breath. [...] Tell her you'll be back. And mean it. [...]
+That little girl? She's where your knowing lives. Every time you turn back toward her, your intuition turns back up. [...]
 
-When you're ready, come back — slowly. She comes with you now.
+**Breathe.** [...] Tell her: *Thank you for meeting me here. I love you. I'll see you again soon.* [...]
+
+When you're ready, come back — slow. She comes with you now.
 
 ---
 
 ## 3. The Vast and the Held
 *When everything feels too big, go bigger.*
 
-Hi, love. If everything feels like too much right now — good. You're in the right place. [...]
+Hey. If everything feels like too much right now — perfect. You're in the exact right place. [...]
 
-Let's breathe. In… [...] out… [...] Let the out-breath be longer than the in. [...] Again. [...]
+Breathe in — one, two, three, four. [...] And out, long and slow, with a sigh. Let the out-breath be longer than the in. [...] Again. [...]
 
-When life gets too big, the instinct is to shrink — to pull in tight, to brace. [...] Today we're going to do the opposite. We're going to get bigger than the thing that's crowding you. [...]
+Okay. When life gets too big, what do we do? We shrink. We brace, we pull in tight, we make ourselves small and try to white-knuckle it. [...] Today we're doing the opposite. We're going to get *bigger* than the thing that's crowding you. [...]
 
-Picture yourself where you are. Now let your awareness lift — up out of the room. See the roof. [...] Higher. The street, the town, small below you. [...] Higher still. The whole curve of the land, the weather moving across it. [...] And higher — until you're looking at the whole quiet earth, turning in the dark, held by something vast. [...]
+**Breathe.** [...]
 
-From up here, the thing that felt so big… is still real. But it's held now. Inside something so much larger. [...] And so are you. [...]
+Picture yourself right where you are. And now let your awareness lift — up, out of the room. Past the pile of laundry that will, I promise, still be there when we're done. [...] Up over the roof. The street, the neighborhood, small underneath you. [...] Higher. The whole town. The curve of the land. [...] Higher still — until you're looking at the whole quiet earth, turning in the dark, held by something so much bigger than all of it. [...]
 
-You are a small, breathing woman on a turning planet, and you are *held.* You always were. [...]
+From up here… the thing that felt so huge is still real. But look — it's held now. Tucked inside something enormous. [...] And so are you. [...]
 
-Now come back down — slowly. The land. The town. The roof. The room. Your body in it. [...] But bring the bigness with you. The knowing that whatever it is, it fits inside something larger, and so do you. [...]
+You are one small, breathing woman on a turning planet, and you are *held.* You always were. Even when nobody told you. [...]
 
-Take one more breath from that place. [...] Your intuition speaks quietest when you're braced and small. It gets loud again when you remember how held you are. [...]
+**Breathe.** [...]
+
+Now float back down — gentle. The land, the town, the roof, the room, your body in it. [...] But bring the bigness with you. [...] Because here's the thing: your intuition goes quiet when you're braced and tiny. It gets loud again the second you remember how held you are. [...]
 
 When you're ready, open your eyes. Nothing shrank you. You got bigger.
 
@@ -87,50 +111,54 @@ When you're ready, open your eyes. Nothing shrank you. You got bigger.
 ## 4. Becoming Her Safe Place
 *For the part of you that learned to earn love.*
 
-Hi, love. Settle in. This one's tender. [...]
+Hey. Settle in. This one's tender — so, you know the drill, adjust as needed. [...]
 
-Breathe with me. In… [...] and out… [...] Let your body get heavy. [...]
+Breathe in — one, two, three, four. [...] Hold. [...] Out with a sigh. [...] Shoulders down. Let her hang out. [...]
 
-Somewhere along the way, you learned that love had to be earned. That you had to be good enough, quiet enough, helpful enough, to get to keep it. [...] So you performed. You achieved. You anticipated everyone's needs before your own. [...] And it worked — but it cost you the little girl who just wanted to be loved for nothing. For simply being here. [...]
+Somewhere back there, you learned that love had to be earned. That you had to be good enough, quiet enough, helpful enough, to get to keep it. [...] So you got *so* good at earning. Anticipating everyone's needs before your own. Reading the room before you walked in it. [...] And it worked — but it cost you the little girl who just wanted to be loved for nothing at all. For simply showing up. [...]
 
-Let's find her. The one who's still working so hard. [...] See her — maybe she's trying to be perfect, trying not to be a bother, trying to hold it all together so no one leaves. [...]
+**Breathe.** [...]
 
-Come close to her. And tell her the truth she never got: *You don't have to earn me.* [...] *I'm not going anywhere, no matter how you perform.* [...] *You can put the effort down. I love you tired. I love you messy. I love you doing nothing at all.* [...]
+Let's find her — the one who's still working so hard. [...] See her. Trying to be perfect. Trying not to be a bother. Holding it all together so nobody leaves. [...] She's been protecting, preventing, and perceiving you this whole time. She's tired. [...]
 
-Feel what happens in your body when you say that to her. [...] Maybe something loosens. Maybe you don't believe it yet. Either way, keep saying it. She's heard "earn it" her whole life. She needs to hear this more than once. [...]
+Kneel down to her. And give her the thing she never got: *You don't have to earn me.* [...] *You can put the effort down. I love you tired. I love you messy. I love you having answered exactly none of those texts.* [...]
 
-You are becoming her safe place. Not her boss. Not her critic. Her home. [...]
+Feel what happens in your body when you say it. [...] Maybe something loosens. Maybe you don't buy it yet — that's okay, she's heard "earn it" her whole life. Say it again. She needs to hear this more than once. [...]
 
-And here's the thing — a girl who feels safe stops scanning everyone else for the answer. She starts to trust what *she* feels. That's your intuition, coming back online. [...]
+You're becoming her safe place. Not her boss. Not her critic. Her home. [...]
 
-One more breath. [...] Tell her: *You're safe with me now.* [...]
+And a girl who feels safe? She stops scanning everyone else for the answer. She starts trusting what *she* feels. That's your intuition, coming back online. [...]
 
-When you're ready, come back. She's a little lighter. So are you.
+**Breathe.** [...] Tell her: *You're safe with me now. I've got you.* [...]
+
+When you're ready, come back. She's lighter. So are you.
 
 ---
 
 ## 5. You Can Put It Down
 *For the one who grew up too fast.*
 
-Hi, love. Let's set something down together. [...]
+Hey. Let's set something down together. Literally. [...]
 
-Breathe. In… [...] out… [...] Feel the ground under you. It's got this. [...]
+Breathe in — one, two, three, four. [...] Out with a sigh. [...] Feel the ground under you. It's got this. [...]
 
-You've been carrying things for a long time. Maybe since before you were old enough to. [...] The one who read the room. Who kept the peace. Who grew up fast because someone had to. [...] You got so good at carrying that you forgot it was ever optional. [...]
+You've been carrying things a long time. Maybe since before you were even old enough to. [...] You were the one who read the room. Kept the peace. Grew up fast because somebody had to, and you looked around and it was you. [...] You got so good at carrying, you forgot it was ever optional. [...]
 
-I want you to picture everything you're holding as something you can actually see. A weight in your arms. A bag on your back. A stack you've been balancing so no one else has to. [...] Feel how long you've been holding it. Feel how tired your arms are. [...]
+**Breathe.** [...]
 
-Now — just for these few minutes — imagine setting it down. Right here. On the ground in front of you. [...] Not forever. Not abandoning anyone. Just… down, for now. [...]
+Picture everything you're holding as something you can actually see. A weight in your arms. A tower of stuff you've been balancing so nobody else has to. [...] Feel how long you've been holding it. Feel how tired your arms are. [...]
 
-Notice the fear that comes: *If I put it down, it'll all fall apart. If I stop holding, who will?* [...] Breathe into that. [...] And hear me: the world does not need you to carry it to stay in it. You were never the only thing holding it up. [...]
+Now — just for these ten minutes — set it down. Right here in front of you. [...] Not forever. Nobody's going to run off with it — trust me, no one else can even *see* the invisible weight you've been hauling around. [...]
 
-Feel your empty arms. Feel your back straighten. Feel how much of you was going into the holding. [...] That's *you* — coming back. [...]
+Notice the little panic: *If I put it down, it all falls apart.* [...] Breathe into that one. [...] And hear me — the world does not need you to carry it in order to stay standing. You were never the only thing holding it up. [...]
 
-The girl who grew up too fast gets to be small here. Held, instead of holding. [...]
+Feel your empty arms. Feel your back straighten out. [...] That's *you*, coming back. [...]
 
-And from this lighter place, listen. Your own voice is easier to hear when your arms aren't full. That's intuition. It was always there, under the weight. [...]
+And here's the part for that little girl who grew up too fast: *you don't have to run the show anymore. You get to just be a kid.* Held, instead of holding. [...]
 
-One more breath. [...] You can pick things back up when you leave — but you'll choose what, and how much. [...]
+**Breathe.** [...] From this lighter place — listen. Your own voice is so much easier to hear when your arms aren't full. That's your intuition. It was there the whole time, buried under the weight. [...]
+
+When you leave, you can pick things back up — but you get to choose what, and how much. [...]
 
 When you're ready, open your eyes. Lighter.
 
@@ -139,55 +167,55 @@ When you're ready, open your eyes. Lighter.
 ## 6. Nothing About You Was Too Much
 *Permission to feel it all.*
 
-Hi, love. Whatever you're feeling right now — bring it. All of it's welcome here. [...]
+Hey. Whatever you're feeling right now — bring it. All of it. It's welcome in here. [...]
 
-Breathe. In… [...] out… [...] You don't have to manage anything in here. [...]
+Breathe in — one, two, three, four. [...] Out with a sigh. [...] Nothing to manage in here. Nothing to tidy up. [...]
 
-You've been told, in a hundred quiet ways, that you're too much. Too sensitive. Too emotional. Too intense. Too needy. Too *you.* [...] So you learned to shrink it. To swallow it. To apologize for taking up space. [...]
+You've been told, in a hundred quiet little ways, that you're too much. Too sensitive. Too emotional. Too intense. Too *you.* [...] So you learned to shrink it. Swallow it. Apologize for taking up space. [...]
 
-Not here. [...]
+Not in here. [...]
 
-Whatever's moving in you — let it be big. If there's sadness, let it be an ocean. If there's anger, let it have heat. If there's longing, let it ache. [...] You don't have to make it smaller to be okay in this room. [...]
+**Breathe.** [...]
 
-Put a hand on the part of your body where you feel it most. [...] And instead of telling it to calm down, tell it: *You're allowed. You were always allowed.* [...]
+Whatever's moving in you — let it be big. If there's sadness, let it be an ocean. If there's anger, let it have some heat. Yes — even about that. *Especially* about that. [...] You don't have to make it smaller to be okay in this room. [...]
 
-That little girl who got called "too much" — she wasn't too much. She was a lot of feeling in a world that didn't know what to do with her. There's a difference. [...] Her bigness wasn't the problem. The people who couldn't hold it — that was theirs, not hers. [...]
+Put a hand where you feel it most. [...] And instead of telling it to calm down — tell it: *You're allowed. You were always allowed.* [...]
+
+That little girl who got called "too much" — she wasn't too much. She was a whole lot of feeling in a world that didn't know what to do with her. Big difference. [...] Her bigness was never the problem. The people who couldn't hold it — that was theirs. Not hers. Not yours. [...]
 
 Tell her: *Nothing about you was ever too much. You were exactly the right amount. You still are.* [...]
 
-Feel that land. [...] Your feelings were never the enemy. They were information. They were your knowing, trying to reach you. When you stopped shaming them, you got your intuition back. [...]
+**Breathe.** [...] And here's the secret — those feelings you were told to shrink? They were never the enemy. They were your knowing, trying to reach you. The second you stop shaming them, your intuition comes right back. [...]
 
-Breathe once more, and let it all just be here. [...]
+Let it all just be here, one more breath. [...]
 
-When you're ready, come back. Nothing about you needs to shrink.
+When you're ready, come back. Nothing about you needs to shrink. Not ever.
 
 ---
 
 ## 7. You Don't Have to Earn It
 *For the part of you afraid love will leave.*
 
-Hi, love. Last one. Come close. [...]
+Hey. Last one. Come close. [...]
 
-Breathe with me. In… [...] out… [...] Let yourself be here, exactly as you are. [...]
+Breathe in — one, two, three, four. [...] Hold it. [...] Out with a sigh. [...] Let yourself be here, exactly as you are. Nothing to fix. [...]
 
-There's a part of you that's always a little braced for love to leave. That works to keep it. That reads faces for the first sign of it going. [...] She's not weak. She learned somewhere that love wasn't guaranteed — so she's been trying to guarantee it ever since. [...]
+There's a part of you that's always a little braced for love to leave. That works to keep it. That reads faces for the first tiny sign of it going. [...] She's not weak, this one. She learned somewhere that love wasn't guaranteed — so she's been trying to guarantee it ever since. Exhausting job. [...]
 
-Let's speak to her. [...] Find the part of you that's afraid. The one holding on tight. [...]
+**Breathe.** [...]
 
-And tell her — slowly, so it lands: *You don't have to earn this.* [...] *Not with me. Not anymore.* [...] *You could stop trying, stop performing, stop being useful, and I would still be here.* [...]
+Let's talk to her. Find the part of you that's afraid — the one holding on so tight. [...]
 
-Feel her resist it. Of course she does. No one ever gave her that for free. [...] Keep going. *I'm not leaving. There's nothing you have to do to keep me. I'm already yours, and you're already mine.* [...]
+And tell her, slow, so it actually lands: *You don't have to earn this.* [...] *Not with me. Not anymore.* [...] *You could stop being useful entirely — just lie there like the cat — and I would still be right here.* [...]
 
-And here's the promise underneath it all — the one I want you to leave with: *I'm here now. I've got you. I'm not leaving again.* [...]
+Feel her resist it. Course she does. Nobody ever handed her that for free. [...] Keep going. *I'm not leaving. There's nothing you have to do to keep me. You will never be alone again.* [...]
 
-Say it to her one more time, in your own voice, in your own head: *I'm here now. I've got you. I'm not leaving again.* [...]
+And here's the promise I want you to leave with — say it with me, in your own voice: *I'm here now. I've got you. You'll never be alone again.* [...] One more time. *I'm here now. I've got you. You'll never be alone again.* [...]
 
-This is what it means to reconnect. Not to fix her. To stop abandoning her. And when she's no longer afraid of being left, she stops second-guessing herself — and starts trusting the quiet voice that was hers all along. [...]
+This is the whole thing. Not fixing her. Just… stopping the leaving. And when she's not scared of being left anymore, she stops second-guessing every little thing — and she starts trusting that quiet voice that was hers all along. That's you, reconnected. [...]
 
-Take one full breath. [...] You came home to yourself today. That's the whole thing. That's everything. [...]
+**Breathe.** [...] Take one full one. [...] You came home to yourself today. That's everything. That's the whole point. [...]
+
+Thank you for meeting me here. I love you. I'll see you again soon. [...]
 
 When you're ready, open your eyes. You don't have to earn it. You never did.
-
----
-
-*End of collection. Optional intro track: record a short welcome that names the promise (reconnecting to intuition), your voice, and how to use the meditations — you already recorded a first pass to extend.*
