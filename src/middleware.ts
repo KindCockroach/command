@@ -17,6 +17,7 @@ function isPublic(path: string): boolean {
   if (path === '/reset' || path === '/cheatcode' || path === '/workshop') return true // public session pages (+ /workshop redirect)
   if (path === '/insait') return true // private $10 Reset (unlisted, no-index)
   if (path === '/bethereforher' || path === '/bethereforher/library') return true // Be There For Her product
+  if (path === '/wellspring' || path === '/bethereforher/wellspring') return true // The Wellspring membership
   if (path === '/lite' || path === '/lite/welcome') return true
   if (/^\/(seen|queen|captionwriter)\/welcome$/.test(path)) return true
   if (path === '/api/journal-waitlist') return true // public waitlist form
@@ -34,6 +35,9 @@ export function middleware(req: NextRequest) {
     }
     if (p === '/library' || p === '/bethereforher/library') {
       const u = req.nextUrl.clone(); u.pathname = '/bethereforher/library'; return NextResponse.rewrite(u)
+    }
+    if (p === '/wellspring' || p === '/bethereforher/wellspring') {
+      const u = req.nextUrl.clone(); u.pathname = '/bethereforher/wellspring'; return NextResponse.rewrite(u)
     }
   }
 
