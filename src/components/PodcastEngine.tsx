@@ -307,6 +307,21 @@ export default function PodcastEngine() {
   const [deepErr, setDeepErr] = useState('')
   const [kitSaved, setKitSaved] = useState(false)
   const [transcriptSaved, setTranscriptSaved] = useState(false)
+  // On-screen text suggestions — overlay hook lines pulled from the transcript
+  // (the words you'd burn onto the video). Reuses the video hook writer.
+  const [onscreen, setOnscreen] = useState<string[]>([])
+  const [onscreenBusy, setOnscreenBusy] = useState(false)
+  const [onscreenErr, setOnscreenErr] = useState('')
+  const suggestOnscreen = async () => {
+    if (!transcript.trim()) return
+    setOnscreenBusy(true); setOnscreenErr('')
+    try {
+      const r = await fetch('/api/video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transcript }) })
+      const d = await r.json().catch(() => ({}))
+      if (Array.isArray(d.hooks) && d.hooks.length) setOnscreen(d.hooks)
+      else setOnscreenErr(d.error || 'Could not generate on-screen text — try again.')
+    } catch { setOnscreenErr('Connection error') } finally { setOnscreenBusy(false) }
+  }
   const [showMedia, setShowMedia] = useState(false)
   const [audioLib, setAudioLib] = useState<{ key: string; name: string; url: string; size: number; lastModified: string }[]>([])
   const [pullingKey, setPullingKey] = useState<string | null>(null)
@@ -664,8 +679,8 @@ export default function PodcastEngine() {
               ? <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--purple)' }}><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> {audioMsg}</span>
               : <>
                   <Mic size={20} style={{ color: audioDrag ? 'var(--purple)' : 'var(--text-subtle)' }} />
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>Drop your episode audio here</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>MP3/M4A/WAV — full episodes welcome; saved to Media, then auto-compressed &amp; transcribed</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>Drop your episode audio or video here</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>MP3/M4A/WAV or MP4/MOV — any size; saved to Media, then auto-compressed &amp; transcribed (video → audio automatically)</span>
                 </>}
             <input type="file" accept="audio/*,video/*,.mp3,.m4a,.wav,.aac,.ogg,.mp4,.mov,.m4v,.webm" style={{ display: 'none' }} disabled={audioState === 'working'} onChange={e => { const f = e.target.files?.[0]; if (f) handleAudio(f); e.target.value = '' }} />
           </label>
@@ -733,6 +748,32 @@ export default function PodcastEngine() {
             )}
           </div>
         </div>
+
+        {/* On-screen text suggestions — overlay hooks from the transcript (great for
+            a dropped video: the words you burn onto the clip). */}
+        {transcript.trim() && (
+          <div style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '11px 12px', background: 'var(--surface-raised)', display: 'flex', flexDirection: 'column', gap: '9px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>📱 On-screen text suggestions</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>overlay hooks pulled from your words</span>
+              <button onClick={suggestOnscreen} disabled={onscreenBusy}
+                style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 11px', borderRadius: '8px', border: '1px solid var(--purple)', background: 'var(--surface)', color: 'var(--purple)', fontWeight: 800, fontSize: '11px', cursor: onscreenBusy ? 'default' : 'pointer' }}>
+                {onscreenBusy ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Reading your words…</> : (onscreen.length ? '↻ New suggestions' : '✍️ Suggest on-screen text')}
+              </button>
+            </div>
+            {onscreenErr && <p style={{ fontSize: '11px', color: '#C0392B' }}>{onscreenErr}</p>}
+            {onscreen.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {onscreen.map((h, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '9px 11px', background: 'var(--surface)', borderRadius: '8px', borderLeft: '3px solid var(--purple)' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.35 }}>{h}</p>
+                    <CopyBtn text={h} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <button onClick={() => generate()} disabled={loading || !transcript.trim()}
           style={{ padding: '12px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: !transcript.trim() ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
