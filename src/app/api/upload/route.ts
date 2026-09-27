@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { putObject, getUploadUrl, getPublicUrl, isR2Configured, mediaKey, ensureCors } from '@/lib/r2'
+import { logActivity } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
       if (!bytes.length) return NextResponse.json({ error: 'empty body — nothing to upload' }, { status: 400 })
       const ok = await putObject(key, bytes, contentType || 'application/octet-stream')
       if (!ok) return NextResponse.json({ error: 'storage rejected the file (R2 write failed)' }, { status: 502 })
+      logActivity({ type: 'drop', title: `Dropped ${rawName}`, icon: '📥', source: folder, media_url: getPublicUrl(key) })
       return NextResponse.json({ publicUrl: getPublicUrl(key), key })
     } catch (e) {
       return NextResponse.json({ error: `relay failed: ${e instanceof Error ? e.message : 'read/storage error'}` }, { status: 500 })
@@ -51,6 +53,7 @@ export async function POST(req: NextRequest) {
       const bytes = Buffer.from(await file.arrayBuffer())
       const ok = await putObject(key, bytes, file.type || 'application/octet-stream')
       if (!ok) return NextResponse.json({ error: 'storage rejected the file (R2 write failed)' }, { status: 502 })
+      logActivity({ type: 'drop', title: `Dropped ${file.name}`, icon: '📥', source: folder, media_url: getPublicUrl(key) })
       return NextResponse.json({ publicUrl: getPublicUrl(key), key })
     } catch (e) {
       // Includes FormData parse failures (the old bare-500 cause) — now with a reason.

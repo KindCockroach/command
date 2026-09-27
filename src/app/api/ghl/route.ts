@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllContent, updateContent, getBrandAccount } from '@/lib/db'
+import { getAllContent, updateContent, getBrandAccount, logActivity } from '@/lib/db'
 import { withHashtags } from '@/lib/hashtags'
 
 export const dynamic = 'force-dynamic'
@@ -235,6 +235,8 @@ export async function POST(req: NextRequest) {
     // If we couldn't capture an id, GHL's shape changed — surface its keys so we can
     // fix the probe, and flag that we can't verify it went live.
     const idNote = ghlPostId ? undefined : `Pushed to GHL, but couldn't read the post id (can't verify it's live). GHL returned keys: ${Object.keys(data || {}).join(', ')}${data?.post ? ` · post.{${Object.keys(data.post).join(',')}}` : ''}`
+    const schedAcct = piece.account_id ? getBrandAccount(piece.account_id) : null
+    logActivity({ type: 'post_approved', title: `Scheduled: ${piece.title}`, detail: schedAcct?.handle ? `→ ${schedAcct.handle}${effectiveSchedule ? ` · ${new Date(effectiveSchedule).toLocaleDateString()}` : ''}` : undefined, icon: '✅', source: 'ghl', account_id: piece.account_id, content_id: piece.id })
     return NextResponse.json({ configured: true, scheduled: true, scheduledAt: effectiveSchedule, ghl_post_id: ghlPostId, mediaCount: mediaItems.length, note: idNote, raw: ghlPostId ? undefined : data, content: updated })
   } catch (e) {
     // Network/GHL error — keep the approval so it isn't silently lost.

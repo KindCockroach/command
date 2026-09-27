@@ -302,6 +302,23 @@ export type WaitlistEntry = {
   created_at: string
 }
 
+// The station's SPINE — one running log of everything that happens (a file dropped,
+// a transcript made, a post drafted/approved, a weekly trend check-in). The
+// Commander reads the recent slice so it always knows what just happened, and the
+// Activity feed widget renders it. Best-effort: logging never breaks the action.
+export type ActivityEvent = {
+  id: number
+  ts: string                 // ISO timestamp
+  type: string               // 'drop' | 'transcribed' | 'post_created' | 'post_approved' | 'note' | 'trend_checkin' | …
+  title: string              // one short human-readable line
+  detail?: string            // optional extra context
+  icon?: string              // emoji for the feed
+  source?: string            // which tab/route emitted it
+  account_id?: string | null
+  content_id?: number | null
+  media_url?: string | null
+}
+
 type Db = {
   content: ContentPiece[]
   intake_log: { id: number; raw_input: string; created_at: string }[]
@@ -318,6 +335,8 @@ type Db = {
   watch_accounts: WatchAccount[]
   events: CalendarEvent[]
   audiences: Audience[]
+  activity?: ActivityEvent[]
+  next_activity_id?: number
   research_briefs?: ResearchBrief[]
   next_research_id?: number
   next_goal_id: number
@@ -987,6 +1006,38 @@ export function createNote(data: Partial<Note>): Note {
   db.notes.push(n)
   writeDb(db)
   return n
+}
+
+// --- Activity feed (the spine) ---
+const ACTIVITY_CAP = 600   // keep the most recent N events; old ones roll off
+export function logActivity(data: { type: string; title: string; detail?: string; icon?: string; source?: string; account_id?: string | null; content_id?: number | null; media_url?: string | null }): ActivityEvent | null {
+  try {
+    const db = readDb()
+    if (!db.activity) db.activity = []
+    if (!db.next_activity_id) db.next_activity_id = 1
+    const ev: ActivityEvent = {
+      id: db.next_activity_id++,
+      ts: new Date().toISOString(),
+      type: data.type,
+      title: data.title,
+      detail: data.detail,
+      icon: data.icon,
+      source: data.source,
+      account_id: data.account_id ?? null,
+      content_id: data.content_id ?? null,
+      media_url: data.media_url ?? null,
+    }
+    db.activity.push(ev)
+    if (db.activity.length > ACTIVITY_CAP) db.activity = db.activity.slice(-ACTIVITY_CAP)
+    writeDb(db)
+    return ev
+  } catch { return null }   // logging must never break the action it's recording
+}
+
+// Newest-first slice of the feed.
+export function getRecentActivity(limit = 50): ActivityEvent[] {
+  const db = readDb()
+  return (db.activity ?? []).slice(-limit).reverse()
 }
 
 export function updateNote(id: number, updates: Partial<Note>): Note | null {

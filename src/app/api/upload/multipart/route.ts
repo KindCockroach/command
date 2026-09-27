@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createMultipart, uploadPart, completeMultipart, abortMultipart, getPublicUrl, isR2Configured, mediaKey, type PartTag } from '@/lib/r2'
+import { logActivity } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -66,6 +67,9 @@ export async function POST(req: NextRequest) {
     try {
       const ok = await completeMultipart(key, uploadId, parts)
       if (!ok) return NextResponse.json({ error: 'R2 could not assemble the parts' }, { status: 502 })
+      const folder = String(key).split('/')[0] || 'uploads'
+      const name = String(key).split('/').pop() || 'file'
+      logActivity({ type: 'drop', title: `Dropped ${name}`, detail: `${parts.length} parts`, icon: '📥', source: folder, media_url: getPublicUrl(key) })
       return NextResponse.json({ publicUrl: getPublicUrl(key), key })
     } catch (e) {
       // Best-effort cleanup so a failed stitch doesn't leave a dangling upload.

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI, { toFile } from 'openai'
 import { putObject, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
+import { logActivity } from '@/lib/db'
+
+const wordCount = (t: string) => t.split(/\s+/).filter(Boolean).length
 import { spawn } from 'child_process'
 import { mkdtemp, writeFile, rm, stat, readdir, readFile } from 'fs/promises'
 import { createReadStream } from 'fs'
@@ -107,6 +110,7 @@ export async function POST(req: NextRequest) {
       // ffmpeg streams the source straight from R2 — extracts audio, compresses,
       // chunks — so ANY size and VIDEO too, without buffering the file in Node.
       const { transcript, compressedUrl } = await compressAndTranscribeInput(url, name)
+      logActivity({ type: 'transcribed', title: `Transcribed ${name}`, detail: `${wordCount(transcript).toLocaleString()} words`, icon: '📝', source: 'transcribe', media_url: compressedUrl || null })
       return NextResponse.json({ transcript, compressedUrl, compressed: true })
     } catch (e) {
       // Only if ffmpeg is missing: fetch + Whisper for a small file (best-effort).
@@ -154,6 +158,7 @@ export async function POST(req: NextRequest) {
     await saveOriginal()
     try {
       const transcription = await client.audio.transcriptions.create({ model: 'whisper-1', file })
+      logActivity({ type: 'transcribed', title: `Transcribed ${file.name}`, detail: `${wordCount(transcription.text).toLocaleString()} words`, icon: '📝', source: 'transcribe', media_url: publicUrl || null })
       return NextResponse.json({ publicUrl, transcript: transcription.text })
     } catch (e) {
       return NextResponse.json({ publicUrl, transcript: null, error: `Transcription failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
@@ -163,6 +168,7 @@ export async function POST(req: NextRequest) {
   // Oversized → keep ONLY the compressed MP3 in Media (not the giant original)
   try {
     const { transcript, compressedUrl } = await compressAndTranscribe(bytes, file.name)
+    logActivity({ type: 'transcribed', title: `Transcribed ${file.name}`, detail: `${wordCount(transcript).toLocaleString()} words`, icon: '📝', source: 'transcribe', media_url: compressedUrl || null })
     return NextResponse.json({ compressedUrl, transcript, compressed: true })
   } catch (e) {
     // Compression failed → fall back to keeping the raw original so nothing is lost

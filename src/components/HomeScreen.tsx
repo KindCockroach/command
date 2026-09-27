@@ -17,11 +17,13 @@ import UniversalCapture from './UniversalCapture'
 import MediaLibrary from './MediaLibrary'
 import PodcastEngine from './PodcastEngine'
 import StoryStudio from './StoryStudio'
+import ActivityFeed from './ActivityFeed'
 
 // ── The widget registry — every tab available as a homescreen widget ──────────
 // DailyCommand stays the anchor widget (quick capture + brief + tasks + fire).
 const WIDGETS: { id: string; label: string; emoji: string; render: () => React.ReactNode }[] = [
   { id: 'yourmove',   label: 'Your Move',       emoji: '⚡', render: () => <CommanderOrders /> },
+  { id: 'activity',   label: 'Activity',        emoji: '🫀', render: () => <ActivityFeed /> },
   { id: 'queue',      label: 'Work Queue',      emoji: '✅', render: () => <CommandQueue /> },
   { id: 'commander',  label: 'The Commander',   emoji: '⚡', render: () => <CommanderChat /> },
   { id: 'research',   label: 'Daily Briefing',  emoji: '🔬', render: () => <ResearchBrief /> },
@@ -40,7 +42,7 @@ const WIDGETS: { id: string; label: string; emoji: string; render: () => React.R
 ]
 
 const STORAGE_KEY = 'rise-home-widgets-v1'
-const DEFAULT_LAYOUT = ['yourmove', 'queue', 'commander', 'research', 'goalspace']   // Your Move (partner briefing) → Work Queue → Commander → Briefing → Goals
+const DEFAULT_LAYOUT = ['yourmove', 'activity', 'queue', 'commander', 'research', 'goalspace']   // Your Move → Activity (the spine) → Work Queue → Commander → Briefing → Goals
 
 // The customizable homescreen: pick which widgets show and in what order,
 // so Daily Command bends to the current focus (launch mode, research season…).
@@ -75,6 +77,14 @@ export default function HomeScreen() {
           if (!localStorage.getItem('rise-home-v4')) {
             ids = ['yourmove', ...ids.filter(id => id !== 'yourmove')]
             localStorage.setItem('rise-home-v4', '1')
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
+          }
+          // v5: the Activity feed (the spine) slots in just under Your Move.
+          if (!localStorage.getItem('rise-home-v5')) {
+            const without = ids.filter(id => id !== 'activity')
+            const at = without.indexOf('yourmove')
+            ids = at >= 0 ? [...without.slice(0, at + 1), 'activity', ...without.slice(at + 1)] : ['activity', ...without]
+            localStorage.setItem('rise-home-v5', '1')
             localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
           }
           setLayout(ids)
