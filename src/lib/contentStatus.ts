@@ -19,3 +19,25 @@ export function effectiveStatus(c: ContentPiece): ContentPiece['status'] {
   if (c.status === 'ready' && !hasMedia(c)) return 'in_progress'
   return c.status
 }
+
+// ── PURPOSE — what a post is FOR, so she can sort by intent (follow / sell / trust).
+// Derived from the post's chosen `post_job` first (reach new / convert-to-DMs /
+// shift-from-peer), then a caption heuristic as a fallback for older posts.
+export type Purpose = 'follower' | 'conversion' | 'trust'
+export const PURPOSE_META: Record<Purpose, { label: string; emoji: string; color: string; bg: string }> = {
+  follower:   { label: 'Follower',   emoji: '📈', color: '#5A4FCF', bg: 'rgba(90,79,207,0.12)' },
+  conversion: { label: 'Conversion', emoji: '💸', color: '#B96A1E', bg: 'rgba(242,166,90,0.18)' },
+  trust:      { label: 'Trust',      emoji: '🤝', color: '#2E8B60', bg: 'rgba(46,139,96,0.12)' },
+}
+export function postPurpose(c: Pick<ContentPiece, 'post_job' | 'title' | 'description' | 'hashtags'>): Purpose {
+  const job = (c.post_job ?? '').toLowerCase()
+  if (job) {
+    if (/convert|dm|sell|sale|buy|offer|book|enroll|sign|waitlist|link|purchase/.test(job)) return 'conversion'
+    if (/reach|follow|grow|\bnew\b|discover|viral|trend|awareness/.test(job)) return 'follower'
+    if (/trust|story|nurture|peer|shift|relat|connect|value/.test(job)) return 'trust'
+  }
+  const text = `${c.title ?? ''} ${c.description ?? ''} ${c.hashtags ?? ''}`.toLowerCase()
+  if (/(comment \w+|dm me|link in bio|sign up|join |waitlist|workshop|enroll|book a|buy |checkout|\$\d|discount|\bsale\b|get the|grab the|download|apply)/.test(text)) return 'conversion'
+  if (/(how to|\d+ ways|\d+ steps|\btips\b|save this|mistake|nobody tells|^stop |the truth|\bhack\b|trend|watch this|\blist\b)/.test(text)) return 'follower'
+  return 'trust'
+}

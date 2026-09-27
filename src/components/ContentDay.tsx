@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
-import { hasMedia } from '@/lib/contentStatus'
+import { hasMedia, postPurpose, PURPOSE_META, type Purpose } from '@/lib/contentStatus'
 import { RefreshCw, Camera, Clapperboard, Loader2 } from 'lucide-react'
 
 // CONTENT DAY — the shoot list, designed like the Format Finder concept cards, and
@@ -19,7 +19,7 @@ type ShootPlan = {
   sections?: { role: string; setup: string; lines: PlanLine[] }[]
   beats?: { label: string; cue: string; text: string; emotion: string; camera: string }[]
 }
-type Line = { key: string; kind: string; length: string; script: string; account?: string; color?: string; postId: number; accountId?: string | null; broll?: boolean }
+type Line = { key: string; kind: string; length: string; script: string; account?: string; color?: string; postId: number; accountId?: string | null; broll?: boolean; purpose: Purpose }
 
 function estLength(script: string): string {
   const words = script.trim().split(/\s+/).filter(Boolean).length
@@ -47,6 +47,7 @@ export default function ContentDay() {
   const [plans, setPlans] = useState<Record<number, ShootPlan>>({})
   const [planning, setPlanning] = useState<Record<number, boolean>>({})
   const [planErr, setPlanErr] = useState<Record<number, string>>({})
+  const [purposeFilter, setPurposeFilter] = useState<'all' | Purpose>('all')
 
   const load = useCallback(() => {
     setLoading(true)
@@ -73,23 +74,26 @@ export default function ContentDay() {
 
   const acct = (id?: string | null) => accounts.find(a => a.id === id)
 
-  const lines: Line[] = []
+  const allLines: Line[] = []
   for (const p of posts) {
     if (['published', 'archived'].includes(p.status)) continue
     const a = acct(p.account_id)
     const acctLabel = a ? `${a.emoji} ${a.handle}` : undefined
+    const purpose = postPurpose(p)
     if ((p.script ?? '').trim() && !(hasMedia(p) && /\.(mp4|mov|webm)/i.test((p.media_url || p.media_urls?.[0] || '')))) {
-      lines.push({ key: `${p.id}-th`, kind: 'Talking head', length: estLength(p.script as string), script: p.script as string, account: acctLabel, color: a?.color, postId: p.id, accountId: p.account_id })
+      allLines.push({ key: `${p.id}-th`, kind: 'Talking head', length: estLength(p.script as string), script: p.script as string, account: acctLabel, color: a?.color, postId: p.id, accountId: p.account_id, purpose })
     }
     const fp = p.frame_plan ?? ''
     if (fp) {
       fp.split('\n').map(l => l.trim()).filter(l => l.startsWith('•') || l.startsWith('-')).forEach((l, i) => {
         const shot = l.replace(/^[•-]\s*/, '')
         const m = shot.match(/^\[([^\]]+)\]\s*(.*)$/)
-        lines.push({ key: `${p.id}-br${i}`, kind: m ? m[1] : 'B-roll', length: '3–6s', script: m ? m[2] : shot, account: acctLabel, color: a?.color, postId: p.id, broll: true })
+        allLines.push({ key: `${p.id}-br${i}`, kind: m ? m[1] : 'B-roll', length: '3–6s', script: m ? m[2] : shot, account: acctLabel, color: a?.color, postId: p.id, broll: true, purpose })
       })
     }
   }
+  const purposeCounts = allLines.reduce((m, l) => { m[l.purpose] = (m[l.purpose] ?? 0) + 1; return m }, {} as Record<Purpose, number>)
+  const lines = purposeFilter === 'all' ? allLines : allLines.filter(l => l.purpose === purposeFilter)
 
   // Rehydrate cached plans for the talking-head scripts currently on screen.
   useEffect(() => {
@@ -182,6 +186,24 @@ export default function ContentDay() {
           </button>
         </div>
       </div>
+
+      {/* PURPOSE sorter — focus on follower / conversion / trust */}
+      {allLines.length > 0 && (
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '10px 14px 0' }}>
+          {(['all', 'follower', 'conversion', 'trust'] as const).map(pk => {
+            const on = purposeFilter === pk
+            const meta = pk === 'all' ? { label: 'All', emoji: '', color: 'var(--purple)', bg: 'var(--purple-light)' } : PURPOSE_META[pk]
+            const count = pk === 'all' ? allLines.length : (purposeCounts[pk] ?? 0)
+            if (pk !== 'all' && count === 0) return null
+            return (
+              <button key={pk} onClick={() => setPurposeFilter(pk)}
+                style={{ padding: '5px 11px', borderRadius: '20px', border: `2px solid ${on ? meta.color : 'var(--border)'}`, background: on ? meta.bg : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: on ? meta.color : 'var(--text-muted)', fontFamily: 'inherit' }}>
+                {'emoji' in meta && meta.emoji ? `${meta.emoji} ` : ''}{meta.label} · {count}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       <div style={{ padding: '12px' }}>
         {loading && <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '14px', textAlign: 'center' }}>Compiling your shoot list…</p>}

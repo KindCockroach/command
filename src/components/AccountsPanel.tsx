@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus, CheckSquare, Eye, Heart, MessageCircle, Send, Bookmark } from 'lucide-react'
+import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus, CheckSquare, Eye, Heart, MessageCircle, Send, Bookmark, ChevronLeft, ChevronRight, Rows3, LayoutGrid, GalleryHorizontal } from 'lucide-react'
+import { postPurpose, PURPOSE_META, type Purpose } from '@/lib/contentStatus'
 import type { BrandAccount, ContentPiece } from '@/lib/db'
 import InstantCompose from './InstantCompose'
 
@@ -1612,6 +1613,12 @@ export default function AccountsPanel() {
   const [ghlConfigured, setGhlConfigured] = useState<boolean | null>(null)
   const [showArchive, setShowArchive] = useState(false)
   const [queueFilter, setQueueFilter] = useState('all')
+  // How the account's posts are shown: swipe = one at a time (finger/trackpad),
+  // list = stacked, grid = tiles. Plus a PURPOSE sorter (follower/conversion/trust).
+  const [postView, setPostView] = useState<'swipe' | 'list' | 'grid'>('swipe')
+  const [purposeFilter, setPurposeFilter] = useState<'all' | Purpose>('all')
+  useEffect(() => { try { const v = localStorage.getItem('rise-account-postview'); if (v === 'swipe' || v === 'list' || v === 'grid') setPostView(v) } catch { /* ok */ } }, [])
+  const chooseView = (v: 'swipe' | 'list' | 'grid') => { setPostView(v); try { localStorage.setItem('rise-account-postview', v) } catch { /* ok */ } }
   const [editing, setEditing] = useState<Partial<BrandAccount> | null>(null)
   const [composeFor, setComposeFor] = useState<BrandAccount | null>(null)
   const [previewPost, setPreviewPost] = useState<ContentPiece | null>(null)
@@ -1783,8 +1790,11 @@ export default function AccountsPanel() {
           { key: 'scheduled', label: 'Scheduled', count: scheduled.length, posts: scheduled },
         ]
         const active = buckets.find(b => b.key === queueFilter) ?? buckets[0]
-        const shown = showArchive ? posted : active.posts
-        const close = () => { setFlipped(null); setShowArchive(false); setQueueFilter('all') }
+        const shownAll = showArchive ? posted : active.posts
+        // Purpose counts across the current bucket, then filter to the chosen purpose.
+        const purposeCounts = shownAll.reduce((m, p) => { const k = postPurpose(p); m[k] = (m[k] ?? 0) + 1; return m }, {} as Record<Purpose, number>)
+        const shown = purposeFilter === 'all' ? shownAll : shownAll.filter(p => postPurpose(p) === purposeFilter)
+        const close = () => { setFlipped(null); setShowArchive(false); setQueueFilter('all'); setPurposeFilter('all') }
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,31,59,0.55)', backdropFilter: 'blur(5px)' }} onClick={close} />
@@ -1827,6 +1837,32 @@ export default function AccountsPanel() {
                 )}
               </div>
 
+              {/* View toggle (swipe / list / grid) + PURPOSE sorter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 16px', flexWrap: 'wrap', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: '2px', padding: '2px', borderRadius: '10px', background: 'var(--surface-raised, var(--bg))', border: '1px solid var(--border)' }}>
+                  {([['swipe', GalleryHorizontal, 'Swipe'], ['list', Rows3, 'List'], ['grid', LayoutGrid, 'Grid']] as const).map(([v, Icon, label]) => (
+                    <button key={v} onClick={() => chooseView(v)} title={`${label} view`}
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', border: 'none', background: postView === v ? theme.color : 'transparent', color: postView === v ? '#fff' : 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                      <Icon size={13} /> {label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginLeft: 'auto' }}>
+                  {(['all', 'follower', 'conversion', 'trust'] as const).map(pk => {
+                    const on = purposeFilter === pk
+                    const meta = pk === 'all' ? { label: 'All', emoji: '', color: theme.color, bg: `${theme.color}12` } : PURPOSE_META[pk]
+                    const count = pk === 'all' ? shownAll.length : (purposeCounts[pk] ?? 0)
+                    if (pk !== 'all' && count === 0) return null
+                    return (
+                      <button key={pk} onClick={() => setPurposeFilter(pk)} title={pk === 'all' ? 'All purposes' : `${meta.label}-purpose posts`}
+                        style={{ padding: '5px 11px', borderRadius: '20px', border: `2px solid ${on ? meta.color : 'var(--border)'}`, background: on ? meta.bg : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: on ? meta.color : 'var(--text-muted)', fontFamily: 'inherit' }}>
+                        {'emoji' in meta && meta.emoji ? `${meta.emoji} ` : ''}{meta.label} · {count}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               {acct.id && <PodcastAudioDrop accountId={acct.id} accentColor={theme.color} onDone={loadContent} />}
 
               {reviewable.length > 0 && (
@@ -1835,19 +1871,73 @@ export default function AccountsPanel() {
                 </div>
               )}
 
-              {/* Post list */}
-              <div style={{ padding: '14px 16px', overflowY: 'auto', flex: 1 }}>
-                {shown.length === 0 && (
+              {/* Empty state */}
+              {shown.length === 0 && (
+                <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
                   <p style={{ fontSize: '12px', textAlign: 'center', padding: '40px 0', color: 'var(--text-subtle)' }}>
-                    {showArchive ? 'Nothing posted yet.' : <>Nothing here yet. Generate content and pick <strong>{acct.handle}</strong> as the account — or drop an idea in Quick Capture.</>}
+                    {purposeFilter !== 'all' ? <>No {PURPOSE_META[purposeFilter as Purpose].label.toLowerCase()}-purpose posts here — tap <strong>All</strong> to see the rest.</>
+                      : showArchive ? 'Nothing posted yet.' : <>Nothing here yet. Generate content and pick <strong>{acct.handle}</strong> as the account — or drop an idea in Quick Capture.</>}
                   </p>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {shown.map(p => (
-                    <PostCard key={p.id} post={p} accentColor={theme.color} onApprove={approve} approving={approvingId === p.id} approveNote={approveNotes[p.id]} onChanged={loadContent} onPreview={setPreviewPost} accounts={accounts} />
-                  ))}
                 </div>
-              </div>
+              )}
+
+              {/* SWIPE — one post at a time; swipe with your finger/trackpad, or ‹ › */}
+              {shown.length > 0 && postView === 'swipe' && (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '7px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                    <button onClick={() => { const el = document.getElementById('acct-swipe-scroll'); el?.scrollBy({ left: -el.clientWidth, behavior: 'smooth' }) }}
+                      style={{ display: 'flex', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: '8px', padding: '5px', cursor: 'pointer', color: 'var(--text-muted)' }}><ChevronLeft size={16} /></button>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', fontFamily: 'ui-monospace, Menlo, monospace' }}>swipe · {shown.length} {shown.length === 1 ? 'post' : 'posts'}</span>
+                    <button onClick={() => { const el = document.getElementById('acct-swipe-scroll'); el?.scrollBy({ left: el.clientWidth, behavior: 'smooth' }) }}
+                      style={{ display: 'flex', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: '8px', padding: '5px', cursor: 'pointer', color: 'var(--text-muted)' }}><ChevronRight size={16} /></button>
+                  </div>
+                  <div id="acct-swipe-scroll" style={{ flex: 1, display: 'flex', overflowX: 'auto', overflowY: 'hidden', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
+                    {shown.map(p => (
+                      <div key={p.id} id={`swipecard-${p.id}`} style={{ minWidth: '100%', scrollSnapAlign: 'center', overflowY: 'auto', padding: '14px 16px' }}>
+                        <PostCard post={p} accentColor={theme.color} onApprove={approve} approving={approvingId === p.id} approveNote={approveNotes[p.id]} onChanged={loadContent} onPreview={setPreviewPost} accounts={accounts} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* LIST — stacked */}
+              {shown.length > 0 && postView === 'list' && (
+                <div style={{ padding: '14px 16px', overflowY: 'auto', flex: 1 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {shown.map(p => (
+                      <PostCard key={p.id} post={p} accentColor={theme.color} onApprove={approve} approving={approvingId === p.id} approveNote={approveNotes[p.id]} onChanged={loadContent} onPreview={setPreviewPost} accounts={accounts} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* GRID — tiles at a glance; tap one to swipe to it */}
+              {shown.length > 0 && postView === 'grid' && (
+                <div style={{ padding: '14px 16px', overflowY: 'auto', flex: 1 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
+                    {shown.map(p => {
+                      const thumb = p.media_urls?.[0] || p.media_url || ''
+                      const isVid = /\.(mp4|mov|webm)/i.test(thumb)
+                      const pm = PURPOSE_META[postPurpose(p)]
+                      return (
+                        <button key={p.id} onClick={() => { chooseView('swipe'); setTimeout(() => document.getElementById(`swipecard-${p.id}`)?.scrollIntoView({ inline: 'center', block: 'nearest' }), 60) }}
+                          style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', padding: 0, borderRadius: '11px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer' }}>
+                          <div style={{ aspectRatio: '1 / 1', background: thumb ? '#000' : `linear-gradient(135deg, ${theme.color}22, ${theme.color}08)`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                            {thumb ? (isVid ? <video src={thumb} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />)
+                              : <span style={{ fontSize: '22px', opacity: 0.5 }}>{p.type === 'video' || p.type === 'podcast' ? '🎬' : '🎨'}</span>}
+                            <span style={{ position: 'absolute', top: '6px', left: '6px', fontSize: '9px', fontWeight: 800, padding: '2px 7px', borderRadius: '20px', background: pm.bg, color: pm.color, backdropFilter: 'blur(4px)' }}>{pm.emoji}</span>
+                          </div>
+                          <div style={{ padding: '8px 9px' }}>
+                            <p style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.title}</p>
+                            <p style={{ fontSize: '9.5px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '3px' }}>{p.status}</p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )
