@@ -31,7 +31,14 @@ Produce, in her voice — the WHOLE package:
 - "caption": ONE ready-to-post caption, spaced with real line breaks, in her voice; must NOT just restate a hook. ${opts.titleFirst ? 'The caption\'s FIRST sentence MUST BE the title, verbatim.' : ''}
 - "hashtags": 3-5 REAL, relevant hashtags actually used in this niche (no spam/banned/invented); camelCase multi-word.
 - "keywords": 5-8 SEO keywords/phrases for this topic (plain phrases, for discovery — NOT hashtags).
-- "script": a tightened SPOKEN version of her point in her voice — the words to say (or re-record / voiceover), ~20-40 seconds, short punchy sentences, opens on a hook, one idea, lands clean. Pull from what she said; sharpen it. No stage directions.
+- "script": the SPOKEN words to say (or re-record / voiceover), ~20-40s, in her voice — built on the RETENTION TEMPLATE so it holds to the end and gets sent:
+    • HOOK (0-1.5s): open on the after/result or an opinion said as the FIRST words ("Stop…", "Nobody tells you…") — no "hey guys", no warm-up.
+    • REASON (1.5-4s): one line on why to stay.
+    • STEPS (4-20s): the point in ~3 tight beats, one idea only.
+    • INTERRUPT (~12s): a reset line — "but here's the part that matters".
+    • PAYOFF (20-30s): the usable takeaway, said plainly.
+    • CTA (last 3s): one ask (save / send / a comment word).
+  Short punchy sentences, natural line breaks, pulled from what she actually said. No stage directions in the script text.
 - "footage": 3-5 B-ROLL / edit suggestions to intercut with her talking-head to hold attention — each { "type": "b-roll" | "talking-head" | "text-moment", "shot": "specific, filmable/find-able moment or on-screen-text beat" }. Real, capturable moments (not AI-generated).
 ${opts.feedback ? `\nAPPLY THIS FEEDBACK from Mandi (she's iterating): "${opts.feedback}"` : ''}
 
