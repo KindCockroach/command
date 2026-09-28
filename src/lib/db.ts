@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { stripBannedHashtags } from './hashtags'
 
 // DB_PATH env var lets Railway Volume override the default local path
 const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'db.json')
@@ -757,6 +758,9 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     river_source: data.river_source ?? '',
     source_context: data.source_context ?? '',
   }
+  // Never-use hashtags are stripped on every save, whatever wrote the post.
+  piece.description = stripBannedHashtags(piece.description, piece.account_id)
+  piece.hashtags = stripBannedHashtags(piece.hashtags ?? '', piece.account_id)
   db.content.unshift(piece)
   writeDb(db)
   return piece
@@ -769,6 +773,10 @@ export function updateContent(id: number, updates: Partial<ContentPiece>): Conte
   const now = new Date().toISOString()
   if (typeof updates.hashtags === 'string') updates = { ...updates, hashtags: normalizeHashtags(updates.hashtags) }
   const updated = { ...db.content[idx], ...updates, id, updated_at: now }
+  if (typeof updates.description === 'string' || typeof updates.hashtags === 'string' || 'account_id' in updates) {
+    updated.description = stripBannedHashtags(updated.description, updated.account_id)
+    updated.hashtags = stripBannedHashtags(updated.hashtags ?? '', updated.account_id)
+  }
   if (updates.status === 'published' && !db.content[idx].published_at) {
     updated.published_at = now
   }

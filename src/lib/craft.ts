@@ -84,6 +84,7 @@ SHAPE — format dictates anatomy; never mix shapes in one post:
 HASHTAGS — every post ends with 3-5 (never more), IN the caption itself (its own line at the very bottom — not a hidden field). They are for DISCOVERY, not decoration, so EVERY tag must be a REAL, CATEGORICAL tag that thousands of people already search, follow, or browse — a topic, niche, community, or public figure: #dollyparton, #earlyliteracy, #consciousparenting, #womeninbusiness, #adhdinwomen, #homeschooling, #aiforbeginners. THE TEST before you keep a tag: do tens of thousands of OTHER posts already use it? If not, it reaches no one — cut it.
 ⛔ NEVER INVENT A HASHTAG. No clever slogans, no cute wordplay, no phrase pulled from this post's own copy — #KnowYourEngine, #TheCabinRemembers, #TellThemAGoodStory, #GiveFromWhereYouveBeen are BANNED: they have ~zero posts, nobody searches them, they reach nobody. A hashtag is a category you JOIN, never a caption you shrink.
 Use a MIX of reach tiers: at most ONE broad tag, two mid-size tags specific to the theme, and one or two smaller NICHE tags that name the exact community this post belongs to (the small, true ones are where a from-zero account gets discovered). Never a generic vanity pile (#love #inspiration #life #motivation #viral). camelCase multi-word tags for readability (#raisingReaders). 3 real categories beat 5 clever ones every time.
+⛔ NEVER-USE TAGS (researched; stripped in code anyway, so don't waste a slot): any #innerChild… tag (#innerChild, #innerChildHealing, #innerChildWork — they share posts with the age-regression/littlespace community; say "inner child" in the caption, never tag it), #trustYourGut (half #gutHealth), #captionIdeas/#captions (quote pages, not buyers), #explorepage #fyp #viral #followback #lfl (spam signals), #selfLove #selfCare #meditation #mentalHealth #love #motivation (30M+ posts, buried in seconds), #narcissisticAbuse (trauma-recovery room; we're not clinical). TAG LIKE HER, NOT LIKE US: tags name who the BUYER is and what she's going through, never what we sell or who we are (#AITools, #bossBabe, #mompreneur on a healing post).
 • Mix formats across an account; each post obeys exactly one shape.
 
 YOUTUBE IS ITS OWN ANIMAL — write for a viewer CHOOSING what to watch, never a scroller half-reading a feed. Never recycle an IG caption as a YouTube title or description; that's the "garbage" failure. The TITLE must earn the click: a specific benefit or an open loop, the payoff front-loaded in the first few words, concrete and curiosity-driving — never a vague label, a topic, or a pretty one-liner. The description's first two lines must hook BEFORE the fold (that's all a viewer sees) — say plainly what they'll GET and why to keep watching, then the fuller 150-300 words. YouTube rewards clarity about the payoff + curiosity, not aesthetics. A talking-head/avatar video for YouTube = captivating TITLE + hooking DESCRIPTION + the spoken script — and NO on-screen text.
@@ -130,15 +131,26 @@ const ACCOUNT_HASHTAGS: Record<string, string[]> = {
   aimompodcast: ['#AIForBeginners', '#ParentingInTheDigitalAge', '#AIExplained', '#FutureOfWork', '#TechForParents', '#AIandKids', '#ConcernedParents'],
   airevealsus: ['#ArtificialIntelligence', '#AIAndHumanity', '#Consciousness', '#SelfDiscovery', '#TechAndSociety', '#PhilosophyOfMind'],
   homeschool4humans: ['#Homeschooling', '#Unschooling', '#Worldschooling', '#HomeschoolMom', '#ChildLedLearning', '#EarlyLiteracy'],
-  onetangledmind: ['#ADHDinWomen', '#ADHDWomen', '#Neurodivergent', '#ADHDBrain', '#ADHDLife', '#MentalHealthMatters'],
+  // Caption Writer ($27) → Maker Maddie: makes things by hand, dreads the caption.
+  onetangledmind: ['#HandmadeBusiness', '#SmallBusinessTips', '#MakersOfInstagram', '#EtsySellersOfInstagram', '#SmallBusinessOwner', '#SmallBusinessMarketing', '#ShopSmall', '#SmallBusinessLove', '#Mompreneur'],
+  mandijoy: ['#HandmadeBusiness', '#SmallBusinessTips', '#MakersOfInstagram', '#EtsySellersOfInstagram', '#SmallBusinessOwner', '#SmallBusinessMarketing', '#ShopSmall', '#SmallBusinessLove', '#Mompreneur'],
   sage: ['#AIForBusiness', '#AITools', '#Automation', '#SmallBusinessTips', '#NoCode', '#Entrepreneurship'],
   empoweredsupermom: ['#GentleParenting', '#NervousSystemRegulation', '#ConsciousParenting', '#MomLife', '#EmotionalRegulation', '#ParentingTips'],
   philosophicalmom: ['#Stoicism', '#Philosophy', '#Mindfulness', '#Motherhood', '#DeepThinking'],
   art4thefeminine: ['#DivineFeminine', '#FeminineEnergy', '#WomenInArt', '#SacredFeminine', '#ArtByWomen'],
   survivethedome: ['#Preparedness', '#Prepping', '#SelfReliance', '#FamilyPreparedness', '#Homesteading'],
-  mandijoybeck: ['#UnapologeticallyWoman', '#WomensStories', '#SelfDiscovery', '#Authenticity', '#HealingJourney'],
+  // Be There For Her ($9) → Second-Guessing Sophie: people-pleaser, overthinker, lost her intuition.
+  mandijoybeck: ['#HealingJourney', '#Overthinking', '#PeoplePleaser', '#Reparenting', '#TrustYourIntuition', '#CycleBreaker', '#InnerWork', '#MotherWound', '#HighlySensitivePerson', '#SelfCompassion', '#EldestDaughter'],
   youradhdnature: ['#ADHD', '#ADHDLife', '#Mindfulness', '#ADHDSupport', '#Neurodivergent'],
   theadderalleffect: ['#ADHD', '#ADHDMotivation', '#GoalSetting', '#Mindset', '#Productivity'],
+}
+
+// ALWAYS-USE anchors: every post on these accounts carries these tags; the other
+// 3 slots rotate from the pool (1 identity · 2 feeling · 2 small-community).
+const ACCOUNT_HASHTAG_ANCHORS: Record<string, string[]> = {
+  onetangledmind: ['#HandmadeBusiness', '#SmallBusinessTips'],
+  mandijoy: ['#HandmadeBusiness', '#SmallBusinessTips'],
+  mandijoybeck: ['#HealingJourney'],
 }
 
 export function craftFor(accountId?: string | null): string {
@@ -149,5 +161,9 @@ export function craftFor(accountId?: string | null): string {
   const tagLine = pool
     ? `\n\nHASHTAG POOL for this account — draw your 3-5 from these REAL categories (you may swap at most ONE for a more post-specific tag, but it must be a real category people search, never an invented slogan): ${pool.join(' ')}`
     : ''
-  return `${base}${tagLine}${getVoiceLessonsContext()}`
+  const anchors = accountId ? ACCOUNT_HASHTAG_ANCHORS[accountId] : undefined
+  const anchorLine = anchors
+    ? `\nALWAYS include ${anchors.join(' ')}${accountId === 'mandijoybeck' ? ' plus ONE feeling tag (#Overthinking or #PeoplePleaser)' : ''}. Anchors count toward the 5; fill the other slots from the pool so the set reads 1 tag for who she is, 2 for what she's going through, 2 small communities. Max 5 total.`
+    : ''
+  return `${base}${tagLine}${anchorLine}${getVoiceLessonsContext()}`
 }
