@@ -17,6 +17,11 @@ export default function CommanderOrders() {
   const [q, setQ] = useState('')
   const [askBusy, setAskBusy] = useState(false)
   const [answers, setAnswers] = useState<Record<number, string>>({})
+  // Check items off as you do them (persisted per day, keyed by the item's text).
+  const [checked, setChecked] = useState<Record<string, boolean>>({})
+  const dayKey = new Date().toLocaleDateString('en-CA')
+  useEffect(() => { try { const s = localStorage.getItem(`rise-yourmove-checked-${dayKey}`); if (s) setChecked(JSON.parse(s)) } catch { /* fresh */ } }, [dayKey])
+  const toggleChecked = (key: string) => setChecked(c => { const n = { ...c, [key]: !c[key] }; try { localStorage.setItem(`rise-yourmove-checked-${dayKey}`, JSON.stringify(n)) } catch { /* ok */ } return n })
 
   const ask = async (m: Move, idx: number) => {
     if (!q.trim()) return
@@ -64,11 +69,14 @@ export default function CommanderOrders() {
               {orders.your_move.length === 0 && (
                 <p style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>Nothing blocking you right now — I&apos;m handling it. Keep the ideas coming. 🌊</p>
               )}
-              {orders.your_move.map((m, i) => (
-                <div key={i} style={{ display: 'flex', gap: '11px', padding: '11px 12px', borderRadius: '12px', background: 'var(--surface)', border: `1px solid ${i === 0 ? 'var(--purple)' : 'var(--border)'}`, boxShadow: i === 0 ? 'var(--shadow-sm)' : 'none' }}>
-                  <div style={{ flexShrink: 0, width: '24px', height: '24px', borderRadius: '8px', background: i === 0 ? 'var(--purple)' : 'var(--purple-light)', color: i === 0 ? '#fff' : 'var(--purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900 }}>{i + 1}</div>
+              {orders.your_move.map((m, i) => {
+                const done = !!checked[m.title]
+                return (
+                <div key={i} style={{ display: 'flex', gap: '11px', padding: '11px 12px', borderRadius: '12px', background: 'var(--surface)', border: `1px solid ${done ? 'var(--border)' : i === 0 ? 'var(--purple)' : 'var(--border)'}`, boxShadow: !done && i === 0 ? 'var(--shadow-sm)' : 'none', opacity: done ? 0.55 : 1, transition: 'opacity .15s' }}>
+                  <button onClick={() => toggleChecked(m.title)} title={done ? 'Mark not done' : 'Check off — done'}
+                    style={{ flexShrink: 0, width: '24px', height: '24px', borderRadius: '8px', border: done ? 'none' : `2px solid ${i === 0 ? 'var(--purple)' : 'var(--border)'}`, background: done ? '#2E8B60' : 'transparent', color: done ? '#fff' : i === 0 ? 'var(--purple)' : 'var(--text-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900, cursor: 'pointer' }}>{done ? '✓' : i + 1}</button>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.3 }}>{m.title}</p>
+                    <p style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.3, textDecoration: done ? 'line-through' : 'none' }}>{m.title}</p>
                     <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: 1.45, marginTop: '2px' }}>{m.why}</p>
                     {m.where && <p style={{ fontSize: '10.5px', color: 'var(--purple)', fontWeight: 700, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '4px' }}><ArrowRight size={11} /> {m.where}</p>}
 
@@ -98,7 +106,8 @@ export default function CommanderOrders() {
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
 
             {/* WHAT I'M HANDLING — the calm reassurance */}

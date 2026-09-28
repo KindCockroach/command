@@ -18,11 +18,13 @@ import MediaLibrary from './MediaLibrary'
 import PodcastEngine from './PodcastEngine'
 import StoryStudio from './StoryStudio'
 import ActivityFeed from './ActivityFeed'
+import ShipThisNext from './ShipThisNext'
 
 // ── The widget registry — every tab available as a homescreen widget ──────────
 // DailyCommand stays the anchor widget (quick capture + brief + tasks + fire).
 const WIDGETS: { id: string; label: string; emoji: string; render: () => React.ReactNode }[] = [
   { id: 'yourmove',   label: 'Your Move',       emoji: '⚡', render: () => <CommanderOrders /> },
+  { id: 'shipnext',   label: 'Ship This Next',  emoji: '🚀', render: () => <ShipThisNext /> },
   { id: 'activity',   label: 'Activity',        emoji: '🫀', render: () => <ActivityFeed /> },
   { id: 'queue',      label: 'Work Queue',      emoji: '✅', render: () => <CommandQueue /> },
   { id: 'commander',  label: 'The Commander',   emoji: '⚡', render: () => <CommanderChat /> },
@@ -42,7 +44,7 @@ const WIDGETS: { id: string; label: string; emoji: string; render: () => React.R
 ]
 
 const STORAGE_KEY = 'rise-home-widgets-v1'
-const DEFAULT_LAYOUT = ['yourmove', 'activity', 'queue', 'commander', 'research', 'goalspace']   // Your Move → Activity (the spine) → Work Queue → Commander → Briefing → Goals
+const DEFAULT_LAYOUT = ['yourmove', 'shipnext', 'activity', 'queue', 'commander', 'research', 'goalspace']   // Your Move → Ship This Next → Activity → Work Queue → Commander → Briefing → Goals
 
 // The customizable homescreen: pick which widgets show and in what order,
 // so Daily Command bends to the current focus (launch mode, research season…).
@@ -85,6 +87,14 @@ export default function HomeScreen() {
             const at = without.indexOf('yourmove')
             ids = at >= 0 ? [...without.slice(0, at + 1), 'activity', ...without.slice(at + 1)] : ['activity', ...without]
             localStorage.setItem('rise-home-v5', '1')
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
+          }
+          // v6: Ship This Next (the priority engine) slots in right under Your Move.
+          if (!localStorage.getItem('rise-home-v6')) {
+            const without = ids.filter(id => id !== 'shipnext')
+            const at = without.indexOf('yourmove')
+            ids = at >= 0 ? [...without.slice(0, at + 1), 'shipnext', ...without.slice(at + 1)] : ['shipnext', ...without]
+            localStorage.setItem('rise-home-v6', '1')
             localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
           }
           setLayout(ids)
