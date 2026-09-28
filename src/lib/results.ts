@@ -168,9 +168,13 @@ export function scoreResults(accountId?: string | null): ScoredResult[] {
     const medFb = median(fbRows.map(r => r.fb_views ?? 0))
     const medEng = median(rows.map(eng))
     const firstByText = new Map<string, PostResult>()
+    // A re-upload is the same words on the same video. Same words on a NEW clip is
+    // a deliberate visual test (Mandi posts each line 3× with different footage).
+    const textKey = (r: PostResult) => r.onscreen_text.toLowerCase().replace(/\s+/g, ' ').trim()
+    const vis = (r: PostResult) => r.visual.toLowerCase().replace(/\s+/g, ' ').trim()
+    const saysRepost = (r: PostResult) => /second version|re-?upload|repost|same (footage|clip|video)/i.test(r.visual)
     for (const r of [...rows].sort((a, b) => a.id - b.id)) {
-      const key = r.onscreen_text.toLowerCase().replace(/\s+/g, ' ').trim()
-      if (isRealText(key) && !firstByText.has(key)) firstByText.set(key, r)
+      if (isRealText(textKey(r)) && !firstByText.has(textKey(r))) firstByText.set(textKey(r), r)
     }
     for (const r of rows) {
       const e = eng(r)
@@ -179,11 +183,10 @@ export function scoreResults(accountId?: string | null): ScoredResult[] {
       const ratio = medViews ? igv / medViews : 0
       const reasons: string[] = []
       let verdict: Verdict = 'neutral'
-      const key = r.onscreen_text.toLowerCase().replace(/\s+/g, ' ').trim()
-      const first = isRealText(key) ? firstByText.get(key) : undefined
-      if (first && first.id !== r.id) {
+      const first = isRealText(textKey(r)) ? firstByText.get(textKey(r)) : undefined
+      if (first && first.id !== r.id && (saysRepost(r) || (!!vis(r) && vis(r) === vis(first)))) {
         verdict = 'reupload'
-        reasons.push('Same on-screen text as an earlier reel. Exact re-posts get buried; re-angle instead.')
+        reasons.push('Same text on the same video as an earlier reel. Exact re-posts get buried; use a new clip or new words.')
       } else if ((ratio >= 2 && igv >= 300) || r.follows > 0) {
         verdict = 'make_more'
         if (ratio >= 2) reasons.push(`${ratio.toFixed(1)}× this account's typical views`)
