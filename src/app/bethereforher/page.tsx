@@ -45,17 +45,31 @@ export default function BeThereForHer() {
       <section className="band">
         <div className="wrap">
           <h2>Your intuition is a wellspring.</h2>
-          <p>The quiet knowing underneath everything. When you follow it, doors open &mdash; the right
-            yeses, the right people, the thing you were quietly meant for.</p>
-          <p className="reframe">When you override it, life slowly comes apart &mdash; so gently you almost
-            don&rsquo;t notice, until you&rsquo;re standing in circumstances that don&rsquo;t feel like your
-            own.</p>
-          <p>Because after years of being there for everyone else, your intuition turned its own volume way
+          <p>The quiet knowing underneath everything. Follow it and doors fly open &mdash; the right yeses,
+            the right people, the life you keep almost letting yourself want.</p>
+          <p className="reframe">Override it and everything quietly comes apart &mdash; so slowly you don&rsquo;t
+            notice, until you&rsquo;re standing in a life that isn&rsquo;t yours.</p>
+          <p>After years of being there for everyone else, your intuition turned its own volume all the way
             down.</p>
           <p className="untilnow"><strong>Until now.</strong></p>
-          <p className="callout">This is for the woman who&rsquo;s done saying &ldquo;yes&rdquo; when she means &ldquo;no&rdquo;
-            &mdash; bending over backward, under-appreciated, ignoring her own needs. You&rsquo;ve been there
-            for everyone but yourself. Now it&rsquo;s time to reconnect.</p>
+          <p className="callout">This is for the woman who&rsquo;s done saying &ldquo;yes&rdquo; when she means
+            &ldquo;no&rdquo; &mdash; done abandoning herself in the parking lot, at the menu, in her own
+            marriage. Your knowing didn&rsquo;t leave. It&rsquo;s about to come roaring back.</p>
+        </div>
+      </section>
+
+      <section className="what">
+        <div className="wrap">
+          <h2>You know exactly what I mean.</h2>
+          <ul className="walkaway">
+            <li>You&rsquo;ve left 45 minutes early and sat in the parking lot, because you can&rsquo;t tell when to go anymore.</li>
+            <li>You ordered what she ordered so you wouldn&rsquo;t have to choose.</li>
+            <li>You said yes when you meant no &mdash; then canceled last minute and called yourself a flake.</li>
+            <li>You felt the red flag on the first date and told yourself you were &ldquo;being sensitive.&rdquo;</li>
+            <li>You have a feeling about what your kid needs, and you won&rsquo;t let yourself follow it.</li>
+            <li>You used to be so sure of yourself. You want her back.</li>
+          </ul>
+          <p className="callout">That&rsquo;s not indecision. That&rsquo;s a signal you stopped trusting &mdash; and we&rsquo;re about to turn it all the way back up.</p>
         </div>
       </section>
 
@@ -68,16 +82,16 @@ export default function BeThereForHer() {
       <section className="what">
         <div className="wrap">
           <h2>What&rsquo;s inside</h2>
-          <p className="lead"><strong>Reconnect To Your Intuition</strong>{' '}is a gentle 7-part listening
-            series that turns up the volume on your intuition &mdash; speaking to your inner child, because
-            that&rsquo;s where your wellspring starts.</p>
-          <p className="walkhead">In 10 minutes you walk away with:</p>
+          <p className="lead"><strong>Reconnect To Your Intuition</strong>{' '}is seven guided sessions in my
+            real voice. Not the meditation you&rsquo;ve quit before &mdash; you don&rsquo;t have to empty your
+            mind, sit still, or get it right. You just listen. Ten minutes after bedtime, headphones in, drop in.</p>
+          <p className="walkhead">You won&rsquo;t believe how you feel when you wake up tomorrow.</p>
           <ul className="walkaway">
-            <li>A clearer connection to your intuition</li>
-            <li>Being there for her, the younger you</li>
-            <li>Time to yourself; your own needs, finally met</li>
+            <li>Your intuition, turned all the way back up</li>
+            <li>The little girl who went quiet &mdash; safe again</li>
+            <li>Your yes and your no, trustworthy for the first time in years</li>
           </ul>
-          <p className="lead sevenhead">Seven meditations. Ten minutes of your day.</p>
+          <p className="lead sevenhead">Seven sessions. Ten minutes of your day.</p>
           <ol className="medlist">
             {MEDS.map((m) => (
               <li key={m.n}>
@@ -94,15 +108,18 @@ export default function BeThereForHer() {
       <section className="product">
         <div className="wrap">
           <p className="ptag">Where this comes from</p>
-          <p>Hi, I&rsquo;m Mama Mandi &mdash; owner of Joyful Media, and mother to four babies here on earth
-            and one in the heavens.</p>
-          <p>After years of white-knuckling my loss, I came up empty and angry. That&rsquo;s when I found the
-            power of mindful listening, parts work, and inner-child healing.</p>
-          <p>I&rsquo;ve been told I have a voice that commands and an imagination that expands.</p>
-          <p>So if you&rsquo;ve had a hard time sitting through a meditation before, I&rsquo;m confident these
-            audios will feel different for you.</p>
-          <p>Please let me hold your hand and walk you through the power of your mind, to your heart, where
-            you&rsquo;ll take a warm dip in the wellspring of your intuition.</p>
+          <p>Hi, I&rsquo;m Mama Mandi &mdash; owner of Joyful Media, mother to four babies here on earth and
+            one in the heavens.</p>
+          <p>After 15 years of yoga, meditation, and mushrooms, mindful listening was the single most powerful
+            modality I have ever touched &mdash; the exact thing that broke a lifetime of my own annoying
+            patterns, outdated beliefs, and problematic behaviors.</p>
+          <p>Now I&rsquo;m using this work to move through my life standing up for the women who came before
+            me, and the ones coming after.</p>
+          <p>I&rsquo;m not here to sell you calm. I&rsquo;m handing you the exact thing that changed everything
+            for me.</p>
+          <p>I&rsquo;ve been told I have a voice that commands and an imagination that expands. So if
+            you&rsquo;ve never made it through a meditation in your life &mdash; perfect. This isn&rsquo;t that.</p>
+          <p>Grab your headphones. Meet me in the quiet. Let&rsquo;s get you back.</p>
           <blockquote className="pullquote">&ldquo;I&rsquo;m here now. I&rsquo;ve got you. I&rsquo;m not leaving again.&rdquo;</blockquote>
         </div>
       </section>
@@ -127,9 +144,10 @@ export default function BeThereForHer() {
       <section className="optin">
         <div className="wrap">
           <p className="eyebrow2">START FREE</p>
-          <h2>Not ready yet? Take one on me.</h2>
-          <p className="osub">Leave your email and &ldquo;The Little You&rdquo; is yours to keep, right now &mdash;
-            a gentle first step back to yourself. No pressure, no spam. Just a place to begin.</p>
+          <h2>Not ready? Take one on me.</h2>
+          <p className="osub">Drop your email and &ldquo;The Little You&rdquo; is yours right now &mdash; free.
+            Grab your headphones after bedtime and drop in. You won&rsquo;t believe how you feel when you wake up
+            tomorrow.</p>
           <FreeOptin />
         </div>
       </section>
@@ -137,10 +155,10 @@ export default function BeThereForHer() {
       <section className="proof">
         <div className="wrap">
           <h2>What changes</h2>
-          <p>You&rsquo;ll start catching the moment you talk yourself out of what you know. You&rsquo;ll hear
-            the quiet &ldquo;yes&rdquo; and the quiet &ldquo;no&rdquo; again &mdash; and trust them. You&rsquo;ll
-            stop asking everyone else what they think before you let yourself know. You&rsquo;ll feel like
-            <em> you</em> again &mdash; the one who was in there the whole time.</p>
+          <p>You stop asking everyone else what they think before you let yourself know. You feel the yes and
+            the no again &mdash; and you <em>move</em> on them. You stop second-guessing your gut about your kid,
+            your marriage, your money, your whole life. The woman who knew comes roaring back &mdash; and this
+            time, she doesn&rsquo;t leave.</p>
         </div>
       </section>
 
@@ -154,7 +172,8 @@ export default function BeThereForHer() {
             <dt>Is this really your voice?</dt>
             <dd>Yes. Every word is me, recorded for the woman and the little girl in you.</dd>
             <dt>Do I need any experience with meditation?</dt>
-            <dd>None. Press play, close your eyes, and follow along. I do the rest.</dd>
+            <dd>None. In fact, if you&rsquo;ve never made it through a meditation in your life &mdash; perfect.
+              This isn&rsquo;t that. Press play, drop in, I do the rest.</dd>
             <dt>Is it a subscription?</dt>
             <dd>No &mdash; one payment, yours to keep forever. (If you want a new meditation every week, a
               membership is coming; you can join when it opens.)</dd>
