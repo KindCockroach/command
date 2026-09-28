@@ -30,14 +30,14 @@ export default function BeThereForHer() {
       <section className="hero">
         <div className="wrap">
           <p className="eyebrow">RECONNECT WITH YOUR INTUITION</p>
-          <h1>You used to just <em>know.</em></h1>
+          <h1>A woman&rsquo;s intuition is her single most important <em>superpower.</em></h1>
           <p className="sub">
-            Lately you&rsquo;re moving through your days a step behind yourself &mdash; doing everything
-            right, feeling everything faintly, not really sure what you&rsquo;re waiting for, but still
-            just waiting. Life takes its toll &mdash; but you&rsquo;re about to get yourself back.
+            You are about to radically change your life, align with everything you&rsquo;ve been calling
+            in, and step into future you &mdash; virtually overnight. This is what you&rsquo;ve been waiting
+            for. And I&rsquo;m not being dramatic.
           </p>
-          <BuyButton href={CHECKOUT} label="Listen to Your Intuition — $9" />
-          <p className="preview-label">Listen free &mdash; &ldquo;The Little You&rdquo;:</p>
+          <BuyButton href={CHECKOUT} label="Reconnect to your intuition — $9" />
+          <p className="preview-label">Grab your headphones after bedtime and drop in. &nbsp;·&nbsp; Listen free &mdash; &ldquo;The Little You&rdquo;:</p>
           <audio controls preload="none" src={PREVIEW_FILE} className="preview" />
         </div>
       </section>
