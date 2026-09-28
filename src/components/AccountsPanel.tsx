@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus, CheckSquare, Eye, Heart, MessageCircle, Send, Bookmark, ChevronLeft, ChevronRight, Rows3, LayoutGrid, GalleryHorizontal } from 'lucide-react'
 import { postPurpose, PURPOSE_META, type Purpose } from '@/lib/contentStatus'
 import type { BrandAccount, ContentPiece } from '@/lib/db'
@@ -1012,6 +1012,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4, wordBreak: 'break-word' }}><span style={{ color: 'var(--text-subtle)', marginRight: '5px' }}>#{post.id}</span>{post.title}</p>
           <div style={{ display: 'flex', gap: '6px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {(() => { const pm = PURPOSE_META[postPurpose(post)]; return <span title={`${pm.label}-purpose post`} style={{ fontSize: '9px', fontWeight: 800, padding: '3px 8px', borderRadius: '10px', background: pm.bg, color: pm.color }}>{pm.emoji} {pm.label}</span> })()}
             <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: accentColor }}>{post.type.replace(/_/g, ' ')}</span>
             <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 8px', borderRadius: '10px', background: statusChip.bg, color: statusChip.color }}>{statusChip.label}</span>
             {gallery.length > 0 ? <span style={{ fontSize: '9px', color: '#3DAA7C', fontWeight: 700 }}>📎 {gallery.length > 1 ? `${gallery.length} slides` : 'media'}</span>
@@ -1607,6 +1608,7 @@ export default function AccountsPanel() {
   const [flipped, setFlipped] = useState<string | null>(null)
   const [focusMode, setFocusMode] = useState(true)   // one account at a time (default) vs full grid
   const [focusIdx, setFocusIdx] = useState(0)
+  const acctSwipeRef = useRef<HTMLDivElement>(null)   // swipe between accounts (focus mode)
   const [reordering, setReordering] = useState(false)   // grid + up/down arrows to set custom scroll order
   const [approvingId, setApprovingId] = useState<number | null>(null)
   const [approveNotes, setApproveNotes] = useState<Record<number, string>>({})
@@ -2034,13 +2036,13 @@ export default function AccountsPanel() {
               </>
             ) : focusMode ? (
               <>
-                <button onClick={() => setFocusIdx(i => (i - 1 + sorted.length) % sorted.length)} title="Previous account"
+                <button onClick={() => { const el = acctSwipeRef.current; if (el) el.scrollBy({ left: -el.clientWidth, behavior: 'smooth' }); else setFocusIdx(i => (i - 1 + sorted.length) % sorted.length) }} title="Previous account"
                   style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>‹ Prev</button>
                 <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
                   <span style={{ fontSize: '13px', fontWeight: 900, color: cur.color || 'var(--text)' }}>{cur.emoji} {cur.handle}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-subtle)', marginLeft: '8px' }}>{idx + 1} of {sorted.length}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-subtle)', marginLeft: '8px' }}>{idx + 1} of {sorted.length} · swipe →</span>
                 </div>
-                <button onClick={() => setFocusIdx(i => (i + 1) % sorted.length)} title="Next account"
+                <button onClick={() => { const el = acctSwipeRef.current; if (el) el.scrollBy({ left: el.clientWidth, behavior: 'smooth' }); else setFocusIdx(i => (i + 1) % sorted.length) }} title="Next account"
                   style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '13px', cursor: 'pointer' }}>Next ›</button>
                 <button onClick={() => { setReordering(true); setFocusMode(false) }} title="Reorder how they scroll"
                   style={{ padding: '8px 11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>↕ Reorder</button>
@@ -2059,9 +2061,13 @@ export default function AccountsPanel() {
         )
       })()}
 
-      {/* Account cards */}
-      <div className={focusMode ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3'}>
-        {(focusMode ? sorted.slice(Math.min(focusIdx, sorted.length - 1), Math.min(focusIdx, sorted.length - 1) + 1) : sorted).map(acct => {
+      {/* Account cards — focus mode is a swipe carousel (finger/trackpad), grid shows all */}
+      <div
+        ref={focusMode ? acctSwipeRef : undefined}
+        onScroll={focusMode ? (e => { const el = e.currentTarget; const i = Math.round(el.scrollLeft / el.clientWidth); if (i !== focusIdx && i >= 0 && i < sorted.length) setFocusIdx(i) }) : undefined}
+        className={focusMode ? '' : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3'}
+        style={focusMode ? { display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', gap: '12px', paddingBottom: '4px' } : undefined}>
+        {(focusMode ? sorted : sorted).map(acct => {
           const s = STATUS_CONFIG[acct.status]
           const posts = postsFor(acct.id)
           const queued = posts.filter(p => ['idea', 'in_progress', 'ready', 'held'].includes(p.status))
@@ -2074,7 +2080,7 @@ export default function AccountsPanel() {
           return (
             <div key={acct.id} onClick={() => { if (reordering) return; selectMode ? toggleSelect(acct.id) : setFlipped(acct.id) }}
               className="rise-float rounded-xl border p-4 flex flex-col gap-3"
-              style={{ background: 'var(--surface)', borderColor: reordering ? 'var(--purple)' : selectMode && selected.has(acct.id) ? 'var(--purple)' : 'var(--border)', borderWidth: (reordering || (selectMode && selected.has(acct.id))) ? '2px' : '1px', boxShadow: 'var(--shadow-float)', position: 'relative', cursor: reordering ? 'default' : 'pointer' }}>
+              style={{ background: 'var(--surface)', borderColor: reordering ? 'var(--purple)' : selectMode && selected.has(acct.id) ? 'var(--purple)' : 'var(--border)', borderWidth: (reordering || (selectMode && selected.has(acct.id))) ? '2px' : '1px', boxShadow: 'var(--shadow-float)', position: 'relative', cursor: reordering ? 'default' : 'pointer', ...(focusMode ? { minWidth: '100%', flexShrink: 0, scrollSnapAlign: 'center', boxSizing: 'border-box' as const } : {}) }}>
               {reordering && (
                 <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '4px', zIndex: 3 }}>
                   <button onClick={e => { e.stopPropagation(); moveAcct(acct.id, -1) }} title="Move up"

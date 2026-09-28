@@ -48,6 +48,7 @@ export default function ContentDay() {
   const [planning, setPlanning] = useState<Record<number, boolean>>({})
   const [planErr, setPlanErr] = useState<Record<number, string>>({})
   const [purposeFilter, setPurposeFilter] = useState<'all' | Purpose>('all')
+  const [acctFilter, setAcctFilter] = useState<string>('all')
 
   const load = useCallback(() => {
     setLoading(true)
@@ -88,12 +89,14 @@ export default function ContentDay() {
       fp.split('\n').map(l => l.trim()).filter(l => l.startsWith('•') || l.startsWith('-')).forEach((l, i) => {
         const shot = l.replace(/^[•-]\s*/, '')
         const m = shot.match(/^\[([^\]]+)\]\s*(.*)$/)
-        allLines.push({ key: `${p.id}-br${i}`, kind: m ? m[1] : 'B-roll', length: '3–6s', script: m ? m[2] : shot, account: acctLabel, color: a?.color, postId: p.id, broll: true, purpose })
+        allLines.push({ key: `${p.id}-br${i}`, kind: m ? m[1] : 'B-roll', length: '3–6s', script: m ? m[2] : shot, account: acctLabel, color: a?.color, postId: p.id, accountId: p.account_id, broll: true, purpose })
       })
     }
   }
   const purposeCounts = allLines.reduce((m, l) => { m[l.purpose] = (m[l.purpose] ?? 0) + 1; return m }, {} as Record<Purpose, number>)
-  const lines = purposeFilter === 'all' ? allLines : allLines.filter(l => l.purpose === purposeFilter)
+  // Accounts that actually have something to film (for the account filter).
+  const acctOptions = Array.from(new Map(allLines.filter(l => l.accountId).map(l => [l.accountId as string, l.account || l.accountId as string])).entries())
+  const lines = allLines.filter(l => (purposeFilter === 'all' || l.purpose === purposeFilter) && (acctFilter === 'all' || l.accountId === acctFilter))
 
   // Rehydrate cached plans for the talking-head scripts currently on screen.
   useEffect(() => {
@@ -187,9 +190,16 @@ export default function ContentDay() {
         </div>
       </div>
 
-      {/* PURPOSE sorter — focus on follower / conversion / trust */}
+      {/* Filters — account + purpose */}
       {allLines.length > 0 && (
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '10px 14px 0' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', padding: '10px 14px 0' }}>
+          {acctOptions.length > 1 && (
+            <select value={acctFilter} onChange={e => setAcctFilter(e.target.value)}
+              style={{ padding: '6px 9px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+              <option value="all">All accounts</option>
+              {acctOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            </select>
+          )}
           {(['all', 'follower', 'conversion', 'trust'] as const).map(pk => {
             const on = purposeFilter === pk
             const meta = pk === 'all' ? { label: 'All', emoji: '', color: 'var(--purple)', bg: 'var(--purple-light)' } : PURPOSE_META[pk]
