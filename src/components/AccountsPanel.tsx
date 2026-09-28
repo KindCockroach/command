@@ -1850,7 +1850,7 @@ export default function AccountsPanel() {
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginLeft: 'auto' }}>
-                  {(['all', 'follower', 'conversion', 'trust'] as const).map(pk => {
+                  {(['all', 'follower', 'engage', 'trust', 'conversion'] as const).map(pk => {
                     const on = purposeFilter === pk
                     const meta = pk === 'all' ? { label: 'All', emoji: '', color: theme.color, bg: `${theme.color}12` } : PURPOSE_META[pk]
                     const count = pk === 'all' ? shownAll.length : (purposeCounts[pk] ?? 0)

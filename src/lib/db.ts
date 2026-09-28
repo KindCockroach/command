@@ -86,6 +86,7 @@ export type Project = {
   notes: string
   assistant: string
   progress: number  // 0-100
+  sort_order?: number           // manual priority order (lower = higher priority); unset sinks to the bottom
   checklist?: ChecklistItem[]   // the step-by-step to get this project done
   scripts?: ProjectScript[]     // recording scripts that live in the project (e.g. meditations)
   created_at: string
@@ -885,7 +886,12 @@ export type ContentPieceRowType = ContentPiece
 export function getAllProjects(status?: string): Project[] {
   const db = readDb()
   const items = (db.projects ?? [])
-  return status ? items.filter(p => p.status === status) : items
+  const filtered = status ? items.filter(p => p.status === status) : items
+  // Manual priority order first (lower sort_order = higher priority); unset sinks
+  // to the bottom, then newest. This is what the Commander reads as "current focus".
+  return [...filtered].sort((a, b) =>
+    (a.sort_order ?? Number.MAX_SAFE_INTEGER) - (b.sort_order ?? Number.MAX_SAFE_INTEGER)
+    || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 }
 
 export function createProject(data: Partial<Project>): Project {

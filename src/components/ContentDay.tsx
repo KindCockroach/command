@@ -200,7 +200,7 @@ export default function ContentDay() {
               {acctOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
             </select>
           )}
-          {(['all', 'follower', 'conversion', 'trust'] as const).map(pk => {
+          {(['all', 'follower', 'engage', 'trust', 'conversion'] as const).map(pk => {
             const on = purposeFilter === pk
             const meta = pk === 'all' ? { label: 'All', emoji: '', color: 'var(--purple)', bg: 'var(--purple-light)' } : PURPOSE_META[pk]
             const count = pk === 'all' ? allLines.length : (purposeCounts[pk] ?? 0)

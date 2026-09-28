@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Plus, ChevronDown, ChevronUp, Trash2, Edit3, CheckCheck, X, Inbox, Send } from 'lucide-react'
+import { Plus, ChevronDown, ChevronUp, Trash2, Edit3, CheckCheck, X, Inbox, Send, Archive, RotateCcw, ArrowUp, ArrowDown } from 'lucide-react'
 import type { Project, ProjectStatus, ProjectPriority, ProjectLabel, ContentPiece } from '@/lib/db'
 import ContentOrderForm from './ContentOrderForm'
 
@@ -29,7 +29,7 @@ function ProgressBar({ value }: { value: number }) {
   )
 }
 
-function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpdate: (id: number, u: Partial<Project>) => void; onDelete: (id: number) => void }) {
+function ProjectCard({ project, onUpdate, onDelete, onArchive, onRestore }: { project: Project; onUpdate: (id: number, u: Partial<Project>) => void; onDelete: (id: number) => void; onArchive: (id: number) => void; onRestore: (id: number) => void }) {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(project)
@@ -262,9 +262,13 @@ function ProjectCard({ project, onUpdate, onDelete }: { project: Project; onUpda
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <button onClick={() => setEditing(true)} style={{ ...btnSt, background: 'var(--bg)', color: 'var(--text)' }}><Edit3 size={12} /> Edit</button>
-                <button onClick={() => onDelete(project.id)} style={{ ...btnSt, background: 'rgba(220,0,0,0.08)', color: '#e05' }}><Trash2 size={12} /> Delete</button>
+                {project.status === 'archived'
+                  ? <button onClick={() => onRestore(project.id)} style={{ ...btnSt, background: 'rgba(61,170,124,0.1)', color: '#2E8B60' }}><RotateCcw size={12} /> Restore</button>
+                  : <button onClick={() => onArchive(project.id)} style={{ ...btnSt, background: 'rgba(148,163,184,0.14)', color: 'var(--text-muted)' }}><Archive size={12} /> Archive</button>}
+                <button onClick={() => { if (window.confirm('Delete this project permanently? This can’t be undone — use Archive if you want it kept in history.')) onDelete(project.id) }}
+                  style={{ ...btnSt, background: 'rgba(220,0,0,0.08)', color: '#e05' }}><Trash2 size={12} /> Delete</button>
               </div>
             </div>
           )}
@@ -306,9 +310,26 @@ export default function ProjectsPanel() {
     await fetch(`/api/projects?id=${id}`, { method: 'DELETE' })
     setProjects(ps => ps.filter(p => p.id !== id))
   }
+  const archive = (id: number) => update(id, { status: 'archived' })
+  const restore = (id: number) => update(id, { status: 'active' })
 
-  const active = projects.filter(p => p.status === 'active')
-  const other = projects.filter(p => p.status !== 'active')
+  const bySort = (a: Project, b: Project) => (a.sort_order ?? Number.MAX_SAFE_INTEGER) - (b.sort_order ?? Number.MAX_SAFE_INTEGER)
+  const active = projects.filter(p => p.status === 'active').sort(bySort)
+  const dormant = projects.filter(p => p.status === 'paused' || p.status === 'complete')
+  const archived = projects.filter(p => p.status === 'archived')
+  const [showArchived, setShowArchived] = useState(false)
+
+  // Move an active project up/down the priority order; renumber + persist the whole list.
+  const move = async (idx: number, dir: -1 | 1) => {
+    const j = idx + dir
+    if (j < 0 || j >= active.length) return
+    const list = [...active]
+    ;[list[idx], list[j]] = [list[j], list[idx]]
+    const updates = list.map((p, i) => ({ id: p.id, sort_order: i }))
+    const orderMap = new Map(updates.map(u => [u.id, u.sort_order]))
+    setProjects(ps => ps.map(p => orderMap.has(p.id) ? { ...p, sort_order: orderMap.get(p.id)! } : p))
+    await Promise.all(updates.map(u => fetch('/api/projects', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(u) }))).catch(() => {})
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -350,15 +371,39 @@ export default function ProjectsPanel() {
 
       {active.length > 0 && (
         <>
-          <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#3daa7c' }}>Active ({active.length})</p>
-          {active.map(p => <ProjectCard key={p.id} project={p} onUpdate={update} onDelete={remove} />)}
+          <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#3daa7c' }}>Active ({active.length}) · top = your #1 priority — reorder with ↑ ↓</p>
+          {active.map((p, i) => (
+            <div key={p.id} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', paddingTop: '14px', flexShrink: 0 }}>
+                <span style={{ fontSize: '11px', fontWeight: 900, color: i === 0 ? 'var(--hot-pink)' : 'var(--text-subtle)', fontVariantNumeric: 'tabular-nums' }}>{i + 1}</span>
+                <button onClick={() => move(i, -1)} disabled={i === 0} title="Move up" style={{ border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: '7px', padding: '3px', cursor: i === 0 ? 'default' : 'pointer', color: i === 0 ? 'var(--border)' : 'var(--text-muted)', display: 'flex' }}><ArrowUp size={13} /></button>
+                <button onClick={() => move(i, 1)} disabled={i === active.length - 1} title="Move down" style={{ border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: '7px', padding: '3px', cursor: i === active.length - 1 ? 'default' : 'pointer', color: i === active.length - 1 ? 'var(--border)' : 'var(--text-muted)', display: 'flex' }}><ArrowDown size={13} /></button>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <ProjectCard project={p} onUpdate={update} onDelete={remove} onArchive={archive} onRestore={restore} />
+              </div>
+            </div>
+          ))}
         </>
       )}
-      {other.length > 0 && (
+      {dormant.length > 0 && (
         <>
-          <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginTop: '8px' }}>Other</p>
-          {other.map(p => <ProjectCard key={p.id} project={p} onUpdate={update} onDelete={remove} />)}
+          <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginTop: '8px' }}>Paused / Complete ({dormant.length})</p>
+          {dormant.map(p => <ProjectCard key={p.id} project={p} onUpdate={update} onDelete={remove} onArchive={archive} onRestore={restore} />)}
         </>
+      )}
+      {archived.length > 0 && (
+        <div style={{ marginTop: '8px' }}>
+          <button onClick={() => setShowArchived(v => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-subtle)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}>
+            {showArchived ? <ChevronUp size={13} /> : <ChevronDown size={13} />} <Archive size={12} /> Archived · {archived.length} (history)
+          </button>
+          {showArchived && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+              {archived.map(p => <ProjectCard key={p.id} project={p} onUpdate={update} onDelete={remove} onArchive={archive} onRestore={restore} />)}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
