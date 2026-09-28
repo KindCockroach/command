@@ -757,6 +757,9 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
   const [moving, setMoving] = useState(false)
   const [showNotes, setShowNotes] = useState(false)
   const [showContext, setShowContext] = useState(false)
+  const [showShoot, setShowShoot] = useState(false)
+  // The saved shoot plan (roles/beats + emotion + camera), parsed from the post.
+  const shootPlan = (() => { try { return post.shoot_plan ? JSON.parse(post.shoot_plan) as { mode?: string; title?: string; sections?: { role: string; setup: string; lines: { text: string; emotion: string; camera: string }[] }[]; beats?: { label: string; cue: string; text: string; emotion: string; camera: string }[] } : null } catch { return null } })()
   const [showMove, setShowMove] = useState(false)
   const [showDup, setShowDup] = useState(false)
   const [duping, setDuping] = useState(false)
@@ -1354,6 +1357,53 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
               )}
               {post.script && <Section label="🎬 Script (spoken — build, does not post)" text={post.script} bold />}
               {post.onscreen_text && <Section label="📱 On-Screen Text / Slides (build, does not post)" text={post.onscreen_text} bold />}
+
+              {/* 🎬 Shoot plan — saved from Content Day's "Plan this shoot", collapsed so the card stays short */}
+              {shootPlan && (
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+                  <button onClick={() => setShowShoot(s => !s)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)' }}>
+                    <span style={{ fontSize: '13px' }}>🎬</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)' }}>Shoot plan{shootPlan.mode === 'dialogue' && shootPlan.sections ? ` · ${shootPlan.sections.length} roles` : shootPlan.beats ? ` · ${shootPlan.beats.length} beats` : ''}</span>
+                    <span style={{ marginLeft: 'auto', color: 'var(--text-subtle)', fontSize: '11px' }}>{showShoot ? '▲' : '▼'}</span>
+                  </button>
+                  {showShoot && (
+                    <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: '11px' }}>
+                      {shootPlan.mode === 'dialogue' && shootPlan.sections?.map((sec, si) => (
+                        <div key={si} style={{ border: '1px solid var(--border)', borderRadius: '9px', overflow: 'hidden' }}>
+                          <div style={{ padding: '7px 10px', background: 'var(--purple-light)', fontSize: '12px', fontWeight: 900, color: 'var(--purple)' }}>🎬 Film all as {sec.role}</div>
+                          {sec.setup && <p style={{ padding: '7px 10px 0', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'ui-monospace, Menlo, monospace' }}>SET-UP · {sec.setup}</p>}
+                          <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {sec.lines?.map((ln, li) => (
+                              <div key={li} style={{ display: 'flex', gap: '9px', alignItems: 'flex-start' }}>
+                                <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: '10px', color: 'var(--text-subtle)', paddingTop: '3px', minWidth: '16px' }}>{String(li + 1).padStart(2, '0')}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4 }}>&ldquo;{ln.text}&rdquo;</p>
+                                  <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{ln.emotion ? `🎭 ${ln.emotion}` : ''}{ln.emotion && ln.camera ? '  ·  ' : ''}{ln.camera ? `🎥 ${ln.camera}` : ''}</p>
+                                </div>
+                                <SectionCopy text={ln.text} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      {shootPlan.mode !== 'dialogue' && shootPlan.beats?.map((b, i) => (
+                        <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                          <div style={{ flexShrink: 0, width: '66px' }}>
+                            <p style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--purple)' }}>{b.label}</p>
+                            <p style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: '10px', color: 'var(--text-subtle)' }}>{b.cue}</p>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0, borderLeft: '2px solid var(--border)', paddingLeft: '10px' }}>
+                            <p style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text)', lineHeight: 1.45 }}>{b.text}</p>
+                            <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{b.emotion ? `🎭 ${b.emotion}` : ''}{b.emotion && b.camera ? '  ·  ' : ''}{b.camera ? `🎥 ${b.camera}` : ''}</p>
+                          </div>
+                          <SectionCopy text={b.text} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {post.onscreen_text && (
                 <div style={{ marginTop: '-2px' }}>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>

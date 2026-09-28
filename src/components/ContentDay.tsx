@@ -69,6 +69,9 @@ export default function ContentDay() {
       if (d.plan) {
         setPlans(p => ({ ...p, [postId]: d.plan }))
         try { localStorage.setItem(`rise-shootplan-${postId}`, JSON.stringify({ sig: sig(script), plan: d.plan })) } catch { /* ok */ }
+        // Persist ONTO the post so it survives refresh and shows on the post card.
+        setPosts(ps => ps.map(p => p.id === postId ? { ...p, shoot_plan: JSON.stringify(d.plan) } : p))
+        fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, shoot_plan: JSON.stringify(d.plan) }) }).catch(() => {})
       } else setPlanErr(e => ({ ...e, [postId]: d.error || 'Could not build the plan — try again.' }))
     } catch { setPlanErr(e => ({ ...e, [postId]: 'Connection error' })) } finally { setPlanning(p => ({ ...p, [postId]: false })) }
   }
@@ -98,11 +101,16 @@ export default function ContentDay() {
   const acctOptions = Array.from(new Map(allLines.filter(l => l.accountId).map(l => [l.accountId as string, l.account || l.accountId as string])).entries())
   const lines = allLines.filter(l => (purposeFilter === 'all' || l.purpose === purposeFilter) && (acctFilter === 'all' || l.accountId === acctFilter))
 
-  // Rehydrate cached plans for the talking-head scripts currently on screen.
+  // Rehydrate plans — the post's saved shoot_plan is the durable source (survives
+  // refresh + shows on the post card); localStorage is a fast fallback.
   useEffect(() => {
     const next: Record<number, ShootPlan> = {}
     for (const l of lines) {
       if (l.broll || plans[l.postId]) continue
+      const post = posts.find(p => p.id === l.postId)
+      if (post?.shoot_plan) {
+        try { const plan = JSON.parse(post.shoot_plan); if (plan) { next[l.postId] = plan; continue } } catch { /* fall through */ }
+      }
       try {
         const raw = localStorage.getItem(`rise-shootplan-${l.postId}`)
         if (raw) { const { sig: s, plan } = JSON.parse(raw); if (s === sig(l.script) && plan) next[l.postId] = plan }

@@ -39,6 +39,7 @@ export type ContentPiece = {
   ghl_post_id?: string | null      // GHL social planner post id once pushed
   scheduled_at?: string | null     // when GHL is set to publish it
   frame_plan?: string              // frame-by-frame trend-aware production plan
+  shoot_plan?: string              // JSON string of the filmable shoot plan (roles/beats + emotion + camera)
   post_job?: string                // THE ONE JOB of this post — picked before writing (reach new / shift-from-peer / convert-to-DMs)
   // River (sorting hat) fields
   open_questions?: string[]        // questions only Mandi can answer before this post is complete
