@@ -12,7 +12,7 @@ type Scored = {
   id: number; account_id: string; media_id: string; onscreen_text: string; visual: string
   views: number; follows: number; saves: number; shares: number; fb_views: number | null
   pct_from_followers: number | null; content_id: number | null
-  verdict: Verdict; reasons: string[]; engagement_rate: number; keep_per_1k: number; views_vs_median: number
+  verdict: Verdict; reasons: string[]; engagement_rate: number; keep_per_1k: number; views_vs_median: number; ig_views: number
 }
 type Account = { id: string; handle?: string; name?: string; status?: string }
 
@@ -144,7 +144,7 @@ export default function WinnersPage() {
                   <p className="txt">{r.onscreen_text || '(no on-screen text recorded)'}</p>
                   {r.visual && <p className="vis">{r.visual}</p>}
                   <dl>
-                    <div><dt>Views</dt><dd>{fmt(r.views)}</dd></div>
+                    <div><dt>IG views</dt><dd>{fmt(r.ig_views)}</dd></div>
                     <div><dt>vs typical</dt><dd>{r.views_vs_median.toFixed(1)}×</dd></div>
                     <div><dt>Engagement</dt><dd>{(r.engagement_rate * 100).toFixed(1)}%</dd></div>
                     <div><dt>Saves+shares /1K</dt><dd>{r.keep_per_1k.toFixed(1)}</dd></div>

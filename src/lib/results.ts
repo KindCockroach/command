@@ -41,7 +41,8 @@ export type ScoredResult = PostResult & {
   reasons: string[]
   engagement_rate: number          // (likes+comments+saves+shares) ÷ views
   keep_per_1k: number              // (saves+shares) per 1K views — the "worth keeping" signal
-  views_vs_median: number          // 2 = twice this account's typical reel
+  views_vs_median: number          // 2 = twice this account's typical reel (Instagram views)
+  ig_views: number                 // total views minus Facebook views
 }
 
 type Store = { results: PostResult[]; next_id: number }
@@ -134,6 +135,10 @@ export function importResults(accountId: string, rows: ImportRow[], platform = '
   return { added, updated, skipped }
 }
 
+// Placeholder text ("None on cover…", "couldn't play…") isn't a real hook, so it
+// never marks a reel as a re-upload.
+const isRealText = (key: string) => key.length > 10 && !/^none\b|couldn.t play/i.test(key)
+
 const median = (xs: number[]) => {
   if (!xs.length) return 0
   const s = [...xs].sort((a, b) => a - b)
@@ -154,30 +159,36 @@ export function scoreResults(accountId?: string | null): ScoredResult[] {
 
   const out: ScoredResult[] = []
   byAccount.forEach(rows => {
-    const eng = (r: PostResult) => (r.views ? (r.likes + r.comments + r.saves + r.shares) / r.views : 0)
-    const medViews = median(rows.map(r => r.views))
+    // Score on Instagram views only: "total views" includes the Facebook cross-post,
+    // which favors a different kind of video and would crown FB hits as IG winners.
+    const ig = (r: PostResult) => Math.max(0, r.views - (r.fb_views ?? 0))
+    const eng = (r: PostResult) => (ig(r) ? (r.likes + r.comments + r.saves + r.shares) / ig(r) : 0)
+    const medViews = median(rows.map(ig))
+    const fbRows = rows.filter(r => (r.fb_views ?? 0) > 0)
+    const medFb = median(fbRows.map(r => r.fb_views ?? 0))
     const medEng = median(rows.map(eng))
     const firstByText = new Map<string, PostResult>()
     for (const r of [...rows].sort((a, b) => a.id - b.id)) {
       const key = r.onscreen_text.toLowerCase().replace(/\s+/g, ' ').trim()
-      if (key.length > 10 && !firstByText.has(key)) firstByText.set(key, r)
+      if (isRealText(key) && !firstByText.has(key)) firstByText.set(key, r)
     }
     for (const r of rows) {
       const e = eng(r)
-      const keep = r.views ? ((r.saves + r.shares) / r.views) * 1000 : 0
-      const ratio = medViews ? r.views / medViews : 0
+      const igv = ig(r)
+      const keep = igv ? ((r.saves + r.shares) / igv) * 1000 : 0
+      const ratio = medViews ? igv / medViews : 0
       const reasons: string[] = []
       let verdict: Verdict = 'neutral'
       const key = r.onscreen_text.toLowerCase().replace(/\s+/g, ' ').trim()
-      const first = key.length > 10 ? firstByText.get(key) : undefined
+      const first = isRealText(key) ? firstByText.get(key) : undefined
       if (first && first.id !== r.id) {
         verdict = 'reupload'
         reasons.push('Same on-screen text as an earlier reel. Exact re-posts get buried; re-angle instead.')
-      } else if ((ratio >= 2 && r.views >= 300) || r.follows > 0) {
+      } else if ((ratio >= 2 && igv >= 300) || r.follows > 0) {
         verdict = 'make_more'
         if (ratio >= 2) reasons.push(`${ratio.toFixed(1)}× this account's typical views`)
         if (r.follows > 0) reasons.push(`Earned ${r.follows} follow${r.follows === 1 ? '' : 's'}`)
-      } else if (keep >= 3 && r.views >= 150) {
+      } else if (keep >= 3 && igv >= 150) {
         verdict = 'rehook'
         reasons.push(`${keep.toFixed(1)} saves+shares per 1K views, but ordinary reach. The idea landed; test a new hook.`)
       } else if (ratio < 0.75 && e < medEng) {
@@ -185,9 +196,10 @@ export function scoreResults(accountId?: string | null): ScoredResult[] {
         reasons.push('Below typical on both views and engagement')
       }
       if (r.pct_from_followers === 0) reasons.push('Shown only to non-followers (Trial Reel)')
-      out.push({ ...r, verdict, reasons, engagement_rate: e, keep_per_1k: keep, views_vs_median: ratio })
+      if (fbRows.length >= 3 && (r.fb_views ?? 0) >= 2 * medFb) reasons.push(`Facebook hit: ${r.fb_views} FB views (${((r.fb_views ?? 0) / medFb).toFixed(1)}× typical). Worth a Facebook-first version.`)
+      out.push({ ...r, verdict, reasons, engagement_rate: e, keep_per_1k: keep, views_vs_median: ratio, ig_views: igv })
     }
   })
   const rank: Record<Verdict, number> = { make_more: 0, rehook: 1, neutral: 2, retire: 3, reupload: 4 }
-  return out.sort((a, b) => rank[a.verdict] - rank[b.verdict] || b.views - a.views)
+  return out.sort((a, b) => rank[a.verdict] - rank[b.verdict] || b.ig_views - a.ig_views)
 }
