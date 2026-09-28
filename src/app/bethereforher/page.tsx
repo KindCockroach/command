@@ -45,10 +45,11 @@ export default function BeThereForHer() {
       <section className="band">
         <div className="wrap">
           <h2>Your intuition is a wellspring.</h2>
-          <p>The quiet knowing underneath everything. Follow it and doors fly open &mdash; the right yeses,
-            the right people, the life you keep almost letting yourself want.</p>
-          <p className="reframe">Override it and everything quietly comes apart &mdash; so slowly you don&rsquo;t
-            notice, until you&rsquo;re standing in a life that isn&rsquo;t yours.</p>
+          <p>The quiet knowing underneath everything. Follow it and the doors fly open &mdash; every yes
+            you&rsquo;ve been waiting for, your people, the life you want but haven&rsquo;t let yourself step
+            into yet.</p>
+          <p>Turn away from it &mdash; for all the good reasons: comfort, convenience, consistency &mdash; and
+            your superpower sense of knowing slips through unnoticed. Until you&rsquo;re the one going unnoticed.</p>
           <p>After years of being there for everyone else, your intuition turned its own volume all the way
             down.</p>
           <p className="untilnow"><strong>Until now.</strong></p>
