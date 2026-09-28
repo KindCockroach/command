@@ -39,6 +39,14 @@ function beats(script: string): string[] {
 
 const sig = (script: string) => `${script.length}:${script.slice(0, 24)}`
 
+// Content Day is PURELY for shooting yourself on camera. A post is FACELESS (skip
+// it) when its script/plan/notes say so — trend clips, text-on-screen only, b-roll,
+// voiceover-only, "no face". Those get made elsewhere, not filmed by Mandi.
+function isFaceless(p: { script?: string; frame_plan?: string; notes?: string; post_job?: string; onscreen_text?: string }): boolean {
+  const blob = `${p.script ?? ''} ${p.frame_plan ?? ''} ${p.notes ?? ''} ${p.post_job ?? ''}`.toLowerCase()
+  return /no[- ]?face|faceless|trend(ing)? clip|text[- ]on[- ]screen|text on screen|b[- ]?roll only|voice[- ]?over only|no talking|don'?t show your face|do not show your face|on[- ]screen only|stock (clip|footage)|\bcapcut\b/.test(blob)
+}
+
 export default function ContentDay() {
   const [posts, setPosts] = useState<ContentPiece[]>([])
   const [accounts, setAccounts] = useState<BrandAccount[]>([])
@@ -81,20 +89,14 @@ export default function ContentDay() {
   const allLines: Line[] = []
   for (const p of posts) {
     if (['published', 'archived'].includes(p.status)) continue
+    // Talking-head only: a real spoken script, no video filmed yet, and NOT faceless.
+    if (!(p.script ?? '').trim()) continue
+    if (isFaceless(p)) continue
+    if (hasMedia(p) && /\.(mp4|mov|webm)/i.test((p.media_url || p.media_urls?.[0] || ''))) continue
     const a = acct(p.account_id)
     const acctLabel = a ? `${a.emoji} ${a.handle}` : undefined
     const purpose = postPurpose(p)
-    if ((p.script ?? '').trim() && !(hasMedia(p) && /\.(mp4|mov|webm)/i.test((p.media_url || p.media_urls?.[0] || '')))) {
-      allLines.push({ key: `${p.id}-th`, kind: 'Talking head', length: estLength(p.script as string), script: p.script as string, account: acctLabel, color: a?.color, postId: p.id, accountId: p.account_id, purpose })
-    }
-    const fp = p.frame_plan ?? ''
-    if (fp) {
-      fp.split('\n').map(l => l.trim()).filter(l => l.startsWith('•') || l.startsWith('-')).forEach((l, i) => {
-        const shot = l.replace(/^[•-]\s*/, '')
-        const m = shot.match(/^\[([^\]]+)\]\s*(.*)$/)
-        allLines.push({ key: `${p.id}-br${i}`, kind: m ? m[1] : 'B-roll', length: '3–6s', script: m ? m[2] : shot, account: acctLabel, color: a?.color, postId: p.id, accountId: p.account_id, broll: true, purpose })
-      })
-    }
+    allLines.push({ key: `${p.id}-th`, kind: 'Talking head', length: estLength(p.script as string), script: p.script as string, account: acctLabel, color: a?.color, postId: p.id, accountId: p.account_id, purpose })
   }
   const purposeCounts = allLines.reduce((m, l) => { m[l.purpose] = (m[l.purpose] ?? 0) + 1; return m }, {} as Record<Purpose, number>)
   // Accounts that actually have something to film (for the account filter).
