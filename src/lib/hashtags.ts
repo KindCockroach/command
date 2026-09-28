@@ -39,7 +39,7 @@ export function stripBannedHashtags(text: string, accountId?: string | null): st
     .replace(/#[\p{L}\p{N}_]+/gu, t => (isBannedHashtag(t, accountId) ? '' : t))
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/[ \t]+$/gm, '')
-    .trimEnd()
+    .trim()
 }
 
 // Normalize a hashtag string to at most `max` clean #tags (deduped, order kept).
