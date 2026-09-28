@@ -18,7 +18,7 @@ const NEVER_TAGS = new Set([
 // Per-account extras: tags that describe Mandi (or AI) instead of the buyer.
 const ACCOUNT_NEVER: Record<string, string[]> = {
   onetangledmind: ['bossbabe', 'girlboss', 'ladyboss', 'ai', 'chatgpt', 'aitools', 'artificialintelligence'],
-  mandijoy: ['bossbabe', 'girlboss', 'ladyboss', 'ai', 'chatgpt', 'aitools', 'artificialintelligence'],
+  mandijoy: ['mompreneur', 'creativemom', 'bossbabe', 'girlboss', 'ai', 'chatgpt', 'aitools', 'artificialintelligence'],
   mandijoybeck: ['mompreneur', 'creativemom', 'bossbabe', 'girlboss', 'ai', 'chatgpt', 'aitools', 'artificialintelligence'],
 }
 

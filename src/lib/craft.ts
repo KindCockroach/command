@@ -133,7 +133,6 @@ const ACCOUNT_HASHTAGS: Record<string, string[]> = {
   homeschool4humans: ['#Homeschooling', '#Unschooling', '#Worldschooling', '#HomeschoolMom', '#ChildLedLearning', '#EarlyLiteracy'],
   // Caption Writer ($27) → Maker Maddie: makes things by hand, dreads the caption.
   onetangledmind: ['#HandmadeBusiness', '#SmallBusinessTips', '#MakersOfInstagram', '#EtsySellersOfInstagram', '#SmallBusinessOwner', '#SmallBusinessMarketing', '#ShopSmall', '#SmallBusinessLove', '#Mompreneur'],
-  mandijoy: ['#HandmadeBusiness', '#SmallBusinessTips', '#MakersOfInstagram', '#EtsySellersOfInstagram', '#SmallBusinessOwner', '#SmallBusinessMarketing', '#ShopSmall', '#SmallBusinessLove', '#Mompreneur'],
   sage: ['#AIForBusiness', '#AITools', '#Automation', '#SmallBusinessTips', '#NoCode', '#Entrepreneurship'],
   empoweredsupermom: ['#GentleParenting', '#NervousSystemRegulation', '#ConsciousParenting', '#MomLife', '#EmotionalRegulation', '#ParentingTips'],
   philosophicalmom: ['#Stoicism', '#Philosophy', '#Mindfulness', '#Motherhood', '#DeepThinking'],
@@ -141,6 +140,8 @@ const ACCOUNT_HASHTAGS: Record<string, string[]> = {
   survivethedome: ['#Preparedness', '#Prepping', '#SelfReliance', '#FamilyPreparedness', '#Homesteading'],
   // Be There For Her ($9) → Second-Guessing Sophie: people-pleaser, overthinker, lost her intuition.
   mandijoybeck: ['#HealingJourney', '#Overthinking', '#PeoplePleaser', '#Reparenting', '#TrustYourIntuition', '#CycleBreaker', '#InnerWork', '#MotherWound', '#HighlySensitivePerson', '#SelfCompassion', '#EldestDaughter'],
+  // @mandij0y joined the Be There For Her push 2026-09-27 (its winners are all inner-child/intuition reels).
+  mandijoy: ['#HealingJourney', '#Overthinking', '#PeoplePleaser', '#Reparenting', '#TrustYourIntuition', '#CycleBreaker', '#InnerWork', '#MotherWound', '#HighlySensitivePerson', '#SelfCompassion', '#EldestDaughter'],
   youradhdnature: ['#ADHD', '#ADHDLife', '#Mindfulness', '#ADHDSupport', '#Neurodivergent'],
   theadderalleffect: ['#ADHD', '#ADHDMotivation', '#GoalSetting', '#Mindset', '#Productivity'],
 }
@@ -149,7 +150,7 @@ const ACCOUNT_HASHTAGS: Record<string, string[]> = {
 // 3 slots rotate from the pool (1 identity · 2 feeling · 2 small-community).
 const ACCOUNT_HASHTAG_ANCHORS: Record<string, string[]> = {
   onetangledmind: ['#HandmadeBusiness', '#SmallBusinessTips'],
-  mandijoy: ['#HandmadeBusiness', '#SmallBusinessTips'],
+  mandijoy: ['#HealingJourney'],
   mandijoybeck: ['#HealingJourney'],
 }
 
@@ -163,7 +164,7 @@ export function craftFor(accountId?: string | null): string {
     : ''
   const anchors = accountId ? ACCOUNT_HASHTAG_ANCHORS[accountId] : undefined
   const anchorLine = anchors
-    ? `\nALWAYS include ${anchors.join(' ')}${accountId === 'mandijoybeck' ? ' plus ONE feeling tag (#Overthinking or #PeoplePleaser)' : ''}. Anchors count toward the 5; fill the other slots from the pool so the set reads 1 tag for who she is, 2 for what she's going through, 2 small communities. Max 5 total.`
+    ? `\nALWAYS include ${anchors.join(' ')}${accountId === 'mandijoybeck' || accountId === 'mandijoy' ? ' plus ONE feeling tag (#Overthinking or #PeoplePleaser)' : ''}. Anchors count toward the 5; fill the other slots from the pool so the set reads 1 tag for who she is, 2 for what she's going through, 2 small communities. Max 5 total.`
     : ''
   return `${base}${tagLine}${anchorLine}${getVoiceLessonsContext()}`
 }
