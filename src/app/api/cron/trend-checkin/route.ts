@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllBrandAccounts, createNote, logActivity } from '@/lib/db'
-import { researchWithWeb } from '@/lib/fable'
+import { getAllBrandAccounts, getAllNotes, createNote, logActivity } from '@/lib/db'
+import { fableText } from '@/lib/fable'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -32,13 +32,19 @@ async function run(req: NextRequest) {
   const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted' || a.status === 'planned')
   const niches = accounts.map(a => `${a.handle}: ${a.topic}`).join('\n') || 'AI for moms, women\'s success, motivation, meditation'
 
-  const instructions = `You are RISE's trend desk. It's a weekly check-in. Search the LIVE web for what is trending RIGHT NOW (this week) that Mandi's accounts could ride — real, current signals only, not evergreen advice. For each niche below, find the strongest 1-2 of: a trending TOPIC/conversation, a FORMAT that's working (a reel/text style), a HOOK pattern, or a HASHTAG/sound gaining traction. Prefer things with a real source or a datable "this week" quality; mark anything shaky "VERIFY:".
+  // Her real trend signal = the "Trends source" notes she's captured from the accounts
+  // she watches. Synthesize from THOSE (fast, no slow web-search) — it's what the
+  // Trends tab holds, and it's more relevant than a generic web scan.
+  const watched = getAllNotes().filter(n => (n.tags ?? []).includes('trends-source') && /trends source/i.test(n.title ?? '')).slice(0, 15)
+  const trendContent = watched.map(n => `— ${(n.title ?? '').replace(/^📡\s*Trends source:\s*/i, '@')}:\n${(n.body ?? '').slice(0, 700)}`).join('\n\n')
 
-MOST IMPORTANT — CAPTURE THE FORMAT SKELETON. The words/format ARE the show for Mandi: she mirrors a proven on-screen-text STRUCTURE and fills it with her own story. So for the strongest trending formats, write the reusable SKELETON as a fill-in-the-blank template with [SLOTS] — e.g. "For the woman who [pain], [pain], while [cost]. You've [behavior]. Now it's time to [turn]." Capture the exact rhythm and number of lines so RISE can mirror it line-for-line with her content. These skeletons are the point.`
-  const input = `HER ACCOUNTS & NICHES:\n${niches}\n\nReturn a compact digest with TWO sections:\n\n1) "🔥 TRENDING THIS WEEK" — 5-8 short bullets grouped by niche: "[TOPIC/HOOK/HASHTAG] — what it is — why it fits [account] — the angle." Include real hashtags/buzzwords.\n\n2) "🧬 FORMATS TO MIRROR" — 3-5 reusable on-screen-text SKELETONS (fill-in-the-blank with [SLOTS]) that are winning right now, each with: the skeleton, one line on the rhythm/beats, and which account(s) it fits. These are templates RISE will fill with her stories.\n\nEnd with one line: "THIS WEEK'S BEST BET: <the single strongest move>".`
+  const instructions = `You are RISE's trend desk doing the weekly check-in. Below is the CAPTURED TREND CONTENT — real posts Mandi pulled from the accounts she watches (this is her live signal). Read it and distill what's working THIS week for her niches.
+
+MOST IMPORTANT — CAPTURE THE FORMAT SKELETON. The words/format ARE the show for Mandi: she mirrors a proven on-screen-text STRUCTURE and fills it with her own story. So for the strongest formats you see in the captured posts, write the reusable SKELETON as a fill-in-the-blank template with [SLOTS] — e.g. "For the woman who [pain], [pain], while [cost]. You've [behavior]. Now it's time to [turn]." Preserve the exact rhythm and number of lines so RISE can mirror it line-for-line with her content. These skeletons are the point. Pull real buzzwords/hashtags/phrasings straight from what you see; never invent trends that aren't in the captured content.`
+  const input = `HER ACCOUNTS & NICHES:\n${niches}\n\nCAPTURED TREND CONTENT (from the accounts she watches):\n${trendContent || '(none captured yet — give her the best evergreen skeletons for her niches instead, clearly marked as general)'}\n\nReturn a compact digest with TWO sections:\n\n1) "🔥 TRENDING THIS WEEK" — 5-8 short bullets grouped by niche: "[TOPIC/HOOK/BUZZWORD] — what it is — why it fits [account] — the angle." Pull real hashtags/buzzwords from the captured content.\n\n2) "🧬 FORMATS TO MIRROR" — 3-5 reusable on-screen-text SKELETONS (fill-in-the-blank with [SLOTS]) drawn from the captured posts, each with: the skeleton, one line on the rhythm/beats, and which account(s) it fits. These are templates RISE will fill with her stories.\n\nEnd with one line: "THIS WEEK'S BEST BET: <the single strongest move>".`
 
   try {
-    const digest = await researchWithWeb({ instructions, input, maxTokens: 2500, maxSearches: 4 })
+    const digest = await fableText({ instructions, input, maxTokens: 2500, useClaude: true })
     const clean = (digest || '').trim()
     if (!clean) throw new Error('empty digest')
 
