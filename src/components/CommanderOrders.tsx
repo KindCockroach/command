@@ -17,11 +17,17 @@ export default function CommanderOrders() {
   const [q, setQ] = useState('')
   const [askBusy, setAskBusy] = useState(false)
   const [answers, setAnswers] = useState<Record<number, string>>({})
-  // Check items off as you do them (persisted per day, keyed by the item's text).
+  // Check items off as you do them. DURABLE (not per-day) + told to the server so
+  // the Commander never re-suggests a task you've already handled, even reworded.
   const [checked, setChecked] = useState<Record<string, boolean>>({})
-  const dayKey = new Date().toLocaleDateString('en-CA')
-  useEffect(() => { try { const s = localStorage.getItem(`rise-yourmove-checked-${dayKey}`); if (s) setChecked(JSON.parse(s)) } catch { /* fresh */ } }, [dayKey])
-  const toggleChecked = (key: string) => setChecked(c => { const n = { ...c, [key]: !c[key] }; try { localStorage.setItem(`rise-yourmove-checked-${dayKey}`, JSON.stringify(n)) } catch { /* ok */ } return n })
+  useEffect(() => { try { const s = localStorage.getItem('rise-yourmove-checked'); if (s) setChecked(JSON.parse(s)) } catch { /* fresh */ } }, [])
+  const toggleChecked = (title: string) => setChecked(c => {
+    const nowDone = !c[title]
+    const n = { ...c, [title]: nowDone }
+    try { localStorage.setItem('rise-yourmove-checked', JSON.stringify(n)) } catch { /* ok */ }
+    fetch('/api/commander/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nowDone ? { done: title } : { undone: title }) }).catch(() => {})
+    return n
+  })
 
   const ask = async (m: Move, idx: number) => {
     if (!q.trim()) return

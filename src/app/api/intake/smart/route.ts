@@ -5,7 +5,7 @@ import {
   upsertBrandAccount, upsertAudience, createTask,
   getAllBrandAccounts, getAllAudiences, audienceLine,
   upsertAvatar, getAllAvatars, createGoal, createWatchAccount,
-  createProject, createEvent, createNote, createContent,
+  createProject, createEvent, createNote, createContent, logActivity,
 } from '@/lib/db'
 import type { BrandAccount, Audience, AvatarRecord, EventKind, ContentType, ContentStatus } from '@/lib/db'
 
@@ -139,6 +139,7 @@ export async function POST(req: NextRequest) {
       const { rememberConversation } = await import('@/lib/memory')
       rememberConversation(String(body.originalInput ?? 'Quick Capture execute'), results.join('\n'), 'ceo').catch(() => {})
     } catch { /* non-fatal */ }
+    logActivity({ type: 'capture', title: 'RISE built from your capture', detail: results.slice(0, 2).join(' · ').slice(0, 120), icon: '🏗️', source: 'capture' })
     return NextResponse.json({ executed: true, results })
   }
 
@@ -223,6 +224,7 @@ Return this JSON:
       const { rememberConversation } = await import('@/lib/memory')
       if (parsed?.summary) rememberConversation(String(input ?? ''), `${parsed.received ?? ''}\n${parsed.summary}`, 'ceo').catch(() => {})
     } catch { /* non-fatal */ }
+    logActivity({ type: 'capture', title: `Captured: ${(parsed?.title || String(input).slice(0, 50) || 'something')}`.slice(0, 100), detail: parsed?.route ? `sorted → ${parsed.route}` : undefined, icon: '✨', source: 'capture' })
     return NextResponse.json({ classification: parsed, raw })
   } catch {
     return NextResponse.json({ error: 'Could not classify input', raw })

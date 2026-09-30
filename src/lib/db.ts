@@ -340,6 +340,7 @@ type Db = {
   audiences: Audience[]
   activity?: ActivityEvent[]
   next_activity_id?: number
+  commander_done?: string[]   // "Your Move" items Mandi has completed — never re-suggest
   research_briefs?: ResearchBrief[]
   next_research_id?: number
   next_goal_id: number
@@ -1053,6 +1054,31 @@ export function logActivity(data: { type: string; title: string; detail?: string
 export function getRecentActivity(limit = 50): ActivityEvent[] {
   const db = readDb()
   return (db.activity ?? []).slice(-limit).reverse()
+}
+
+// ── "Your Move" completions — durable so a checked-off task never comes back ──
+// The Commander regenerates its brief with fresh wording each time, so we can't
+// rely on matching titles; we keep the DONE texts and the generator both excludes
+// them and is told never to re-suggest them.
+export function getCommanderDone(): string[] {
+  return readDb().commander_done ?? []
+}
+export function addCommanderDone(text: string): string[] {
+  const db = readDb()
+  if (!db.commander_done) db.commander_done = []
+  const t = (text || '').trim()
+  if (t && !db.commander_done.includes(t)) {
+    db.commander_done.push(t)
+    if (db.commander_done.length > 120) db.commander_done = db.commander_done.slice(-120)
+    writeDb(db)
+  }
+  return db.commander_done
+}
+export function removeCommanderDone(text: string): string[] {
+  const db = readDb()
+  const t = (text || '').trim()
+  if (db.commander_done && t) { db.commander_done = db.commander_done.filter(x => x !== t); writeDb(db) }
+  return db.commander_done ?? []
 }
 
 export function updateNote(id: number, updates: Partial<Note>): Note | null {

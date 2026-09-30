@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllBrandAccounts, getAllGoals, getAllNotes, getAllContent, getAllProjects, getDailyCommand, saveDailyCommand } from '@/lib/db'
+import { getAllBrandAccounts, getAllGoals, getAllNotes, getAllContent, getAllProjects, getDailyCommand, saveDailyCommand, getCommanderDone, addCommanderDone, removeCommanderDone } from '@/lib/db'
 import { commanderChat } from '@/lib/fable'
 import type { CommanderOrders } from '@/lib/db'
+
+// Fuzzy match a freshly-worded move against the DONE list (the model rewords each
+// brief). Significant word overlap = the same task, so we drop it.
+const keyWords = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 3)
+function isAlreadyDone(title: string, done: string[]): boolean {
+  const tw = new Set(keyWords(title))
+  return done.some(d => { const dw = keyWords(d); if (!dw.length) return false; const overlap = dw.filter(w => tw.has(w)).length; return overlap / dw.length >= 0.5 })
+}
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -24,6 +32,7 @@ async function generate(): Promise<CommanderOrders> {
   const needFinish = content.filter(c => ['idea', 'in_progress'].includes(c.status)).length
   const projects = getAllProjects().filter(p => p.status !== 'archived').map(p => `- ${p.name} (${p.status}${p.next_action ? `, next: ${p.next_action}` : ''})`).join('\n') || '(none)'
   const recentNotes = getAllNotes().slice(0, 10).map(n => `- ${n.title}`).join('\n')
+  const done = getCommanderDone()
 
   const system = `You are THE COMMANDER — Mandi Beck's autonomous AI business partner running RISE. You operate the station on your own (drafting, shredding across accounts, setting goals, repurposing) and you STOP only for things that spend money, post publicly, or change an offer — or things you physically cannot do.
 
@@ -45,7 +54,7 @@ PROJECTS:
 ${projects}
 RECENT NOTES/IDEAS:
 ${recentNotes || '(none)'}
-
+${done.length ? `\n✅ ALREADY HANDLED BY MANDI — these are DONE. NEVER put any of these in "your_move" again, even reworded:\n${done.map(d => `- ${d}`).join('\n')}\n` : ''}
 Give me today's briefing.`
 
   const raw = await commanderChat(system, [{ role: 'user', content: input }], 1500)
@@ -54,8 +63,27 @@ Give me today's briefing.`
   return {
     generated_at: new Date().toISOString(),
     doing: Array.isArray(parsed.doing) ? parsed.doing.slice(0, 4) : [],
-    your_move: Array.isArray(parsed.your_move) ? parsed.your_move.slice(0, 3) : [],
+    // Safety net: even if the model slips, drop anything Mandi already checked off.
+    your_move: (Array.isArray(parsed.your_move) ? parsed.your_move : []).filter(m => !isAlreadyDone(m?.title ?? '', done)).slice(0, 3),
   }
+}
+
+// Mark a "Your Move" item done (durable) so it never comes back, or un-done it.
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({}))
+  const text = String(body.done ?? body.undone ?? '').trim()
+  if (!text) return NextResponse.json({ error: 'done or undone text required' }, { status: 400 })
+  if (body.undone) return NextResponse.json({ ok: true, done: removeCommanderDone(text) })
+  const list = addCommanderDone(text)
+  // Also prune it from today's cached brief so it disappears immediately.
+  try {
+    const dc = getDailyCommand(today())
+    if (dc.orders?.your_move) {
+      dc.orders.your_move = dc.orders.your_move.filter(m => !isAlreadyDone(m.title, [text]))
+      saveDailyCommand({ ...dc, orders: dc.orders })
+    }
+  } catch { /* non-fatal */ }
+  return NextResponse.json({ ok: true, done: list })
 }
 
 export async function GET(req: NextRequest) {
