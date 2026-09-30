@@ -1,8 +1,9 @@
 // Self-scheduled background jobs. Railway runs one long-lived `next start` process, so
 // timers set on startup fire reliably with NO external cron and nothing for Mandi to
 // set up. No-op in dev and on the edge runtime. A deploy/restart recomputes next runs.
-//   • DAILY DRAFT   — ~11:30 UTC ≈ 6:30 AM Central: her recent notes → ready-to-approve posts.
-//   • WEEKLY TRENDS — Monday ~13:00 UTC ≈ ~7–8 AM Central: live-web trend check-in → Notes + Activity.
+//   • DAILY DRAFT    — ~11:30 UTC ≈ 6:30 AM Central: her recent notes → ready-to-approve posts.
+//   • DAILY PLAN     — same run: break every active project into small tasks + a live next action.
+//   • WEEKLY TRENDS  — Monday ~13:00 UTC ≈ ~7–8 AM Central: live-web trend check-in → Notes + Activity.
 
 let scheduled = false
 
@@ -25,7 +26,7 @@ export async function register() {
     const next = new Date(now)
     next.setUTCHours(11, 30, 0, 0)
     if (next <= now) next.setUTCDate(next.getUTCDate() + 1)
-    setTimeout(async () => { await ping('/api/cron/draft-from-notes'); runDaily() }, next.getTime() - now.getTime())
+    setTimeout(async () => { await ping('/api/cron/draft-from-notes'); await ping('/api/cron/plan-projects'); runDaily() }, next.getTime() - now.getTime())
   }
 
   // Weekly: next Monday at 13:00 UTC. Cheap (one pass a week) — keeps spend down.
