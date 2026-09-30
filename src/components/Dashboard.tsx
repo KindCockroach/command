@@ -16,6 +16,7 @@ import UniversalCapture from './UniversalCapture'
 import ResearchPanel from './ResearchPanel'
 import HomeScreen from './HomeScreen'
 import ContentDay from './ContentDay'
+import ActivityStation from './ActivityStation'
 import InstantCompose from './InstantCompose'
 import StationChat from './StationChat'
 import PodcastEngine from './PodcastEngine'
@@ -31,7 +32,7 @@ import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'command' | 'contentday' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
+type View = 'command' | 'activity' | 'contentday' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
 
 // Renders children on first activation and KEEPS them mounted after — hidden with
 // display:none when inactive — so long-running work (podcast generation) and state
@@ -82,6 +83,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
 
   const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode; accent?: boolean }[] = [
     { id: 'command',    label: 'Daily Command', icon: <Zap size={12} />, accent: true },
+    { id: 'activity',   label: 'Activity',      icon: <Radar size={12} /> },
     { id: 'contentday', label: 'Content Day',   icon: <Mic size={12} /> },
     { id: 'goals',      label: 'Goals',         icon: <Target size={12} /> },
     // Content tab merged into Daily Command (the Work Queue). Old 'pipeline' Kanban
@@ -199,6 +201,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
 
         {/* Home stays alive so the Commander chat + Daily Command survive navigation */}
         <KeepAlive active={view === 'command'}><HomeScreen /></KeepAlive>
+        <KeepAlive active={view === 'activity'}><ActivityStation /></KeepAlive>
         <KeepAlive active={view === 'contentday'}><ContentDay /></KeepAlive>
 
         {view === 'pipeline' && (

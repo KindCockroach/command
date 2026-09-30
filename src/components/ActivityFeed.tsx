@@ -47,6 +47,11 @@ export default function ActivityFeed() {
           <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)' }}>Activity</p>
           <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>The station&apos;s spine — what RISE has seen and done</p>
         </div>
+        <button onClick={() => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'activity' } }))}
+          title="Open the full Activity tab — feed, summary, and chat"
+          style={{ display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid var(--purple)', background: 'var(--purple-light)', borderRadius: '8px', cursor: 'pointer', color: 'var(--purple)', padding: '6px 10px', fontWeight: 800, fontSize: '11px' }}>
+          Open →
+        </button>
         <button onClick={load} title="Refresh" style={{ border: 'none', background: 'var(--surface-raised)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-muted)', padding: '6px', display: 'flex' }}>
           <RefreshCw size={13} />
         </button>
