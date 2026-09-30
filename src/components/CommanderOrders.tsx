@@ -56,7 +56,7 @@ export default function CommanderOrders() {
         <span style={{ fontSize: '18px' }}>⚡</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.01em' }}>Your move</p>
-          <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>What only you can do — from the Commander, ranked by cash</p>
+          <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>Your ranked priorities right now — projects, content &amp; money, highest-impact first</p>
         </div>
         <button onClick={() => load(true)} disabled={refreshing || loading} title="Re-brief now"
           style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>

@@ -30,17 +30,24 @@ async function generate(): Promise<CommanderOrders> {
   const counts = content.reduce((m, c) => { m[c.status] = (m[c.status] ?? 0) + 1; return m }, {} as Record<string, number>)
   const ready = content.filter(c => c.status === 'ready').length
   const needFinish = content.filter(c => ['idea', 'in_progress'].includes(c.status)).length
-  const projects = getAllProjects().filter(p => p.status !== 'archived').map(p => `- ${p.name} (${p.status}${p.next_action ? `, next: ${p.next_action}` : ''})`).join('\n') || '(none)'
+  // Active projects in HER priority order (top = #1 she set) with their next action.
+  const projects = getAllProjects().filter(p => p.status === 'active')
+    .map((p, i) => `${i + 1}. ${p.name}${typeof p.progress === 'number' ? ` (${p.progress}%)` : ''}${p.next_action ? ` — NEXT: ${p.next_action}` : ' — (no next action set)'}${p.label ? ` [${p.label}]` : ''}`)
+    .join('\n') || '(none active)'
   const recentNotes = getAllNotes().slice(0, 10).map(n => `- ${n.title}`).join('\n')
   const done = getCommanderDone()
 
   const system = `You are THE COMMANDER — Mandi Beck's autonomous AI business partner running RISE. You operate the station on your own (drafting, shredding across accounts, setting goals, repurposing) and you STOP only for things that spend money, post publicly, or change an offer — or things you physically cannot do.
 
-Your job right now: brief Mandi like a partner at standup. Two lists:
+Your job right now: brief Mandi like a partner at standup so she can log in with an EMPTY BRAIN and just work top-down. Two lists:
 1. "doing" — 2-4 short lines of what YOU are handling autonomously so she doesn't have to think about it (e.g. "Drafting this week's posts from your notes", "Watching @x's pace"). Present tense, confident, brief.
-2. "your_move" — the 1-3 HUMAN-ONLY actions only SHE can do, that you can't — ranked by CASH IMPACT (most money-moving first). These are things like: set up / fix a checkout or product in GHL, record a specific video, connect or unlock an account, make a pricing or spend decision, approve a batch that's ready. For each: a short imperative "title", a one-sentence "why" (the cash/impact reason), and "where" (which tab or tool she does it in). Be specific to HER actual station below — never generic.
+2. "your_move" — her PRIORITIZED ACTION LIST for right now: **6-8 concrete next steps, ranked HIGHEST-IMPACT FIRST.** She has SEVERAL projects going at once and needs the whole landscape, ordered. Draw from ALL of it, and make sure each active thread is represented:
+   • ACTIVE PROJECTS (listed below in HER OWN priority order, top = #1) — surface the concrete NEXT ACTION for each of the top projects so every one of them moves forward. If a project has no next action, the move is "decide the next step for [project]".
+   • The CONTENT bottleneck — e.g. "N posts ready but unapproved" (approving ships them), or a specific high-reach post to film/finish.
+   • MONEY / setup moves only SHE can do — wire a checkout, connect an account, a pricing or spend decision.
+   For each: a short imperative "title", a one-sentence "why" (the impact), and "where" (tab/tool). Be specific to HER data below — never generic filler. Include real work even if it isn't strictly "only you can do" (a project's next step counts) — the point is a TRUE, complete, ranked to-do.
 
-OPTIMIZE FOR CASH FLOW. The income engine is the Caption Writer product ($27) at aiworksforher.com plus growing the accounts that feed it — but infer the real bottleneck from the data. If the biggest lever is "you have ${ready} posts ready but none approved," say that. If a checkout isn't live, that beats making more content.
+RANK BY INCOME + MOMENTUM. Her income comes from her products (Caption Writer $27, Be There For Her $9) and the content engine that feeds them. Put the thing that moves money or unblocks the most work at #1. If a checkout isn't live, that beats making more content; if ${ready} posts are ready but unapproved, approving them is high on the list. But do NOT collapse everything to one theme — give her the full ranked spread across her projects and content.
 
 Return ONLY valid JSON: { "doing": ["..."], "your_move": [ { "title": "...", "why": "...", "where": "..." } ] }`
 
@@ -57,14 +64,14 @@ ${recentNotes || '(none)'}
 ${done.length ? `\n✅ ALREADY HANDLED BY MANDI — these are DONE. NEVER put any of these in "your_move" again, even reworded:\n${done.map(d => `- ${d}`).join('\n')}\n` : ''}
 Give me today's briefing.`
 
-  const raw = await commanderChat(system, [{ role: 'user', content: input }], 1500)
+  const raw = await commanderChat(system, [{ role: 'user', content: input }], 3000)
   let parsed: Partial<CommanderOrders> = {}
   try { parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') } catch { /* fall through */ }
   return {
     generated_at: new Date().toISOString(),
     doing: Array.isArray(parsed.doing) ? parsed.doing.slice(0, 4) : [],
     // Safety net: even if the model slips, drop anything Mandi already checked off.
-    your_move: (Array.isArray(parsed.your_move) ? parsed.your_move : []).filter(m => !isAlreadyDone(m?.title ?? '', done)).slice(0, 3),
+    your_move: (Array.isArray(parsed.your_move) ? parsed.your_move : []).filter(m => !isAlreadyDone(m?.title ?? '', done)).slice(0, 8),
   }
 }
 
