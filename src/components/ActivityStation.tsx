@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Loader2, RefreshCw, Moon, Send, MessageCircle } from 'lucide-react'
+import { Loader2, RefreshCw, Moon, Send, MessageCircle, Search } from 'lucide-react'
 
 // THE ACTIVITY STATION — the window into RISE while Mandi's away. A running, grouped
 // feed of everything the station did (drops, transcripts, drafts, approvals, the
@@ -44,6 +44,11 @@ export default function ActivityStation() {
   const [q, setQ] = useState('')
   const [asking, setAsking] = useState(false)
   const chatEnd = useRef<HTMLDivElement>(null)
+  // Hashtag scout
+  const [tag, setTag] = useState('')
+  const [scouting, setScouting] = useState(false)
+  const [scout, setScout] = useState<{ tag: string; bestBet?: string; digest: string } | null>(null)
+  const [scoutErr, setScoutErr] = useState('')
 
   const load = useCallback(() => {
     fetch('/api/activity?limit=200').then(r => r.json())
@@ -85,6 +90,18 @@ export default function ActivityStation() {
     setAsking(false)
   }
 
+  const runScout = async () => {
+    const t = tag.trim().replace(/^#/, '')
+    if (!t || scouting) return
+    setScouting(true); setScout(null); setScoutErr('')
+    try {
+      const d = await fetch('/api/trends/hashtag', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tag: t }) }).then(r => r.json())
+      if (d.error) setScoutErr(d.error)
+      else { setScout({ tag: d.tag, bestBet: d.bestBet, digest: d.digest }); load() }
+    } catch { setScoutErr('The scout timed out — try a narrower tag, or try again.') }
+    setScouting(false)
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Header */}
@@ -107,6 +124,32 @@ export default function ActivityStation() {
         {summary.length
           ? <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.6 }}>RISE handled <strong>{summary.join(' · ')}</strong>.</p>
           : <p style={{ fontSize: '12.5px', color: 'var(--text-subtle)' }}>Quiet the last day — nothing new logged. Drop something in or let the schedulers run.</p>}
+      </div>
+
+      {/* Hashtag scout — point RISE at a tag, get plug-and-play skeletons + film-this calls */}
+      <div className="rise-float" style={{ borderRadius: '16px', border: '1px solid var(--border)', background: 'var(--surface)', padding: '14px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '9px' }}>
+          <Search size={15} color="var(--purple)" />
+          <p style={{ fontSize: '13px', fontWeight: 900, color: 'var(--text)' }}>Scout a hashtag</p>
+          <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>what&apos;s trending → skeletons to adlib + shoots only you can film</span>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input value={tag} onChange={e => setTag(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') runScout() }}
+            placeholder="#healingjourney"
+            style={{ flex: 1, padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px', outline: 'none' }} />
+          <button onClick={runScout} disabled={scouting || !tag.trim()} className="rise-tactile" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '10px', border: 'none', background: tag.trim() ? 'var(--purple)' : 'var(--border)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: tag.trim() ? 'pointer' : 'default' }}>
+            {scouting ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> scanning the web…</> : 'Scout'}
+          </button>
+        </div>
+        {scouting && <p style={{ fontSize: '11.5px', color: 'var(--text-subtle)', marginTop: '8px' }}>Reading live trend reports — this takes a bit. Results save to Notes and feed your Format Studio + Commander.</p>}
+        {scoutErr && <p style={{ fontSize: '12px', color: '#C2477E', marginTop: '8px' }}>{scoutErr}</p>}
+        {scout && (
+          <div style={{ marginTop: '11px', borderTop: '1px solid var(--border)', paddingTop: '11px' }}>
+            {scout.bestBet && <p style={{ fontSize: '12.5px', color: 'var(--text)', marginBottom: '8px' }}><strong>Best bet:</strong> {scout.bestBet}</p>}
+            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{scout.digest}</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-subtle)', marginTop: '8px' }}>Saved to Notes as <strong>📡 {scout.tag}</strong> — skeletons are live in the Format Studio, the film-this calls go to your Commander.</p>
+          </div>
+        )}
       </div>
 
       {/* Ask RISE about its feed */}

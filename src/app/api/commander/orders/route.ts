@@ -35,6 +35,18 @@ async function generate(): Promise<CommanderOrders> {
     .map((p, i) => `${i + 1}. ${p.name}${typeof p.progress === 'number' ? ` (${p.progress}%)` : ''}${p.next_action ? ` — NEXT: ${p.next_action}` : ' — (no next action set)'}${p.label ? ` [${p.label}]` : ''}`)
     .join('\n') || '(none active)'
   const recentNotes = getAllNotes().slice(0, 10).map(n => `- ${n.title}`).join('\n')
+  // Creative calls the hashtag/trend scout spotted — "only you can make this" shoots.
+  // Pull the freshest trends note's 🎬 section so the Commander ranks real, timely
+  // film-this moves into her standup (never auto-posted; she shoots them).
+  const trendNote = getAllNotes().find(n => (n.tags ?? []).includes('trends') && /ONLY YOU CAN MAKE THIS/i.test(n.body ?? ''))
+  let creativeCalls = ''
+  if (trendNote?.body) {
+    const start = trendNote.body.search(/ONLY YOU CAN MAKE THIS/i)
+    const section = trendNote.body.slice(start)
+    creativeCalls = section.split('\n').map(l => l.trim())
+      .filter(l => l && !/ONLY YOU CAN MAKE THIS/i.test(l) && !/^(🧬|BEST BET)/i.test(l) && !/^FORMATS TO MIRROR/i.test(l))
+      .slice(0, 5).join('\n')
+  }
   const done = getCommanderDone()
 
   const system = `You are THE COMMANDER — Mandi Beck's autonomous AI business partner running RISE. You operate the station on your own (drafting, shredding across accounts, setting goals, repurposing) and you STOP only for things that spend money, post publicly, or change an offer — or things you physically cannot do.
@@ -61,6 +73,7 @@ PROJECTS:
 ${projects}
 RECENT NOTES/IDEAS:
 ${recentNotes || '(none)'}
+${creativeCalls ? `\n🎬 TRENDING — CREATIVE CALLS RISE SPOTTED (shoots ONLY Mandi can film, from "${trendNote?.title}"):\n${creativeCalls}\nSurface the 1-2 strongest of these as "your_move" items (title = the shoot, why = why it's trending NOW, where = "Film it · Trends scout"). These are timely — rank them high if they fit an active account.\n` : ''}
 ${done.length ? `\n✅ ALREADY HANDLED BY MANDI — these are DONE. NEVER put any of these in "your_move" again, even reworded:\n${done.map(d => `- ${d}`).join('\n')}\n` : ''}
 Give me today's briefing.`
 
