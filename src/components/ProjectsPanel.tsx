@@ -153,6 +153,12 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, onRestore }: { pr
                     <div key={item.id} className="rise-check-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', padding: '7px 8px', borderRadius: '9px' }}>
                       <button onClick={() => toggleItem(item.id)} style={{ flexShrink: 0, marginTop: '1px', width: '19px', height: '19px', borderRadius: '6px', border: `2px solid ${item.done ? '#3daa7c' : 'var(--border)'}`, background: item.done ? '#3daa7c' : 'transparent', color: '#fff', fontSize: '11px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>{item.done ? '✓' : ''}</button>
                       <span onClick={() => toggleItem(item.id)} style={{ flex: 1, fontSize: '13px', lineHeight: 1.45, cursor: 'pointer', color: item.done ? 'var(--text-subtle)' : 'var(--text)', textDecoration: item.done ? 'line-through' : 'none' }}>{item.text}</span>
+                      {item.owner && (
+                        <span title={item.owner === 'mine' ? 'Only you can do this' : 'RISE can do this once your steps are done'}
+                          style={{ flexShrink: 0, fontSize: '8.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 7px', borderRadius: '20px', marginTop: '1px', background: item.owner === 'mine' ? 'rgba(232,68,138,0.14)' : 'rgba(90,79,207,0.12)', color: item.owner === 'mine' ? '#E8448A' : '#5a4fcf', whiteSpace: 'nowrap' }}>
+                          {item.owner === 'mine' ? '🎬 You' : '🤖 RISE'}
+                        </span>
+                      )}
                       <button onClick={() => deleteItem(item.id)} title="Remove" style={{ flexShrink: 0, border: 'none', background: 'none', color: 'var(--text-subtle)', cursor: 'pointer', opacity: 0.5, fontSize: '13px', lineHeight: 1 }}>✕</button>
                     </div>
                   ))}

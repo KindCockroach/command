@@ -72,7 +72,7 @@ export type ProjectStatus = 'active' | 'paused' | 'complete' | 'archived'
 export type ProjectPriority = 'urgent' | 'high' | 'medium' | 'low'
 export type ProjectLabel = 'series' | 'biz_dev' | 'new_account' | 'launch' | 'general'
 
-export type ChecklistItem = { id: string; text: string; done: boolean }
+export type ChecklistItem = { id: string; text: string; done: boolean; owner?: 'mine' | 'commander' }
 export type ProjectScript = { id: string; title: string; body: string; recorded?: boolean }
 
 export type Project = {
