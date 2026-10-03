@@ -111,12 +111,11 @@ AI MOM PODCAST CONSTITUTION (non-negotiable, overrides generic instructions):
 // @mandij0y (and "Amanda Beck") is PERSONAL — corrected per Mandi directly. This
 // OVERRIDES any stored topic/niche/mission on the account record (which still reads
 // the old "inner child / parts work" tagline until the Accounts tab is updated).
-const MANDIJOY_TRUTH = `
+// CORRECTED 2026-10-03 (per Mandi: "none of them are purely personal anymore").
+// These accounts draw on her real life/story but are CONTENT/GROWTH accounts now.
+const STORY_ACCOUNTS_NOTE = `
 
-⚠ @mandij0y / "Amanda Beck" — PERSONAL ACCOUNT. This overrides the account's stored topic, mission, or "niche" entirely:
-• Audience = people who ALREADY know and love her — her real circle. You are NOT converting strangers, NOT pitching, NOT testing angles, NOT running a funnel here. Write like she's talking to friends who already care about her.
-• This is NOT an "inner child / confidence / parts work" niche account. Those are her MODALITIES — the healing tools she TEACHES (on YouTube + AI Mom), never the identity of @mandij0y. Never frame a @mandij0y post as inner-child/parts-work content.
-• @mandij0y is her personal presence: her real life, her joy, honest human moments, shared warmly. No offers, no keyword CTA, no sell. Give, connect, be a person.`
+⚠ @mandij0y, @theknowingis, Amanda Beck — these draw on her REAL life and story (intuition, inner child, healing), but they are CONTENT / GROWTH accounts — NOT "purely personal." Offers, CTAs, and a funnel ARE allowed (e.g. Be There For Her). She OWNS "inner child" and intuition as her core material — lead with it, never avoid it. Keep her voice warm, honest, human, strangely-specific and a little funny — but write to GROW and to serve the reader (the woman reconnecting to her own intuition), not only friends who already know her.`
 
 // Her personal accounts — @mandij0y (IG) and Amanda Beck (FB) — are SEPARATE
 // (different platforms + audiences) but BOTH personal. Add the FB slug here once
@@ -181,7 +180,7 @@ export function accountHashtags(accountId?: string | null): string[] {
 export function craftFor(accountId?: string | null): string {
   let base = CRAFT_RULES
   if (accountId === 'aimompodcast') base = `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}`
-  else if (accountId && PERSONAL_ACCOUNT_IDS.has(accountId)) base = `${CRAFT_RULES}\n${MANDIJOY_TRUTH}${PROTECT_PEOPLE}`
+  else if (accountId && PERSONAL_ACCOUNT_IDS.has(accountId)) base = `${CRAFT_RULES}\n${STORY_ACCOUNTS_NOTE}${PROTECT_PEOPLE}`
   const pool = accountId ? ACCOUNT_HASHTAGS[accountId] : undefined
   const tagLine = pool
     ? `\n\nHASHTAG POOL for this account — draw your 3-5 from these REAL categories (you may swap at most ONE for a more post-specific tag, but it must be a real category people search, never an invented slogan): ${pool.join(' ')}`

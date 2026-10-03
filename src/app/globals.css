@@ -95,6 +95,16 @@ body {
   line-height: 1.5;
 }
 
+/* Never let the whole app scroll sideways (iPhone "a little wide" fix). Inner
+   scrollers (nav, account swipe) keep their own horizontal scroll. */
+html, body { overflow-x: hidden; max-width: 100%; }
+
+/* Tighter gutters + safe wrapping on phones so nothing runs off the screen. */
+@media (max-width: 480px) {
+  main { padding-left: 14px !important; padding-right: 14px !important; }
+  main p, main h1, main h2, main h3, main span { overflow-wrap: anywhere; }
+}
+
 .font-display {
   font-family: 'Cormorant Garamond', Georgia, serif;
 }
