@@ -19,6 +19,7 @@ function actionLabel(a: Action): string {
     case 'create_goal': return 'Add goal'
     case 'create_project': return 'Start project'
     case 'create_event': return 'Add to calendar'
+    case 'update_account': return 'Update account'
     case 'meta_post': return 'Make it meta'
     case 'manifesto_story': return 'Before / after'
     case 'shred': return 'Tear it up across accounts'
@@ -184,6 +185,17 @@ export default function CommanderChat() {
         const r = await post('/api/manifesto-story', { input: str(p.input), accountId: p.account_id ? str(p.account_id) : undefined })
         const d = await r.json()
         setActStatus(s => ({ ...s, [key]: r.ok && d.piece ? '✓ Before/after drafted — in Content' : 'couldn\'t draft' }))
+      } else if (a.type === 'update_account') {
+        const id = str(p.id)
+        const allow = ['handle', 'brand_name', 'topic', 'tone', 'mission', 'underlying_message', 'offer', 'keywords', 'notes', 'color', 'platform', 'content_format', 'status', 'priority', 'emoji']
+        const fields: Record<string, unknown> = { id }
+        for (const k of allow) if (p[k] !== undefined && p[k] !== null && p[k] !== '') fields[k] = p[k]
+        if (!id) setActStatus(s => ({ ...s, [key]: 'need the account id' }))
+        else {
+          const r = await post('/api/accounts', fields)
+          const d = await r.json().catch(() => ({}))
+          setActStatus(s => ({ ...s, [key]: r.ok && d.id ? `✓ Updated ${d.handle ?? d.id}` : 'couldn\'t update' }))
+        }
       } else {
         setActStatus(s => ({ ...s, [key]: 'unknown action' }))
       }
