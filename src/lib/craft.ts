@@ -130,7 +130,8 @@ const PERSONAL_ACCOUNT_IDS = new Set(['mandijoy', 'amandabeck', 'mandijoybeck'])
 const ACCOUNT_HASHTAGS: Record<string, string[]> = {
   content4queens: ['#MotivationForWomen', '#SuccessMindset', '#WomenInBusiness', '#FemaleEntrepreneur', '#WomenSupportingWomen', '#MoneyMindset', '#SheHustles'],
   aimomatwork: ['#AIForMoms', '#AITools', '#WorkFromHomeMom', '#MomEntrepreneur', '#AIForBeginners', '#ProductivityTips'],
-  aimompodcast: ['#AIForBeginners', '#ParentingInTheDigitalAge', '#AIExplained', '#FutureOfWork', '#TechForParents', '#AIandKids', '#ConcernedParents'],
+  // RESEARCHED 2026-10-02 — tiered rooms: mom identity (broad) · AI accessibility (mid) · exact niche (small).
+  aimompodcast: ['#WorkingMomLife', '#AIForBeginners', '#AITools', '#ParentingInTheDigitalAge', '#MomPodcast'],
   airevealsus: ['#ArtificialIntelligence', '#AIAndHumanity', '#Consciousness', '#SelfDiscovery', '#TechAndSociety', '#PhilosophyOfMind'],
   homeschool4humans: ['#Homeschooling', '#Unschooling', '#Worldschooling', '#HomeschoolMom', '#ChildLedLearning', '#EarlyLiteracy'],
   // Caption Writer ($27) → Maker Maddie: makes things by hand, dreads the caption.
@@ -140,10 +141,10 @@ const ACCOUNT_HASHTAGS: Record<string, string[]> = {
   philosophicalmom: ['#Stoicism', '#Philosophy', '#Mindfulness', '#Motherhood', '#DeepThinking'],
   art4thefeminine: ['#DivineFeminine', '#FeminineEnergy', '#WomenInArt', '#SacredFeminine', '#ArtByWomen'],
   survivethedome: ['#Preparedness', '#Prepping', '#SelfReliance', '#FamilyPreparedness', '#Homesteading'],
-  // Be There For Her ($9) → Second-Guessing Sophie: people-pleaser, overthinker, lost her intuition.
-  mandijoybeck: ['#HealingJourney', '#Overthinking', '#PeoplePleaser', '#Reparenting', '#TrustYourIntuition', '#CycleBreaker', '#InnerWork', '#MotherWound', '#HighlySensitivePerson', '#SelfCompassion', '#EldestDaughter'],
-  // @mandij0y joined the Be There For Her push 2026-09-27 (its winners are all inner-child/intuition reels).
-  mandijoy: ['#HealingJourney', '#Overthinking', '#PeoplePleaser', '#Reparenting', '#TrustYourIntuition', '#CycleBreaker', '#InnerWork', '#MotherWound', '#HighlySensitivePerson', '#SelfCompassion', '#EldestDaughter'],
+  // @theknowingis (id mandijoybeck) — RESEARCHED 2026-10-02. Intuition / self-trust lane, the woman who doesn't know whether to stay. Rooms: inner child (core, 71K) · the promise · reparenting process · somatic/nervous-system community · exact self-trust niche.
+  mandijoybeck: ['#InnerChildHealing', '#TrustYourIntuition', '#Reparenting', '#NervousSystemHealing', '#FollowYourIntuition'],
+  // @mandij0y — RESEARCHED 2026-10-02. Personal brand, but its winners are inner-child/intuition reels. Rooms: healing (broad) · eldest-daughter (hot niche) · the through-line · inner child (mid) · HSP (small).
+  mandijoy: ['#HealingJourney', '#EldestDaughter', '#TrustYourIntuition', '#InnerChildHealing', '#HighlySensitivePerson'],
   youradhdnature: ['#ADHD', '#ADHDLife', '#Mindfulness', '#ADHDSupport', '#Neurodivergent'],
   theadderalleffect: ['#ADHD', '#ADHDMotivation', '#GoalSetting', '#Mindset', '#Productivity'],
 }
@@ -153,7 +154,8 @@ const ACCOUNT_HASHTAGS: Record<string, string[]> = {
 const ACCOUNT_HASHTAG_ANCHORS: Record<string, string[]> = {
   onetangledmind: ['#HandmadeBusiness', '#SmallBusinessTips'],
   mandijoy: ['#HealingJourney'],
-  mandijoybeck: ['#HealingJourney'],
+  mandijoybeck: ['#InnerChildHealing'],
+  aimompodcast: ['#WorkingMomLife'],
 }
 
 export function craftFor(accountId?: string | null): string {
@@ -166,7 +168,7 @@ export function craftFor(accountId?: string | null): string {
     : ''
   const anchors = accountId ? ACCOUNT_HASHTAG_ANCHORS[accountId] : undefined
   const anchorLine = anchors
-    ? `\nALWAYS include ${anchors.join(' ')}${accountId === 'mandijoybeck' || accountId === 'mandijoy' ? ' plus ONE feeling tag (#Overthinking or #PeoplePleaser)' : ''}. Anchors count toward the 5; fill the other slots from the pool so the set reads 1 tag for who she is, 2 for what she's going through, 2 small communities. Max 5 total.`
+    ? `\nALWAYS include ${anchors.join(' ')}. Anchors count toward the 5; fill the other slots from the pool so the set reads 1 tag for who she is, 2 for what she's going through, 2 small communities. Max 5 total.`
     : ''
   return `${base}${tagLine}${anchorLine}${getVoiceLessonsContext()}`
 }
