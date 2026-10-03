@@ -21,6 +21,9 @@ export default function VideoDraftPanel({ videoUrl, fileName, onClose }: { video
   const [account, setAccount] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState('')
+  // Silent clip (no audio to transcribe): ask what it shows, then write from that.
+  const [silent, setSilent] = useState(false)
+  const [desc, setDesc] = useState('')
 
   useEffect(() => {
     fetch('/api/accounts').then(r => r.json()).then((a: Acct[]) => setAccounts(a.filter(x => ['active', 'restricted', 'planned'].includes(x.status)))).catch(() => {})
@@ -28,14 +31,28 @@ export default function VideoDraftPanel({ videoUrl, fileName, onClose }: { video
 
   // Initial draft (transcribe + write).
   const runInitial = useCallback(() => {
-    setLoading(true); setErr('')
+    setLoading(true); setErr(''); setSilent(false)
     fetch('/api/video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoUrl }) })
       .then(r => r.json())
-      .then(d => { if (d.title || d.hooks?.length) { setDraft(d); setHookIdx(0) } else setErr(d.error || 'Could not write from that video') })
+      .then(d => {
+        if (d.silent) { setSilent(true); return }                    // no talking — ask what it shows
+        if (d.title || d.hooks?.length) { setDraft(d); setHookIdx(0) } else setErr(d.error || 'Could not write from that video')
+      })
       .catch(() => setErr('Connection error'))
       .finally(() => setLoading(false))
   }, [videoUrl])
   useEffect(() => { runInitial() }, [runInitial])
+
+  // Write a draft from her one-line description of a silent clip.
+  const writeFromDesc = () => {
+    if (!desc.trim()) return
+    setLoading(true); setErr('')
+    fetch('/api/video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transcript: desc.trim(), accountId: account || undefined }) })
+      .then(r => r.json())
+      .then(d => { if (d.title || d.hooks?.length) { setDraft({ ...d, transcript: desc.trim() }); setSilent(false); setHookIdx(0) } else setErr(d.error || 'Could not write from that') })
+      .catch(() => setErr('Connection error'))
+      .finally(() => setLoading(false))
+  }
 
   // Regenerate from the existing transcript (cheap) — with feedback or title-first.
   const redraft = (opts: { feedback?: string; titleFirst?: boolean }) => {
@@ -77,6 +94,27 @@ export default function VideoDraftPanel({ videoUrl, fileName, onClose }: { video
       <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
         {loading && <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '13px', padding: '10px 0' }}><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Listening to your video and writing it up…</div>}
         {!loading && err && <p style={{ fontSize: '12px', color: '#E05252' }}>{err} <button onClick={runInitial} style={{ marginLeft: '6px', color: 'var(--purple)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: 700 }}>try again</button></p>}
+
+        {/* 🔇 Silent clip — saved, now ask what it shows and write from that */}
+        {silent && !draft && !loading && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)' }}>🔇 No one&apos;s talking in this one — it&apos;s a visual clip.</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>Your video&apos;s already saved to Media. Tell me in a line what it shows (or what you want on screen) and I&apos;ll write the on-screen text, caption &amp; hashtags and pick the account — or just keep it as b-roll to attach to a post later.</p>
+            <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={2}
+              placeholder="e.g. 'me walking through fall leaves, slow-mo' or 'close-up of hands journaling by candlelight'"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.5 }} />
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button onClick={writeFromDesc} disabled={!desc.trim()} className="rise-tactile"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '10px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: desc.trim() ? 'pointer' : 'not-allowed', opacity: desc.trim() ? 1 : 0.6 }}>
+                <Wand2 size={13} /> Write it from this
+              </button>
+              <button onClick={onClose}
+                style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                Just keep it in Media (b-roll)
+              </button>
+            </div>
+          </div>
+        )}
 
         {draft && !loading && (
           <div style={{ opacity: regen ? 0.5 : 1, display: 'flex', flexDirection: 'column', gap: '15px', transition: 'opacity .2s' }}>

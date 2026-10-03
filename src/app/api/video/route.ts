@@ -120,7 +120,10 @@ export async function POST(req: NextRequest) {
     const tRes = await fetch(`${base}/api/transcribe`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audioUrl: videoUrl }) })
     transcript = ((await tRes.json().catch(() => ({}))).transcript ?? '').trim()
   } catch { /* handled */ }
-  if (!transcript) return NextResponse.json({ error: "Couldn't hear spoken words in that video — is there audio? (Silent clips can't be auto-written yet.)" }, { status: 502 })
+  // No audio to transcribe (b-roll / silent clip). DON'T reject — the file is
+  // already saved to Media. Signal "silent" so the UI asks what it shows and we
+  // write from her one-line description instead of her spoken words.
+  if (!transcript) return NextResponse.json({ silent: true, videoUrl })
 
   const draft = await writeDraft(transcript, { feedback: body.feedback, titleFirst: body.titleFirst, accountId: body.accountId })
   if (!draft.title && !draft.hooks.length && !draft.caption) return NextResponse.json({ transcript, error: 'Transcribed fine, but the writer came back empty — try again.' }, { status: 502 })
