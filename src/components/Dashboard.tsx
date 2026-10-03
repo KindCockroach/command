@@ -15,6 +15,7 @@ import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
 import ResearchPanel from './ResearchPanel'
 import HomeScreen from './HomeScreen'
+import LinesPanel from './LinesPanel'
 import ContentDay from './ContentDay'
 import ActivityStation from './ActivityStation'
 import InstantCompose from './InstantCompose'
@@ -32,7 +33,7 @@ import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'command' | 'activity' | 'contentday' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
+type View = 'lines' | 'command' | 'activity' | 'contentday' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
 
 // Renders children on first activation and KEEPS them mounted after — hidden with
 // display:none when inactive — so long-running work (podcast generation) and state
@@ -47,7 +48,7 @@ function KeepAlive({ active, children }: { active: boolean; children: React.Reac
 export default function Dashboard({ initialContent, stats: initialStats }: Props) {
   const [content, setContent] = useState(initialContent)
   const [stats, setStats] = useState(initialStats)
-  const [view, setView] = useState<View>('command')
+  const [view, setView] = useState<View>('lines')
   const [dark, setDark] = useState(false)
   const [scroller, setScroller] = useState<{ status: string; label: string } | null>(null)
   const [navOrder, setNavOrder] = useState<View[]>([])
@@ -82,6 +83,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
   })
 
   const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode; accent?: boolean }[] = [
+    { id: 'lines',      label: 'Lines',         icon: <PenLine size={12} />, accent: true },
     { id: 'command',    label: 'Daily Command', icon: <Zap size={12} />, accent: true },
     { id: 'activity',   label: 'Activity',      icon: <Radar size={12} /> },
     { id: 'contentday', label: 'Content Day',   icon: <Mic size={12} /> },
@@ -200,6 +202,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
       <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
         {/* Home stays alive so the Commander chat + Daily Command survive navigation */}
+        <KeepAlive active={view === 'lines'}><LinesPanel /></KeepAlive>
         <KeepAlive active={view === 'command'}><HomeScreen /></KeepAlive>
         <KeepAlive active={view === 'activity'}><ActivityStation /></KeepAlive>
         <KeepAlive active={view === 'contentday'}><ContentDay /></KeepAlive>

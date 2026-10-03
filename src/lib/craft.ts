@@ -167,6 +167,17 @@ const ACCOUNT_HASHTAG_ANCHORS: Record<string, string[]> = {
   aimompodcast: ['#WorkingMomLife'],
 }
 
+// The account's AGREED hashtag set (anchors first, filled from its real pool to 5).
+// Lines append THIS verbatim — never an invented tag.
+export function accountHashtags(accountId?: string | null): string[] {
+  if (!accountId) return []
+  const pool = ACCOUNT_HASHTAGS[accountId] ?? []
+  const anchors = ACCOUNT_HASHTAG_ANCHORS[accountId] ?? []
+  const set = [...anchors]
+  for (const t of pool) { if (set.length >= 5) break; if (!set.includes(t)) set.push(t) }
+  return set.slice(0, 5)
+}
+
 export function craftFor(accountId?: string | null): string {
   let base = CRAFT_RULES
   if (accountId === 'aimompodcast') base = `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}`

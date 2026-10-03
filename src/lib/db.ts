@@ -322,8 +322,24 @@ export type ActivityEvent = {
   media_url?: string | null
 }
 
+// A LINE — one copy-ready reel idea for the calm "Lines" feed. Not a content card:
+// it renders as four short strings and nothing else.
+export type Line = {
+  id: number
+  account_id: string
+  line: string            // the one strangely-specific on-screen line
+  caption: string         // ready-to-post caption, ending in the account's agreed hashtags
+  audio_tone: string      // vibe of trending sound to pair ("soft/cozy lo-fi")
+  broll_scene: string     // what to film ("hands journaling by candlelight")
+  created_at: string
+  used?: boolean
+  dismissed?: boolean
+}
+
 type Db = {
   content: ContentPiece[]
+  lines?: Line[]
+  next_line_id?: number
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
   memories: Memory[]
@@ -1507,4 +1523,50 @@ export function saveResearchBrief(data: Omit<ResearchBrief, 'id' | 'created_at'>
   if (db.research_briefs.length > 60) db.research_briefs = db.research_briefs.slice(-60)
   writeDb(db)
   return brief
+}
+
+// ── LINES — the calm, text-first idea feed ───────────────────────────────────
+// Active = not used and not dismissed. The feed shows active, newest first.
+export function getLines(opts?: { accountId?: string; includeInactive?: boolean }): Line[] {
+  const db = readDb()
+  let rows = db.lines ?? []
+  if (opts?.accountId) rows = rows.filter(l => l.account_id === opts.accountId)
+  if (!opts?.includeInactive) rows = rows.filter(l => !l.used && !l.dismissed)
+  return rows.slice().sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export function countActiveLines(accountId: string): number {
+  return getLines({ accountId }).length
+}
+
+// Recent line TEXTS (active or not) so the generator never repeats itself.
+export function getRecentLineTexts(accountId: string, limit = 40): string[] {
+  const db = readDb()
+  return (db.lines ?? [])
+    .filter(l => l.account_id === accountId)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, limit)
+    .map(l => l.line)
+}
+
+export function createLine(data: Omit<Line, 'id' | 'created_at'>): Line {
+  const db = readDb()
+  if (!db.lines) db.lines = []
+  const id = db.next_line_id ?? 1
+  db.next_line_id = id + 1
+  const line: Line = { ...data, id, created_at: new Date().toISOString() }
+  db.lines.push(line)
+  // keep the store lean — 400 lines across all accounts is plenty of history
+  if (db.lines.length > 400) db.lines = db.lines.slice(-400)
+  writeDb(db)
+  return line
+}
+
+export function updateLine(id: number, patch: Partial<Pick<Line, 'used' | 'dismissed'>>): Line | null {
+  const db = readDb()
+  const row = (db.lines ?? []).find(l => l.id === id)
+  if (!row) return null
+  Object.assign(row, patch)
+  writeDb(db)
+  return row
 }

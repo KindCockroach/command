@@ -44,7 +44,7 @@ const WIDGETS: { id: string; label: string; emoji: string; render: () => React.R
 ]
 
 const STORAGE_KEY = 'rise-home-widgets-v1'
-const DEFAULT_LAYOUT = ['yourmove', 'shipnext', 'activity', 'queue', 'commander', 'research', 'goalspace']   // Your Move → Ship This Next → Activity → Work Queue → Commander → Briefing → Goals
+const DEFAULT_LAYOUT = ['yourmove', 'shipnext', 'activity', 'commander', 'research', 'goalspace', 'queue']   // Your Move → Ship This Next → Activity → Commander → Briefing → Goals → (Work Queue tucked last)
 
 // The customizable homescreen: pick which widgets show and in what order,
 // so Daily Command bends to the current focus (launch mode, research season…).
@@ -95,6 +95,14 @@ export default function HomeScreen() {
             const at = without.indexOf('yourmove')
             ids = at >= 0 ? [...without.slice(0, at + 1), 'shipnext', ...without.slice(at + 1)] : ['shipnext', ...without]
             localStorage.setItem('rise-home-v6', '1')
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
+          }
+          // v7: tuck the Work Queue (the content-card pile) to the BOTTOM. The calm
+          // Lines feed greets her now; the pile should never be the first thing she
+          // sees. She can drag it back up anytime — this just stops the overwhelm.
+          if (!localStorage.getItem('rise-home-v7')) {
+            if (ids.includes('queue')) ids = [...ids.filter(id => id !== 'queue'), 'queue']
+            localStorage.setItem('rise-home-v7', '1')
             localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
           }
           setLayout(ids)
