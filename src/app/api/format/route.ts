@@ -76,9 +76,12 @@ ${topic ? `Build it around this topic/angle: ${topic}` : 'Pick the strongest tru
 Return ONLY valid JSON:
 { "title": "short internal title", "onscreen": "the filled skeleton — the scroll-stopping on-screen text, mirroring the format line-for-line", "caption": "the caption in her voice that carries this account's arc/promise (spaced, real line breaks)", "hashtags": ["3-5 real relevant hashtags"] }`
 
-  const raw = await fableText({ useClaude: true, json: true, maxTokens: 1600, instructions, input: `THE FORMAT SKELETON TO MIRROR (keep its exact shape):\n${skeleton}` })
-  let p: { title?: string; onscreen?: string; caption?: string; hashtags?: string[] } = {}
-  try { p = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') } catch { /* fall through */ }
+  // maxTokens must leave room for adaptive THINKING + the JSON on Sonnet 5 — 1600 got
+  // eaten by thinking and streamed back empty. Retry once if the first pass is blank.
+  const write = () => fableText({ useClaude: true, json: true, maxTokens: 3500, instructions, input: `THE FORMAT SKELETON TO MIRROR (keep its exact shape):\n${skeleton}` })
+  const parse = (raw: string) => { try { return JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') } catch { return {} } }
+  let p: { title?: string; onscreen?: string; caption?: string; hashtags?: string[] } = parse(await write())
+  if (!p.onscreen && !p.caption) p = parse(await write())
   if (!p.onscreen && !p.caption) return NextResponse.json({ error: 'The writer came back empty — try again.' }, { status: 502 })
   return NextResponse.json({
     title: p.title || 'Mirrored post',
