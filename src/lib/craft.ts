@@ -123,6 +123,15 @@ const MANDIJOY_TRUTH = `
 // it's in the roster.
 const PERSONAL_ACCOUNT_IDS = new Set(['mandijoy', 'amandabeck', 'mandijoybeck'])
 
+// HARD RULE — protect the real people in her life (her mom, Preston/partner, family,
+// friends). Applied to the accounts that draw on her real story.
+const PROTECT_PEOPLE = `
+
+⚠ PROTECT THE REAL PEOPLE IN HER LIFE (non-negotiable — her mom, her partner, family, friends):
+• NEVER name or make identifiable a real person, and NEVER attribute a hurtful line or action to one ("my mom said…", "my husband told me…"). TRANSMUTE it instead — to the internalized belief ("somewhere I learned my feelings were 'too much'" / "I was the 'dramatic' one"), OR to the reader ("if you were the one always called 'too sensitive'…"), OR a faceless source ("you were told", "the room decided") — never a specific person.
+• A real person is never the villain or the lesson; the content is about HER OWN knowing. Own her part, never assign them fault. No private logistics (living arrangements, specific fights, a partner's job, money). Past-tense pattern, not present-tense exposé. Never tell the reader to stay or leave a relationship — return her to her own intuition. No contempt or mockery of partner/family, ever.
+• TEST every line + caption: could a real person read this and feel called out or hurt? If yes, rewrite to the belief/pattern, not the person.`
+
 // Locked categorical hashtag pools per account — REAL, searched tags (topics,
 // niches, communities, public figures), never invented slogans. Generation draws
 // 3-5 from the account's pool; it may swap ONE for a more post-specific tag as long
@@ -161,7 +170,7 @@ const ACCOUNT_HASHTAG_ANCHORS: Record<string, string[]> = {
 export function craftFor(accountId?: string | null): string {
   let base = CRAFT_RULES
   if (accountId === 'aimompodcast') base = `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}`
-  else if (accountId && PERSONAL_ACCOUNT_IDS.has(accountId)) base = `${CRAFT_RULES}\n${MANDIJOY_TRUTH}`
+  else if (accountId && PERSONAL_ACCOUNT_IDS.has(accountId)) base = `${CRAFT_RULES}\n${MANDIJOY_TRUTH}${PROTECT_PEOPLE}`
   const pool = accountId ? ACCOUNT_HASHTAGS[accountId] : undefined
   const tagLine = pool
     ? `\n\nHASHTAG POOL for this account — draw your 3-5 from these REAL categories (you may swap at most ONE for a more post-specific tag, but it must be a real category people search, never an invented slogan): ${pool.join(' ')}`
