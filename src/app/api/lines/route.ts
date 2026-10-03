@@ -68,10 +68,20 @@ ${avoid.length ? `\nDO NOT REPEAT or lightly reword any of these lines she alrea
 
 Return ONLY a valid JSON object: { "lines": [ { "line": "...", "caption": "...", "audio_tone": "...", "broll_scene": "..." } ] } with exactly ${count} distinct entries. No preamble, no commentary.`
 
-  const raw = await fableText({ useClaude: true, json: true, maxTokens: 4000, instructions, input: `Write ${count} fresh Lines for ${acct.handle}. Make each one specific enough that only she could have written it.` })
-  let parsed: { lines?: Array<{ line?: string; caption?: string; audio_tone?: string; broll_scene?: string }> } = {}
-  try { parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') } catch { /* fall through */ }
-  const items = Array.isArray(parsed.lines) ? parsed.lines : []
+  type Item = { line?: string; caption?: string; audio_tone?: string; broll_scene?: string }
+  // Big prompt + 4 entries + Sonnet 5 adaptive thinking: the budget must hold THINKING
+  // AND the JSON, or text streams back empty (that's the 43s-then-empty failure).
+  const input = `Write ${count} fresh Lines for ${acct.handle}. Make each one specific enough that only she could have written it.`
+  const extract = (raw: string): Item[] => {
+    // Accept either {"lines":[...]} or a bare [...] array.
+    const obj = raw.match(/\{[\s\S]*\}/)?.[0]
+    if (obj) { try { const p = JSON.parse(obj); if (Array.isArray(p?.lines)) return p.lines } catch { /* try array */ } }
+    const arr = raw.match(/\[[\s\S]*\]/)?.[0]
+    if (arr) { try { const p = JSON.parse(arr); if (Array.isArray(p)) return p } catch { /* give up */ } }
+    return []
+  }
+  let items = extract(await fableText({ useClaude: true, json: true, maxTokens: 8000, instructions, input }))
+  if (!items.length) items = extract(await fableText({ useClaude: true, json: true, maxTokens: 8000, instructions, input }))
 
   // Append the account's AGREED hashtag set to every caption, verbatim (never invented).
   const tags = accountHashtags(accountId)
