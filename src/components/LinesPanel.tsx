@@ -74,8 +74,8 @@ export default function LinesPanel() {
     <div style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '22px', padding: '4px 0 60px' }}>
       {/* Header — gentle */}
       <div>
-        <h1 className="font-display" style={{ fontSize: '30px', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.1, color: 'var(--text)' }}>Lines</h1>
-        <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginTop: '5px', lineHeight: 1.5 }}>Copy-ready words for your next trial reel. Grab one, film it, post it yourself. That&apos;s the whole job.</p>
+        <h1 className="font-display" style={{ fontSize: '30px', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.1, color: 'var(--text)' }}>Quick Post <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-subtle)' }}>for Edits</span></h1>
+        <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginTop: '5px', lineHeight: 1.5 }}>Copy-ready words for your next trial reel. Grab one, film it in Edits, post it yourself. That&apos;s the whole job.</p>
       </div>
 
       {/* Quiet account filter */}

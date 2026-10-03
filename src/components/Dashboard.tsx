@@ -83,7 +83,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
   })
 
   const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode; accent?: boolean }[] = [
-    { id: 'lines',      label: 'Lines',         icon: <PenLine size={12} />, accent: true },
+    { id: 'lines',      label: 'Quick Post',    icon: <PenLine size={12} />, accent: true },
     { id: 'command',    label: 'Daily Command', icon: <Zap size={12} />, accent: true },
     { id: 'activity',   label: 'Activity',      icon: <Radar size={12} /> },
     { id: 'contentday', label: 'Content Day',   icon: <Mic size={12} /> },

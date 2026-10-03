@@ -36,21 +36,47 @@ async function generateLines(accountId: string, count: number): Promise<number> 
   const trend = trendNote?.body ? trendNote.body.slice(0, 260) : ''
   const avoid = getRecentLineTexts(accountId, 12)
 
-  // @theknowingis gets its specific voice + reader + the one hard rule, in one line.
+  // The voice, pinned by CONTRAST. GOOD = plain, exact, the wit is in the precision.
+  // BAD = reaching for a punchline that performs itself. Write like GOOD, never BAD.
+  const GOOD = [
+    `You pick the stair that creaks when you actually want to be heard.`,
+    `You know his mood from the garage door before his keys hit the lock.`,
+    `You practice your "I'm okay" voice in the driveway before you even unlock the door.`,
+    `You moved the couch four times this year and called it feng shui.`,
+    `You check your horoscope before you check in with yourself.`,
+    `You narrate your own fights in third person now.`,
+    `You rehearsed the paragraph for 40 minutes and sent. Okay.`,
+    `She just needed space, like it happened to a stranger.`,
+  ].join('\n')
+  const BAD = [
+    `You've rehearsed 'we need to talk' in the shower so many times the conditioner bottle knows it by heart.`,
+    `You've catalogued five meanings of his exhale. You've never once translated your own.`,
+    `You alphabetized the spice rack at midnight. The cumin didn't ask for that.`,
+  ].join('\n')
+
   const special = accountId === 'mandijoybeck'
-    ? `This account (@theknowingis): silly-serious, strangely specific, spiritual-atheist, owns "inner child," humor is core. Reader: the woman unsure whether to stay in her relationship, intuition gone quiet from keeping the peace. HARD RULE: every line points her back to HER OWN intuition — never toward stay or leave.`
+    ? `WHO SHE IS: the woman unsure whether to stay in her relationship, intuition gone quiet from years of keeping the peace. She reads everyone else's signals fluently and her own not at all; she's started narrating herself in third person, like it happened to a stranger.
+HARD RULE: every line quietly shows her abandoning her OWN knowing — never toward "stay," never toward "leave."`
     : `This account: ${acct.tone || ''}. ${acct.underlying_message || ''}`
 
-  // LEAN brief — no full craft dump, no pinned stack. Short + directive = far less
-  // thinking per run. Core voice rules distilled to one line.
-  const instructions = `Write in Mandi's voice: ONE scroll-stopping statement (never a question), show don't tell, speak straight to the woman reading, strangely specific beats clever, earned humor never a lecture.
+  const instructions = `Write in Mandi's voice. The form is "You [one hyper-specific self-abandoning or peace-keeping behavior]." Short. Second person. A statement, never a question.
+The voice is PLAIN and EXACT. The wit lives in the precision of a real detail — NOT in a punchline. Do not reach for a clever closer, a quip, or a cute metaphor; the recognition IS the payoff. She should feel caught and seen, then tender. Sometimes land on a flat beat ("...and sent. Okay.").
+
+WRITE LIKE THESE (plain, exact, the detail does the work):
+${GOOD}
+
+NOT LIKE THESE (these try too hard — the joke performs itself; too many clauses; a punchline tacked on):
+${BAD}
+
+TWO HARD BANS:
+1. NEVER shame, scold, diagnose, or name-call the reader (no "you chickened out", no "you're the problem"). You're a peer who does it too, not her therapist.
+2. The caption must be COHERENT ON ITS OWN — never reference a prop/image the reader can't see ("still has the plastic peeled off" is meaningless without the picture). Plain and self-contained.
 ${PROTECT}
 ${special}
-Reader: ${reader || 'the capable, funny, invisible woman quietly sure she is meant for more'}${note197 ? `\nHer voice/story: ${(note197.body ?? '').slice(0, 450)}` : ''}${trend ? `\nTrending now (mirror the rhythm, use her story): ${trend}` : ''}${avoid.length ? `\nDon't repeat: ${avoid.join(' / ')}` : ''}
-
+${note197 ? `Her voice/story: ${(note197.body ?? '').slice(0, 300)}\n` : ''}${trend ? `Trending now (mirror the rhythm): ${trend}\n` : ''}${avoid.length ? `Don't repeat: ${avoid.join(' / ')}\n` : ''}
 Write ${count} LINES for ${acct.handle}. Each = 4 short parts:
-- "line": the on-screen statement
-- "caption": her voice, spaced; do NOT add hashtags
+- "line": the on-screen statement, in the GOOD register above
+- "caption": her same plain voice — 2-4 short lines that stay WITH the recognition, self-contained, no advice or fixing, no hashtags
 - "audio_tone": 2-4 words (e.g. "soft cozy lo-fi")
 - "broll_scene": a filmable scene (e.g. "hands journaling by candlelight")
 Return ONLY JSON: {"lines":[{"line","caption","audio_tone","broll_scene"}]} — ${count} entries, no preamble.`
