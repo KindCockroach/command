@@ -38,11 +38,17 @@ export async function POST(req: NextRequest) {
 🎬 ONLY YOU CAN MAKE THIS
 3-5 creative calls that only Mandi can physically make — the human-only moves you'd tell her at standup. Each ONE short imperative line, specific: e.g. "Film a POV monologue to [the audio/sound that's climbing] — it fits Be There For Her", "Shoot [this specific idea] from [this angle] because [why it's trending under ${tag}]". Name the audio/sound, the angle, or the exact idea, and the reason it's rising. No skeletons here — these are shoots.
 
-End with one line: "BEST BET: <the single strongest move under ${tag} this week>".`
+End with one line: "BEST BET: <the single strongest move under ${tag} this week>".
+
+Do NOT narrate your search process or say what you're about to do — output ONLY the brief, starting directly with the 🧬 header. Keep each creative call to one line so none get cut off.`
 
   try {
-    const digest = await researchWithWeb({ instructions, input, maxTokens: 2800, maxSearches: 4 })
-    const clean = (digest || '').trim()
+    const digest = await researchWithWeb({ instructions, input, maxTokens: 4000, maxSearches: 4 })
+    // Drop the model's between-search narration ("Let me run the searches…") that
+    // leaks ahead of the real brief — keep from the first section header onward.
+    const raw = (digest || '').trim()
+    const headAt = raw.search(/🧬|🔥\s*TRENDING|FORMATS TO MIRROR/i)
+    const clean = (headAt > 0 ? raw.slice(headAt) : raw).trim()
     if (!clean) throw new Error('empty digest')
 
     const dateLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
