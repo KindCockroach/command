@@ -28,7 +28,7 @@ export default function Wellspring() {
           <p className="eyebrow">THE WELLSPRING · A MINDFUL LISTENING MEMBERSHIP</p>
           <h1>You found your way back. <em>Congratulations.</em></h1>
           <p className="sub">
-            Reconnecting to yourself doesn&rsquo;t need to be a once-a-year thing. The Wellspring is the
+            Listening to yourself doesn&rsquo;t need to be a once-a-year thing. The Wellspring is the
             place you return to &mdash; to stay connected.
           </p>
           <BuyButton href={CHECKOUT} label="Join The Wellspring →" />
@@ -38,7 +38,7 @@ export default function Wellspring() {
 
       <section className="band">
         <div className="wrap">
-          <h2>Reconnecting isn&rsquo;t a one-time fix.</h2>
+          <h2>Listening isn&rsquo;t a one-time fix.</h2>
           <p>You can have the most tender moment with your inner girl on a Tuesday &mdash; and by Thursday, the
             noise creeps back in. The volume on your intuition slips down. The to-do list swallows you again.</p>
           <p className="reframe">Not because you failed. Because that&rsquo;s what life does when you stop tending
@@ -69,7 +69,7 @@ export default function Wellspring() {
         <div className="wrap">
           <p className="ptag">From Mandi</p>
           <p>Hey. It&rsquo;s Mandi. I built The Wellspring because <em>I</em> need it too.</p>
-          <p>Reconnecting isn&rsquo;t a graduation &mdash; there&rsquo;s no day you&rsquo;re &ldquo;done&rdquo; being
+          <p>Listening isn&rsquo;t a graduation &mdash; there&rsquo;s no day you&rsquo;re &ldquo;done&rdquo; being
             a human with a tender inner world. So every month I sit down, in the quiet, and make the thing I wish
             someone would make for me. Then I hand it to you.</p>
           <p>You don&rsquo;t have to do this alone anymore. Come flow with me.</p>
@@ -79,7 +79,7 @@ export default function Wellspring() {
       <section className="proof">
         <div className="wrap">
           <h2>Who it&rsquo;s for</h2>
-          <p>For the woman who felt something shift when she first reconnected &mdash; and doesn&rsquo;t want to
+          <p>For the woman who felt something shift when she first listened &mdash; and doesn&rsquo;t want to
             lose it. Who&rsquo;s done abandoning herself and wants a rhythm that keeps her close to her own knowing.
             Who&rsquo;d rather tend the wellspring a little each month than run dry and have to find her way back
             from scratch, again.</p>

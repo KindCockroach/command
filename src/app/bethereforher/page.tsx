@@ -5,15 +5,15 @@ import { MetaPixel, BuyButton, salesCss } from '@/components/funnel/shared'
 import FreeOptin from './FreeOptin'
 import { MEDS, PREVIEW_FILE } from './meds'
 
-const TITLE = 'Reconnect To Your Intuition — Guided Meditations by Mandi'
+const TITLE = 'Listen To Your Intuition — Guided Meditations by Mandi'
 const SHARE_TITLE = 'Mindful Listening by Joyful Media'
 const DESC =
-  'Guided inner-child meditations and mindful listening, in a real warm voice, for the woman who’s cared for everyone but herself. Reconnect to your intuition — become your own resting place.'
+  'Guided inner-child meditations and mindful listening, in a real warm voice, for the woman who’s cared for everyone but herself. Listen to your intuition — become your own resting place.'
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESC,
-  keywords: ['guided meditations', 'meditation', 'inner child healing', 'inner child work', 'mindful listening', 'mindfulness', 'intuition', 'reconnect with your intuition', 'meditation for women', 'self-trust', 'nervous system regulation', 'reparenting'],
+  keywords: ['guided meditations', 'meditation', 'inner child healing', 'inner child work', 'mindful listening', 'mindfulness', 'intuition', 'listen to your intuition', 'meditation for women', 'self-trust', 'nervous system regulation', 'reparenting'],
   openGraph: { title: SHARE_TITLE, description: DESC, type: 'website', siteName: 'Joyful Media' },
   twitter: { card: 'summary_large_image', title: SHARE_TITLE, description: DESC },
 }
@@ -29,14 +29,14 @@ export default function BeThereForHer() {
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">RECONNECT WITH YOUR INTUITION</p>
+          <p className="eyebrow">LISTEN TO YOUR INTUITION</p>
           <h1>A woman&rsquo;s intuition is her single most important <em>superpower.</em></h1>
           <p className="sub">
             You are about to radically change your life, align with everything you&rsquo;ve been calling
             in, and step into future you &mdash; virtually overnight. This is what you&rsquo;ve been waiting
             for. And I&rsquo;m not being dramatic.
           </p>
-          <BuyButton href={CHECKOUT} label="Reconnect to your intuition — $9" />
+          <BuyButton href={CHECKOUT} label="Listen to your intuition — $9" />
           <p className="preview-label">Grab your headphones after bedtime and drop in. &nbsp;·&nbsp; Listen free &mdash; &ldquo;The Little You&rdquo;:</p>
           <audio controls preload="none" src={PREVIEW_FILE} className="preview" />
         </div>
@@ -66,9 +66,9 @@ export default function BeThereForHer() {
             <li>You&rsquo;ve left 45 minutes early and sat in the parking lot, because you can&rsquo;t tell when to go anymore.</li>
             <li>You ordered what she ordered so you wouldn&rsquo;t have to choose.</li>
             <li>You said yes when you meant no &mdash; then canceled last minute and called yourself a flake.</li>
-            <li>You felt the red flag on the first date and told yourself you were &ldquo;being sensitive.&rdquo;</li>
-            <li>You have a feeling about what your kid needs, and you won&rsquo;t let yourself follow it.</li>
-            <li>You used to be so sure of yourself. You want her back.</li>
+            <li>Your stomach&rsquo;s been side-eyeing that mom friend for months &mdash; and you just booked the next playdate anyway.</li>
+            <li>You lie awake wondering if it&rsquo;s him or if it&rsquo;s you, studying his moods for an answer your gut already has.</li>
+            <li>You keep a running list of what you want, right next to the list of what you won&rsquo;t let yourself have.</li>
           </ul>
           <p className="callout">That&rsquo;s not indecision. That&rsquo;s a signal you stopped trusting &mdash; and we&rsquo;re about to turn it all the way back up.</p>
         </div>
@@ -83,7 +83,7 @@ export default function BeThereForHer() {
       <section className="what">
         <div className="wrap">
           <h2>What&rsquo;s inside</h2>
-          <p className="lead"><strong>Reconnect To Your Intuition</strong>{' '}is seven guided sessions in my
+          <p className="lead"><strong>Listen To Your Intuition</strong>{' '}is seven guided sessions in my
             real voice. Not the meditation you&rsquo;ve quit before &mdash; you don&rsquo;t have to empty your
             mind, sit still, or get it right. You just listen. Ten minutes after bedtime, headphones in, drop in.</p>
           <p className="walkhead">You won&rsquo;t believe how you feel when you wake up tomorrow.</p>
@@ -187,7 +187,7 @@ export default function BeThereForHer() {
 
       <section className="final">
         <div className="wrap">
-          <h2>You&rsquo;ve been there for everyone.<br />Now reconnect to yourself.</h2>
+          <h2>You&rsquo;ve been there for everyone.<br />Now listen to yourself.</h2>
           <BuyButton href={CHECKOUT} label="I'm ready — $9" tagline="Instant access · Listen anywhere · Yours to keep" />
           <p className="terms">Digital product &mdash; no refunds. Not a licensed therapist; these meditations
             aren&rsquo;t therapy or medical advice. Please use alongside professional care, not in place of it.</p>
