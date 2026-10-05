@@ -13,4 +13,4 @@ export const MEDS = [
   { n: 7, file: '03-the-vast-and-the-held.m4a', title: 'The Vast and the Held', line: 'When everything feels too big, go bigger.' },
 ] as const
 
-export const PREVIEW_FILE = '/bethereforher/preview-little-you.m4a'
+export const PREVIEW_FILE = '/bethereforher/preview-little-you-v2.m4a'
