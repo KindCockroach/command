@@ -49,13 +49,30 @@ async function generateLines(accountId: string, count: number): Promise<number> 
     `You check your horoscope before you check in with yourself.`,
   ].join('\n')
 
+  // Lauren's REAL moments — the raw material. Every line is built from one of these
+  // so she recognizes her exact life before the turn lands. (BTFH / @theknowingis.)
+  const LAUREN = [
+    `organic vs regular apples — she puts both back and grabs bananas`,
+    `leaves 45 minutes early for a 12-minute drive, then sits in the parking lot`,
+    `says yes when she means no, cancels last-minute, decides that's why she has no friends`,
+    `the mom-friend she side-eyes but keeps scheduling (the only one free when she's free)`,
+    `felt it day one — he went cold for two days when she disagreed — called herself "too sensitive," three years in`,
+    `"is it him or is it me" — she studies his moods instead of her own body`,
+    `the 4-year-old won't sleep in his own bed; she runs the mom-group's method over her own gut about HER kid`,
+    `teacher says he's "a little behind"; her gut says he's just younger; she books the eval and cries in the car`,
+    `orders whatever her friend orders to dodge the menu; buys both throw pillows or neither`,
+  ].join('\n')
+
   const special = accountId === 'mandijoybeck'
-    ? `WHO SHE IS: the woman unsure whether to stay in her relationship, intuition gone quiet from years of keeping the peace. She reads everyone else's signals fluently and her own not at all.
-HARD RULE: every line quietly shows her abandoning her OWN knowing — never toward "stay," never toward "leave."`
+    ? `WHO SEES HERSELF HERE — LAUREN: a competent mom in her 30s–40s who runs everyone's life but stopped trusting her own gut. The through-line: a gut signal arrives (which apples, bedtime, a friendship, her marriage) and she OVERRIDES it, then pays for it later. Point her back to her OWN knowing — never toward "stay," never toward "leave."
+BUILD EACH LINE FROM ONE OF HER REAL MOMENTS, with enough SETUP that she recognizes her exact life before the turn lands:
+${LAUREN}
+MONEY SHAPE — Hook C: "You're not [what she beats herself up for: flaky / dramatic / too sensitive / indecisive], you're [the truer reframe]." Use it often.
+NEVER use the words "intuition" or "inner child" in the line — lead with the outcome + the weird-specific behavior; the reveal lives in the video, not the hook.`
     : `This account: ${acct.tone || ''}. ${acct.underlying_message || ''}`
 
-  const instructions = `Write in Mandi's voice. The form is "You [one hyper-specific self-abandoning or peace-keeping behavior]" — usually with a second beat: a wry, slightly absurd TURN that reveals the self-abandonment without naming it. Second person. A statement, never a question.
-Her voice is SILLY-SERIOUS and strangely specific. The humor is the point, not a decoration — a real mundane detail taken one absurd step ("the cumin didn't ask for that", "the conditioner bottle knows it by heart"). Do NOT write her plain and earnest, and NEVER state the moral/lesson outright ("check your horoscope before you check in with yourself" is dead — it explains itself). Let the weird specific turn carry it; she feels caught, then laughs, then aches a little.
+  const instructions = `Write in Mandi's voice. Each line GROUNDS the reader in a recognizable SCENE from her real life — enough context (the moment, the where/when/who) that she thinks "that's literally me" — THEN a wry, slightly absurd turn or a reframe. Second person. A statement, never a question.
+A bare behavior with no scene MEANS NOTHING to her — she can't stand in it. Give the setup first. Her voice is SILLY-SERIOUS and strangely specific: a real mundane detail taken one step ("the cumin didn't ask for that"). Never write her plain and earnest, and never STATE the lesson outright ("check your horoscope before you check in with yourself" is dead — it explains itself). She should feel caught, laugh, then ache a little.
 
 WRITE LIKE THESE (strangely specific, a wry absurd turn, silly-serious):
 ${GOOD}
