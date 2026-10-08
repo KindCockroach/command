@@ -117,7 +117,10 @@ export default function FileUpload({ folder = 'uploads', onUploaded, accept, lab
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault(); setDragging(false)
     const file = e.dataTransfer.files[0]
-    if (file) upload(file)
+    if (file) { upload(file); return }
+    // Empty drop = almost always a drag straight from the Apple Photos app, which
+    // hands the browser a "file promise" instead of a real file. Tell her what to do.
+    setError('That looks like it came straight from the Photos app — Apple won’t release the file to a browser on a drag. Drag it to your Desktop first, then drop it here (or click to browse).')
   }, [upload])
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Loader2, Video, Music, Image, FileText, Download, ExternalLink, RefreshCw, Search, Pencil, Sparkles, Copy, Check, Trash2 } from 'lucide-react'
 import VideoDraftPanel from './VideoDraftPanel'
+import FileUpload from './FileUpload'
 
 interface MediaFile {
   key: string
@@ -210,6 +211,14 @@ export default function MediaLibrary() {
           <RefreshCw size={13} /> Refresh
         </button>
       </div>
+
+      {/* Drop b-roll right here — the Media tab had no uploader before */}
+      <FileUpload
+        folder="broll"
+        accept="video/*,image/*,.mov,.heic,.heif,.mp4,.m4v,.jpg,.jpeg,.png,.webp"
+        label="Drop b-roll or photos here — from your Desktop (not straight from the Photos app)"
+        onUploaded={() => load()}
+      />
 
       {/* Filter tabs */}
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
