@@ -155,7 +155,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
 
           {/* Brand — fixed left, never scrolls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-            <img src="/logo.png" alt="RISE AI" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+            <img src="/balloon-512.png" alt="RISE AI" style={{ width: '38px', height: '38px', objectFit: 'contain' }} />
             <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '19px', fontWeight: 700, color: '#fff', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>RISE AI</span>
           </div>
 

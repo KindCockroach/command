@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, Copy, Check, ThumbsDown, Sparkles, Music, Clapperboard } from 'lucide-react'
+import { Loader2, Copy, Check, ThumbsDown, Sparkles, Music, Clapperboard, Radio } from 'lucide-react'
 
 // THE LINES FEED — the opposite of the content-card pile. Calm, text-first, lots of
 // whitespace. One Line per row: the on-screen line and the caption, each with a
@@ -10,6 +10,7 @@ import { Loader2, Copy, Check, ThumbsDown, Sparkles, Music, Clapperboard } from 
 
 type Line = { id: number; account_id: string; line: string; caption: string; audio_tone: string; broll_scene: string; created_at: string }
 type Acct = { id: string; handle: string; status: string; brand_name?: string }
+type Pulse = { title: string; best_bet: string; audio: string; when: string | null }
 
 const DEFAULT_ACCOUNT = 'mandijoybeck'   // @theknowingis — her current focus
 
@@ -31,6 +32,7 @@ export default function LinesPanel() {
   const [lines, setLines] = useState<Line[]>([])
   const [loading, setLoading] = useState(true)
   const [more, setMore] = useState(false)
+  const [pulse, setPulse] = useState<Pulse | null>(null)
 
   // Active accounts for the quiet filter.
   useEffect(() => {
@@ -38,6 +40,13 @@ export default function LinesPanel() {
       const a: Acct[] = (Array.isArray(d) ? d : d.accounts ?? []).filter((x: Acct) => x.status === 'active' || x.status === 'restricted')
       setAccounts(a)
     }).catch(() => {})
+  }, [])
+
+  // This week's trend pulse — shown at the very top.
+  useEffect(() => {
+    fetch('/api/trends/latest').then(r => r.json())
+      .then(d => { if (d.pulse && (d.pulse.best_bet || d.pulse.audio)) setPulse(d.pulse) })
+      .catch(() => {})
   }, [])
 
   const load = useCallback((acct: string) => {
@@ -77,6 +86,18 @@ export default function LinesPanel() {
         <h1 className="font-display" style={{ fontSize: '30px', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.1, color: 'var(--text)' }}>Quick Post <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-subtle)' }}>for Edits</span></h1>
         <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginTop: '5px', lineHeight: 1.5 }}>Copy-ready words for your next trial reel. Grab one, film it in Edits, post it yourself. That&apos;s the whole job.</p>
       </div>
+
+      {/* This week's trend pulse — audio + best bet, right at the top */}
+      {pulse && (
+        <div style={{ borderRadius: '14px', padding: '13px 16px', background: 'linear-gradient(120deg, rgba(194,71,126,0.10), rgba(90,79,207,0.08))', border: '1px solid rgba(194,71,126,0.22)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <Radio size={14} style={{ color: '#C2477E' }} />
+            <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#C2477E' }}>Trending this week</span>
+          </div>
+          {pulse.audio && <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><Music size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} /> <span>{pulse.audio}</span></p>}
+          {pulse.best_bet && <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.45 }}><strong style={{ color: 'var(--text)' }}>Best bet:</strong> {pulse.best_bet}</p>}
+        </div>
+      )}
 
       {/* Quiet account filter */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
