@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title: SHARE_TITLE, description: DESC },
 }
 
-const CHECKOUT = process.env.NEXT_PUBLIC_BETHEREFORHER_CHECKOUT || '#'
+const CHECKOUT = process.env.NEXT_PUBLIC_BETHEREFORHER_CHECKOUT || 'https://link.fastpaydirect.com/payment-link/6ab2eef69a013c156f1f990f'
 
 export default function BeThereForHer() {
   return (
