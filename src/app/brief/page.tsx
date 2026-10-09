@@ -135,6 +135,10 @@ export default function BriefPage() {
         <footer style={{ textAlign: 'center', paddingTop: '6px' }}>
           <p style={{ fontSize: '15px', color: '#2E241D', fontWeight: 700 }}>That&apos;s it.</p>
           <p style={{ fontSize: '14px', color: '#7A6A5B', marginTop: '4px' }}>Everything else, I&apos;m holding. Go be with them.</p>
+          <a href="/station" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', marginTop: '22px', padding: '11px 20px', borderRadius: '12px', background: '#2E241D', color: '#F7F1EA', fontSize: '13.5px', fontWeight: 700, textDecoration: 'none' }}>
+            ▲ Open RISE Station
+          </a>
+          <p style={{ fontSize: '11.5px', color: '#B8A694', marginTop: '8px' }}>the full workshop, when you&apos;re ready to work</p>
         </footer>
       </div>
     </main>
