@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react'
 // surface. Add to Dock → its own icon → open first thing.
 
 type YourMove = { title: string; why?: string; where?: string }
+type InboxItem = { icon?: string; text: string; view_url?: string }
+type Inbox = { items: InboxItem[]; checked_at: string; count_total?: number }
 
 // A gentle default rhythm (she doesn't keep a calendar — RISE holds the shape so she
 // doesn't have to). Editable later; this is the starting rough routine.
@@ -30,6 +32,7 @@ function greeting(): string {
 export default function BriefPage() {
   const [line, setLine] = useState<string | null>(null)
   const [move, setMove] = useState<YourMove | null>(null)
+  const [inbox, setInbox] = useState<Inbox | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -39,9 +42,11 @@ export default function BriefPage() {
     Promise.allSettled([
       fetch('/api/lines?account=mandijoybeck').then(r => r.json()),
       fetch('/api/commander/orders').then(r => r.json()),
-    ]).then(([l, m]) => {
+      fetch('/api/inbox').then(r => r.json()),
+    ]).then(([l, m, i]) => {
       if (l.status === 'fulfilled' && Array.isArray(l.value?.lines) && l.value.lines[0]) setLine(l.value.lines[0].line)
       if (m.status === 'fulfilled' && m.value?.orders?.your_move?.[0]) setMove(m.value.orders.your_move[0])
+      if (i.status === 'fulfilled' && i.value?.inbox) setInbox(i.value.inbox)
     }).finally(() => setLoaded(true))
   }, [])
 
@@ -104,9 +109,26 @@ export default function BriefPage() {
           </div>
         </section>
 
-        {/* 4 — Protect her from the noise */}
-        <section style={{ borderRadius: '16px', padding: '14px 18px', background: 'rgba(168,147,126,0.12)', border: '1px dashed rgba(168,147,126,0.4)' }}>
-          <p style={{ fontSize: '13.5px', color: '#7A6A5B', lineHeight: 1.5 }}>📬 Your inbox: <strong style={{ color: '#5E5044' }}>I&apos;ll stand between you and it</strong> once you connect Gmail — then this line only shows what actually needs you. For now, it&apos;s not your job this morning.</p>
+        {/* 4 — Protect her from the noise (live inbox triage) */}
+        <section style={{ borderRadius: '16px', padding: '16px 18px', background: 'rgba(168,147,126,0.12)', border: '1px solid rgba(168,147,126,0.3)' }}>
+          <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#A8937E', marginBottom: '10px' }}>📬 Your inbox {inbox?.items?.length ? `· ${inbox.items.length} need you` : ''}</p>
+          {inbox && inbox.items.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {inbox.items.map((it, i) => (
+                <p key={i} style={{ fontSize: '14.5px', color: '#3A2E26', lineHeight: 1.45 }}>
+                  {it.icon ? `${it.icon} ` : ''}
+                  {it.view_url
+                    ? <a href={it.view_url} target="_blank" rel="noreferrer" style={{ color: '#6B4A30', textDecoration: 'underline' }}>{it.text}</a>
+                    : it.text}
+                </p>
+              ))}
+              <p style={{ fontSize: '12.5px', color: '#9A8676', marginTop: '2px' }}>Everything else{inbox.count_total ? ` (${inbox.count_total} threads)` : ''} is noise. Not your job this morning.</p>
+            </div>
+          ) : inbox ? (
+            <p style={{ fontSize: '14px', color: '#5E5044', lineHeight: 1.5 }}>Nothing needs you this morning. I checked — it&apos;s all noise. 🤍</p>
+          ) : (
+            <p style={{ fontSize: '13.5px', color: '#7A6A5B', lineHeight: 1.5 }}>I&apos;ll stand between you and your inbox — this line shows only what actually needs you. Not your job this morning.</p>
+          )}
         </section>
 
         {/* 5 — The close */}

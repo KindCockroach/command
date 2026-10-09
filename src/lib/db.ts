@@ -322,6 +322,11 @@ export type ActivityEvent = {
   media_url?: string | null
 }
 
+// INBOX BRIEF — the triaged "what actually needs you" for the morning Brief. RISE
+// stores the latest triage (pushed by the daily Gmail scan); the Brief just displays it.
+export type InboxItem = { icon?: string; text: string; view_url?: string }
+export type InboxBrief = { items: InboxItem[]; checked_at: string; count_total?: number }
+
 // A LINE — one copy-ready reel idea for the calm "Lines" feed. Not a content card:
 // it renders as four short strings and nothing else.
 export type Line = {
@@ -340,6 +345,7 @@ type Db = {
   content: ContentPiece[]
   lines?: Line[]
   next_line_id?: number
+  inbox?: InboxBrief
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
   memories: Memory[]
@@ -1569,4 +1575,17 @@ export function updateLine(id: number, patch: Partial<Pick<Line, 'used' | 'dismi
   Object.assign(row, patch)
   writeDb(db)
   return row
+}
+
+// ── INBOX BRIEF — triaged "what needs you" for the morning Brief ──────────────
+export function getInbox(): InboxBrief | null {
+  const db = readDb()
+  return db.inbox ?? null
+}
+
+export function setInbox(brief: InboxBrief): InboxBrief {
+  const db = readDb()
+  db.inbox = brief
+  writeDb(db)
+  return brief
 }
