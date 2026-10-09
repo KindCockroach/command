@@ -89,6 +89,26 @@ export default function MediaLibrary() {
   const [describing, setDescribing] = useState<Record<string, boolean>>({})
   const [bulkState, setBulkState] = useState<'idle' | 'working' | 'done'>('idle')
   const [bulkMsg, setBulkMsg] = useState('')
+  // Thought → media matching
+  const [thought, setThought] = useState('')
+  const [matching, setMatching] = useState(false)
+  const [matches, setMatches] = useState<{ key: string; reason: string }[]>([])
+  const [matchNote, setMatchNote] = useState('')
+
+  const matchThought = async () => {
+    const t = thought.trim()
+    if (!t || matching) return
+    setMatching(true); setMatches([]); setMatchNote('')
+    const d = await fetch('/api/media/match', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ thought: t }),
+    }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+    if (Array.isArray(d.matches)) {
+      setMatches(d.matches)
+      if (!d.matches.length) setMatchNote(d.note || 'Nothing fit yet — describe more images, or reword the thought.')
+    } else setMatchNote(d.error || 'Could not match.')
+    setMatching(false)
+  }
 
   const describeOne = async (f: MediaFile) => {
     if (describing[f.key] || meta[f.key]) return
@@ -270,6 +290,41 @@ export default function MediaLibrary() {
         label="Drop b-roll or photos here — from your Desktop (not straight from the Photos app)"
         onUploaded={() => load()}
       />
+
+      {/* Thought → media: hand RISE a feeling, it brings back the footage */}
+      <div style={{ borderRadius: '14px', padding: '15px 16px', background: 'linear-gradient(120deg, rgba(90,79,207,0.07), rgba(226,68,138,0.06))', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '7px' }}><Sparkles size={14} style={{ color: 'var(--purple)' }} /> Match a thought to your media</p>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input value={thought} onChange={e => setThought(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') matchThought() }}
+            placeholder="Paste a thought or rant — I'll find the clips that fit it…"
+            style={{ flex: 1, padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px', outline: 'none' }} />
+          <button onClick={matchThought} disabled={matching || !thought.trim()}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '10px', border: 'none', background: thought.trim() ? 'var(--purple)' : 'var(--border)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: thought.trim() ? 'pointer' : 'default', whiteSpace: 'nowrap' }}>
+            {matching ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : 'Find clips'}
+          </button>
+        </div>
+        {matchNote && <p style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>{matchNote}</p>}
+        {matches.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
+            {matches.map(m => {
+              const f = files.find(x => x.key === m.key)
+              if (!f) return null
+              return (
+                <div key={m.key} onClick={() => setPreview(f)} style={{ background: 'var(--surface)', border: '1px solid var(--purple)', borderRadius: '11px', overflow: 'hidden', cursor: 'pointer' }}>
+                  <div style={{ height: '90px', background: 'var(--surface-raised)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {f.type === 'image'
+                      ? <img src={f.url} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                      : <div style={{ color: TYPE_COLOR[f.type], opacity: 0.5 }}>{TYPE_ICON[f.type]}</div>}
+                  </div>
+                  <div style={{ padding: '8px 9px' }}>
+                    <p style={{ fontSize: '11px', color: 'var(--text)', lineHeight: 1.35 }}>{m.reason}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Filter tabs */}
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
