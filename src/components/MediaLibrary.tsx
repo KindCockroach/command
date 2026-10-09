@@ -83,6 +83,50 @@ export default function MediaLibrary() {
   const [renameVal, setRenameVal] = useState('')
   const [renameBusy, setRenameBusy] = useState(false)
   const [sent, setSent] = useState('')
+  // Media memory — descriptions/tags per file, so media is findable by meaning.
+  type Meta = { description: string; tags: string[]; vibe?: string; has_children?: boolean }
+  const [meta, setMeta] = useState<Record<string, Meta>>({})
+  const [describing, setDescribing] = useState<Record<string, boolean>>({})
+  const [bulkState, setBulkState] = useState<'idle' | 'working' | 'done'>('idle')
+  const [bulkMsg, setBulkMsg] = useState('')
+
+  const describeOne = async (f: MediaFile) => {
+    if (describing[f.key] || meta[f.key]) return
+    setDescribing(s => ({ ...s, [f.key]: true }))
+    try {
+      const d = await fetch('/api/media/describe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: f.key, url: f.url, type: f.type, name: f.name }),
+      }).then(r => r.json()).catch(() => ({}))
+      if (d.meta) setMeta(m => ({ ...m, [f.key]: d.meta }))
+    } finally {
+      setDescribing(s => { const n = { ...s }; delete n[f.key]; return n })
+    }
+  }
+
+  const loadMeta = async (currentFiles: MediaFile[]) => {
+    try {
+      const d = await fetch('/api/media/describe').then(r => r.json())
+      const m: Record<string, Meta> = d.meta || {}
+      setMeta(m)
+      // Auto-describe freshly dropped images (last ~3 min) that have no memory yet.
+      const fresh = currentFiles.filter(f => f.type === 'image' && !m[f.key] && Date.now() - new Date(f.lastModified).getTime() < 3 * 60000).slice(0, 5)
+      for (const f of fresh) describeOne(f)
+    } catch { /* non-fatal */ }
+  }
+
+  const describeAll = async () => {
+    const imgs = files.filter(f => f.type === 'image' && !meta[f.key]).map(f => ({ key: f.key, url: f.url, type: f.type, name: f.name }))
+    if (!imgs.length || bulkState === 'working') return
+    setBulkState('working'); setBulkMsg(`Describing ${Math.min(imgs.length, 12)}…`)
+    const d = await fetch('/api/media/describe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ describeAll: true, files: imgs }),
+    }).then(r => r.json()).catch(() => ({}))
+    const m = await fetch('/api/media/describe').then(r => r.json()).catch(() => ({ meta: {} }))
+    setMeta(m.meta || {})
+    setBulkState('done'); setBulkMsg(`✓ Described ${d.described || 0}${d.remaining ? ` · ${d.remaining} left — tap again` : ''}`)
+  }
   useEffect(() => { setTxState('idle'); setTxMsg(''); setRenaming(false); setSent(''); setVideoDrafting(false); setRenameVal(displayName(preview?.name ?? '')) }, [preview?.name])
 
   const doRename = async () => {
@@ -180,6 +224,7 @@ export default function MediaLibrary() {
       const res = await fetch('/api/media/list')
       const data = await res.json()
       setFiles(data.files ?? [])
+      loadMeta(data.files ?? [])
     } finally {
       setLoading(false)
     }
@@ -189,9 +234,15 @@ export default function MediaLibrary() {
 
   const filtered = files.filter(f => {
     if (filter !== 'all' && f.type !== filter) return false
-    if (search && !f.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (search) {
+      const q = search.toLowerCase()
+      const m = meta[f.key]
+      const hay = `${f.name} ${m?.description ?? ''} ${(m?.tags ?? []).join(' ')} ${m?.vibe ?? ''}`.toLowerCase()
+      if (!hay.includes(q)) return false
+    }
     return true
   })
+  const undescribed = files.filter(f => f.type === 'image' && !meta[f.key]).length
 
   const counts = {
     all: files.length,
@@ -234,9 +285,22 @@ export default function MediaLibrary() {
         ))}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)' }}>
           <Search size={13} style={{ color: 'var(--text-subtle)' }} />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..." style={{ border: 'none', background: 'none', fontSize: '13px', color: 'var(--text)', outline: 'none', width: '140px' }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or meaning…" style={{ border: 'none', background: 'none', fontSize: '13px', color: 'var(--text)', outline: 'none', width: '170px' }} />
         </div>
       </div>
+
+      {/* Give your media a memory — describe the backlog so it's findable + matchable */}
+      {undescribed > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '11px 14px', borderRadius: '11px', background: 'linear-gradient(120deg, rgba(90,79,207,0.08), rgba(61,170,124,0.06))', border: '1px solid var(--border)' }}>
+          <Sparkles size={15} style={{ color: 'var(--purple)' }} />
+          <span style={{ fontSize: '12.5px', color: 'var(--text)', fontWeight: 600 }}>{undescribed} image{undescribed === 1 ? '' : 's'} with no description yet — RISE can&apos;t match what it can&apos;t see.</span>
+          <button onClick={describeAll} disabled={bulkState === 'working'}
+            style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '9px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '12.5px', cursor: bulkState === 'working' ? 'default' : 'pointer' }}>
+            {bulkState === 'working' ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> describing…</> : <><Sparkles size={13} /> Describe all (12 at a time)</>}
+          </button>
+          {bulkMsg && bulkState !== 'working' && <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', width: '100%', textAlign: 'right' }}>{bulkMsg}</span>}
+        </div>
+      )}
 
       {loading ? (
         <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-subtle)' }}>
@@ -277,6 +341,23 @@ export default function MediaLibrary() {
                   <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{formatBytes(file.size)}</span>
                   <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{timeAgo(file.lastModified)}</span>
                 </div>
+
+                {/* Media memory — what's in it, so it's searchable + matchable */}
+                {meta[file.key] ? (
+                  <div style={{ marginTop: '7px' }}>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{meta[file.key].description}</p>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '5px' }}>
+                      {meta[file.key].has_children && <span style={{ fontSize: '9px', fontWeight: 800, color: '#E05252', background: 'rgba(224,82,82,0.12)', borderRadius: '5px', padding: '1px 5px' }}>👶 has kids</span>}
+                      {meta[file.key].tags.slice(0, 3).map(t => <span key={t} style={{ fontSize: '9px', color: 'var(--text-subtle)', background: 'var(--surface-raised)', borderRadius: '5px', padding: '1px 5px' }}>{t}</span>)}
+                    </div>
+                  </div>
+                ) : file.type === 'image' ? (
+                  <button onClick={e => { e.stopPropagation(); describeOne(file) }} disabled={describing[file.key]}
+                    style={{ marginTop: '7px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '4px', borderRadius: '7px', border: '1px dashed var(--border)', background: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)' }}>
+                    {describing[file.key] ? <><Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} /> describing…</> : <><Sparkles size={10} /> Describe</>}
+                  </button>
+                ) : null}
+
                 <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
                   <button onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(file.url); setCopiedKey(file.key); setTimeout(() => setCopiedKey(''), 1500) }}
                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '5px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--surface-raised)', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: copiedKey === file.key ? '#3DAA7C' : 'var(--text-muted)' }}>
@@ -332,6 +413,25 @@ export default function MediaLibrary() {
                 </div>
               ))}
             </div>
+
+            {/* What's in it — the memory RISE uses to match it to your ideas */}
+            {preview.type === 'image' && (
+              meta[preview.key] ? (
+                <div style={{ padding: '12px 14px', borderRadius: '11px', background: 'var(--surface-raised)' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-subtle)', marginBottom: '6px' }}>What RISE sees</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.5 }}>{meta[preview.key].description}</p>
+                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '8px' }}>
+                    {meta[preview.key].has_children && <span style={{ fontSize: '10px', fontWeight: 800, color: '#E05252', background: 'rgba(224,82,82,0.12)', borderRadius: '6px', padding: '2px 7px' }}>👶 has kids — exclude from posts</span>}
+                    {meta[preview.key].tags.map(t => <span key={t} style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '6px', padding: '2px 7px' }}>{t}</span>)}
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => describeOne(preview)} disabled={describing[preview.key]}
+                  style={{ width: '100%', padding: '10px', background: 'var(--surface)', color: 'var(--purple)', border: '1px solid var(--purple)', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  {describing[preview.key] ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> describing…</> : <><Sparkles size={13} /> Describe this image</>}
+                </button>
+              )
+            )}
 
             <div style={{ display: 'flex', gap: '8px' }}>
               <a href={preview.url} download target="_blank" rel="noreferrer"

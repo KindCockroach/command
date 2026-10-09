@@ -327,6 +327,18 @@ export type ActivityEvent = {
 export type InboxItem = { icon?: string; text: string; view_url?: string }
 export type InboxBrief = { items: InboxItem[]; checked_at: string; count_total?: number }
 
+// MEDIA MEMORY — what's actually IN a dropped file, so it's findable by meaning and
+// matchable to a thought. Keyed by the R2 object key. has_children flags kids so posts
+// can exclude those clips (hard rule: never use media with her children).
+export type MediaMeta = {
+  key: string
+  description: string
+  tags: string[]
+  vibe?: string
+  has_children?: boolean
+  described_at: string
+}
+
 // A LINE — one copy-ready reel idea for the calm "Lines" feed. Not a content card:
 // it renders as four short strings and nothing else.
 export type Line = {
@@ -346,6 +358,7 @@ type Db = {
   lines?: Line[]
   next_line_id?: number
   inbox?: InboxBrief
+  media_meta?: Record<string, MediaMeta>
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
   memories: Memory[]
@@ -1588,4 +1601,24 @@ export function setInbox(brief: InboxBrief): InboxBrief {
   db.inbox = brief
   writeDb(db)
   return brief
+}
+
+// ── MEDIA MEMORY — descriptions/tags per dropped file (for search + matching) ──
+export function getAllMediaMeta(): Record<string, MediaMeta> {
+  const db = readDb()
+  return db.media_meta ?? {}
+}
+
+export function getMediaMeta(key: string): MediaMeta | null {
+  const db = readDb()
+  return (db.media_meta ?? {})[key] ?? null
+}
+
+export function setMediaMeta(key: string, data: Omit<MediaMeta, 'key' | 'described_at'>): MediaMeta {
+  const db = readDb()
+  if (!db.media_meta) db.media_meta = {}
+  const meta: MediaMeta = { key, ...data, described_at: new Date().toISOString() }
+  db.media_meta[key] = meta
+  writeDb(db)
+  return meta
 }
