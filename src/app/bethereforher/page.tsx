@@ -70,7 +70,7 @@ export default function BeThereForHer() {
             <li>You lie awake wondering if it&rsquo;s him or if it&rsquo;s you, studying his moods for an answer your gut already has.</li>
             <li>You keep a running list of what you want, right next to the list of what you won&rsquo;t let yourself have.</li>
           </ul>
-          <p className="callout">That&rsquo;s not indecision. That&rsquo;s a signal you stopped trusting &mdash; and we&rsquo;re about to turn it all the way back up.</p>
+          <p className="callout">That&rsquo;s not indecision. That&rsquo;s a signal you stopped listening to your intuition &mdash; and we&rsquo;re about to turn the volume back up.</p>
         </div>
       </section>
 
