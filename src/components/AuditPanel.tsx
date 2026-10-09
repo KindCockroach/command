@@ -53,6 +53,9 @@ export default function AuditPanel() {
   const [pasteText, setPasteText] = useState('')
   const [platformFilter, setPlatformFilter] = useState<string>('all')
   const [view, setView] = useState<'accounts' | 'intelligence'>('accounts')
+  const [pulls, setPulls] = useState<{ id: number; title: string; kind: string; when: string | null; best_bet: string; audio: string; body: string }[]>([])
+  const [openPull, setOpenPull] = useState<number | null>(null)
+  useEffect(() => { fetch('/api/trends/list').then(r => r.json()).then(d => setPulls(d.pulls || [])).catch(() => {}) }, [])
 
   useEffect(() => {
     fetch('/api/watch').then(r => r.json()).then(setWatched).catch(() => {})
@@ -171,6 +174,28 @@ export default function AuditPanel() {
           </button>
         </div>
       </div>
+
+      {/* Recently pulled — the running log of what the auto-run + scout found */}
+      {pulls.length > 0 && (
+        <div style={{ borderRadius: '14px', border: '1px solid var(--border)', background: 'var(--surface)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
+          <p style={{ fontSize: '13px', fontWeight: 900, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '7px' }}>
+            📡 Recently pulled <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-subtle)' }}>· what RISE scouted while you were away</span>
+          </p>
+          {pulls.map(p => (
+            <div key={p.id} onClick={() => setOpenPull(o => o === p.id ? null : p.id)}
+              style={{ borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg)', padding: '10px 12px', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: p.kind === 'hashtag' ? '#C2477E' : '#5A4FCF', background: p.kind === 'hashtag' ? 'rgba(194,71,126,0.1)' : 'rgba(90,79,207,0.1)', borderRadius: '5px', padding: '2px 6px' }}>{p.kind}</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</span>
+                <span style={{ fontSize: '10.5px', color: 'var(--text-subtle)', whiteSpace: 'nowrap' }}>{p.when ? new Date(p.when).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
+              </div>
+              {p.audio && openPull !== p.id && <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '5px', display: 'flex', gap: '6px' }}>🎵 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.audio}</span></p>}
+              {p.best_bet && openPull !== p.id && <p style={{ fontSize: '11.5px', color: 'var(--text-subtle)', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><strong>Best bet:</strong> {p.best_bet}</p>}
+              {openPull === p.id && <pre style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '8px', whiteSpace: 'pre-wrap', fontFamily: 'inherit', lineHeight: 1.5 }}>{p.body}</pre>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Stats strip */}
       {watched.length > 0 && (

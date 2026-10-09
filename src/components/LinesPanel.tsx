@@ -94,6 +94,7 @@ export default function LinesPanel() {
             <Radio size={14} style={{ color: '#C2477E' }} />
             <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#C2477E' }}>Trending this week</span>
           </div>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>The move: film your next clip to this sound, then pair it with any line below. That&apos;s the post.</p>
           {pulse.audio && <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><Music size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} /> <span>{pulse.audio}</span></p>}
           {pulse.best_bet && <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.45 }}><strong style={{ color: 'var(--text)' }}>Best bet:</strong> {pulse.best_bet}</p>}
         </div>
