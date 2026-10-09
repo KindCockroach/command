@@ -28,22 +28,23 @@ export default function Wellspring() {
           <p className="eyebrow">THE WELLSPRING · A MINDFUL LISTENING MEMBERSHIP</p>
           <h1>You found your way back. <em>Congratulations.</em></h1>
           <p className="sub">
-            Listening to yourself doesn&rsquo;t need to be a once-a-year thing. The Wellspring is the
-            place you return to &mdash; to stay connected.
+            Now keep it. The Wellspring is the monthly reset that updates your personal operating system &mdash;
+            so you stay in your own life, on your own frequency.
           </p>
           <BuyButton href={CHECKOUT} label="Join The Wellspring →" />
-          <p className="preview-label">Founding rate inside &mdash; locked for life.</p>
+          <p className="preview-label">Founding rate inside &mdash; $9/mo while the doors are open.</p>
         </div>
       </section>
 
       <section className="band">
         <div className="wrap">
-          <h2>Listening isn&rsquo;t a one-time fix.</h2>
-          <p>You can have the most tender moment with your inner girl on a Tuesday &mdash; and by Thursday, the
-            noise creeps back in. The volume on your intuition slips down. The to-do list swallows you again.</p>
-          <p className="reframe">Not because you failed. Because that&rsquo;s what life does when you stop tending
-            the quiet.</p>
-          <p className="callout">A wellspring keeps flowing. You keep flowing.</p>
+          <h2>This updates your personal operating system.</h2>
+          <p>Once a month, you give yourself the damn time to sit with yourself and remember who you are.
+            Toggle your brain off. Turn your heart on. Tune back into your body.</p>
+          <p className="reframe">Because by Thursday the noise always creeps back in and the volume on your
+            intuition slips down. Not because you failed &mdash; that&rsquo;s just what life does when you stop
+            tending the quiet.</p>
+          <p className="callout">Then you reply to the group text effortlessly &mdash; and authentically.</p>
         </div>
       </section>
 
@@ -58,7 +59,7 @@ export default function Wellspring() {
             <li>A new mindful-listening session &mdash; fresh, seasonal, in your ears</li>
             <li>The full back-catalog &mdash; every session, yours to stream or keep</li>
             <li>A monthly voice note from me &mdash; a real check-in, like a friend a step ahead</li>
-            <li>Your founding rate, locked forever &mdash; your price never goes up</li>
+            <li>The founding rate &mdash; the lowest price this will ever be offered</li>
           </ul>
           <p className="bonus">No streaks to keep. No pressure. No &ldquo;you&rsquo;re behind.&rdquo; Just a soft,
             steady rhythm of coming home &mdash; ten minutes at a time, for as long as you want to keep flowing.</p>
@@ -91,7 +92,7 @@ export default function Wellspring() {
           <h2>Come home to yourself &mdash; and stay.</h2>
           <p className="offerline">A new mindful-listening session every month · the full library · a monthly voice
             note from me.</p>
-          <p className="pricebig"><strong>Founding rate: $11/month</strong> &mdash; locked for life.</p>
+          <p className="pricebig"><strong>Founding rate: $9/month</strong> &mdash; the lowest it&rsquo;ll ever be. Join before the doors close and it goes up.</p>
           <BuyButton href={CHECKOUT} label="Join The Wellspring →" tagline="Cancel anytime · no guilt · no hoops" />
           <p className="terms">Recurring monthly membership; cancel anytime. Digital product &mdash; not therapy or
             medical advice. Mandi is not a licensed therapist; please use alongside professional care, not in place
