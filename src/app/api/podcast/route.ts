@@ -148,7 +148,7 @@ RULES:
 - Each clip opens on its strongest line in the first 2 seconds. If the best line is mid-clip, say so in the edit sheet ("open with 0:14 line, then cut back").
 - on_screen_hook ≠ caption headline (Two Hooks). Hooks are bold claims, never questions.
 - Captions: directive, short, certain (high masculine energy). End with ONE direct CTA — usually "Full episode: link in bio" or a follow/share instruction.
-- EDIT SHEET = beat-by-beat cues keyed to seconds INTO THE CLIP. Use ONLY these tags: [HOOK TEXT: “…”] [PUNCH-IN 115%] [PUNCH-OUT 100%] [WHOOSH] [DING] [POP] [TEXT: “…”] [B-ROLL: what to show] [CAPTION HIGHLIGHT: word] [CUT] [CTA TEXT: “…”]. Pattern interrupt every 2-3 seconds. Ding on numbers/key points, whoosh when text appears, pop on punchlines, punch-in on every new sentence or punchline.
+- EDIT SHEET = beat-by-beat cues keyed to seconds INTO THE CLIP. Use ONLY these tags: [HOOK TEXT: “…”] [PUNCH-IN 115%] [PUNCH-OUT 100%] [WHOOSH] [DING] [POP] [TEXT: “…”] [B-ROLL: what to show] [CAPTION HIGHLIGHT: word] [CUT] [CTA TEXT: “…”]. Pattern interrupt every 2-3 seconds. Max ~12 beats per clip; keep each beat short. Ding on numbers/key points, whoosh when text appears, pop on punchlines, punch-in on every new sentence or punchline.
 - tier: "full" for the 1-2 strongest (worth zooms/SFX/B-roll), "light" for the rest (captions + hook only — goes out as a Trial Reel first).
 - file_name: EP{number}_C{clip#}_{2-3-word-slug}.mp4
 - Quote her verbatim for the spoken part — never rewrite what she said.
@@ -171,7 +171,7 @@ ${CRAFT_RULES}`
 } ] }`
     const ctx = `EPISODE: ${episodeNumber ? `#${episodeNumber}` : 'TBD'}${title ? ` — ${title}` : ''}\n${timestamps && String(timestamps).trim() ? `TIMESTAMPS (real, from Riverside):\n${String(timestamps).trim()}\n` : ''}TRANSCRIPT:\n${clip}`
     try {
-      const raw = await fableText({ instructions: cInstr, input: `${ctx}\n\n${cSchema}`, maxTokens: 8000, json: true, useClaude: true })
+      const raw = await fableText({ instructions: cInstr, input: `${ctx}\n\n${cSchema}`, maxTokens: 20000, json: true, useClaude: true })
       const out = await parseKit(raw)
       const rawClips = Array.isArray(out) ? out : out ? (out.clips ?? Object.values(out).find(Array.isArray)) : undefined
       const clips = Array.isArray(rawClips) ? rawClips : []
