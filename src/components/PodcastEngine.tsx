@@ -192,6 +192,67 @@ function CaptionBox({ caption, saveTitle, saveTags }: { caption: string; saveTit
   )
 }
 
+interface ClipPlan {
+  n: number; file_name?: string; type?: string; tier?: string; start?: string; end?: string; find_it?: string
+  on_screen_hook: string; caption: string; hashtags?: string; edit_sheet?: string[]; audio_note?: string
+}
+
+// The episode workflow — RISE writes, Riverside cuts, CapCut edits, Instagram posts.
+// Finished video never comes back into RISE. Ticks persist per episode in this browser.
+const WORKFLOW_STEPS: { phase: string; who: string; items: string[] }[] = [
+  { phase: '1 · Capture', who: 'You', items: ['Riff recorded + uploaded to Riverside', 'Transcript pasted below'] },
+  { phase: '2 · Writer’s room', who: 'RISE', items: ['Generate the episode kit (titles, notes, copy)', 'Build clip list + edit sheets', 'Next teleprompter script drafted from this + recent riffs'] },
+  { phase: '3 · Cut', who: 'Riverside', items: ['Cut each clip by its timecodes', 'Export vertical to camera roll, named EP##_C##_slug'] },
+  { phase: '4 · Edit', who: 'CapCut', items: ['Light edit every clip (captions + hook) → post as Trial Reels', 'Full edit the 1–2 winners using their edit sheet (zooms, SFX, B-roll)'] },
+  { phase: '5 · Post', who: 'Instagram app', items: ['Schedule natively in IG with trending audio, caption pasted from RISE', 'Full episode live on YouTube + Spotify, link in bio'] },
+  { phase: '6 · Feedback', who: 'You → RISE', items: ['Weekly numbers pasted into /winners'] },
+]
+
+function WorkflowChecklist({ episode }: { episode: string }) {
+  const key = `rise-pod-checklist-${episode || 'current'}`
+  const [done, setDone] = useState<Record<string, boolean>>({})
+  useEffect(() => {
+    try { setDone(JSON.parse(localStorage.getItem(key) || '{}')) } catch { setDone({}) }
+  }, [key])
+  const toggle = (id: string) => setDone(prev => {
+    const next = { ...prev, [id]: !prev[id] }
+    try { localStorage.setItem(key, JSON.stringify(next)) } catch { /* storage unavailable — ticks just won't persist */ }
+    return next
+  })
+  const total = WORKFLOW_STEPS.reduce((n, p) => n + p.items.length, 0)
+  const count = Object.values(done).filter(Boolean).length
+  return (
+    <Section title={`✅ Episode Workflow — ${count}/${total}${episode ? ` (Ep ${episode})` : ''}`}>
+      <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginBottom: '8px' }}>RISE writes. Riverside cuts. CapCut edits. Instagram posts. Finished video never comes back here.</p>
+      {WORKFLOW_STEPS.map(p => (
+        <div key={p.phase} style={{ marginBottom: '8px' }}>
+          <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--purple)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>{p.phase} <span style={{ color: 'var(--text-subtle)', fontWeight: 600 }}>· {p.who}</span></p>
+          {p.items.map(item => {
+            const id = `${p.phase}|${item}`
+            return (
+              <label key={id} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: done[id] ? 'var(--text-subtle)' : 'var(--text)', textDecoration: done[id] ? 'line-through' : 'none', padding: '3px 0', cursor: 'pointer' }}>
+                <input type="checkbox" checked={!!done[id]} onChange={() => toggle(id)} style={{ marginTop: '3px' }} />
+                {item}
+              </label>
+            )
+          })}
+        </div>
+      ))}
+    </Section>
+  )
+}
+
+function clipText(c: ClipPlan): string {
+  return [
+    `${c.file_name || `Clip ${c.n}`} · ${c.type || ''} · ${c.tier === 'full' ? 'FULL EDIT' : 'LIGHT EDIT'}`,
+    `Cut: ${c.start || '?'} → ${c.end || '?'}${c.find_it ? `  (find: ${c.find_it})` : ''}`,
+    `ON-SCREEN HOOK: ${c.on_screen_hook}`,
+    `\nEDIT SHEET:\n${(c.edit_sheet ?? []).join('\n')}`,
+    c.audio_note ? `\nAUDIO: ${c.audio_note}` : '',
+    `\nCAPTION:\n${c.caption}${c.hashtags ? `\n\n${c.hashtags}` : ''}`,
+  ].filter(Boolean).join('\n')
+}
+
 export default function PodcastEngine() {
   const [transcript, setTranscript] = useState('')
   const [episodeNumber, setEpisodeNumber] = useState('')
@@ -300,6 +361,27 @@ export default function PodcastEngine() {
     } catch {
       setRiverMsg('River connection failed — deliverables are still available above.')
       setRiverStatus('done')
+    }
+  }
+
+  const [clips, setClips] = useState<ClipPlan[]>([])
+  const [clipsBusy, setClipsBusy] = useState(false)
+  const [clipsErr, setClipsErr] = useState('')
+  const buildClips = async () => {
+    if (!transcript.trim()) return
+    setClipsBusy(true); setClipsErr('')
+    try {
+      const res = await fetch('/api/podcast', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clips', transcript, episodeNumber, timestamps, title: result?.title }),
+      })
+      const d = await res.json()
+      if (Array.isArray(d.clips) && d.clips.length) setClips(d.clips)
+      else setClipsErr(d.error ?? 'Came back empty — try again')
+    } catch {
+      setClipsErr('Connection error — try again')
+    } finally {
+      setClipsBusy(false)
     }
   }
 
@@ -653,6 +735,48 @@ export default function PodcastEngine() {
         <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em' }}>Podcast Engine</h2>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>Paste your transcript → get every deliverable you need to publish and promote the episode.</p>
       </div>
+
+      <WorkflowChecklist episode={episodeNumber} />
+
+      {transcript.trim() && (
+        <Section title="✂️ Clip List + Edit Sheets (Riverside → CapCut)" defaultOpen={clips.length > 0}>
+          <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginBottom: '8px' }}>RISE picks the clips, writes the hook + caption + CTA, and directs the edit beat by beat. Paste Riverside timestamps for exact cut points.</p>
+          <button onClick={buildClips} disabled={clipsBusy}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '9px', border: 'none', background: clipsBusy ? 'var(--border)' : 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: clipsBusy ? 'default' : 'pointer', marginBottom: '10px' }}>
+            {clipsBusy ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Picking clips + writing edit sheets (~1 min)…</> : clips.length ? '🔁 Rebuild clip list' : '✂️ Build clip list + edit sheets'}
+          </button>
+          {clipsErr && <p style={{ fontSize: '12px', color: 'var(--hot-pink)', marginBottom: '8px' }}>{clipsErr}</p>}
+          {clips.map((c, i) => (
+            <div key={i} style={{ border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden', marginBottom: '10px' }}>
+              <div style={{ padding: '10px 14px', background: 'var(--purple-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--purple)' }}>{c.file_name || `Clip ${c.n}`} · {c.type} · {c.tier === 'full' ? '⭐ FULL EDIT' : 'light edit'}</span>
+                <CopyBtn text={clipText(c)} label="Copy all" />
+              </div>
+              <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>Cut {c.start || '?'} → {c.end || '?'}{c.find_it ? ` · find: “${c.find_it}”` : ''}</p>
+                <div><p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', marginBottom: '3px' }}>On-screen hook</p><p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{c.on_screen_hook}</p></div>
+                {!!c.edit_sheet?.length && (
+                  <div style={{ border: '1px dashed var(--purple)', borderRadius: '8px', padding: '9px 11px', background: 'var(--surface-raised)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <p style={{ fontSize: '10px', fontWeight: 800, color: 'var(--purple)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎬 Edit sheet — follow in CapCut</p>
+                      <CopyBtn text={c.edit_sheet.join('\n')} />
+                    </div>
+                    <pre style={{ fontSize: '12px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'monospace' }}>{c.edit_sheet.join('\n')}</pre>
+                  </div>
+                )}
+                {c.audio_note && <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>🎵 {c.audio_note}</p>}
+                <div style={{ padding: '8px 10px', background: 'var(--purple-light)', borderRadius: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--purple)' }}>Caption (paste into IG)</p>
+                    <CopyBtn text={`${c.caption}${c.hashtags ? `\n\n${c.hashtags}` : ''}`} />
+                  </div>
+                  <p style={{ fontSize: '12px', color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{c.caption}{c.hashtags ? `\n\n${c.hashtags}` : ''}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </Section>
+      )}
 
       {/* Input */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>

@@ -36,7 +36,7 @@ ${craftFor(piece.account_id)}
 
 ${getAudienceContext(account?.audience_id)}
 
-CLEAN UP THIS EXISTING POST'S COPY so it fully obeys the craft laws — this is a polish of what's already here, not a new post. Keep the underlying idea, story, and facts; do NOT invent new events about her life. The caption MUST use real line breaks (headline first line carries the golden thread; short paragraphs; curiosity-gap last line; NO CTA in growth phase; NO question hooks anywhere). Fix the on-screen text for the format below.
+CLEAN UP THIS EXISTING POST'S COPY so it fully obeys the craft laws — this is a polish of what's already here, not a new post. Keep the underlying idea, story, and facts; do NOT invent new events about her life. The caption MUST use real line breaks (headline first line carries the golden thread; short paragraphs; curiosity gap, then ONE direct CTA as the last line; NO question hooks anywhere). Fix the on-screen text for the format below.
 
 FORMAT: ${format}
 - TALKING/AVATAR VIDEO → onscreen_text = "" (EMPTY). The spoken words are the hook; never stamp text on a talking video.

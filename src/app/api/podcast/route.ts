@@ -134,6 +134,53 @@ ${CRAFT_RULES}`
     }
   }
 
+  // ── CLIP LIST + EDIT SHEETS (on demand) — RISE is the writer, CapCut is the edit bay ──
+  // Picks the 5-8 strongest clip moments with real timecodes, writes the on-screen
+  // hook / caption / direct CTA for each, and a beat-by-beat EDIT SHEET (zooms, SFX,
+  // B-roll, text pops) she follows in CapCut. Video never comes back into RISE.
+  if (action === 'clips') {
+    const clip = String(transcript).slice(0, 120000)
+    const cInstr = `You are the clip producer AND edit director for the AI Mom Podcast. RISE is the writer's room; Mandi cuts in Riverside, edits in CapCut, and posts natively in the Instagram app with trending audio. Your job: pick the clips and direct the edit so it's mechanical for her.
+
+RULES:
+- Pick 5-8 clip moments, each 15-45 seconds, that work with ZERO context. Mix the types: hot take, surprising number, story, quick how-to, twist.
+- TIMECODES: use ONLY real times — from the TIMESTAMPS block or timecodes inside the transcript. If none exist, leave start/end "" and fill "find_it" with the exact first and last words so she can search the transcript in Riverside. NEVER invent times.
+- Each clip opens on its strongest line in the first 2 seconds. If the best line is mid-clip, say so in the edit sheet ("open with 0:14 line, then cut back").
+- on_screen_hook ≠ caption headline (Two Hooks). Hooks are bold claims, never questions.
+- Captions: directive, short, certain (high masculine energy). End with ONE direct CTA — usually "Full episode: link in bio" or a follow/share instruction.
+- EDIT SHEET = beat-by-beat cues keyed to seconds INTO THE CLIP. Use ONLY these tags: [HOOK TEXT: "…"] [PUNCH-IN 115%] [PUNCH-OUT 100%] [WHOOSH] [DING] [POP] [TEXT: "…"] [B-ROLL: what to show] [CAPTION HIGHLIGHT: word] [CUT] [CTA TEXT: "…"]. Pattern interrupt every 2-3 seconds. Ding on numbers/key points, whoosh when text appears, pop on punchlines, punch-in on every new sentence or punchline.
+- tier: "full" for the 1-2 strongest (worth zooms/SFX/B-roll), "light" for the rest (captions + hook only — goes out as a Trial Reel first).
+- file_name: EP{number}_C{clip#}_{2-3-word-slug}.mp4
+- Quote her verbatim for the spoken part — never rewrite what she said.
+
+${CRAFT_RULES}`
+    const cSchema = `Return ONLY valid JSON:
+{ "clips": [ {
+  "n": 1,
+  "file_name": "EP08_C01_dream-job.mp4",
+  "type": "hot take | number | story | how-to | twist",
+  "tier": "full | light",
+  "start": "MM:SS or empty", "end": "MM:SS or empty",
+  "find_it": "first words … last words (verbatim)",
+  "on_screen_hook": "bold claim burned on frame 1",
+  "caption": "post-ready caption: headline line, 1-3 short lines, final line = ONE direct CTA",
+  "hashtags": "3-5 real tags",
+  "edit_sheet": ["0:00 [HOOK TEXT: \\"…\\"] [WHOOSH]", "0:02 [PUNCH-IN 115%] \\"spoken words…\\"", "…"],
+  "audio_note": "what kind of trending audio fits under it (low volume under voice)"
+} ] }`
+    const ctx = `EPISODE: ${episodeNumber ? `#${episodeNumber}` : 'TBD'}${title ? ` — ${title}` : ''}\n${timestamps && String(timestamps).trim() ? `TIMESTAMPS (real, from Riverside):\n${String(timestamps).trim()}\n` : ''}TRANSCRIPT:\n${clip}`
+    try {
+      const raw = await fableText({ instructions: cInstr, input: `${ctx}\n\n${cSchema}`, maxTokens: 8000, json: true, useClaude: true })
+      const out = await parseKit(raw)
+      const rawClips = out ? out.clips : undefined
+      const clips = Array.isArray(rawClips) ? rawClips : []
+      if (!clips.length) throw new Error('Could not parse the clip list')
+      return NextResponse.json({ clips })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : 'Clip list failed' }, { status: 500 })
+    }
+  }
+
   // Read the WHOLE episode — Fable's context is huge. (The old 8-9k cap meant the
   // model never saw the last third of an episode, where the real takeaway usually lands.)
   const clip = String(transcript).slice(0, 120000)

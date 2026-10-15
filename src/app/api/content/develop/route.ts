@@ -52,7 +52,7 @@ Return ONLY valid JSON:
   "updates": {
     ${isVideo ? '"onscreen_text": "" (always empty for a talking video),' : '"onscreen_text": "only if it changed — for image=1-2 statement lines, carousel=numbered slides",'}
     "title": "only if it changed",
-    "description": "the full cleaned caption if you changed it — real line breaks, headline first line, curiosity-gap last line, NO question hooks, NO CTA in growth phase",
+    "description": "the full cleaned caption if you changed it — real line breaks, headline first line, ends with ONE direct CTA line, NO question hooks",
     "hashtags": "only if changed",
     "open_questions": ["any questions that REMAIN unanswered — [] if she just answered them all"]
   }
