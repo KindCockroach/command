@@ -148,10 +148,11 @@ RULES:
 - Each clip opens on its strongest line in the first 2 seconds. If the best line is mid-clip, say so in the edit sheet ("open with 0:14 line, then cut back").
 - on_screen_hook ≠ caption headline (Two Hooks). Hooks are bold claims, never questions.
 - Captions: directive, short, certain (high masculine energy). End with ONE direct CTA — usually "Full episode: link in bio" or a follow/share instruction.
-- EDIT SHEET = beat-by-beat cues keyed to seconds INTO THE CLIP. Use ONLY these tags: [HOOK TEXT: "…"] [PUNCH-IN 115%] [PUNCH-OUT 100%] [WHOOSH] [DING] [POP] [TEXT: "…"] [B-ROLL: what to show] [CAPTION HIGHLIGHT: word] [CUT] [CTA TEXT: "…"]. Pattern interrupt every 2-3 seconds. Ding on numbers/key points, whoosh when text appears, pop on punchlines, punch-in on every new sentence or punchline.
+- EDIT SHEET = beat-by-beat cues keyed to seconds INTO THE CLIP. Use ONLY these tags: [HOOK TEXT: “…”] [PUNCH-IN 115%] [PUNCH-OUT 100%] [WHOOSH] [DING] [POP] [TEXT: “…”] [B-ROLL: what to show] [CAPTION HIGHLIGHT: word] [CUT] [CTA TEXT: “…”]. Pattern interrupt every 2-3 seconds. Ding on numbers/key points, whoosh when text appears, pop on punchlines, punch-in on every new sentence or punchline.
 - tier: "full" for the 1-2 strongest (worth zooms/SFX/B-roll), "light" for the rest (captions + hook only — goes out as a Trial Reel first).
 - file_name: EP{number}_C{clip#}_{2-3-word-slug}.mp4
 - Quote her verbatim for the spoken part — never rewrite what she said.
+- ⛔ JSON SAFETY: inside ANY string value, NEVER use straight double quotes ("). Quote spoken words and on-screen text with curly quotes “like this”. Write line breaks inside captions as \\n (escaped), never a raw line break.
 
 ${CRAFT_RULES}`
     const cSchema = `Return ONLY valid JSON:
@@ -165,14 +166,14 @@ ${CRAFT_RULES}`
   "on_screen_hook": "bold claim burned on frame 1",
   "caption": "post-ready caption: headline line, 1-3 short lines, final line = ONE direct CTA",
   "hashtags": "3-5 real tags",
-  "edit_sheet": ["0:00 [HOOK TEXT: \\"…\\"] [WHOOSH]", "0:02 [PUNCH-IN 115%] \\"spoken words…\\"", "…"],
+  "edit_sheet": ["0:00 [HOOK TEXT: “…”] [WHOOSH]", "0:02 [PUNCH-IN 115%] “spoken words…”", "…"],
   "audio_note": "what kind of trending audio fits under it (low volume under voice)"
 } ] }`
     const ctx = `EPISODE: ${episodeNumber ? `#${episodeNumber}` : 'TBD'}${title ? ` — ${title}` : ''}\n${timestamps && String(timestamps).trim() ? `TIMESTAMPS (real, from Riverside):\n${String(timestamps).trim()}\n` : ''}TRANSCRIPT:\n${clip}`
     try {
       const raw = await fableText({ instructions: cInstr, input: `${ctx}\n\n${cSchema}`, maxTokens: 8000, json: true, useClaude: true })
       const out = await parseKit(raw)
-      const rawClips = out ? out.clips : undefined
+      const rawClips = Array.isArray(out) ? out : out ? (out.clips ?? Object.values(out).find(Array.isArray)) : undefined
       const clips = Array.isArray(rawClips) ? rawClips : []
       if (!clips.length) throw new Error('Could not parse the clip list')
       return NextResponse.json({ clips })
