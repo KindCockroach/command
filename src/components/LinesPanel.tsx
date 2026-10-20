@@ -10,7 +10,7 @@ import { Loader2, Copy, Check, ThumbsDown, Sparkles, Music, Clapperboard, Radio 
 
 type Line = { id: number; account_id: string; line: string; caption: string; audio_tone: string; broll_scene: string; created_at: string }
 type Acct = { id: string; handle: string; status: string; brand_name?: string }
-type Pulse = { title: string; best_bet: string; audio: string; when: string | null }
+type Pulse = { audio: string; audio_from?: string; format: string; when: string | null }
 
 const DEFAULT_ACCOUNT = 'mandijoybeck'   // @theknowingis — her current focus
 
@@ -45,7 +45,7 @@ export default function LinesPanel() {
   // This week's trend pulse — shown at the very top.
   useEffect(() => {
     fetch('/api/trends/latest').then(r => r.json())
-      .then(d => { if (d.pulse && (d.pulse.best_bet || d.pulse.audio)) setPulse(d.pulse) })
+      .then(d => { if (d.pulse && (d.pulse.audio || d.pulse.format)) setPulse(d.pulse) })
       .catch(() => {})
   }, [])
 
@@ -92,11 +92,11 @@ export default function LinesPanel() {
         <div style={{ borderRadius: '14px', padding: '13px 16px', background: 'linear-gradient(120deg, rgba(194,71,126,0.10), rgba(90,79,207,0.08))', border: '1px solid rgba(194,71,126,0.22)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
             <Radio size={14} style={{ color: '#C2477E' }} />
-            <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#C2477E' }}>Trending this week</span>
+            <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#C2477E' }}>Trending this week{pulse.audio_from ? ` · ${pulse.audio_from}` : ''}</span>
           </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>The move: film your next clip to this sound, then pair it with any line below. That&apos;s the post.</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>{pulse.audio ? 'The move: film your next clip to this sound, then pair it with any line below.' : 'The move: try this format with any line below.'}</p>
           {pulse.audio && <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><Music size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} /> <span>{pulse.audio}</span></p>}
-          {pulse.best_bet && <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.45 }}><strong style={{ color: 'var(--text)' }}>Best bet:</strong> {pulse.best_bet}</p>}
+          {pulse.format && <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><span style={{ flexShrink: 0 }}>🧬</span> <span>{pulse.format}</span></p>}
         </div>
       )}
 
