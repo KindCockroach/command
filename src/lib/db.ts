@@ -359,6 +359,7 @@ type Db = {
   next_line_id?: number
   inbox?: InboxBrief
   media_meta?: Record<string, MediaMeta>
+  trend_audio?: { audio: string; format: string; sounds?: string[]; when: string }
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
   memories: Memory[]
@@ -1621,4 +1622,15 @@ export function setMediaMeta(key: string, data: Omit<MediaMeta, 'key' | 'describ
   db.media_meta[key] = meta
   writeDb(db)
   return meta
+}
+
+// ── TREND AUDIO — today's fresh trending-sound pick for the Quick Post pulse ──
+export function getTrendAudio(): { audio: string; format: string; sounds?: string[]; when: string } | null {
+  const db = readDb()
+  return db.trend_audio ?? null
+}
+export function setTrendAudio(data: { audio: string; format: string; sounds?: string[] }): void {
+  const db = readDb()
+  db.trend_audio = { ...data, when: new Date().toISOString() }
+  writeDb(db)
 }
