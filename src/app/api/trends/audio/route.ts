@@ -33,12 +33,19 @@ export async function POST(req: NextRequest) {
 {"sounds":["'Track Name' — Artist — one line on the vibe/why it's trending", "... 2-4 total"], "format":"one trending on-screen-text FORMAT to try this week (short, concrete)"}
 Name real current tracks a creator can find in the app today. No preamble.`
 
-  try {
-    const raw = await researchWithWeb({ instructions, input, maxTokens: 1500, maxSearches: 4 })
+  const pull = async () => {
+    // Opus + web-search + JSON needs headroom or the JSON never lands (3000, not 1500).
+    const raw = await researchWithWeb({ instructions, input, maxTokens: 3000, maxSearches: 4 })
     let p: { sounds?: string[]; format?: string } = {}
     try { p = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') } catch { /* fall through */ }
-    const sounds = Array.isArray(p.sounds) ? p.sounds.map(s => String(s).trim()).filter(Boolean).slice(0, 4) : []
-    const format = (p.format ?? '').trim()
+    return {
+      sounds: Array.isArray(p.sounds) ? p.sounds.map(s => String(s).trim()).filter(Boolean).slice(0, 4) : [],
+      format: (p.format ?? '').trim(),
+    }
+  }
+  try {
+    let { sounds, format } = await pull()
+    if (!sounds.length && !format) ({ sounds, format } = await pull())
     if (!sounds.length && !format) return NextResponse.json({ error: 'The scout came back empty — try again.' }, { status: 502 })
 
     const audio = sounds[0] || ''  // the headline sound for the one-glance banner
