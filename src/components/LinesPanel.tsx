@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, Copy, Check, ThumbsDown, Sparkles, Music, Clapperboard, Radio } from 'lucide-react'
+import { Loader2, Copy, Check, ThumbsDown, Sparkles, Music, Clapperboard, Radio, RefreshCw } from 'lucide-react'
 
 // THE LINES FEED — the opposite of the content-card pile. Calm, text-first, lots of
 // whitespace. One Line per row: the on-screen line and the caption, each with a
@@ -33,6 +33,18 @@ export default function LinesPanel() {
   const [loading, setLoading] = useState(true)
   const [more, setMore] = useState(false)
   const [pulse, setPulse] = useState<Pulse | null>(null)
+  const [pulseBusy, setPulseBusy] = useState(false)
+
+  const refreshPulse = async () => {
+    if (pulseBusy) return
+    setPulseBusy(true)
+    try {
+      await fetch('/api/trends/audio', { method: 'POST' })
+      const d = await fetch('/api/trends/latest').then(r => r.json())
+      if (d.pulse && (d.pulse.audio || d.pulse.format)) setPulse(d.pulse)
+    } catch { /* ignore */ }
+    setPulseBusy(false)
+  }
 
   // Active accounts for the quiet filter.
   useEffect(() => {
@@ -92,7 +104,11 @@ export default function LinesPanel() {
         <div style={{ borderRadius: '14px', padding: '13px 16px', background: 'linear-gradient(120deg, rgba(194,71,126,0.10), rgba(90,79,207,0.08))', border: '1px solid rgba(194,71,126,0.22)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
             <Radio size={14} style={{ color: '#C2477E' }} />
-            <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#C2477E' }}>Trending this week{pulse.audio_from ? ` · ${pulse.audio_from}` : ''}</span>
+            <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#C2477E' }}>Trending now{pulse.audio_from ? ` · ${pulse.audio_from}` : ''}</span>
+            <button onClick={refreshPulse} disabled={pulseBusy} title="Pull a fresh trending sound"
+              style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px', border: 'none', background: 'transparent', cursor: pulseBusy ? 'default' : 'pointer', color: 'var(--text-subtle)', fontSize: '10.5px', fontWeight: 700, padding: '2px 4px' }}>
+              <RefreshCw size={11} style={pulseBusy ? { animation: 'spin 1s linear infinite' } : undefined} /> {pulseBusy ? 'pulling…' : 'fresh'}
+            </button>
           </div>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>{pulse.audio ? 'The move: film your next clip to this sound, then pair it with any line below.' : 'The move: try this format with any line below.'}</p>
           {pulse.audio && <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><Music size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} /> <span>{pulse.audio}</span></p>}
