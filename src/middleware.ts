@@ -17,6 +17,7 @@ function isPublic(path: string): boolean {
   if (path === '/reset' || path === '/cheatcode' || path === '/workshop') return true // public session pages (+ /workshop redirect)
   if (path === '/insait') return true // private $10 Reset (unlisted, no-index)
   if (path === '/bethereforher' || path === '/bethereforher/library') return true // Be There For Her product
+  if (path === '/aimomeducation') return true // AI Mom Podcast landing (aimomeducation.com)
   if (path === '/wellspring' || path === '/bethereforher/wellspring') return true // The Wellspring membership
   if (path === '/lite' || path === '/lite/welcome') return true
   if (/^\/(seen|queen|captionwriter)\/welcome$/.test(path)) return true
@@ -38,6 +39,14 @@ export function middleware(req: NextRequest) {
     }
     if (p === '/wellspring' || p === '/bethereforher/wellspring') {
       const u = req.nextUrl.clone(); u.pathname = '/bethereforher/wellspring'; return NextResponse.rewrite(u)
+    }
+  }
+
+  // aimomeducation.com serves the AI Mom Podcast landing at its root.
+  if (host === 'aimomeducation.com' || host === 'www.aimomeducation.com') {
+    const p = req.nextUrl.pathname
+    if (p === '/' || p === '/aimomeducation') {
+      const u = req.nextUrl.clone(); u.pathname = '/aimomeducation'; return NextResponse.rewrite(u)
     }
   }
 
