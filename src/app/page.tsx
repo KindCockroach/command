@@ -61,16 +61,40 @@ export default function Home() {
         <div className="wrap">
           <h2>A little about me &mdash; before we talk</h2>
           <p>
-            I started where a lot of you are: overwhelmed, underestimated, and pretty sure I&rsquo;d
-            missed the boat. Five months postpartum with four little ones, I taught myself to build with
-            AI during nap times &mdash; a podcast, a voice clone, a whole command center &mdash; and I
-            realized the thing holding women back from this moment isn&rsquo;t ability. It&rsquo;s being
-            told we&rsquo;re behind.
+            I come from a line of women who broke things open. My mother and my grandmother were rebels
+            against the role women were handed. I did something that surprised even me &mdash; I
+            <em> chose</em> the traditional one. I became a stay-at-home mom. But I have never once been
+            able to sit still while the world is on fire.
           </p>
           <p>
-            I talk fast, I laugh easily, and I&rsquo;ll meet you exactly where you are. On the show I care
-            more about a real conversation than a perfect one. Come as you are &mdash; we&rsquo;ll find
-            the honest thing together.
+            Even as a kid, I carried this intense, bone-deep feeling that I was somehow responsible for
+            the whole world. It took a real healing journey &mdash; parts work, inner-child work, timeline
+            integration &mdash; to finally meet my fear, feel it for the first time, and then learn to be
+            brave. To live in a reality where I&rsquo;m not responsible for everything &mdash; just in
+            integrity with what&rsquo;s actually mine.
+          </p>
+          <p>
+            That journey led me to mindfulness and meditation (before kids, you&rsquo;d find me at Beecroft
+            Yoga three times a week). Then AI arrived, and I taught myself to build with it during nap
+            times &mdash; a podcast, a voice clone, a whole command center &mdash; because I couldn&rsquo;t
+            watch a once-in-history shift happen <em>without us</em> in the room.
+          </p>
+          <p>
+            Off the clock, I&rsquo;m an unapologetic party girl, a music lover, and a mindful mama who
+            beats to her own drum &mdash; an aspiring novelist and public speaker, currently building my
+            keynote and researching my thesis on women in tech, and women, period. I have a big
+            personality and an even bigger optimism. Some might call it delusional. My friends call it
+            generous, intense, and hilarious &mdash; not when I&rsquo;m trying to be funny, but because my
+            brain runs a little off-key and neuro-spicy, and that&rsquo;s where the fun of doing life with
+            me comes from.
+          </p>
+          <p>
+            Here&rsquo;s what I know: women can do anything. We are the holders of the world and the
+            birthers of life &mdash; infinitely powerful, just living in a world that&rsquo;s been
+            misaligned. I&rsquo;ve seen what opens up when women get aligned with themselves and gather
+            around each other. That&rsquo;s the whole point of this &mdash; and on the show, I care more
+            about a real conversation than a perfect one. Come as you are. We&rsquo;ll find the honest
+            thing together.
           </p>
         </div>
       </section>
