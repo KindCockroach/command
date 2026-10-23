@@ -327,6 +327,14 @@ export type ActivityEvent = {
 export type InboxItem = { icon?: string; text: string; view_url?: string }
 export type InboxBrief = { items: InboxItem[]; checked_at: string; count_total?: number }
 
+// PODCAST SCHEDULER — her available weekly slot(s) + guest bookings.
+export type PodcastBooking = {
+  id: string; date: string; time: string
+  name: string; email: string; phone?: string; socials?: string; comm_method?: string
+  created_at: string
+}
+export type PodcastSchedule = { weekly: { dow: number; time: string }[]; booked: PodcastBooking[] }
+
 // MEDIA MEMORY — what's actually IN a dropped file, so it's findable by meaning and
 // matchable to a thought. Keyed by the R2 object key. has_children flags kids so posts
 // can exclude those clips (hard rule: never use media with her children).
@@ -360,6 +368,7 @@ type Db = {
   inbox?: InboxBrief
   media_meta?: Record<string, MediaMeta>
   trend_audio?: { audio: string; format: string; sounds?: string[]; when: string }
+  podcast_schedule?: PodcastSchedule
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
   memories: Memory[]
@@ -1633,4 +1642,29 @@ export function setTrendAudio(data: { audio: string; format: string; sounds?: st
   const db = readDb()
   db.trend_audio = { ...data, when: new Date().toISOString() }
   writeDb(db)
+}
+
+// ── PODCAST SCHEDULER — availability + guest bookings ────────────────────────
+export function getPodcastSchedule(): PodcastSchedule {
+  const db = readDb()
+  return db.podcast_schedule ?? { weekly: [], booked: [] }
+}
+export function setPodcastWeekly(weekly: { dow: number; time: string }[]): PodcastSchedule {
+  const db = readDb()
+  const cur = db.podcast_schedule ?? { weekly: [], booked: [] }
+  db.podcast_schedule = { ...cur, weekly }
+  writeDb(db)
+  return db.podcast_schedule
+}
+export function addPodcastBooking(data: Omit<PodcastBooking, 'id' | 'created_at'>): { booking?: PodcastBooking; error?: string } {
+  const db = readDb()
+  const sched = db.podcast_schedule ?? { weekly: [], booked: [] }
+  if (sched.booked.some(b => b.date === data.date && b.time === data.time)) {
+    return { error: 'That slot was just taken — please pick another date.' }
+  }
+  const booking: PodcastBooking = { ...data, id: Math.random().toString(36).slice(2, 10), created_at: new Date().toISOString() }
+  sched.booked.push(booking)
+  db.podcast_schedule = sched
+  writeDb(db)
+  return { booking }
 }
