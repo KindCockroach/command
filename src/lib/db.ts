@@ -333,7 +333,24 @@ export type PodcastBooking = {
   name: string; email: string; phone?: string; socials?: string; comm_method?: string
   created_at: string
 }
-export type PodcastSchedule = { weekly: { dow: number; time: string }[]; booked: PodcastBooking[] }
+export type PodcastSlot = { dow: number; time: string; end?: string }
+export type PodcastSchedule = { weekly: PodcastSlot[]; booked: PodcastBooking[]; from?: string }
+
+// A podcast EPISODE on the weekly schedule — topic, teleprompter script, references.
+export type EpisodeRef = { label: string; url: string }
+export type PodcastEpisode = {
+  id: string
+  date: string            // YYYY-MM-DD (recording date)
+  day: 'sun' | 'wed'      // Sunday = solo, Wednesday = guest
+  time?: string           // recording time
+  title: string
+  topic: string
+  guest?: string          // Wednesdays; '' or 'TBD' placeholder
+  script: string          // teleprompter script
+  references: EpisodeRef[]
+  status: 'planned' | 'scripted' | 'recorded' | 'published'
+  created_at: string
+}
 
 // MEDIA MEMORY — what's actually IN a dropped file, so it's findable by meaning and
 // matchable to a thought. Keyed by the R2 object key. has_children flags kids so posts
@@ -369,6 +386,7 @@ type Db = {
   media_meta?: Record<string, MediaMeta>
   trend_audio?: { audio: string; format: string; sounds?: string[]; when: string }
   podcast_schedule?: PodcastSchedule
+  podcast_episodes?: PodcastEpisode[]
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
   memories: Memory[]
@@ -1649,10 +1667,10 @@ export function getPodcastSchedule(): PodcastSchedule {
   const db = readDb()
   return db.podcast_schedule ?? { weekly: [], booked: [] }
 }
-export function setPodcastWeekly(weekly: { dow: number; time: string }[]): PodcastSchedule {
+export function setPodcastWeekly(weekly: PodcastSlot[], from?: string): PodcastSchedule {
   const db = readDb()
   const cur = db.podcast_schedule ?? { weekly: [], booked: [] }
-  db.podcast_schedule = { ...cur, weekly }
+  db.podcast_schedule = { ...cur, weekly, from: from !== undefined ? from : cur.from }
   writeDb(db)
   return db.podcast_schedule
 }
@@ -1667,4 +1685,39 @@ export function addPodcastBooking(data: Omit<PodcastBooking, 'id' | 'created_at'
   db.podcast_schedule = sched
   writeDb(db)
   return { booking }
+}
+
+// ── PODCAST EPISODES — the weekly show schedule (topics, scripts, references) ──
+export function getPodcastEpisodes(): PodcastEpisode[] {
+  const db = readDb()
+  return (db.podcast_episodes ?? []).slice().sort((a, b) => a.date.localeCompare(b.date))
+}
+export function createPodcastEpisode(data: Partial<PodcastEpisode>): PodcastEpisode {
+  const db = readDb()
+  if (!db.podcast_episodes) db.podcast_episodes = []
+  const ep: PodcastEpisode = {
+    id: Math.random().toString(36).slice(2, 10),
+    date: data.date ?? '', day: data.day ?? 'sun', time: data.time,
+    title: data.title ?? 'Untitled', topic: data.topic ?? '', guest: data.guest ?? '',
+    script: data.script ?? '', references: Array.isArray(data.references) ? data.references : [],
+    status: data.status ?? 'planned', created_at: new Date().toISOString(),
+  }
+  db.podcast_episodes.push(ep)
+  writeDb(db)
+  return ep
+}
+export function updatePodcastEpisode(id: string, patch: Partial<PodcastEpisode>): PodcastEpisode | null {
+  const db = readDb()
+  const ep = (db.podcast_episodes ?? []).find(e => e.id === id)
+  if (!ep) return null
+  Object.assign(ep, patch, { id: ep.id, created_at: ep.created_at })
+  writeDb(db)
+  return ep
+}
+export function deletePodcastEpisode(id: string): boolean {
+  const db = readDb()
+  const before = (db.podcast_episodes ?? []).length
+  db.podcast_episodes = (db.podcast_episodes ?? []).filter(e => e.id !== id)
+  writeDb(db)
+  return (db.podcast_episodes.length < before)
 }

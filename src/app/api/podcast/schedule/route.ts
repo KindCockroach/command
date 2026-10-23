@@ -11,8 +11,8 @@ export const dynamic = 'force-dynamic'
 export function GET(req: NextRequest) {
   const admin = new URL(req.url).searchParams.get('admin') === '1'
   const s = getPodcastSchedule()
-  if (admin) return NextResponse.json({ weekly: s.weekly, bookings: s.booked.slice().sort((a, b) => a.date.localeCompare(b.date)) })
-  return NextResponse.json({ weekly: s.weekly, booked: s.booked.map(b => ({ date: b.date, time: b.time })) })
+  if (admin) return NextResponse.json({ weekly: s.weekly, from: s.from ?? null, bookings: s.booked.slice().sort((a, b) => a.date.localeCompare(b.date)) })
+  return NextResponse.json({ weekly: s.weekly, from: s.from ?? null, booked: s.booked.map(b => ({ date: b.date, time: b.time })) })
 }
 
 export async function POST(req: NextRequest) {
@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
   if (Array.isArray(body.weekly)) {
     const weekly = body.weekly
       .filter((w: { dow?: number; time?: string }) => typeof w?.dow === 'number' && typeof w?.time === 'string')
-      .map((w: { dow: number; time: string }) => ({ dow: w.dow, time: w.time }))
-    return NextResponse.json({ ok: true, schedule: setPodcastWeekly(weekly) })
+      .map((w: { dow: number; time: string; end?: string }) => ({ dow: w.dow, time: w.time, ...(w.end ? { end: String(w.end) } : {}) }))
+    return NextResponse.json({ ok: true, schedule: setPodcastWeekly(weekly, typeof body.from === 'string' ? body.from : undefined) })
   }
 
   if (body.book) {

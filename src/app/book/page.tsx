@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 // Mandi's available weekly slots, fills their details, and lands on a warm thank-you
 // with her bio + socials. Cream + purple, lots of whitespace, the balloon. No RISE chrome.
 
-type Weekly = { dow: number; time: string }
+type Weekly = { dow: number; time: string; end?: string }
 const PURPLE = '#6B5BD4'
 const CREAM = '#FBF7F1'
 const INK = '#2E2A3F'
@@ -23,44 +23,50 @@ function fmtTime(t: string): string {
 }
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-function gcalLink(date: string, time: string, name: string): string {
+function gcalLink(date: string, time: string, name: string, endTime?: string): string {
   const m = /^(\d{1,2}):(\d{2})/.exec(time || '20:00')
   const hh = String(m ? +m[1] : 20).padStart(2, '0'); const mm = m ? m[2] : '00'
   const start = `${date.replace(/-/g, '')}T${hh}${mm}00`
-  const endH = String((m ? +m[1] : 20) + 1).padStart(2, '0')
-  const end = `${date.replace(/-/g, '')}T${endH}${mm}00`
+  const em = endTime ? /^(\d{1,2}):(\d{2})/.exec(endTime) : null
+  const endH = String(em ? +em[1] : (m ? +m[1] : 20) + 1).padStart(2, '0')
+  const endM = em ? em[2] : mm
+  const end = `${date.replace(/-/g, '')}T${endH}${endM}00`
   const p = new URLSearchParams({ action: 'TEMPLATE', text: `AI Mom Podcast — ${name}`, details: 'Podcast interview with Mandi Beck.', ctz: 'America/Chicago', dates: `${start}/${end}` })
   return `https://calendar.google.com/calendar/render?${p.toString()}`
 }
 
 export default function BookPage() {
   const [weekly, setWeekly] = useState<Weekly[]>([])
+  const [from, setFrom] = useState<string | null>(null)
   const [bookedSet, setBookedSet] = useState<Set<string>>(new Set())
   const [loaded, setLoaded] = useState(false)
   const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
-  const [picked, setPicked] = useState<{ date: string; time: string } | null>(null)
+  const [picked, setPicked] = useState<{ date: string; time: string; end?: string } | null>(null)
+  const [dayPick, setDayPick] = useState<{ date: string; slots: Weekly[] } | null>(null)
   const [form, setForm] = useState({ name: '', email: '', phone: '', socials: '', comm_method: 'Instagram DM' })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const [done, setDone] = useState<{ date: string; time: string; name: string } | null>(null)
+  const [done, setDone] = useState<{ date: string; time: string; name: string; end?: string } | null>(null)
 
   useEffect(() => {
     document.title = 'Be a guest · AI Mom Podcast'
     fetch('/api/podcast/schedule').then(r => r.json()).then(d => {
       setWeekly(Array.isArray(d.weekly) ? d.weekly : [])
+      setFrom(d.from || null)
       setBookedSet(new Set((d.booked || []).map((b: { date: string; time: string }) => `${b.date}@${b.time}`)))
     }).catch(() => {}).finally(() => setLoaded(true))
   }, [])
 
-  const dowTimes = new Map<number, string>(weekly.map(w => [w.dow, w.time] as [number, string]))
+  // One account may have multiple slots on the same day; collect them all per dow.
+  const dowSlots = new Map<number, Weekly[]>()
+  weekly.forEach(w => { const a = dowSlots.get(w.dow) ?? []; a.push(w); dowSlots.set(w.dow, a) })
   const today = new Date(); today.setHours(0, 0, 0, 0)
 
-  const slotFor = (d: Date): { time: string } | null => {
-    const t = dowTimes.get(d.getDay())
-    if (!t) return null
-    if (d < today) return null
-    if (bookedSet.has(`${ymd(d)}@${t}`)) return null
-    return { time: t }
+  const slotsFor = (d: Date): Weekly[] => {
+    const all = dowSlots.get(d.getDay()) ?? []
+    if (!all.length || d < today) return []
+    if (from && ymd(d) < from) return []
+    return all.filter(w => !bookedSet.has(`${ymd(d)}@${w.time}`))
   }
 
   // Build the month grid
@@ -85,7 +91,7 @@ export default function BookPage() {
       body: JSON.stringify({ book: { ...picked, ...form } }),
     }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup — try again.' }))
     setBusy(false)
-    if (d.booking) setDone({ date: picked.date, time: picked.time, name: form.name })
+    if (d.booking) setDone({ date: picked.date, time: picked.time, name: form.name, end: picked.end })
     else setErr(d.error || 'Could not book that — try another date.')
   }
 
@@ -111,7 +117,7 @@ export default function BookPage() {
             <p style={{ fontSize: '14px', color: '#6E678A', marginTop: '8px', lineHeight: 1.55 }}>
               {DOW[new Date(done.date + 'T00:00').getDay()]}, {MONTHS[new Date(done.date + 'T00:00').getMonth()]} {new Date(done.date + 'T00:00').getDate()} at {fmtTime(done.time)} CT. I&apos;ll reach out on your preferred channel to confirm the details.
             </p>
-            <a href={gcalLink(done.date, done.time, done.name)} target="_blank" rel="noreferrer"
+            <a href={gcalLink(done.date, done.time, done.name, done.end)} target="_blank" rel="noreferrer"
               style={{ display: 'inline-block', marginTop: '16px', padding: '10px 18px', borderRadius: '11px', background: CREAM, color: PURPLE, fontWeight: 700, fontSize: '13px', textDecoration: 'none', border: `1px solid ${PURPLE}` }}>📅 Add to your calendar</a>
 
             <div style={{ borderTop: '1px solid #EFE9F7', margin: '26px 0 18px' }} />
@@ -146,7 +152,7 @@ export default function BookPage() {
             <div style={{ background: '#F3F0FC', borderRadius: '12px', padding: '12px 15px', marginBottom: '18px' }}>
               <p style={{ fontSize: '12px', color: '#8B84A3', fontWeight: 700 }}>YOUR SLOT</p>
               <p style={{ fontSize: '16px', fontWeight: 800, color: INK, marginTop: '2px' }}>
-                {DOW[new Date(picked.date + 'T00:00').getDay()]}, {MONTHS[new Date(picked.date + 'T00:00').getMonth()]} {new Date(picked.date + 'T00:00').getDate()} · {fmtTime(picked.time)} CT
+                {DOW[new Date(picked.date + 'T00:00').getDay()]}, {MONTHS[new Date(picked.date + 'T00:00').getMonth()]} {new Date(picked.date + 'T00:00').getDate()} · {fmtTime(picked.time)}{picked.end ? ` – ${fmtTime(picked.end)}` : ''} CT
               </p>
             </div>
             {([
@@ -172,6 +178,22 @@ export default function BookPage() {
               {busy ? 'Booking…' : 'Book my spot 🎈'}
             </button>
           </div>
+        ) : dayPick ? (
+          /* ───── Pick a time (multiple slots that day) ───── */
+          <div style={{ ...card, padding: '26px' }}>
+            <button onClick={() => setDayPick(null)} style={{ background: 'none', border: 'none', color: PURPLE, fontWeight: 700, fontSize: '13px', cursor: 'pointer', padding: 0, marginBottom: '16px' }}>← pick another date</button>
+            <p style={{ fontSize: '15px', fontWeight: 800, marginBottom: '14px' }}>
+              {DOW[new Date(dayPick.date + 'T00:00').getDay()]}, {MONTHS[new Date(dayPick.date + 'T00:00').getMonth()]} {new Date(dayPick.date + 'T00:00').getDate()} — pick a time:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {dayPick.slots.map((s, i) => (
+                <button key={i} onClick={() => { setPicked({ date: dayPick.date, time: s.time, end: s.end }); setDayPick(null) }}
+                  style={{ padding: '14px', borderRadius: '13px', border: `1.5px solid ${PURPLE}`, background: '#F3F0FC', color: PURPLE, fontWeight: 800, fontSize: '15px', cursor: 'pointer' }}>
+                  {fmtTime(s.time)}{s.end ? ` – ${fmtTime(s.end)}` : ''} CT
+                </button>
+              ))}
+            </div>
+          </div>
         ) : (
           /* ───── Calendar ───── */
           <div style={{ ...card, padding: '22px' }}>
@@ -187,10 +209,11 @@ export default function BookPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
               {cells.map((d, i) => {
                 if (!d) return <div key={i} />
-                const slot = slotFor(d)
-                const open = !!slot
+                const slots = slotsFor(d)
+                const open = slots.length > 0
+                const choose = () => { if (slots.length === 1) setPicked({ date: ymd(d), time: slots[0].time, end: slots[0].end }); else setDayPick({ date: ymd(d), slots }) }
                 return (
-                  <button key={i} disabled={!open} onClick={() => slot && setPicked({ date: ymd(d), time: slot.time })}
+                  <button key={i} disabled={!open} onClick={choose}
                     style={{
                       aspectRatio: '1', borderRadius: '11px', border: open ? `1.5px solid ${PURPLE}` : '1px solid transparent',
                       background: open ? '#F3F0FC' : 'transparent', color: open ? PURPLE : '#CFC9DF',
