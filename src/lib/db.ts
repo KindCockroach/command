@@ -330,7 +330,7 @@ export type InboxBrief = { items: InboxItem[]; checked_at: string; count_total?:
 // PODCAST SCHEDULER — her available weekly slot(s) + guest bookings.
 export type PodcastBooking = {
   id: string; date: string; time: string
-  name: string; email: string; phone?: string; socials?: string; comm_method?: string; link?: string
+  name: string; email: string; phone?: string; socials?: string; comm_method?: string; link?: string; notes?: string
   created_at: string
 }
 export type PodcastSlot = { dow: number; time: string; end?: string }

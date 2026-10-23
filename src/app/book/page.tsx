@@ -43,7 +43,7 @@ export default function BookPage() {
   const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
   const [picked, setPicked] = useState<{ date: string; time: string; end?: string } | null>(null)
   const [dayPick, setDayPick] = useState<{ date: string; slots: Weekly[] } | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', instagram: '', tiktok: '', youtube: '', facebook: '', linkedin: '', link: '', comm_method: 'Instagram DM', comm_other: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', instagram: '', tiktok: '', youtube: '', facebook: '', linkedin: '', link: '', notes: '', comm_method: 'Instagram DM', comm_other: '' })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [done, setDone] = useState<{ date: string; time: string; name: string; end?: string } | null>(null)
@@ -96,7 +96,7 @@ export default function BookPage() {
     ].filter(Boolean).join(' · ')
     const d = await fetch('/api/podcast/schedule', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ book: { date: picked.date, time: picked.time, name: form.name, email: form.email, phone: form.phone, socials, link: form.link, comm_method } }),
+      body: JSON.stringify({ book: { date: picked.date, time: picked.time, name: form.name, email: form.email, phone: form.phone, socials, link: form.link, notes: form.notes, comm_method } }),
     }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup — try again.' }))
     setBusy(false)
     if (d.booking) setDone({ date: picked.date, time: picked.time, name: form.name, end: picked.end })
@@ -179,6 +179,11 @@ export default function BookPage() {
                   style={{ width: '100%', marginTop: '5px', padding: '11px 13px', borderRadius: '11px', border: '1px solid #E4DEF2', background: CREAM, color: INK, fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
               </div>
             ))}
+            <div style={{ marginBottom: '13px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#8B84A3', display: 'block', lineHeight: 1.45 }}>Anything you&apos;d like me to know about you or your project before we meet? And what&apos;s the #1 question your audience is asking right now?</label>
+              <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={4}
+                style={{ width: '100%', marginTop: '6px', padding: '11px 13px', borderRadius: '11px', border: '1px solid #E4DEF2', background: CREAM, color: INK, fontSize: '14px', outline: 'none', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }} />
+            </div>
             <div style={{ marginBottom: '18px' }}>
               <label style={{ fontSize: '12px', fontWeight: 700, color: '#8B84A3' }}>Best way to reach you</label>
               <select value={form.comm_method} onChange={e => setForm(f => ({ ...f, comm_method: e.target.value }))}
