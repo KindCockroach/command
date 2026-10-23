@@ -43,7 +43,7 @@ export default function BookPage() {
   const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
   const [picked, setPicked] = useState<{ date: string; time: string; end?: string } | null>(null)
   const [dayPick, setDayPick] = useState<{ date: string; slots: Weekly[] } | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', socials: '', comm_method: 'Instagram DM' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', instagram: '', tiktok: '', youtube: '', facebook: '', linkedin: '', link: '', comm_method: 'Instagram DM', comm_other: '' })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [done, setDone] = useState<{ date: string; time: string; name: string; end?: string } | null>(null)
@@ -86,9 +86,17 @@ export default function BookPage() {
   const submit = async () => {
     if (!picked || !form.name.trim() || !form.email.trim()) { setErr('Please add your name and email.'); return }
     setBusy(true); setErr('')
+    const comm_method = form.comm_method === 'Other' ? (form.comm_other.trim() || 'Other') : form.comm_method
+    const socials = [
+      form.instagram.trim() && `Instagram: ${form.instagram.trim()}`,
+      form.tiktok.trim() && `TikTok: ${form.tiktok.trim()}`,
+      form.youtube.trim() && `YouTube: ${form.youtube.trim()}`,
+      form.facebook.trim() && `Facebook: ${form.facebook.trim()}`,
+      form.linkedin.trim() && `LinkedIn: ${form.linkedin.trim()}`,
+    ].filter(Boolean).join(' · ')
     const d = await fetch('/api/podcast/schedule', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ book: { ...picked, ...form } }),
+      body: JSON.stringify({ book: { date: picked.date, time: picked.time, name: form.name, email: form.email, phone: form.phone, socials, link: form.link, comm_method } }),
     }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup — try again.' }))
     setBusy(false)
     if (d.booking) setDone({ date: picked.date, time: picked.time, name: form.name, end: picked.end })
@@ -156,8 +164,14 @@ export default function BookPage() {
               </p>
             </div>
             {([
-              ['name', 'Your name', 'text'], ['email', 'Email', 'email'], ['phone', 'Phone (optional)', 'tel'],
-              ['socials', 'Your socials / handles', 'text'],
+              ['name', 'Your name', 'text'], ['email', 'Email', 'email'],
+              ['phone', 'Phone — optional, but encouraged so I can text you', 'tel'],
+              ['instagram', 'Instagram (optional)', 'text'],
+              ['tiktok', 'TikTok (optional)', 'text'],
+              ['youtube', 'YouTube (optional)', 'text'],
+              ['facebook', 'Facebook (optional)', 'text'],
+              ['linkedin', 'LinkedIn (optional)', 'text'],
+              ['link', "Share the website or link that best represents what you're working on", 'text'],
             ] as const).map(([k, label, type]) => (
               <div key={k} style={{ marginBottom: '13px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: '#8B84A3' }}>{label}</label>
@@ -171,6 +185,11 @@ export default function BookPage() {
                 style={{ width: '100%', marginTop: '5px', padding: '11px 13px', borderRadius: '11px', border: '1px solid #E4DEF2', background: CREAM, color: INK, fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}>
                 {COMM_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
+              {form.comm_method === 'Other' && (
+                <input type="text" value={form.comm_other} onChange={e => setForm(f => ({ ...f, comm_other: e.target.value }))}
+                  placeholder="How should she reach you?"
+                  style={{ width: '100%', marginTop: '8px', padding: '11px 13px', borderRadius: '11px', border: '1px solid #E4DEF2', background: CREAM, color: INK, fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+              )}
             </div>
             {err && <p style={{ color: '#D1456B', fontSize: '13px', marginBottom: '12px' }}>{err}</p>}
             <button onClick={submit} disabled={busy}

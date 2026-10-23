@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 // with guests.
 
 type Weekly = { dow: number; time: string }
-type Booking = { id: string; date: string; time: string; name: string; email: string; phone?: string; socials?: string; comm_method?: string; created_at: string }
+type Booking = { id: string; date: string; time: string; name: string; email: string; phone?: string; socials?: string; comm_method?: string; link?: string; created_at: string }
 const PURPLE = '#6B5BD4'; const CREAM = '#FBF7F1'; const INK = '#2E2A3F'
 const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -82,7 +82,9 @@ export default function ManagePage() {
                       <span style={{ fontSize: '12.5px', fontWeight: 700, color: PURPLE }}>{DOW[d.getDay()].slice(0, 3)} {MONTHS[d.getMonth()]} {d.getDate()} · {fmtTime(b.time)}</span>
                     </div>
                     <p style={{ fontSize: '12.5px', color: '#6E678A', marginTop: '5px', lineHeight: 1.5 }}>
-                      {b.email}{b.phone ? ` · ${b.phone}` : ''}{b.socials ? ` · ${b.socials}` : ''}<br />
+                      {b.email}{b.phone ? ` · ${b.phone}` : ''}<br />
+                      {b.socials ? <>{b.socials}<br /></> : null}
+                      {b.link ? <>Working on: <a href={b.link.startsWith('http') ? b.link : `https://${b.link}`} target="_blank" rel="noreferrer" style={{ color: PURPLE }}>{b.link}</a><br /></> : null}
                       Reach via <strong>{b.comm_method || '—'}</strong>
                     </p>
                     <a href={gcal(b)} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: '8px', fontSize: '12px', fontWeight: 700, color: PURPLE, textDecoration: 'none' }}>📅 Add to Google Calendar</a>

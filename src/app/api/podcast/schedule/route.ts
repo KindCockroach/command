@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       phone: b.phone ? String(b.phone).slice(0, 40) : '',
       socials: b.socials ? String(b.socials).slice(0, 300) : '',
       comm_method: b.comm_method ? String(b.comm_method).slice(0, 40) : '',
+      link: b.link ? String(b.link).slice(0, 400) : '',
     })
     if (error) return NextResponse.json({ error }, { status: 409 })
     logActivity({ type: 'note', title: `🎙️ Podcast guest booked — ${booking!.name}`, detail: `${booking!.date} ${booking!.time} · ${booking!.comm_method || booking!.email}`, icon: '🎙️', source: 'podcast-scheduler' })
