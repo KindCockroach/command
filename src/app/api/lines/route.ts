@@ -74,6 +74,8 @@ NEVER use the words "intuition" or "inner child" in the line — lead with the o
   const instructions = `Write in Mandi's voice. Each line GROUNDS the reader in a recognizable SCENE from her real life — enough context (the moment, the where/when/who) that she thinks "that's literally me" — THEN a wry, slightly absurd turn or a reframe. Second person. A statement, never a question.
 A bare behavior with no scene MEANS NOTHING to her — she can't stand in it. Give the setup first. Her voice is SILLY-SERIOUS and strangely specific: a real mundane detail taken one step ("the cumin didn't ask for that"). Never write her plain and earnest, and never STATE the lesson outright ("check your horoscope before you check in with yourself" is dead — it explains itself). She should feel caught, laugh, then ache a little.
 
+STRUCTURE — the line is TWO short sentences. Sentence 1 STOPS THE SCROLL: the strangely-specific recognition (that's literally me). Sentence 2 opens a CURIOSITY GAP: hint at what's underneath — the cost, the reason, the thing she won't say out loud — WITHOUT resolving it, so she has to keep watching or read the caption to close the loop. Never answer the gap in the line itself.
+
 WRITE LIKE THESE (strangely specific, a wry absurd turn, silly-serious):
 ${GOOD}
 
@@ -87,7 +89,7 @@ ${PROTECT}
 ${special}
 ${note197 ? `Her voice/story: ${(note197.body ?? '').slice(0, 300)}\n` : ''}${trend ? `Trending now (mirror the rhythm): ${trend}\n` : ''}${avoid.length ? `Don't repeat: ${avoid.join(' / ')}\n` : ''}
 Write ${count} LINES for ${acct.handle}. Each = 4 short parts:
-- "line": the on-screen statement, in the GOOD register above
+- "line": TWO short sentences — (1) scroll-stopping recognition, (2) a curiosity gap that doesn't resolve — in the GOOD register above
 - "caption": her same silly-serious, specific voice — 2-4 short lines that stay WITH the recognition, self-contained, no advice or fixing, no hashtags
 - "audio_tone": 2-4 words (e.g. "soft cozy lo-fi")
 - "broll_scene": a filmable scene (e.g. "hands journaling by candlelight")
