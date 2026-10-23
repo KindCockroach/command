@@ -9,7 +9,7 @@ import { MetaPixel } from '@/components/funnel/shared'
 export const metadata: Metadata = {
   title: 'Mandi Beck — AI Mom · Host of the AI Mom Podcast',
   description:
-    "Mom of four, former realtor, host of the AI Mom Podcast. Helping women trust their intuition and lead the way as AI reshapes everything — because women are the front line of man and machine coexisting in harmony.",
+    "Mom of five (one an angel in heaven), former realtor and Evernote employee, host of the AI Mom Podcast. Helping women trust their intuition and lead the way as AI reshapes everything — because women are the front line of man and machine coexisting in harmony.",
 }
 
 const DOORS = [
@@ -32,9 +32,10 @@ export default function Home() {
             <h1>Nice to <em>e-meet</em> you.</h1>
             <p className="lead">I&rsquo;m Mandi &mdash; they call me AI Mom.</p>
             <p className="sub">
-              Mom of four. Former realtor. Host of the AI Mom Podcast. I build tools and have honest
-              conversations so women aren&rsquo;t left behind as AI reshapes everything &mdash; because I
-              believe <strong>we&rsquo;re the ones meant to shape what it becomes.</strong>
+              Mom of five &mdash; one an angel in heaven. Former realtor and Evernote employee. Host of
+              the AI Mom Podcast. I build tools and have honest
+              conversations so families aren&rsquo;t left behind as AI reshapes everything &mdash; because I
+              believe <strong>women hold the vision and shape what it becomes.</strong>
             </p>
             <div className="ctaRow">
               <a className="cta" href="https://aimomeducation.com">Listen</a>

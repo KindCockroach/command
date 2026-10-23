@@ -97,7 +97,8 @@ export default function Thesis() {
         <div className="wrap">
           <p className="tag">WHY ME</p>
           <p>
-            I&rsquo;m Mandi Beck &mdash; mom of four, former realtor, host of the AI Mom Podcast. Five months
+            I&rsquo;m Mandi Beck &mdash; mom of five (one an angel in heaven), former realtor and Evernote
+            employee, host of the AI Mom Podcast. Five months
             postpartum, I taught myself to build with AI during nap times: a podcast, a voice clone, a
             whole command center. I come from a line of women who broke things open, and I&rsquo;ve done
             the inner work &mdash; parts work, inner-child, timeline integration &mdash; to speak about
