@@ -12,29 +12,54 @@ export const metadata: Metadata = {
     "Mom of four, former realtor, host of the AI Mom Podcast. Helping women trust their intuition and lead the way as AI reshapes everything — because women are the front line of man and machine coexisting in harmony.",
 }
 
+const DOORS = [
+  { href: 'https://aimomeducation.com', emoji: '🎙', label: 'Listen to the podcast', line: 'How to think — not what to think — about AI. Real, clear-eyed talk for thoughtful women.' },
+  { href: '/book', emoji: '🤝', label: 'Be a guest', line: 'Have a story or a perspective women need to hear? Come on the show. Pick your date.' },
+  { href: '/thesis', emoji: '🎤', label: 'Book me as a speaker', line: 'Bring the keynote on intuition, women, and the age of AI to your stage.' },
+]
+
 export default function Home() {
   return (
     <main className="h">
       <MetaPixel />
       <style>{css}</style>
 
-      {/* Hero — hi, I'm Mandi */}
+      {/* Hero — nice to e-meet you */}
       <section className="hero">
         <div className="wrap heroGrid">
           <div>
             <p className="eyebrow">AI WORKS FOR HER</p>
-            <h1>Hi, I&rsquo;m Mandi.<br />They call me <em>AI Mom.</em></h1>
+            <h1>Nice to <em>e-meet</em> you.</h1>
+            <p className="lead">I&rsquo;m Mandi &mdash; they call me AI Mom.</p>
             <p className="sub">
               Mom of four. Former realtor. Host of the AI Mom Podcast. I build tools and have honest
               conversations so women aren&rsquo;t left behind as AI reshapes everything &mdash; because I
               believe <strong>we&rsquo;re the ones meant to shape what it becomes.</strong>
             </p>
             <div className="ctaRow">
-              <a className="cta" href="https://aimomeducation.com">Listen to the podcast</a>
-              <a className="cta ghost" href="/book">Be a guest →</a>
+              <a className="cta" href="https://aimomeducation.com">Listen</a>
+              <a className="cta ghost" href="/book">Be a guest</a>
+              <a className="cta ghost" href="/thesis">Book me to speak</a>
             </div>
           </div>
           <div className="photo" role="img" aria-label="Mandi Beck" />
+        </div>
+      </section>
+
+      {/* Where to get involved — three clear doors */}
+      <section className="doors">
+        <div className="wrap">
+          <h2>Where would you like to get involved?</h2>
+          <div className="grid">
+            {DOORS.map((d) => (
+              <a className="door" href={d.href} key={d.href}>
+                <span className="demoji">{d.emoji}</span>
+                <span className="dlabel">{d.label}</span>
+                <span className="dline">{d.line}</span>
+                <span className="dgo">Start here →</span>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -139,6 +164,7 @@ export default function Home() {
         <div className="wrap">
           <p className="fcta"><a href="/book">Be a guest on the podcast →</a></p>
           <div className="social">
+            <a href="/thesis">Speaking</a>
             <a href="https://aimomeducation.com">Podcast</a>
             <a href="https://instagram.com/aimompodcast">@aimompodcast</a>
             <a href="https://instagram.com/mandij0y">@mandij0y</a>
@@ -173,8 +199,21 @@ const css = `
 .h .hero .eyebrow { letter-spacing:3px; font-size:13px; font-weight:800; color:var(--ember); margin:0 0 18px; }
 .h .hero h1 { font-size:clamp(32px,5.5vw,52px); line-height:1.1; margin:0 0 20px; color:#fff; }
 .h .hero h1 em { color:var(--ember); }
+.h .hero .lead { font-size:18px; color:var(--ember); font-weight:700; margin:0 0 14px; }
 .h .hero .sub { font-size:19px; color:#e7e2f2; max-width:620px; }
 .h .hero .sub strong { color:#fff; }
+
+/* Doors */
+.h .doors { background:var(--cream); }
+.h .doors h2 { font-size:clamp(24px,4vw,34px); margin:0 0 26px; }
+.h .doors .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+.h .doors .door { display:flex; flex-direction:column; gap:8px; text-decoration:none; color:var(--midnight);
+  background:#fff; border:1px solid #e7e0d3; border-radius:18px; padding:26px 22px; transition:transform .12s ease, box-shadow .12s ease; }
+.h .doors .door:hover { transform:translateY(-3px); box-shadow:0 14px 34px rgba(23,28,58,0.12); }
+.h .doors .demoji { font-size:30px; }
+.h .doors .dlabel { font-family:Georgia,serif; font-size:21px; font-weight:700; }
+.h .doors .dline { font-size:15.5px; color:#4a4560; flex:1; line-height:1.5; }
+.h .doors .dgo { font-weight:800; color:var(--nebula); margin-top:6px; }
 .h .heroGrid { display:grid; grid-template-columns:1.5fr 1fr; gap:40px; align-items:center; }
 .h .photo { width:230px; height:230px; border-radius:50%; justify-self:center; border:4px solid rgba(242,166,90,0.6);
   background-image:url('/host-photo.jpg'), url('/balloon-512.png'); background-size:cover, 70%;
@@ -212,5 +251,6 @@ const css = `
   .h .hero .ctaRow { justify-content:center; }
   .h .photo { width:180px; height:180px; order:-1; }
   .h .hero .sub { margin-left:auto; margin-right:auto; }
+  .h .doors .grid { grid-template-columns:1fr; }
 }
 `
