@@ -3,140 +3,190 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
 
-// Public homepage for aiworksforher.com — the AI Mom "start here" hub. Routes
-// visitors to the three Caption Writer doors and teases the Caption Keeper.
-// (The private Command Center moved to /station.)
+// The aiworksforher.com homepage — Mandi's face: an intro to her, the AI Mom Podcast,
+// and what she's building, closing on her manifesto (intuition · women as the front
+// line · the mission). The former homepage lives at /goldenthread.
 export const metadata: Metadata = {
-  title: 'AI Works For Her — Find Your Golden Thread · by AI Mom',
+  title: 'Mandi Beck — AI Mom · Host of the AI Mom Podcast',
   description:
-    'Find your golden thread and stop the scroll. Caption Writer turns your real life into captions in your voice — find the story that ties it all together, align your message, and say it well. Raw life in → meaningful message out.',
+    "Mom of four, former realtor, host of the AI Mom Podcast. Helping women trust their intuition and lead the way as AI reshapes everything — because women are the front line of man and machine coexisting in harmony.",
 }
-
-const DOORS = [
-  {
-    href: '/seen',
-    emoji: '📣',
-    label: 'Your social presence',
-    line: 'You’ve got a life worth sharing and you freeze at the caption box. Let’s get you seen.',
-  },
-  {
-    href: '/captionwriter',
-    emoji: '⚡',
-    label: 'Mama’s Side Hustle',
-    line: 'You post for your thing, and the caption alone eats nap time. Done in minutes, in your voice.',
-  },
-  {
-    href: '/queen',
-    emoji: '👑',
-    label: 'Her Business',
-    line: 'So much to say, so little makes it out of your head, but your people need to hear from you.',
-  },
-]
 
 export default function Home() {
   return (
-    <main className="home">
+    <main className="h">
       <MetaPixel />
       <style>{css}</style>
 
+      {/* Hero — hi, I'm Mandi */}
       <section className="hero">
-        <div className="wrap">
-          <p className="eyebrow">AI WORKS FOR HER · BY AI MOM</p>
-          <h1>Find your golden thread and stop the scroll.</h1>
-          <p className="sub">
-            Your life is full of stories worth telling &mdash; Caption Writer helps you find the one
-            that ties them together, make it clear, and say it in your voice.
-          </p>
-          <p className="mantra">Raw life in <span className="arw">→</span> Meaningful Message out</p>
-          <a className="cta" href="#doors">Pick your starting point ↓</a>
+        <div className="wrap heroGrid">
+          <div>
+            <p className="eyebrow">AI WORKS FOR HER</p>
+            <h1>Hi, I&rsquo;m Mandi.<br />They call me <em>AI Mom.</em></h1>
+            <p className="sub">
+              Mom of four. Former realtor. Host of the AI Mom Podcast. I build tools and have honest
+              conversations so women aren&rsquo;t left behind as AI reshapes everything &mdash; because I
+              believe <strong>we&rsquo;re the ones meant to shape what it becomes.</strong>
+            </p>
+            <div className="ctaRow">
+              <a className="cta" href="https://aimomeducation.com">Listen to the podcast</a>
+              <a className="cta ghost" href="/book">Be a guest →</a>
+            </div>
+          </div>
+          <div className="photo" role="img" aria-label="Mandi Beck" />
         </div>
       </section>
 
-      <section className="doors" id="doors">
+      {/* The podcast */}
+      <section className="pod">
         <div className="wrap">
-          <h2>Where are you right now?</h2>
-          <p className="doorsub">Your captions and on-screen text are begging to be written in less time.
-            Your life is full of stories people are looking for &mdash; if only they&rsquo;re clearly
-            written. Caption Writer helps you find the message that ties all your stories together,
-            makes it clear, and says it in your voice.</p>
-          <div className="grid">
-            {DOORS.map((d) => (
-              <a className="door" href={d.href} key={d.href}>
-                <span className="demoji">{d.emoji}</span>
-                <span className="dlabel">{d.label}</span>
-                <span className="dline">{d.line}</span>
-                <span className="dgo">Start here →</span>
-              </a>
-            ))}
+          <p className="tag">🎙 THE AI MOM PODCAST</p>
+          <h2>Not what to think about AI. <em>How</em> to think about it.</h2>
+          <p>
+            No fear. No hype. Just clear-eyed, real conversations with women figuring out how to stay
+            human while everything changes &mdash; and how to use these tools instead of being used by
+            them. If you&rsquo;re a thoughtful woman wondering what all of this means for your kids, your
+            work, and your peace, you&rsquo;re exactly who this is for.
+          </p>
+          <div className="ctaRow">
+            <a className="cta" href="https://aimomeducation.com">Listen now</a>
+            <a className="cta ghost" href="/book">Come on the show →</a>
           </div>
         </div>
       </section>
 
-      <section className="what">
+      {/* A little about me — meta, for guests */}
+      <section className="about">
         <div className="wrap">
-          <h2>All three start with <em>Caption Writer</em></h2>
-          <p>One $27 AI that turns your real life &mdash; a photo, a thought, a voice memo &mdash; into
-            ready-to-post content in your own voice. It runs inside your own ChatGPT, learns how you
-            sound, and never invents your life. Set up in about 10 minutes.</p>
+          <h2>A little about me &mdash; before we talk</h2>
+          <p>
+            I started where a lot of you are: overwhelmed, underestimated, and pretty sure I&rsquo;d
+            missed the boat. Five months postpartum with four little ones, I taught myself to build with
+            AI during nap times &mdash; a podcast, a voice clone, a whole command center &mdash; and I
+            realized the thing holding women back from this moment isn&rsquo;t ability. It&rsquo;s being
+            told we&rsquo;re behind.
+          </p>
+          <p>
+            I talk fast, I laugh easily, and I&rsquo;ll meet you exactly where you are. On the show I care
+            more about a real conversation than a perfect one. Come as you are &mdash; we&rsquo;ll find
+            the honest thing together.
+          </p>
         </div>
       </section>
 
-      <section className="soon">
+      {/* Manifesto */}
+      <section className="creed">
         <div className="wrap">
-          <p className="soontag">✨ COMING SOON</p>
-          <h2>The Caption Keeper</h2>
-          <p>A place that keeps it all &mdash; a journal that talks back, and a home for every caption.
-            Get on the list for first access.</p>
-          <a className="ghost" href="/journal">Get on the waitlist →</a>
+          <p className="tag light">WHAT I BELIEVE</p>
+
+          <div className="belief">
+            <h3>A woman&rsquo;s intuition is not a soft skill.</h3>
+            <p>
+              It&rsquo;s the oldest intelligence we have &mdash; the one that reads the room, the child,
+              the danger, the truth underneath the words. We were taught to override it, to defer to the
+              louder logic in the room. I&rsquo;m here to help you trust it again. It was right all along.
+            </p>
+          </div>
+
+          <div className="belief">
+            <h3>Women are the front line.</h3>
+            <p>
+              The question of our time isn&rsquo;t whether man and machine can coexist &mdash; it&rsquo;s
+              whether they can coexist <em>in harmony.</em> I believe women are the ones who will make
+              that so. We have always been the translators between power and care, between what&rsquo;s
+              possible and what&rsquo;s human. This moment needs exactly that, and it needs it from us.
+            </p>
+          </div>
+
+          <div className="belief">
+            <h3>My mission is to lift women up &mdash; with confidence.</h3>
+            <p>
+              To lift up mothers, women, and children in dark and uncertain times. To <em>show</em>, not
+              just say, what&rsquo;s possible when we stop shrinking and start building together. I&rsquo;m
+              genuinely confident about what we can do from here &mdash; and I&rsquo;d like to share some of
+              that confidence with you.
+            </p>
+          </div>
         </div>
       </section>
 
       <footer className="foot">
-        <div className="wrap">AI Works For Her · by AI Mom</div>
+        <div className="wrap">
+          <p className="fcta"><a href="/book">Be a guest on the podcast →</a></p>
+          <div className="social">
+            <a href="https://aimomeducation.com">Podcast</a>
+            <a href="https://instagram.com/aimompodcast">@aimompodcast</a>
+            <a href="https://instagram.com/mandij0y">@mandij0y</a>
+            <a href="https://instagram.com/theknowingis">@theknowingis</a>
+            <a href="https://linkedin.com/in/amanda-beck-588200378">LinkedIn</a>
+          </div>
+          <p className="fname">Mandi Beck · AI Mom · From invisible to impactful.</p>
+        </div>
       </footer>
     </main>
   )
 }
 
 const css = `
-.home { --midnight:#171C3A; --nebula:#5A4FCF; --pink:#D98AB7; --ember:#F2A65A; --light:#F5EFE6;
-  background:var(--light); color:var(--midnight); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  line-height:1.6; margin:0; }
-.home .wrap { max-width:920px; margin:0 auto; padding:0 24px; }
-.home h1,.home h2 { font-family:Georgia,"Times New Roman",serif; }
-.home h1 { font-size:clamp(30px,5.5vw,50px); line-height:1.12; letter-spacing:-0.5px; margin:0 0 20px; color:#fff; }
-.home h2 { font-size:clamp(24px,4vw,34px); line-height:1.2; margin:0 0 20px; }
-.home section { padding:64px 0; }
-.home .hero { background:linear-gradient(160deg,var(--midnight),#25204d 68%,var(--nebula)); color:var(--light); padding:88px 0 80px; }
-.home .eyebrow { letter-spacing:3px; font-size:13px; font-weight:700; color:var(--ember); margin:0 0 18px; }
-.home .sub { font-size:20px; color:#e7e2f2; max-width:680px; }
-.home .sub strong { color:#fff; }
-.home em { font-style:italic; color:var(--nebula); }
-.home .hero em { color:var(--ember); }
-.home .mantra { font-family:Georgia,serif; font-size:clamp(20px,3vw,29px); color:#fff; margin:28px 0 0; }
-.home .mantra .arw { color:var(--ember); font-style:normal; }
-.home .cta { display:inline-block; margin-top:22px; background:var(--ember); color:var(--midnight);
-  font-weight:800; font-size:19px; text-decoration:none; padding:16px 34px; border-radius:999px;
-  box-shadow:0 10px 30px rgba(242,166,90,0.4); transition:transform .12s ease; }
-.home .cta:hover { transform:translateY(-2px); }
-.home .doors { background:var(--light); }
-.home .doorsub { font-size:18px; color:#4a4560; max-width:700px; margin:0 0 26px; }
-.home .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:8px; }
-.home .door { display:flex; flex-direction:column; gap:8px; text-decoration:none; color:var(--midnight);
-  background:#fff; border:1px solid #e7e0d3; border-radius:18px; padding:26px 22px; transition:transform .12s ease, box-shadow .12s ease; }
-.home .door:hover { transform:translateY(-3px); box-shadow:0 14px 34px rgba(23,28,58,0.12); }
-.home .demoji { font-size:30px; }
-.home .dlabel { font-family:Georgia,serif; font-size:21px; font-weight:700; }
-.home .dline { font-size:16px; color:#4a4560; flex:1; }
-.home .dgo { font-weight:800; color:var(--nebula); margin-top:6px; }
-.home .what { background:#fff; }
-.home .what p { font-size:19px; max-width:720px; }
-.home .soon { background:linear-gradient(160deg,#3a2352,var(--nebula) 65%,var(--pink)); color:#fff; text-align:center; }
-.home .soon h2 { color:#fff; }
-.home .soon p { font-size:18px; color:#f3ecf7; max-width:620px; margin:0 auto 8px; }
-.home .soontag { letter-spacing:2px; font-size:12px; font-weight:800; color:var(--ember); margin:0 0 8px; }
-.home .ghost { display:inline-block; margin-top:18px; background:#fff; color:var(--nebula); font-weight:700;
-  text-decoration:none; padding:13px 26px; border-radius:999px; }
-.home .foot { padding:34px 0; background:var(--midnight); color:#cfc9dd; font-size:14px; text-align:center; }
-@media (max-width:640px){ .home .grid { grid-template-columns:1fr; } }
+.h { --midnight:#171C3A; --nebula:#5A4FCF; --copper:#C2693F; --ember:#F2A65A; --cream:#FBF7F1;
+  background:var(--cream); color:var(--midnight); line-height:1.65; margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+.h .wrap { max-width:960px; margin:0 auto; padding:0 24px; }
+.h h1,.h h2,.h h3 { font-family:Georgia,"Times New Roman",serif; letter-spacing:-0.3px; }
+.h section { padding:72px 0; }
+.h em { font-style:italic; }
+.h .tag { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--copper); margin:0 0 14px; }
+.h .tag.light { color:var(--ember); }
+.h .ctaRow { display:flex; gap:12px; flex-wrap:wrap; margin-top:26px; }
+.h .cta { display:inline-block; background:var(--nebula); color:#fff; font-weight:800; font-size:16px;
+  text-decoration:none; padding:14px 26px; border-radius:999px; box-shadow:0 10px 26px rgba(90,79,207,0.3); transition:transform .12s ease; }
+.h .cta:hover { transform:translateY(-2px); }
+.h .cta.ghost { background:transparent; color:var(--nebula); box-shadow:none; border:1.5px solid var(--nebula); }
+
+/* Hero */
+.h .hero { background:linear-gradient(165deg,var(--midnight),#241f49 62%,var(--nebula)); color:var(--cream); padding:84px 0; }
+.h .hero .eyebrow { letter-spacing:3px; font-size:13px; font-weight:800; color:var(--ember); margin:0 0 18px; }
+.h .hero h1 { font-size:clamp(32px,5.5vw,52px); line-height:1.1; margin:0 0 20px; color:#fff; }
+.h .hero h1 em { color:var(--ember); }
+.h .hero .sub { font-size:19px; color:#e7e2f2; max-width:620px; }
+.h .hero .sub strong { color:#fff; }
+.h .heroGrid { display:grid; grid-template-columns:1.5fr 1fr; gap:40px; align-items:center; }
+.h .photo { width:230px; height:230px; border-radius:50%; justify-self:center; border:4px solid rgba(242,166,90,0.6);
+  background-image:url('/host-photo.jpg'), url('/balloon-512.png'); background-size:cover, 70%;
+  background-position:center; background-repeat:no-repeat; background-color:#241f49; box-shadow:0 20px 50px rgba(0,0,0,0.35); }
+
+/* Podcast */
+.h .pod { background:#fff; }
+.h .pod h2 { font-size:clamp(25px,4vw,36px); line-height:1.18; margin:0 0 18px; }
+.h .pod h2 em { color:var(--nebula); }
+.h .pod p { font-size:18px; max-width:720px; color:#3f3a52; }
+
+/* About */
+.h .about { background:var(--cream); }
+.h .about h2 { font-size:clamp(24px,4vw,32px); margin:0 0 18px; }
+.h .about p { font-size:18px; max-width:720px; color:#3f3a52; margin:0 0 16px; }
+
+/* Creed */
+.h .creed { background:linear-gradient(165deg,#2a1c3f,var(--nebula) 70%,var(--copper)); color:#fff; }
+.h .creed .belief { max-width:760px; margin:0 0 34px; }
+.h .creed .belief:last-child { margin-bottom:0; }
+.h .creed h3 { font-size:clamp(21px,3.2vw,28px); line-height:1.25; margin:0 0 10px; color:#fff; }
+.h .creed h3, .h .creed em { color:#fff; }
+.h .creed p { font-size:17.5px; color:#efe9f7; }
+
+/* Footer */
+.h .foot { background:var(--midnight); color:#cfc9dd; text-align:center; padding:48px 0; }
+.h .foot .fcta a { color:var(--ember); font-weight:800; font-size:18px; text-decoration:none; font-family:Georgia,serif; }
+.h .foot .social { display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin:22px 0 18px; }
+.h .foot .social a { color:#cfc9dd; text-decoration:none; font-size:14px; font-weight:600; }
+.h .foot .social a:hover { color:#fff; }
+.h .foot .fname { font-size:13px; color:#8782a0; margin:0; }
+
+@media (max-width:720px){
+  .h .heroGrid { grid-template-columns:1fr; text-align:center; }
+  .h .hero .ctaRow { justify-content:center; }
+  .h .photo { width:180px; height:180px; order:-1; }
+  .h .hero .sub { margin-left:auto; margin-right:auto; }
+}
 `
