@@ -52,7 +52,7 @@ export default function BookPage() {
     }).catch(() => {}).finally(() => setLoaded(true))
   }, [])
 
-  const dowTimes = new Map(weekly.map(w => [w.dow, w.time]))
+  const dowTimes = new Map<number, string>(weekly.map(w => [w.dow, w.time] as [number, string]))
   const today = new Date(); today.setHours(0, 0, 0, 0)
 
   const slotFor = (d: Date): { time: string } | null => {
