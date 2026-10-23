@@ -21,6 +21,7 @@ import ActivityStation from './ActivityStation'
 import InstantCompose from './InstantCompose'
 import StationChat from './StationChat'
 import PodcastEngine from './PodcastEngine'
+import PodcastStudio from './PodcastStudio'
 import PitchStudio from './PitchStudio'
 import StoryProcessor from './StoryProcessor'
 import StoryStudio from './StoryStudio'
@@ -255,7 +256,8 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         {/* Podcast stays mounted once opened, so a running generation survives
             clicking to another tab and finishes into the still-live component. */}
         <KeepAlive active={view === 'podcast'}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <PodcastStudio />
             <PodcastEngine />
           </div>
         </KeepAlive>
