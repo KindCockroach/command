@@ -19,6 +19,7 @@ function isPublic(path: string): boolean {
   if (path === '/bethereforher' || path === '/bethereforher/library') return true // Be There For Her product
   if (path === '/aimomeducation') return true // AI Mom Podcast landing (aimomeducation.com)
   if (path === '/wellspring' || path === '/bethereforher/wellspring') return true // The Wellspring membership
+  if (path === '/bethereforher/reset') return true // Be There For Her live Reset (editor at /bethereforher/reset/edit stays private)
   if (path === '/lite' || path === '/lite/welcome') return true
   if (/^\/(seen|queen|captionwriter)\/welcome$/.test(path)) return true
   if (path === '/api/journal-waitlist') return true // public waitlist form
@@ -39,6 +40,10 @@ export function middleware(req: NextRequest) {
     }
     if (p === '/wellspring' || p === '/bethereforher/wellspring') {
       const u = req.nextUrl.clone(); u.pathname = '/bethereforher/wellspring'; return NextResponse.rewrite(u)
+    }
+    // bethereforher.com/reset is the Be There For Her live Reset — NOT the aiworksforher /reset.
+    if (p === '/reset' || p === '/bethereforher/reset') {
+      const u = req.nextUrl.clone(); u.pathname = '/bethereforher/reset'; return NextResponse.rewrite(u)
     }
   }
 
