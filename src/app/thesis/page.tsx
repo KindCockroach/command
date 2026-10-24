@@ -27,8 +27,8 @@ export default function Thesis() {
       <section className="hero">
         <div className="wrap">
           <p className="eyebrow">KEYNOTE SPEAKER · AI MOM</p>
-          <h1>In the age of machines,<br /><em>intuition</em> is the decisive technology.</h1>
-          <p className="sub">And women carry it most fluently. I speak about why women are the front line of a future where man and machine coexist <strong>in harmony</strong> — and how we lead it.</p>
+          <h1>In the age of exponential machines, a <em>woman&rsquo;s intuition</em> is where mankind&rsquo;s exponential is found.</h1>
+          <p className="sub">Women carry it most fluently. I speak about why women are the front line of a future where man and machine coexist <strong>in harmony</strong> — and how we lead it.</p>
           <a className="cta" href="mailto:hi@aimomeducation.com?subject=Speaking%20inquiry%20—%20Mandi%20Beck">Book me to speak →</a>
         </div>
       </section>
@@ -38,7 +38,7 @@ export default function Thesis() {
         <div className="wrap">
           <p className="tag">THE THESIS</p>
           <blockquote>
-            In the age of machine intelligence, human <em>intuition</em> — the oldest intelligence we have, and the one women were most trained to override — is the decisive technology. Women, reconnected to their intuition and aligned with themselves, are the front line of a future where man and machine coexist in harmony.
+            In the age of exponential machines, a woman&rsquo;s <em>intuition</em> is where mankind&rsquo;s exponential is found — the oldest intelligence we have, and the one women were most trained to override. Women, reconnected to their intuition and aligned with themselves, are the front line of a future where man and machine coexist in harmony.
           </blockquote>
           <div className="beats">
             <p>We built machines that can out-calculate every one of us. So the scarce resource is no longer information or logic — it&rsquo;s <strong>discernment</strong>. Knowing what&rsquo;s true, what matters, and what&rsquo;s human.</p>
@@ -97,7 +97,7 @@ export default function Thesis() {
         <div className="wrap">
           <p className="tag">WHY ME</p>
           <p>
-            I&rsquo;m Mandi Beck &mdash; mom of five (one an angel in heaven), former realtor and Evernote
+            I&rsquo;m Mandi Beck &mdash; mom of five (one an Angel on Earth), former realtor and Evernote
             employee, host of the AI Mom Podcast. Five months
             postpartum, I taught myself to build with AI during nap times: a podcast, a voice clone, a
             whole command center. I come from a line of women who broke things open, and I&rsquo;ve done
