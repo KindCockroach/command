@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 }
 
 const PLATFORMS = [
-  { name: 'Apple Podcasts', emoji: '', color: '#9933CC', href: 'https://podcasts.apple.com/search?term=AI%20Mom%20Podcast' },
-  { name: 'Spotify', emoji: '', color: '#1DB954', href: 'https://open.spotify.com/search/AI%20Mom%20Podcast' },
-  { name: 'YouTube', emoji: '', color: '#FF0000', href: 'https://www.youtube.com/results?search_query=AI+Mom+Podcast' },
+  { name: 'Apple Podcasts', emoji: '', color: '#9933CC', href: 'https://podcasts.apple.com/us/podcast/ai-mom/id6786440414' },
+  { name: 'Spotify', emoji: '', color: '#1DB954', href: 'https://open.spotify.com/show/033I8hRPjXiKlCHhaq5YYc' },
+  { name: 'YouTube', emoji: '', color: '#FF0000', href: 'https://www.youtube.com/@AIMom_888' },
 ]
 
 export default function Listen() {
