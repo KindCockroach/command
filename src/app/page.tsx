@@ -9,7 +9,7 @@ import { MetaPixel } from '@/components/funnel/shared'
 export const metadata: Metadata = {
   title: 'Mandi Beck — AI Mom · Host of the AI Mom Podcast',
   description:
-    "Mom of five (one baby in heaven). A real mom, proactive woman, and AI enthusiast. Host of the AI Mom Podcast — honest conversations and tools that empower the middle class, mindful mothers, and the coming-of-age generations as AI changes everything. I believe women's intuition is the anecdote to mankind's exponential potential for a harmonious coexistence with exponential technology.",
+    "Mom of five (one baby in heaven). A real mom, proactive woman, and AI enthusiast. Host of the AI Mom Podcast — honest conversations and tools that empower the middle class, mindful mothers, and the coming-of-age generations as AI changes everything. I believe women's intuition is the antidote to mankind's exponential potential for a harmonious coexistence with exponential technology.",
 }
 
 const DOORS = [
@@ -35,7 +35,7 @@ export default function Home() {
               Mom of five &mdash; one baby in heaven. A real mom, a proactive woman, and an AI enthusiast.
               Host of the AI Mom Podcast. I build tools and have honest conversations that empower the
               middle class, mindful mothers, and the coming-of-age generations as AI changes everything.
-              I believe <strong>women&rsquo;s intuition is the anecdote to mankind&rsquo;s exponential potential for a harmonious coexistence with exponential technology.</strong>
+              I believe <strong>women&rsquo;s intuition is the antidote to mankind&rsquo;s exponential potential for a harmonious coexistence with exponential technology.</strong>
             </p>
             <div className="ctaRow">
               <a className="cta" href="https://aimomeducation.com">Listen</a>
