@@ -36,6 +36,7 @@ Mark natural [pause] beats sparingly. Put [VERIFY] after any fact, name, price, 
     const input = `${ep.number ? `EPISODE ${ep.number}\n` : ''}EPISODE TITLE: ${ep.title}\nTOPIC: ${ep.topic}${ep.guest ? `\nGUEST: ${ep.guest}` : ''}${ep.thread ? `\nHUMAN THREAD: ${ep.thread}` : ''}${ep.pushback ? `\nPUSHBACK: ${ep.pushback}` : ''}${source ? `\n\nBUILD FROM THIS ORIGINAL (her banked words — keep her stories, jokes, and lines; sharpen, tighten, raise the stakes):\n${source.slice(0, 12000)}` : ''}\n\nWrite the teleprompter script.`
     try {
       const script = await fableText({ useClaude: true, maxTokens: 6000, instructions, input })
+        .catch(() => fableText({ maxTokens: 6000, instructions, input }))
       if (!script.trim()) return NextResponse.json({ error: 'writer came back empty — try again' }, { status: 502 })
       const updated = updatePodcastEpisode(ep.id, { script: script.trim(), status: ep.status === 'planned' ? 'scripted' : ep.status })
       return NextResponse.json({ ok: true, episode: updated })

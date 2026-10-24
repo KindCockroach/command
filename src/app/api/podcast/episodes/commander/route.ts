@@ -84,7 +84,9 @@ Return ONLY valid JSON: {"reply": "...", "actions": [ ... ]}`
   const input = `EPISODES (what's on her screen):\n${JSON.stringify(brief, null, 1)}\n\nBANKED SCRIPTS & TRANSCRIPTS IN NOTES:\n${banked.join('\n') || '(none)'}\n\n${priorTurns ? `RECENT CONVERSATION:\n${priorTurns}\n\n` : ''}MANDI: ${ask}`
 
   try {
+    // Claude first; if the Anthropic account can't answer (e.g. out of credit), fall back to the 4o writer.
     const raw = await fableText({ instructions, input, maxTokens: 4000, json: true, useClaude: true })
+      .catch(() => fableText({ instructions, input, maxTokens: 4000, json: true }))
     const out = await parseKit(raw)
     if (!out) return NextResponse.json({ error: 'That came back garbled — say it again and I\'ll get it.' }, { status: 502 })
     const actions = (Array.isArray(out.actions) ? out.actions : []) as Action[]
