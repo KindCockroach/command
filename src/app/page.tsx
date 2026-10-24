@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 }
 
 const DOORS = [
-  { href: 'https://aimomeducation.com', emoji: '🎙', label: 'Listen to the podcast', line: 'How to think — not what to think — about AI. Real, clear-eyed talk for thoughtful women.' },
+  { href: '/listen', emoji: '🎙', label: 'Listen to the podcast', line: 'How to think — not what to think — about AI. Real, clear-eyed talk for thoughtful women.' },
   { href: '/book', emoji: '🤝', label: 'Be a guest', line: 'Have a story or a perspective women need to hear? Come on the show. Pick your date.' },
   { href: '/thesis', emoji: '🎤', label: 'Book me as a speaker', line: 'Bring the keynote on intuition, women, and the age of AI to your stage.' },
 ]
@@ -38,7 +38,7 @@ export default function Home() {
               I believe <strong>women&rsquo;s intuition is the antidote to mankind&rsquo;s exponential potential for a harmonious coexistence with exponential technology.</strong>
             </p>
             <div className="ctaRow">
-              <a className="cta" href="https://aimomeducation.com">Listen</a>
+              <a className="cta" href="/listen">Listen</a>
               <a className="cta ghost" href="/book">Be a guest</a>
               <a className="cta ghost" href="/thesis">Book me to speak</a>
             </div>
@@ -76,7 +76,7 @@ export default function Home() {
             work, and your peace, you&rsquo;re exactly who this is for.
           </p>
           <div className="ctaRow">
-            <a className="cta" href="https://aimomeducation.com">Listen now</a>
+            <a className="cta" href="/listen">Listen now</a>
             <a className="cta ghost" href="/book">Come on the show →</a>
           </div>
         </div>
