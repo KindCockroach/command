@@ -1,14 +1,17 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import { Loader2, Mic, Calendar, FileText, Link2, Copy, Check, Sparkles, X, ExternalLink } from 'lucide-react'
+import { useState, useEffect, useCallback, type CSSProperties } from 'react'
+import { Loader2, Mic, Calendar, FileText, Link2, Copy, Check, Sparkles, X, ExternalLink, Newspaper, Send, BookOpen } from 'lucide-react'
 
 // PODCAST STUDIO — the robust podcast tab. Top: a scrollable weekly schedule (each
 // week's shows with topic + recording time). Click a show for its teleprompter script
 // + reference links. Bottom: a table of every episode. Sundays = solo (scripted),
 // Wednesdays = guest (booked via /book).
 type Ref = { label: string; url: string }
-type Episode = { id: string; date: string; day: 'sun' | 'wed'; time?: string; title: string; topic: string; guest?: string; script: string; references: Ref[]; status: string }
+type Episode = { id: string; date: string; day: 'sun' | 'wed'; time?: string; title: string; topic: string; guest?: string; script: string; references: Ref[]; status: string; number?: number; thread?: string; pushback?: string; note_id?: number }
+type Turn = { role: 'user' | 'commander'; text: string }
 
+const COLS = '0.45fr 1.3fr 1.3fr 0.7fr 0.9fr 1.1fr 0.6fr'
+const btn = (bg: string): CSSProperties => ({ border: 'none', background: bg, color: '#fff', borderRadius: '10px', padding: '9px 14px', fontWeight: 800, fontSize: '12.5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' })
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const fmtTime = (t?: string) => { if (!t) return ''; const m = /^(\d{1,2}):(\d{2})/.exec(t); if (!m) return t; let h = +m[1]; const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${m[2]} ${ap}` }
@@ -22,6 +25,35 @@ export default function PodcastStudio() {
   const [open, setOpen] = useState<Episode | null>(null)
   const [gen, setGen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [chat, setChat] = useState<Turn[]>([])
+  const [draft, setDraft] = useState('')
+  const [asking, setAsking] = useState(false)
+  const [banked, setBanked] = useState<{ id: number; title: string; body: string } | null>(null)
+
+  // Commander on the table: recommend the next episode, pull headlines, or talk.
+  const askCommander = async (mode: 'chat' | 'recommend' | 'headlines', text: string) => {
+    const said = text.trim() || (mode === 'recommend' ? 'Recommend the next episode.' : mode === 'headlines' ? "Pull this week's headlines." : '')
+    if (!said || asking) return
+    const history = [...chat, { role: 'user' as const, text: said }]
+    setChat(history); setDraft(''); setAsking(true)
+    try {
+      const d = await fetch('/api/podcast/episodes/commander', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode, message: text.trim(), history: chat }) }).then(r => r.json())
+      if (Array.isArray(d.episodes)) setEps(d.episodes)
+      const note = Array.isArray(d.applied) && d.applied.length ? `\n\n✓ ${d.applied.join(' · ')}` : ''
+      setChat([...history, { role: 'commander', text: d.error ? `⚠ ${d.error}` : `${d.reply}${note}` }])
+    } catch {
+      setChat([...history, { role: 'commander', text: '⚠ Couldn\'t reach the Commander — try again.' }])
+    }
+    setAsking(false)
+  }
+
+  const openBanked = async (id: number) => {
+    try {
+      const notes = await fetch('/api/notes').then(r => r.json())
+      const n = Array.isArray(notes) ? notes.find((x: { id: number }) => x.id === id) : null
+      setBanked(n ? { id: n.id, title: n.title, body: n.body } : { id, title: `Note #${id}`, body: 'That note wasn\'t found.' })
+    } catch { /* ignore */ }
+  }
 
   const load = useCallback(() => {
     fetch('/api/podcast/episodes').then(r => r.json()).then(d => setEps(Array.isArray(d.episodes) ? d.episodes : [])).catch(() => {}).finally(() => setLoading(false))
@@ -75,7 +107,7 @@ export default function PodcastStudio() {
                         <span style={{ fontSize: '10px', fontWeight: 800, color: tint(e) }}>{fmtDate(e.date)}{e.time ? ` · ${fmtTime(e.time)}` : ''}</span>
                         {e.script ? <FileText size={11} style={{ color: 'var(--text-subtle)' }} /> : null}
                       </div>
-                      <p style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text)', marginTop: '3px', lineHeight: 1.3 }}>{e.title}</p>
+                      <p style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text)', marginTop: '3px', lineHeight: 1.3 }}>{e.number ? `Ep ${e.number} · ` : ''}{e.title}</p>
                       {e.day === 'wed' && <p style={{ fontSize: '10.5px', color: 'var(--text-subtle)', marginTop: '2px' }}>👤 {e.guest || 'guest TBD'}</p>}
                     </button>
                   ))}
@@ -84,21 +116,55 @@ export default function PodcastStudio() {
             ))}
           </div>
 
-          {/* Episode table */}
+          {/* Episode table — scrollable, numbered */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.2fr 0.9fr 0.5fr', gap: '8px', padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-subtle)' }}>
-              <span>Title</span><span>Topic</span><span>Guest</span><span>Script</span>
-            </div>
-            {eps.map(e => (
-              <div key={e.id} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.2fr 0.9fr 0.5fr', gap: '8px', padding: '11px 14px', borderBottom: '1px solid var(--border)', alignItems: 'center', fontSize: '12.5px' }}>
-                <span style={{ fontWeight: 700, color: 'var(--text)' }}>{e.title}</span>
-                <span style={{ color: 'var(--text-muted)' }}>{e.topic}</span>
-                <span style={{ color: 'var(--text-subtle)' }}>{e.day === 'wed' ? (e.guest || 'TBD') : '—'}</span>
-                <button onClick={() => setOpen(e)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: e.script ? 'var(--purple)' : 'var(--text-subtle)', fontWeight: 700, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}>
-                  <FileText size={12} /> {e.script ? 'View' : 'Write'}
-                </button>
+            <div style={{ maxHeight: '440px', overflow: 'auto' }}>
+              <div style={{ minWidth: '860px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: COLS, gap: '8px', padding: '10px 14px', borderBottom: '1px solid var(--border)', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-subtle)', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
+                  <span>Ep</span><span>Title</span><span>Topic</span><span>Guest</span><span>Human thread</span><span>Pushback</span><span>Script</span>
+                </div>
+                {eps.map(e => (
+                  <div key={e.id} style={{ display: 'grid', gridTemplateColumns: COLS, gap: '8px', padding: '11px 14px', borderBottom: '1px solid var(--border)', alignItems: 'start', fontSize: '12.5px' }}>
+                    <span style={{ fontWeight: 800, color: tint(e) }}>{e.number ?? '—'}<span style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-subtle)' }}>{fmtDate(e.date)}</span></span>
+                    <span style={{ fontWeight: 700, color: 'var(--text)' }}>{e.title}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{e.topic}</span>
+                    <span style={{ color: 'var(--text-subtle)' }}>{e.day === 'wed' ? (e.guest || 'TBD') : 'Solo'}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{e.thread || '—'}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{e.pushback || '—'}</span>
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      <button onClick={() => setOpen(e)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: e.script ? 'var(--purple)' : 'var(--text-subtle)', fontWeight: 700, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}>
+                        <FileText size={12} /> {e.script ? 'View' : 'Write'}
+                      </button>
+                      {e.note_id ? (
+                        <button onClick={() => openBanked(e.note_id!)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', padding: 0, textAlign: 'left' }}>
+                          <BookOpen size={12} /> Banked
+                        </button>
+                      ) : null}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+          </div>
+
+          {/* Commander on the table */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button onClick={() => askCommander('recommend', draft)} disabled={asking} style={btn('var(--purple)')}><Sparkles size={13} /> Recommend next episode</button>
+              <button onClick={() => askCommander('headlines', draft)} disabled={asking} style={btn('#C2477E')}><Newspaper size={13} /> Pull this week&rsquo;s headlines</button>
+            </div>
+            {chat.length > 0 && (
+              <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {chat.map((t, i) => (
+                  <div key={i} style={{ alignSelf: t.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '88%', background: t.role === 'user' ? 'var(--purple)' : 'var(--bg)', color: t.role === 'user' ? '#fff' : 'var(--text)', borderRadius: '12px', padding: '9px 12px', fontSize: '13px', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{t.text}</div>
+                ))}
+                {asking && <div style={{ display: 'flex', gap: '6px', alignItems: 'center', color: 'var(--text-muted)', fontSize: '12.5px' }}><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> thinking…</div>}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <textarea value={draft} onChange={ev => setDraft(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); askCommander('chat', draft) } }} rows={2} placeholder="Talk to the Commander: &quot;move the water pushback to Ep 9,&quot; &quot;add a guest for Nov 25,&quot; &quot;what should Ep 8 open with?&quot;" style={{ flex: 1, resize: 'vertical', border: '1px solid var(--border)', borderRadius: '10px', padding: '9px 11px', fontSize: '13px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' }} />
+              <button onClick={() => askCommander('chat', draft)} disabled={asking || !draft.trim()} style={{ ...btn('var(--purple)'), alignSelf: 'stretch' }}><Send size={13} /></button>
+            </div>
           </div>
         </>
       )}
@@ -110,8 +176,11 @@ export default function PodcastStudio() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
               <div>
                 <span style={{ fontSize: '11px', fontWeight: 800, color: tint(open) }}>{fmtDate(open.date)}{open.time ? ` · ${fmtTime(open.time)} CT` : ''} · {open.day === 'wed' ? 'Guest' : 'Solo'}</span>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', marginTop: '3px', lineHeight: 1.2 }}>{open.title}</h2>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', marginTop: '3px', lineHeight: 1.2 }}>{open.number ? `Ep ${open.number}: ` : ''}{open.title}</h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{open.topic}{open.day === 'wed' && open.guest ? ` · with ${open.guest}` : ''}</p>
+                {open.thread ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '4px' }}><strong>Human thread:</strong> {open.thread}</p> : null}
+                {open.pushback ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '2px' }}><strong>Pushback:</strong> {open.pushback}</p> : null}
+                {open.note_id ? <button onClick={() => openBanked(open.note_id!)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0, marginTop: '6px' }}><BookOpen size={12} /> Banked script (Note #{open.note_id})</button> : null}
               </div>
               <button onClick={() => setOpen(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={18} /></button>
             </div>
@@ -145,6 +214,21 @@ export default function PodcastStudio() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {/* Banked script viewer */}
+      {banked && (
+        <div onClick={() => setBanked(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,16,40,0.6)', zIndex: 110, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 18px', overflowY: 'auto' }}>
+          <div onClick={ev => ev.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: '18px', padding: '24px', maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--purple)' }}>Banked · Note #{banked.id}</span>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)', marginTop: '3px', lineHeight: 1.25 }}>{banked.title}</h2>
+              </div>
+              <button onClick={() => setBanked(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={18} /></button>
+            </div>
+            <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '16px 18px', maxHeight: '60vh', overflowY: 'auto', fontSize: '14px', lineHeight: 1.65, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{banked.body}</div>
           </div>
         </div>
       )}

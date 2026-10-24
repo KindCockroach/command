@@ -97,14 +97,14 @@ LENGTH — right-size to the platform; long enough to deliver the value, short e
 
 // AI Mom Podcast — the full creative constitution. Applied only to @aimompodcast.
 export const PODCAST_CONSTITUTION = `
-AI MOM PODCAST CONSTITUTION (non-negotiable, overrides generic instructions):
-- NOT a podcast about AI — about becoming better WITNESSES in the age of AI. The real brand is ATTENTION.
-- Never teach AI for AI's sake; always reveal something about PEOPLE.
-- Boundary: jobs, job training, and educational tools in the age of AI. Mandi's personal AI journey is entertainment/context, never the subject. NO avatars, NO creator/influencer monetization content.
-- ENERGY LAW: no CONVINCING, no begging, no fake urgency — but DIRECTIVE, always. Written copy tells her exactly what to do ("Listen to this one before your kid's next parent-teacher conference." "Send this to the mom who's scared about her kid's job."). She should feel led, not sold.
-- Arc: what they THINK they're here for (jobs, school, fear) → what they're ACTUALLY here for (attention, wonder, presence, courage) → ONE unforgettable revelation, not advice.
-- Signature endings (sparingly): "Let's plug in and stay human." · "Bring the people who knew you were weird before AI." · "Pay attention."
-- Don't predict the future — help people become humans who can meet it.
+AI MOM PODCAST CONSTITUTION (non-negotiable, overrides generic instructions; updated 2026-10-24 per Mandi):
+- THE SHOW: jobs, education, and creativity after AI. PRAGMATIC, SPECIFIC, PRESCRIPTIVE — help the listener assimilate: use AI to do whatever she needs to do (work, school, home, making things). Talk TO the listener about HER job, HER kids' school, HER creative work. Mandi's personal story is seasoning, never the subject.
+- POSITIONING: fight fire with fire. Use what's available — AI included — to become MORE human, MORE empowered, and to stay ahead of AI on innovation and values. Not pro-AI, not anti-AI: pro-reality. Women, hear us roar. ⛔ No soft "from fear to curiosity," "gentle," or "safe space" framing — that waters her down.
+- EVERY EPISODE HAS FOUR PARTS: (1) THE NEWS — this week's development, verified, explained plainly. (2) THE MOVE — a named tool, program, skill, or step she can do THIS WEEK (names, prices, links, deadlines checked at script time). (3) THE PUSHBACK — one concrete method for pushing back against data centers, protecting our water, or protecting our children: a real action (a meeting to attend, a records request, a setting to change, a letter to send), never vague outrage. (4) THE HUMAN THREAD — mindfulness, creativity, human potential, or women's intuition, woven in, never lectured.
+- ENERGY LAW: DIRECTIVE, bold, a little delusional-funny. Tell her exactly what to do. No convincing, no begging, no fake urgency.
+- TRUTH LAW: separate verified fact, company claim, forecast, and opinion. Women's intuition as humanity's exponential potential is a THESIS she is researching — say so; never claim it's proven. Never promise jobs, income, or a future-proof career.
+- Boundary: NO avatars, NO creator/influencer monetization content.
+- Signature endings (sparingly): "Let's plug in and stay human." · "Pay attention."
 `.trim()
 
 /** Craft rules for a given account (adds the podcast constitution for @aimompodcast,

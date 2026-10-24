@@ -349,6 +349,10 @@ export type PodcastEpisode = {
   script: string          // teleprompter script
   references: EpisodeRef[]
   status: 'planned' | 'scripted' | 'recorded' | 'published'
+  number?: number         // episode number (Ep 7, Ep 8, …)
+  thread?: string         // the human thread woven in (mindfulness, creativity, human potential, women's intuition)
+  pushback?: string       // the episode's pushback move (data centers, water, children)
+  note_id?: number        // banked script / raw transcript in Notes
   created_at: string
 }
 
@@ -1700,7 +1704,11 @@ export function createPodcastEpisode(data: Partial<PodcastEpisode>): PodcastEpis
     date: data.date ?? '', day: data.day ?? 'sun', time: data.time,
     title: data.title ?? 'Untitled', topic: data.topic ?? '', guest: data.guest ?? '',
     script: data.script ?? '', references: Array.isArray(data.references) ? data.references : [],
-    status: data.status ?? 'planned', created_at: new Date().toISOString(),
+    status: data.status ?? 'planned',
+    number: typeof data.number === 'number' ? data.number : undefined,
+    thread: data.thread ?? '', pushback: data.pushback ?? '',
+    note_id: typeof data.note_id === 'number' ? data.note_id : undefined,
+    created_at: new Date().toISOString(),
   }
   db.podcast_episodes.push(ep)
   writeDb(db)
