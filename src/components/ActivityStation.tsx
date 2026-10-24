@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Loader2, RefreshCw, Moon, Send, MessageCircle, Search } from 'lucide-react'
+import CommanderModal from './CommanderModal'
+import { executeCommanderAction, commanderActionLabel, AUTO_RUN_TYPES, type CommanderAction as Action } from '@/lib/commanderActions'
 
 // THE ACTIVITY STATION — the window into RISE while Mandi's away. A running, grouped
 // feed of everything the station did (drops, transcripts, drafts, approvals, the
@@ -9,7 +11,7 @@ import { Loader2, RefreshCw, Moon, Send, MessageCircle, Search } from 'lucide-re
 // become agentic without being present.
 
 type Ev = { id: number; ts: string; type: string; title: string; detail?: string; icon?: string; source?: string; account_id?: string | null; content_id?: number | null }
-type Msg = { role: 'user' | 'assistant'; content: string }
+type Msg = { role: 'user' | 'assistant'; content: string; actions?: Action[] }
 
 const TYPE_TINT: Record<string, string> = {
   drop: '#5A4FCF', transcribed: '#2B9CC4', post_created: '#7C3AED', post_approved: '#2E8B60',
@@ -43,6 +45,9 @@ export default function ActivityStation() {
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [q, setQ] = useState('')
   const [asking, setAsking] = useState(false)
+  const [actStatus, setActStatus] = useState<Record<string, string>>({})
+  const [queueRunning, setQueueRunning] = useState<number | null>(null)
+  const [shredInput, setShredInput] = useState<string | null>(null)
   const chatEnd = useRef<HTMLDivElement>(null)
   // Hashtag scout
   const [tag, setTag] = useState('')
@@ -85,9 +90,42 @@ export default function ActivityStation() {
       : { role: m.role, content: m.content })
     try {
       const d = await fetch('/api/commander/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: sent }) }).then(r => r.json())
-      setMsgs(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Say that again?' }])
+      const actions: Action[] = Array.isArray(d.actions) ? d.actions : []
+      setMsgs(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Say that again?', actions }])
+      // Same JUST-DO-IT behavior as the Home Commander: auto-run posts + notes/tasks,
+      // leave the rest as tappable buttons. (This chat used to drop actions entirely.)
+      const mi = next.length // index of the assistant message just appended
+      const autoActions = actions.map((a, ai) => ({ a, ai })).filter(x => AUTO_RUN_TYPES.has(x.a.type))
+      if (autoActions.length) {
+        setQueueRunning(mi)
+        for (const { a, ai } of autoActions) {
+          // eslint-disable-next-line no-await-in-loop
+          await runAction(`${mi}-${ai}`, a)
+        }
+        setQueueRunning(null)
+      }
     } catch { setMsgs(m => [...m, { role: 'assistant', content: 'Connection hiccup — try again.' }]) }
     setAsking(false)
+  }
+
+  // One action → the shared runner. shred opens the cross-account preview modal.
+  const runAction = async (key: string, a: Action) => {
+    if (a.type === 'shred') { const res = await executeCommanderAction(a); setShredInput(res.openShred ?? ''); setActStatus(s => ({ ...s, [key]: res.status })); return }
+    setActStatus(s => ({ ...s, [key]: '…' }))
+    const res = await executeCommanderAction(a)
+    if (res.openShred !== undefined) setShredInput(res.openShred)
+    setActStatus(s => ({ ...s, [key]: res.status }))
+  }
+
+  const runAllActions = async (mi: number, actions: Action[]) => {
+    setQueueRunning(mi)
+    for (let ai = 0; ai < actions.length; ai++) {
+      const key = `${mi}-${ai}`
+      if (actStatus[key]?.startsWith('✓')) continue
+      // eslint-disable-next-line no-await-in-loop
+      await runAction(key, actions[ai])
+    }
+    setQueueRunning(null)
   }
 
   const runScout = async () => {
@@ -161,7 +199,30 @@ export default function ActivityStation() {
         {msgs.length > 0 && (
           <div style={{ maxHeight: '300px', overflowY: 'auto', padding: '12px 15px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
             {msgs.map((m, i) => (
-              <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', padding: '9px 12px', borderRadius: m.role === 'user' ? '13px 13px 4px 13px' : '13px 13px 13px 4px', background: m.role === 'user' ? 'var(--purple)' : 'var(--surface-raised)', color: m.role === 'user' ? '#fff' : 'var(--text)', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.content}</div>
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                <div style={{ padding: '9px 12px', borderRadius: m.role === 'user' ? '13px 13px 4px 13px' : '13px 13px 13px 4px', background: m.role === 'user' ? 'var(--purple)' : 'var(--surface-raised)', color: m.role === 'user' ? '#fff' : 'var(--text)', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                {m.actions && m.actions.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {m.actions.length > 1 && (
+                      <button onClick={() => runAllActions(i, m.actions!)} disabled={queueRunning !== null}
+                        style={{ fontSize: '12px', fontWeight: 800, padding: '6px 12px', borderRadius: '9px', border: 'none', cursor: queueRunning !== null ? 'default' : 'pointer', background: queueRunning === i ? 'var(--border)' : 'var(--purple)', color: '#fff', width: '100%' }}>
+                        {queueRunning === i ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite', display: 'inline', verticalAlign: 'middle' }} /> running {m.actions.length} in order…</> : `▶ Run all ${m.actions.length} (one at a time)`}
+                      </button>
+                    )}
+                    {m.actions.map((a, ai) => {
+                      const key = `${i}-${ai}`
+                      const st = actStatus[key]
+                      const done = st && st !== '…'
+                      return (
+                        <button key={ai} onClick={() => runAction(key, a)} disabled={st === '…' || (!!done && st.startsWith('✓'))}
+                          style={{ fontSize: '12px', fontWeight: 700, padding: '6px 11px', borderRadius: '9px', border: '1px solid var(--purple)', cursor: st === '…' ? 'default' : 'pointer', background: done && st.startsWith('✓') ? '#EAF7F0' : 'var(--surface)', color: done && st.startsWith('✓') ? '#2E8B60' : 'var(--purple)' }}>
+                          {st === '…' ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite', display: 'inline', verticalAlign: 'middle' }} /> working…</> : done ? st : commanderActionLabel(a)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             ))}
             {asking && <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--text-muted)', fontSize: '12px' }}><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> thinking…</div>}
             <div ref={chatEnd} />
@@ -215,6 +276,7 @@ export default function ActivityStation() {
           ))}
         </div>
       )}
+      {shredInput !== null && <CommanderModal input={shredInput} onClose={() => setShredInput(null)} />}
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </div>
   )
