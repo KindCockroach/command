@@ -8,11 +8,9 @@ export const metadata: Metadata = {
 }
 
 // Downsell for the launch: the $10 "Reset" offered to buyers who decline the
-// $55 Cheat Code add-on. Register button → NEXT_PUBLIC_RESET_CHECKOUT_URL.
-const CHECKOUT_URL =
-  process.env.NEXT_PUBLIC_RESET_CHECKOUT_URL ||
-  process.env.NEXT_PUBLIC_LITE_CHECKOUT_URL ||
-  'https://link.fastpaydirect.com/payment-link/6a67ba88a655fa0b802a6707'
+// $55 Cheat Code add-on. Register button → the Reset's own FastPayDirect link
+// (hardcoded so a stale NEXT_PUBLIC_RESET_CHECKOUT_URL on Railway can't override it).
+const CHECKOUT_URL = 'https://link.fastpaydirect.com/payment-link/6a6f64ff7b99151a54041cca'
 const META_PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || ''
 
 function MetaPixel() {
