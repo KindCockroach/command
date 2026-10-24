@@ -9,7 +9,7 @@ import { MetaPixel } from '@/components/funnel/shared'
 export const metadata: Metadata = {
   title: 'Mandi Beck — AI Mom · Host of the AI Mom Podcast',
   description:
-    "Mom of five — one an Angel on Earth — carried through a rich history of women's health struggles. Former realtor and Evernote employee, host of the AI Mom Podcast. Helping families trust intuition and lead as AI reshapes everything — because women hold the vision for how man and machine coexist in harmony.",
+    "Mom of five (one baby in heaven). A real mom, proactive woman, and AI enthusiast. Host of the AI Mom Podcast — honest conversations and tools that empower the middle class, mindful mothers, and the coming-of-age generations as AI changes everything. I believe women's intuition is the anecdote to mankind's exponential potential for a harmonious coexistence with exponential technology.",
 }
 
 const DOORS = [
@@ -32,10 +32,10 @@ export default function Home() {
             <h1>Nice to <em>e-meet</em> you.</h1>
             <p className="lead">I&rsquo;m Mandi &mdash; they call me AI Mom.</p>
             <p className="sub">
-              Mom of five &mdash; one an Angel on Earth &mdash; carried through a rich history of women&rsquo;s
-              health struggles. Former realtor and Evernote employee. Host of the AI Mom Podcast. I build
-              tools and have honest conversations so families aren&rsquo;t left behind as AI reshapes
-              everything &mdash; because I believe <strong>women hold the vision and shape what it becomes.</strong>
+              Mom of five &mdash; one baby in heaven. A real mom, a proactive woman, and an AI enthusiast.
+              Host of the AI Mom Podcast. I build tools and have honest conversations that empower the
+              middle class, mindful mothers, and the coming-of-age generations as AI changes everything.
+              I believe <strong>women&rsquo;s intuition is the anecdote to mankind&rsquo;s exponential potential for a harmonious coexistence with exponential technology.</strong>
             </p>
             <div className="ctaRow">
               <a className="cta" href="https://aimomeducation.com">Listen</a>
