@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
+import CopyEditor from '@/components/CopyEditor'
 
 // aiworksforher.com/aimom — Mandi's face: an intro to her, the AI Mom Podcast, be a
 // guest, book her to speak, closing on her manifesto (intuition · women as the front
@@ -24,6 +25,7 @@ export default function AIMom() {
     <main className="h">
       <MetaPixel />
       <style>{css}</style>
+      <CopyEditor />
 
       {/* Hero — nice to e-meet you */}
       <section className="hero">

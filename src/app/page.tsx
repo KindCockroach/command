@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
+import CopyEditor from '@/components/CopyEditor'
 
 // The aiworksforher.com homepage — WFH (Works For Her), Mandi's business, and its four
 // services: the AI Mom Podcast, Small Business AI Integration, UGC, and speaking.
@@ -88,6 +89,7 @@ export default function Home() {
     <main className="h">
       <MetaPixel />
       <style>{css}</style>
+      <CopyEditor />
 
       <section className="hero">
         <div className="wrap">

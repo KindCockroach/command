@@ -130,3 +130,35 @@ export function assess(a: Answers): Assessment {
 
   return { score, level, summary, hours_per_month, top, next_step, next_detail }
 }
+
+// RISE — the features a personalized recommendation can pick from. Claude chooses
+// 3–5 of these by exact name and explains each for THIS person; it can't invent new ones.
+export const RISE_FEATURES: { name: string; does: string }[] = [
+  { name: 'Commander', does: 'Your AI chief of staff — talk or type what you need and it drafts, plans, files the tasks and notes, and gets it moving.' },
+  { name: 'Quick Capture', does: 'Voice notes, ideas, screenshots and links captured in one tap from your phone, then sorted for you automatically.' },
+  { name: 'Sorting Hat', does: 'Turns one idea into ready-to-post drafts for each of your brands or accounts, matched to each one’s audience.' },
+  { name: 'Content Engine', does: 'Hooks, captions, scripts, and hashtags written in your voice, per platform, from your real life and stories.' },
+  { name: 'Content Day Planner', does: 'Plans a filming day — shot list, scripts, and on-screen text — so one session gives you weeks of content.' },
+  { name: 'Trends Desk', does: 'Shows what’s trending in your niche each day and tweaks your drafts to ride it.' },
+  { name: 'Media Library', does: 'Every photo, video, and audio file in one searchable place, ready to attach to any post.' },
+  { name: 'Auto-Publishing', does: 'Approved posts scheduled and published to Instagram, Facebook and more on a steady daily rhythm.' },
+  { name: 'Winner Loop', does: 'Scores every post against your own average and tells you what to make more of, rehook, or retire.' },
+  { name: 'Goals & Pace', does: 'Set income and content goals; it shows whether you’re ahead or behind and the next move that closes the gap.' },
+  { name: 'Daily Command', does: 'A morning brief — today’s priorities, new bookings, and what actually needs you.' },
+  { name: 'Tasks & Projects', does: 'Every task and project in one board, with AI breaking big goals into next steps.' },
+  { name: 'Story Bank', does: 'Your stories, notes, and ideas banked and searchable, so content and offers come from your real life.' },
+  { name: 'Research Desk', does: 'Deep research with live web search, delivered as a clear brief you can act on.' },
+  { name: 'Booking & Client Scheduler', does: 'A public booking page with automatic notices and reminders — no back-and-forth emails.' },
+  { name: 'Podcast Studio', does: 'Episode planning, teleprompter scripts, guest pipeline and booking, and clip plans for every episode.' },
+  { name: 'Repurpose Studio', does: 'One long piece — a video, episode, or post — turned into clips, posts, and emails.' },
+  { name: 'Brand Voice & Accounts', does: 'Each brand or account keeps its own voice, audience, and keywords, so everything sounds like you.' },
+  { name: 'Assistants & Workflows', does: 'Custom AI assistants for the jobs you repeat every week, built around your tools.' },
+  { name: 'Activity Feed', does: 'Everything that happened across your business in one timeline, so nothing slips.' },
+]
+
+export type RiseRecommendation = {
+  headline: string
+  intro: string
+  features: { name: string; why: string; first_step: string }[]
+  closing: string
+}

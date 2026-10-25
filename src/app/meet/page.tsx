@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { serviceLabel } from '@/lib/wfh'
 import { wfhCss } from '@/components/wfh/theme'
+import CopyEditor from '@/components/CopyEditor'
 
 // WFH — "Book a time with me." Every service ends here (?service=<key> from lib/wfh.ts).
 // Shows the next three weeks of Mandi's open slots (set on /meet/manage; podcast
@@ -82,6 +83,7 @@ export default function MeetPage() {
   return (
     <main className="w">
       <style>{wfhCss + css}</style>
+      <CopyEditor />
       <header className="top">
         <div className="wrap">
           <a className="home" href="/">WFH · WORKS FOR HER</a>

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
 import { wfhCss } from '@/components/wfh/theme'
+import CopyEditor from '@/components/CopyEditor'
 
 // WFH — UGC & marketing menu. Two separate menus: VIDEO CREATION (trending content
 // made for the brand) and MARKETING ASSESSMENTS (copy / website / full). Every item
@@ -58,14 +59,12 @@ export default function UgcPage() {
     <main className="w">
       <MetaPixel />
       <style>{wfhCss + css}</style>
+      <CopyEditor />
       <header className="top">
         <div className="wrap">
           <a className="home" href="/">WFH · WORKS FOR HER</a>
           <h1>Trending content that gets <em>traffic and new customers.</em></h1>
-          <p>
-            Hooks, scripts, and edits built for how the algorithm rewards interesting brands &mdash; brands that
-            serve women, moms, families, and wellness, and brands built on unique experiences and travel.
-          </p>
+          <p>Hooks, scripts, and edits built for how the algorithm rewards interesting brands.</p>
         </div>
       </header>
 

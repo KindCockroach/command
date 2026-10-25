@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getWfhSchedule, setWfhWeekly, addWfhBooking, removeWfhBooking, addWfhLead, getWfhLeads, getPodcastSchedule, logActivity } from '@/lib/db'
 import { assess, serviceLabel, type Answers } from '@/lib/wfh'
+import { recommendRise, ghlContact, ghlEmail, clientEmailHtml, mandiLeadHtml, esc, NOTIFY_EMAIL } from '@/lib/wfhServer'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 120
 
 // WFH (Works For Her) — the public aiworksforher.com funnel.
 // GET               → public: { weekly, from, booked:[{date,time}] } (no client PII)
 // GET ?admin=1      → hers: bookings + leads with contact details
-// POST {assess}     → score the AI integration questionnaire, save the lead → { lead_id, result }
+// POST {assess}     → score the questionnaire + Claude writes a personalized RISE recommendation;
+//                     saves the lead, emails it to them, emails Mandi everything → { lead_id, recommendation }
 // POST {book}       → book a meeting
 // POST {weekly}     → hers: set her weekly meeting slots
 // DELETE ?id=       → hers: remove a booking
@@ -44,14 +47,23 @@ export async function POST(req: NextRequest) {
       else if (Array.isArray(v)) answers[k] = v.filter(x => typeof x === 'string').slice(0, 12).map(x => (x as string).slice(0, 60))
     }
     const result = assess(answers)
+    const business = str(a.business, 160), website = str(a.website, 300)
+    const { rec, by } = await recommendRise({ name, business, website }, answers, result)
     const lead = addWfhLead({
-      kind: 'assessment', name, email, business: str(a.business, 160), website: str(a.website, 300), answers,
+      kind: 'assessment', name, email, business, website, answers,
       result: { score: result.score, level: result.level, hours_per_month: result.hours_per_month, top: result.top.map(o => o.title), next_step: result.next_step },
+      recommendation: { ...rec, by },
       service: 'ai-integration',
     })
-    logActivity({ type: 'note', title: `🤖 AI assessment — ${name}${lead.business ? ` (${lead.business})` : ''}`, detail: `Score ${result.score} · ~${result.hours_per_month} hrs/mo · ${result.top.map(o => o.title).join(', ')}`, icon: '🤖', source: 'wfh' })
-    await tagInGhl({ name, email, tag: 'wfh-ai-assessment', source: 'WFH AI assessment' })
-    return NextResponse.json({ ok: true, lead_id: lead.id, result })
+    logActivity({ type: 'note', title: `🤖 AI questionnaire — ${name}${business ? ` (${business})` : ''}`, detail: `Recommended: ${rec.features.map(f => f.name).join(', ')} · score ${result.score}`, icon: '🤖', source: 'wfh' })
+    const bookUrl = "https://www.aiworksforher.com/meet?service=ai-integration"
+    // Emails go out in the background so she sees her recommendation right away.
+    void (async () => {
+      await ghlContact({ name, email, tag: 'wfh-ai-assessment', source: 'WFH AI questionnaire' })
+      await ghlEmail({ name, email }, 'Your personalized RISE recommendation', clientEmailHtml(name, rec, bookUrl), 'WFH AI questionnaire')
+      await ghlEmail({ name: 'Mandi Beck', email: NOTIFY_EMAIL }, `New AI questionnaire: ${name}${business ? ` (${business})` : ''}`, mandiLeadHtml({ name, email, business, website }, answers, result, rec, by, bookUrl), 'WFH notices')
+    })()
+    return NextResponse.json({ ok: true, lead_id: lead.id, recommendation: rec })
   }
 
   if (body.book) {
@@ -67,7 +79,12 @@ export async function POST(req: NextRequest) {
     })
     if (error) return NextResponse.json({ error }, { status: 409 })
     logActivity({ type: 'note', title: `📅 WFH meeting booked — ${booking!.name}`, detail: `${booking!.date} ${booking!.time} CT · ${serviceLabel(booking!.service)}${booking!.business ? ` · ${booking!.business}` : ''}`, icon: '📅', source: 'wfh' })
-    await tagInGhl({ name, email, phone: booking!.phone, tag: 'wfh-meeting-booked', source: `WFH booking · ${serviceLabel(booking!.service)}` })
+    const bk = booking!
+    void (async () => {
+      await ghlContact({ name, email, phone: bk.phone, tag: 'wfh-meeting-booked', source: `WFH booking · ${serviceLabel(bk.service)}` })
+      await ghlEmail({ name: 'Mandi Beck', email: NOTIFY_EMAIL }, `New call booked: ${bk.name} · ${bk.date} ${bk.time} CT`,
+        `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6"><h2 style="font-family:Georgia,serif">New call booked</h2><p><b>${esc(bk.name)}</b> booked <b>${esc(serviceLabel(bk.service))}</b><br>${esc(bk.date)} at ${esc(bk.time)} CT</p><p>Email: ${esc(bk.email)}<br>Phone: ${esc(bk.phone || '—')}<br>Business: ${esc(bk.business || '—')}</p>${bk.notes ? `<p>Notes: ${esc(bk.notes)}</p>` : ''}${bk.lead_id ? '<p>They took the AI questionnaire first; their recommendation is in your earlier email.</p>' : ''}<p>Send them the Google Meet link.</p></div>`, 'WFH notices')
+    })()
     return NextResponse.json({ ok: true, booking })
   }
 
@@ -87,24 +104,4 @@ export function DELETE(req: NextRequest) {
   const id = new URL(req.url).searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   return NextResponse.json({ ok: removeWfhBooking(id) })
-}
-
-// Upsert the contact into GoHighLevel with a tag. A GHL workflow on that tag
-// (Contact Tag Added → Send Internal Notification) pings Mandi. Best effort.
-async function tagInGhl(c: { name: string; email: string; phone?: string; tag: string; source: string }) {
-  const token = process.env.GHL_API_KEY
-  const locationId = process.env.GHL_LOCATION_ID
-  if (!token || !locationId) return
-  const [firstName, ...rest] = c.name.trim().split(/\s+/)
-  try {
-    const res = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, Version: '2021-07-28', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ locationId, email: c.email, firstName, lastName: rest.join(' '), ...(c.phone ? { phone: c.phone } : {}), tags: [c.tag], source: c.source }),
-      signal: AbortSignal.timeout(8000),
-    })
-    if (!res.ok) logActivity({ type: 'note', title: `⚠ GHL tag failed (${res.status})`, detail: (await res.text()).slice(0, 200), icon: '⚠️', source: 'wfh' })
-  } catch (e) {
-    logActivity({ type: 'note', title: '⚠ GHL tag failed', detail: e instanceof Error ? e.message : 'network error', icon: '⚠️', source: 'wfh' })
-  }
 }

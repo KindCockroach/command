@@ -8,7 +8,7 @@ import { wfhCss } from '@/components/wfh/theme'
 
 type Slot = { dow: number; time: string; end?: string }
 type Booking = { id: string; date: string; time: string; end?: string; name: string; email: string; phone?: string; business?: string; service?: string; notes?: string }
-type Lead = { id: string; kind: string; name: string; email: string; business?: string; website?: string; result?: Pick<Assessment, 'score' | 'level' | 'hours_per_month' | 'next_step'> & { top: string[] }; created_at: string }
+type Lead = { id: string; kind: string; name: string; email: string; business?: string; website?: string; result?: Pick<Assessment, 'score' | 'level' | 'hours_per_month' | 'next_step'> & { top: string[] }; recommendation?: { features: { name: string }[] }; created_at: string }
 const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const fmtTime = (t: string) => { const m = /^(\d{1,2}):(\d{2})/.exec(t || ''); if (!m) return t; let h = +m[1]; const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${m[2]} ${ap}` }
 
@@ -82,6 +82,7 @@ export default function ManageMeet() {
               <strong>{l.name}{l.business ? ` — ${l.business}` : ''}</strong>
               <p><a href={`mailto:${l.email}`}>{l.email}</a>{l.website ? ` · ${l.website}` : ''} · {l.created_at.slice(0, 10)}</p>
               {l.result && <p>Score {l.result.score} ({l.result.level}) · ~{l.result.hours_per_month} hrs/mo · {l.result.top.join(', ')} → <em>{l.result.next_step}</em></p>}
+              {l.recommendation && <p>Recommended: {l.recommendation.features.map(f => f.name).join(', ')}</p>}
               <p className="muted">{bookings.some(b => b.email.toLowerCase() === l.email) ? '✓ booked a meeting' : 'Not booked yet — follow up'}</p>
             </div>
           ))}

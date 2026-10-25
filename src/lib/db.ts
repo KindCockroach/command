@@ -334,6 +334,7 @@ export type WfhLead = {
   name: string; email: string; business?: string; website?: string
   answers?: Record<string, string | string[]>
   result?: { score: number; level: string; hours_per_month: number; top: string[]; next_step: string }
+  recommendation?: { headline: string; intro: string; features: { name: string; why: string; first_step: string }[]; closing: string; by: 'claude' | 'rules' }
   service?: string
   created_at: string
 }
@@ -455,6 +456,8 @@ type Db = {
   podcast_guests?: PodcastGuest[]
   wfh_leads?: WfhLead[]
   wfh_schedule?: WfhSchedule
+  site_copy?: Record<string, Record<string, string>>  // page path → { original text → edited text }
+  site_edit_key_hash?: string                         // sha256 of Mandi's copy-editor key
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
   memories: Memory[]
@@ -1913,4 +1916,32 @@ export function deletePodcastGuest(id: string): boolean {
   db.podcast_guests = (db.podcast_guests ?? []).filter(x => x.id !== id)
   writeDb(db)
   return db.podcast_guests.length < before
+}
+
+// ── SITE COPY EDITOR — Mandi's in-page text edits on the public site ──
+export function getSiteCopy(page: string): Record<string, string> {
+  return readDb().site_copy?.[page] ?? {}
+}
+export function setSiteCopy(page: string, from: string, to: string): Record<string, string> {
+  const db = readDb()
+  if (!db.site_copy) db.site_copy = {}
+  const cur = db.site_copy[page] ?? {}
+  if (to === from) delete cur[from]; else cur[from] = to
+  db.site_copy[page] = cur
+  writeDb(db)
+  return cur
+}
+export function resetSiteCopy(page: string): void {
+  const db = readDb()
+  if (db.site_copy) { delete db.site_copy[page]; writeDb(db) }
+}
+export function getSiteEditKeyHash(): string | undefined {
+  return readDb().site_edit_key_hash
+}
+export function claimSiteEditKeyHash(hash: string): boolean {
+  const db = readDb()
+  if (db.site_edit_key_hash) return false
+  db.site_edit_key_hash = hash
+  writeDb(db)
+  return true
 }
