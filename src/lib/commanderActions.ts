@@ -12,10 +12,11 @@ export type CommanderAction = { type: string; label?: string; payload?: Record<s
 export type CommanderMedia = { url: string; type: string } | null | undefined
 export type ActionResult = { status: string; openShred?: string }
 
-// The action types that fire the moment the Commander proposes them — no tap.
-// Posts (she's worn out on being asked) PLUS notes/tasks (auto-commit, per her ask:
-// keep a toast, not a pre-confirm gate). Everything else renders a tappable button.
-export const AUTO_RUN_TYPES = new Set(['compose_post', 'compose_posts', 'store_note', 'create_task'])
+// Everything the Commander proposes fires the moment it proposes it — no tap —
+// EXCEPT `shred`, which fans one drop across ~20 accounts, so it always opens a
+// preview first. That's the one and only thing Mandi wants to be asked about.
+// Rule: auto-run unless it's shred. (If it says it's doing it, it's already done.)
+export const shouldAutoRun = (type: string): boolean => type !== 'shred'
 
 // The model sometimes omits `label`, which rendered an empty bubble. Always have text.
 export function commanderActionLabel(a: CommanderAction): string {

@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Loader2, Send, Paperclip, X } from 'lucide-react'
 import CommanderModal from './CommanderModal'
-import { executeCommanderAction, commanderActionLabel as actionLabel, AUTO_RUN_TYPES, type CommanderAction as Action } from '@/lib/commanderActions'
+import { executeCommanderAction, commanderActionLabel as actionLabel, shouldAutoRun, type CommanderAction as Action } from '@/lib/commanderActions'
 
 type Attach = { url: string; type: string; name: string }
 type Msg = { role: 'user' | 'assistant'; content: string; actions?: Action[]; attach?: Attach | null }
@@ -60,11 +60,11 @@ export default function CommanderChat() {
       const d = await res.json()
       const actions: Action[] = Array.isArray(d.actions) ? d.actions : []
       setMessages(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Something glitched — say that again?', actions, attach: sentAttach }])
-      // JUST DO IT: auto-run the actions that shouldn't need a tap — posts (she's worn
-      // out on being asked) plus notes/tasks (auto-commit, keep a toast not a gate).
-      // Everything else (meta_post, update_account, shred, …) still waits for her tap.
+      // JUST DO IT: auto-run everything she asked for — notes, tasks, posts, account
+      // edits, goals, projects, calendar, the lot. Only `shred` waits for a tap (it
+      // opens the 20-account preview). If it said it's doing it, it's already done.
       const mi = next.length // index of the assistant message just appended
-      const autoActions = actions.map((a, ai) => ({ a, ai })).filter(x => AUTO_RUN_TYPES.has(x.a.type))
+      const autoActions = actions.map((a, ai) => ({ a, ai })).filter(x => shouldAutoRun(x.a.type))
       if (autoActions.length) {
         setQueueRunning(mi)
         for (const { a, ai } of autoActions) {

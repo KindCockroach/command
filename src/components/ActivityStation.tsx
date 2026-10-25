@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Loader2, RefreshCw, Moon, Send, MessageCircle, Search } from 'lucide-react'
 import CommanderModal from './CommanderModal'
-import { executeCommanderAction, commanderActionLabel, AUTO_RUN_TYPES, type CommanderAction as Action } from '@/lib/commanderActions'
+import { executeCommanderAction, commanderActionLabel, shouldAutoRun, type CommanderAction as Action } from '@/lib/commanderActions'
 
 // THE ACTIVITY STATION — the window into RISE while Mandi's away. A running, grouped
 // feed of everything the station did (drops, transcripts, drafts, approvals, the
@@ -92,10 +92,10 @@ export default function ActivityStation() {
       const d = await fetch('/api/commander/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: sent }) }).then(r => r.json())
       const actions: Action[] = Array.isArray(d.actions) ? d.actions : []
       setMsgs(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Say that again?', actions }])
-      // Same JUST-DO-IT behavior as the Home Commander: auto-run posts + notes/tasks,
-      // leave the rest as tappable buttons. (This chat used to drop actions entirely.)
+      // Same JUST-DO-IT behavior as the Home Commander: auto-run everything except
+      // shred (which opens the 20-account preview). This chat used to drop actions entirely.
       const mi = next.length // index of the assistant message just appended
-      const autoActions = actions.map((a, ai) => ({ a, ai })).filter(x => AUTO_RUN_TYPES.has(x.a.type))
+      const autoActions = actions.map((a, ai) => ({ a, ai })).filter(x => shouldAutoRun(x.a.type))
       if (autoActions.length) {
         setQueueRunning(mi)
         for (const { a, ai } of autoActions) {
