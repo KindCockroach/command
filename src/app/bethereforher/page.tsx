@@ -98,35 +98,40 @@ export default function BeThereForHer() {
 }
 
 const css = `
-.b { --plum:#3B2A3A; --rose:#C97B63; --gold:#E0A458; --cream:#FBF6F0; --soft:#6B5A63;
+.b { --cream:#F4E9DB; --band:#FBF3EA; --plum:#3c2a37; --mauve:#9b6a86; --rose:#cf8aa0; --ember:#d98c5f; --amber:#f2b872; --gold:#E0A458; --soft:#6a5a62;
   background:var(--cream); color:var(--plum); line-height:1.65; margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
 .b .wrap { max-width:900px; margin:0 auto; padding:0 24px; }
 .b h1,.b h2 { font-family:Georgia,"Times New Roman",serif; letter-spacing:-0.3px; }
 .b em { font-style:italic; color:var(--rose); }
 .b section { padding:70px 0; }
-.b .cta { display:inline-block; background:var(--rose); color:#fff; font-weight:800; font-size:17px;
-  text-decoration:none; padding:15px 30px; border-radius:999px; box-shadow:0 10px 28px rgba(201,123,99,0.35); transition:transform .12s ease; }
-.b .cta:hover { transform:translateY(-2px); }
-.b .cta.dark { background:var(--plum); box-shadow:0 10px 28px rgba(59,42,58,0.35); }
 
-.b .hero { background:linear-gradient(165deg,#f6e9df,#f3ddd3 70%,#eccdbe); text-align:center; padding:92px 0; }
-.b .hero .eyebrow { letter-spacing:3px; font-size:12px; font-weight:800; color:var(--rose); margin:0 0 18px; }
-.b .hero h1 { font-size:clamp(34px,6vw,54px); line-height:1.1; margin:0 0 20px; }
-.b .hero .sub { font-size:19px; color:var(--soft); max-width:620px; margin:0 auto 28px; }
+@keyframes floaty { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-5px) } }
+.b .cta { display:inline-block; color:#2a1c24; font-weight:800; font-size:17px; text-decoration:none;
+  padding:15px 32px; border-radius:999px; background:linear-gradient(135deg,#f2c45a,#dd9a4e);
+  box-shadow:0 10px 28px rgba(221,154,78,0.5), 0 0 22px rgba(242,196,90,0.4);
+  animation:floaty 3.6s ease-in-out infinite; transition:box-shadow .2s ease, filter .2s ease; }
+.b .cta:hover { filter:brightness(1.05); box-shadow:0 14px 40px rgba(221,154,78,0.65), 0 0 34px rgba(242,196,90,0.55); }
+.b .cta.dark { background:linear-gradient(135deg,#6b3f52,#a86a72); box-shadow:0 10px 28px rgba(59,42,58,0.4), 0 0 20px rgba(168,106,114,0.4); }
 
-.b .series { background:var(--cream); }
+.b .hero { background:linear-gradient(165deg,#382634 0%,#6b3f52 58%,#a86a72 100%); text-align:center; padding:92px 0; }
+.b .hero .eyebrow { letter-spacing:3px; font-size:12px; font-weight:800; color:var(--ember); margin:0 0 18px; }
+.b .hero h1 { font-size:clamp(34px,6vw,54px); line-height:1.1; margin:0 0 20px; color:#fdf3ea; }
+.b .hero h1 em { color:var(--amber); font-size:1.08em; text-shadow:0 2px 20px rgba(242,166,90,0.45); }
+.b .hero .sub { font-size:19px; color:#f2e2d7; max-width:620px; margin:0 auto 28px; }
+
+.b .series { background:var(--band); }
 .b .series h2 { font-size:clamp(26px,4vw,36px); margin:0 0 6px; }
 .b .series .ssub { font-size:17px; color:var(--soft); margin:0 0 28px; }
 .b .series .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .b .card { display:flex; flex-direction:column; gap:8px; background:#fff; border:1px solid #ecdccf; border-radius:18px; padding:24px 24px; text-decoration:none; color:var(--plum); }
-.b .card.live { border:1.5px solid var(--rose); transition:transform .12s ease, box-shadow .12s ease; }
+.b .card.live { border:1.5px solid var(--ember); transition:transform .12s ease, box-shadow .12s ease; }
 .b .card.live:hover { transform:translateY(-3px); box-shadow:0 16px 36px rgba(201,123,99,0.2); }
 .b .status { font-size:10.5px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:#b7a79b; }
-.b .status.live { color:var(--rose); }
+.b .status.live { color:var(--ember); }
 .b .ctitle { font-family:Georgia,serif; font-size:22px; font-weight:700; }
 .b .cline { font-size:15.5px; color:var(--soft); flex:1; line-height:1.5; }
-.b .cgo { font-weight:800; color:var(--rose); margin-top:4px; }
+.b .cgo { font-weight:800; color:var(--ember); margin-top:4px; }
 .b .series .more { font-size:16px; color:var(--soft); font-style:italic; margin:24px 0 0; text-align:center; }
 
 /* The Reset — vibrant flagship */
