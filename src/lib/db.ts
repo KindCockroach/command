@@ -1717,6 +1717,16 @@ export function addPodcastBooking(data: Omit<PodcastBooking, 'id' | 'created_at'
   return { booking }
 }
 
+export function removePodcastBooking(id: string): boolean {
+  const db = readDb()
+  const sched = db.podcast_schedule ?? { weekly: [], booked: [] }
+  const before = sched.booked.length
+  sched.booked = sched.booked.filter(b => b.id !== id)
+  db.podcast_schedule = sched
+  writeDb(db)
+  return sched.booked.length < before
+}
+
 // ── PODCAST EPISODES — the weekly show schedule (topics, scripts, references) ──
 export function getPodcastEpisodes(): PodcastEpisode[] {
   const db = readDb()
