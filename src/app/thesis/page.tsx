@@ -113,7 +113,7 @@ export default function Thesis() {
         <div className="wrap">
           <h2>Let&rsquo;s bring this to your stage.</h2>
           <a className="cta" href="mailto:hi@aimomeducation.com?subject=Speaking%20inquiry%20—%20Mandi%20Beck">Book me to speak →</a>
-          <p className="back"><a href="/">← aiworksforher.com</a> · <a href="https://aimomeducation.com">The AI Mom Podcast</a></p>
+          <p className="back"><a href="/aimom">← AI Mom</a> · <a href="https://aimomeducation.com">The AI Mom Podcast</a></p>
         </div>
       </footer>
     </main>

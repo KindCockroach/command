@@ -37,7 +37,7 @@ export default function Listen() {
             ))}
           </div>
 
-          <p className="back"><a href="/">&larr; aiworksforher.com</a> &middot; <a href="/book">Be a guest</a></p>
+          <p className="back"><a href="/aimom">&larr; AI Mom</a> &middot; <a href="/book">Be a guest</a></p>
         </div>
       </section>
     </main>
