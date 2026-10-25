@@ -102,7 +102,7 @@ export default function GuestsPanel() {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', color: 'var(--text-muted)', fontSize: '13px', padding: '20px' }}><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading guests…</div>
       ) : guests.length === 0 ? (
         <p style={{ fontSize: '13px', color: 'var(--text-subtle)', padding: '24px', textAlign: 'center' }}>No guests yet. Add one.</p>
-      ) : guests.map(g => {
+      ) : [...guests].sort((a, b) => (a.tier || 'Tier 9').localeCompare(b.tier || 'Tier 9')).map(g => {
         const isOpen = openId === g.id
         const n = done(g)
         const files = media.filter(f => f.key.startsWith(`${g.media_folder}/`))
