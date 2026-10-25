@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPodcastSchedule, setPodcastWeekly, addPodcastBooking, removePodcastBooking, logActivity, getPodcastGuests, updatePodcastGuest, createPodcastGuest, type PodcastBooking } from '@/lib/db'
+import { getPodcastSchedule, setPodcastWeekly, addPodcastBooking, removePodcastBooking, updatePodcastBooking, addGuestComm, logActivity, getPodcastGuests, updatePodcastGuest, createPodcastGuest, type PodcastBooking } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
 // GET ?admin=1   → her view: full bookings with contact details
 // POST {book}    → create a guest booking
 // POST {weekly}  → set her available weekly slot(s)
+// PATCH {id, date?, time?, seen?} → reschedule a booking / acknowledge its notice
 // DELETE ?id=    → remove a booking (frees the slot)
 export function GET(req: NextRequest) {
   const admin = new URL(req.url).searchParams.get('admin') === '1'
@@ -50,6 +51,26 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ error: 'nothing to do' }, { status: 400 })
 }
 
+export async function PATCH(req: NextRequest) {
+  const body = await req.json().catch(() => ({}))
+  if (!body.id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  const before = getPodcastSchedule().booked.find(b => b.id === body.id)
+  if (!before) return NextResponse.json({ error: 'booking not found' }, { status: 404 })
+  const patch: Partial<PodcastBooking> = {}
+  if (body.date) patch.date = String(body.date)
+  if (body.time) patch.time = String(body.time)
+  if (body.seen) patch.seen_at = new Date().toISOString()
+  if (body.reminded) patch.reminded_at = new Date().toISOString()
+  const { booking, error } = updatePodcastBooking(String(body.id), patch)
+  if (error) return NextResponse.json({ error }, { status: 409 })
+  const moved = booking!.date !== before.date || booking!.time !== before.time
+  if (moved && booking!.guest_id) {
+    addGuestComm(booking!.guest_id, { channel: 'note', direction: 'out', body: `Rescheduled from ${before.date} ${before.time} to ${booking!.date} ${booking!.time}.`, status: 'logged', booking_id: booking!.id })
+    logActivity({ type: 'note', title: `🎙️ Guest rescheduled — ${booking!.name}`, detail: `${booking!.date} ${booking!.time}`, icon: '🎙️', source: 'podcast-scheduler' })
+  }
+  return NextResponse.json({ ok: true, booking })
+}
+
 export async function DELETE(req: NextRequest) {
   const id = new URL(req.url).searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
@@ -65,15 +86,16 @@ function linkToGuestCard(b: PodcastBooking) {
     ?? guests.find(g => norm(g.name) === norm(b.name) || (norm(b.name).length > 3 && norm(g.name).includes(norm(b.name))))
   const today = new Date().toISOString().slice(0, 10)
   const line = `Booked via /book on ${today}: records ${b.date} ${b.time}${b.notes ? ` · Notes: ${b.notes}` : ''}${b.link ? ` · ${b.link}` : ''}`
-  if (match) {
-    updatePodcastGuest(match.id, {
-      email: match.email || b.email,
-      stages: { ...match.stages, link_sent: match.stages?.link_sent ?? today, scheduled: today },
-      notes: [match.notes, line].filter(Boolean).join('\n'),
-    })
-  } else {
-    createPodcastGuest({ name: b.name, email: b.email, tier: 'Tier 0 · booked', contact_notes: [b.socials, b.phone].filter(Boolean).join(' · '), stages: { link_sent: today, scheduled: today }, notes: line })
-  }
+  const guest = match
+    ? updatePodcastGuest(match.id, {
+        email: match.email || b.email,
+        stages: { ...match.stages, link_sent: match.stages?.link_sent ?? today, scheduled: today },
+        notes: [match.notes, line].filter(Boolean).join('\n'),
+      })
+    : createPodcastGuest({ name: b.name, email: b.email, tier: 'Tier 0 · booked', contact_notes: [b.socials, b.phone].filter(Boolean).join(' · '), stages: { link_sent: today, scheduled: today }, notes: line })
+  if (!guest) return
+  updatePodcastBooking(b.id, { guest_id: guest.id })
+  addGuestComm(guest.id, { channel: 'note', direction: 'in', body: line, status: 'logged', booking_id: b.id })
 }
 
 // Put the guest in GoHighLevel tagged "podcast-guest-booked". A GHL workflow

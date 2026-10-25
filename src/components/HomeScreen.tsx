@@ -19,6 +19,7 @@ import PodcastEngine from './PodcastEngine'
 import StoryStudio from './StoryStudio'
 import ActivityFeed from './ActivityFeed'
 import ShipThisNext from './ShipThisNext'
+import GuestNotices from './GuestNotices'
 
 // ── The widget registry — every tab available as a homescreen widget ──────────
 // DailyCommand stays the anchor widget (quick capture + brief + tasks + fire).
@@ -141,6 +142,9 @@ export default function HomeScreen() {
           <p style={{ fontSize: '12px', opacity: 0.9, marginTop: '2px' }}>Marketing is the only activity that makes money. Everything else is infrastructure. Ship the post.</p>
         </div>
       </div>
+
+      {/* New podcast bookings + upcoming recordings */}
+      <GuestNotices />
 
       {/* Edit-home control */}
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

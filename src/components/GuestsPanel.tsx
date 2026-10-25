@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Plus, Trash2, Copy, Check, Mail, ExternalLink, Image as ImageIcon, Film, Mic, FileText, ChevronDown, ChevronRight } from 'lucide-react'
 import FileUpload from './FileUpload'
+import GuestsAdmin from './GuestsAdmin'
 
 // GUESTS — every podcast guest prospect in one place: links, handles, contact info,
 // the drafted outreach, and a checklist that walks each one from first attempt to
@@ -45,6 +46,11 @@ function splitPitch(p: string): { subject: string; body: string } {
 }
 
 export default function GuestsPanel() {
+  // Daily Command's "Open guest admin" lands here in admin mode.
+  const [mode, setMode] = useState<'guests' | 'admin'>(() => {
+    try { if (typeof window !== 'undefined' && sessionStorage.getItem('guests-mode') === 'admin') { sessionStorage.removeItem('guests-mode'); return 'admin' } } catch { /* ignore */ }
+    return 'guests'
+  })
   const [guests, setGuests] = useState<Guest[]>([])
   const [loading, setLoading] = useState(true)
   const [openId, setOpenId] = useState<string | null>(null)
@@ -95,10 +101,19 @@ export default function GuestsPanel() {
           <h1 className="font-display" style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.01em', background: 'linear-gradient(115deg, #5A4FCF, #C2477E)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Guests</h1>
           <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '3px' }}>{guests.length} prospects · pitch from hi@aimomeducation.com · booking link aiworksforher.com/book</p>
         </div>
-        <button onClick={add} style={{ border: 'none', background: 'var(--purple)', color: '#fff', borderRadius: '10px', padding: '9px 14px', fontWeight: 800, fontSize: '12.5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Plus size={13} /> Add guest</button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+            {(['guests', 'admin'] as const).map(m => (
+              <button key={m} onClick={() => { setMode(m); if (m === 'guests') load() }} style={{ border: 'none', background: mode === m ? 'var(--purple)' : 'var(--surface)', color: mode === m ? '#fff' : 'var(--text-muted)', padding: '8px 13px', fontWeight: 800, fontSize: '12.5px', cursor: 'pointer' }}>{m === 'guests' ? 'Guests' : 'Admin'}</button>
+            ))}
+          </div>
+          {mode === 'guests' && <button onClick={add} style={{ border: 'none', background: 'var(--purple)', color: '#fff', borderRadius: '10px', padding: '9px 14px', fontWeight: 800, fontSize: '12.5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Plus size={13} /> Add guest</button>}
+        </div>
       </div>
 
-      {loading ? (
+      {mode === 'admin' ? <GuestsAdmin /> : null}
+
+      {mode === 'admin' ? null : loading ? (
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', color: 'var(--text-muted)', fontSize: '13px', padding: '20px' }}><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading guests…</div>
       ) : guests.length === 0 ? (
         <p style={{ fontSize: '13px', color: 'var(--text-subtle)', padding: '24px', textAlign: 'center' }}>No guests yet. Add one.</p>

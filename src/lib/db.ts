@@ -331,6 +331,9 @@ export type InboxBrief = { items: InboxItem[]; checked_at: string; count_total?:
 export type PodcastBooking = {
   id: string; date: string; time: string
   name: string; email: string; phone?: string; socials?: string; comm_method?: string; link?: string; notes?: string
+  guest_id?: string       // the Guests card this booking belongs to
+  seen_at?: string        // when she acknowledged the booking notice (Daily Command)
+  reminded_at?: string    // when the last reminder went out
   created_at: string
 }
 export type PodcastSlot = { dow: number; time: string; end?: string }
@@ -377,8 +380,22 @@ export type PodcastGuest = {
   their_show_date?: string
   media_folder: string
   notes?: string
+  comms?: GuestComm[]     // communications log, newest last
   created_at: string
   updated_at: string
+}
+// One touchpoint with a guest — an email sent through RISE, a draft, or a DM/text/
+// call she logged by hand.
+export type GuestComm = {
+  id: string
+  at: string
+  channel: 'email' | 'dm' | 'text' | 'call' | 'note'
+  direction: 'out' | 'in'
+  subject?: string
+  body: string
+  status: 'drafted' | 'sent' | 'logged' | 'failed'
+  booking_id?: string
+  error?: string
 }
 
 // MEDIA MEMORY — what's actually IN a dropped file, so it's findable by meaning and
@@ -1717,6 +1734,30 @@ export function addPodcastBooking(data: Omit<PodcastBooking, 'id' | 'created_at'
   return { booking }
 }
 
+// Patch a booking. A new date/time must be a free slot.
+export function updatePodcastBooking(id: string, patch: Partial<PodcastBooking>): { booking?: PodcastBooking; error?: string } {
+  const db = readDb()
+  const sched = db.podcast_schedule ?? { weekly: [], booked: [] }
+  const b = sched.booked.find(x => x.id === id)
+  if (!b) return { error: 'booking not found' }
+  const date = patch.date ?? b.date, time = patch.time ?? b.time
+  if ((date !== b.date || time !== b.time) && sched.booked.some(x => x.id !== id && x.date === date && x.time === time)) {
+    return { error: 'That slot is already booked.' }
+  }
+  Object.assign(b, patch, { id: b.id, created_at: b.created_at })
+  db.podcast_schedule = sched
+  writeDb(db)
+  return { booking: b }
+}
+export function addGuestComm(guestId: string, comm: Omit<GuestComm, 'id' | 'at'> & { at?: string }): PodcastGuest | null {
+  const db = readDb()
+  const g = (db.podcast_guests ?? []).find(x => x.id === guestId)
+  if (!g) return null
+  g.comms = [...(g.comms ?? []), { ...comm, id: Math.random().toString(36).slice(2, 10), at: comm.at ?? new Date().toISOString() }]
+  g.updated_at = new Date().toISOString()
+  writeDb(db)
+  return g
+}
 export function removePodcastBooking(id: string): boolean {
   const db = readDb()
   const sched = db.podcast_schedule ?? { weekly: [], booked: [] }
