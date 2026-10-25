@@ -35,13 +35,40 @@ Mark natural [pause] beats sparingly. Put [VERIFY] after any fact, name, price, 
     const source = body.source ? String(body.source) : banked?.body ?? ''
     const input = `${ep.number ? `EPISODE ${ep.number}\n` : ''}EPISODE TITLE: ${ep.title}\nTOPIC: ${ep.topic}${ep.guest ? `\nGUEST: ${ep.guest}` : ''}${ep.thread ? `\nHUMAN THREAD: ${ep.thread}` : ''}${ep.pushback ? `\nPUSHBACK: ${ep.pushback}` : ''}${source ? `\n\nBUILD FROM THIS ORIGINAL (her banked words — keep her stories, jokes, and lines; sharpen, tighten, raise the stakes):\n${source.slice(0, 12000)}` : ''}\n\nWrite the teleprompter script.`
     try {
-      const script = await fableText({ useClaude: true, maxTokens: 6000, instructions, input })
-        .catch(() => fableText({ maxTokens: 6000, instructions, input }))
+      // 12k budget: adaptive thinking shares max_tokens with the output, so a tight
+      // budget was starving the script and it came back very short. Give it room.
+      const script = await fableText({ useClaude: true, maxTokens: 12000, instructions, input })
+        .catch(() => fableText({ maxTokens: 12000, instructions, input }))
       if (!script.trim()) return NextResponse.json({ error: 'writer came back empty — try again' }, { status: 502 })
       const updated = updatePodcastEpisode(ep.id, { script: script.trim(), status: ep.status === 'planned' ? 'scripted' : ep.status })
       return NextResponse.json({ ok: true, episode: updated })
     } catch (e) {
       return NextResponse.json({ error: e instanceof Error ? e.message : 'generation failed' }, { status: 502 })
+    }
+  }
+
+  // Revise an EXISTING teleprompter script from Mandi's raw feedback — keep the script
+  // she has, change exactly what she asks. This is the Rewrite box in the View modal;
+  // it operates on the FINAL script, never the raw banked input.
+  if (body.revise_script && body.id) {
+    const eps = getPodcastEpisodes()
+    const ep = eps.find(e => e.id === body.id)
+    if (!ep) return NextResponse.json({ error: 'episode not found' }, { status: 404 })
+    if (!ep.script?.trim()) return NextResponse.json({ error: 'no script to revise yet — write one first' }, { status: 400 })
+    const feedback = String(body.feedback || '').trim()
+    if (!feedback) return NextResponse.json({ error: 'tell me what to change' }, { status: 400 })
+    const instructions = `${PODCAST_CONSTITUTION}
+
+Revise this existing TELEPROMPTER SCRIPT for Mandi's AI Mom Podcast using her feedback. Keep her voice — directive, bold, plain, a little delusional-funny, fights fire with fire. Keep the [SEGMENT] markers and the overall structure, and keep every line she did NOT ask you to change. Apply her feedback exactly; do not rewrite from scratch, do not blandify, do not drop her stories, jokes, or lines. Keep [pause] beats sparingly and put [VERIFY] after any NEW fact, name, price, or date. Return the FULL revised script, ready to read — nothing else.`
+    const input = `EPISODE${ep.number ? ` ${ep.number}` : ''}: ${ep.title}\nTOPIC: ${ep.topic}\n\nCURRENT SCRIPT:\n${ep.script}\n\nHER FEEDBACK (do exactly this, nothing more):\n${feedback}\n\nReturn the full revised teleprompter script.`
+    try {
+      const script = await fableText({ useClaude: true, maxTokens: 12000, instructions, input })
+        .catch(() => fableText({ maxTokens: 12000, instructions, input }))
+      if (!script.trim()) return NextResponse.json({ error: 'writer came back empty — try again' }, { status: 502 })
+      const updated = updatePodcastEpisode(ep.id, { script: script.trim() })
+      return NextResponse.json({ ok: true, episode: updated })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : 'revision failed' }, { status: 502 })
     }
   }
 

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, type CSSProperties } from 'react'
-import { Loader2, Mic, Calendar, FileText, Link2, Copy, Check, Sparkles, X, ExternalLink, Newspaper, Send, BookOpen } from 'lucide-react'
+import { Loader2, Mic, Calendar, FileText, Link2, Copy, Check, Sparkles, X, ExternalLink, Newspaper, Send, BookOpen, Pencil, Wand2 } from 'lucide-react'
 
 // PODCAST STUDIO — the robust podcast tab. Top: a scrollable weekly schedule (each
 // week's shows with topic + recording time). Click a show for its teleprompter script
@@ -29,6 +29,55 @@ export default function PodcastStudio() {
   const [draft, setDraft] = useState('')
   const [asking, setAsking] = useState(false)
   const [banked, setBanked] = useState<{ id: number; title: string; body: string } | null>(null)
+  // Editing the final teleprompter script (View) + revising it from raw feedback.
+  const [editing, setEditing] = useState(false)
+  const [scriptDraft, setScriptDraft] = useState('')
+  const [savingScript, setSavingScript] = useState(false)
+  const [feedback, setFeedback] = useState('')
+  const [revising, setRevising] = useState(false)
+  // Editing the banked raw note directly.
+  const [bankedEditing, setBankedEditing] = useState(false)
+  const [bankedDraft, setBankedDraft] = useState('')
+  const [savingBanked, setSavingBanked] = useState(false)
+  const [bankedCopied, setBankedCopied] = useState(false)
+
+  const closeDetail = () => { setOpen(null); setEditing(false); setFeedback('') }
+  const closeBanked = () => { setBanked(null); setBankedEditing(false) }
+
+  // Save a hand-edited teleprompter script straight to the episode.
+  const saveScript = async () => {
+    if (!open || savingScript) return
+    setSavingScript(true)
+    try {
+      const d = await fetch('/api/podcast/episodes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: open.id, script: scriptDraft }) }).then(r => r.json())
+      if (d.episode) { setOpen(d.episode); load() }
+      setEditing(false)
+    } catch { /* keep editing */ }
+    setSavingScript(false)
+  }
+
+  // Rewrite the FINAL script from raw feedback — keeps what she didn't flag.
+  const reviseScript = async () => {
+    if (!open || !feedback.trim() || revising) return
+    setRevising(true)
+    try {
+      const d = await fetch('/api/podcast/episodes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revise_script: true, id: open.id, feedback }) }).then(r => r.json())
+      if (d.episode) { setOpen(d.episode); load(); setFeedback('') }
+    } catch { /* ignore */ }
+    setRevising(false)
+  }
+
+  // Save an edit to the banked raw note.
+  const saveBanked = async () => {
+    if (!banked || savingBanked) return
+    setSavingBanked(true)
+    try {
+      const d = await fetch('/api/notes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: banked.id, body: bankedDraft }) }).then(r => r.json())
+      if (d && d.id) setBanked({ id: d.id, title: d.title, body: d.body })
+      setBankedEditing(false)
+    } catch { /* keep editing */ }
+    setSavingBanked(false)
+  }
 
   // Commander on the table: recommend the next episode, pull headlines, or talk.
   const askCommander = async (mode: 'chat' | 'recommend' | 'headlines', text: string) => {
@@ -171,7 +220,7 @@ export default function PodcastStudio() {
 
       {/* Detail modal */}
       {open && (
-        <div onClick={() => setOpen(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,16,40,0.6)', zIndex: 100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 18px', overflowY: 'auto' }}>
+        <div onClick={closeDetail} style={{ position: 'fixed', inset: 0, background: 'rgba(20,16,40,0.6)', zIndex: 100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 18px', overflowY: 'auto' }}>
           <div onClick={ev => ev.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: '18px', padding: '24px', maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
               <div>
@@ -182,7 +231,7 @@ export default function PodcastStudio() {
                 {open.pushback ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '2px' }}><strong>Pushback:</strong> {open.pushback}</p> : null}
                 {open.note_id ? <button onClick={() => openBanked(open.note_id!)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0, marginTop: '6px' }}><BookOpen size={12} /> Banked script (Note #{open.note_id})</button> : null}
               </div>
-              <button onClick={() => setOpen(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={18} /></button>
+              <button onClick={closeDetail} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={18} /></button>
             </div>
 
             {/* References */}
@@ -199,12 +248,30 @@ export default function PodcastStudio() {
 
             {/* Script */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', gap: '8px' }}>
                 <p style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-subtle)', display: 'flex', alignItems: 'center', gap: '5px' }}><Mic size={11} /> Teleprompter script</p>
-                {open.script && <button onClick={async () => { try { await navigator.clipboard.writeText(open.script); setCopied(true); setTimeout(() => setCopied(false), 1400) } catch { /* ignore */ } }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: copied ? 'var(--purple)' : 'var(--text-subtle)', fontSize: '11.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>{copied ? <><Check size={12} /> Copied</> : <><Copy size={12} /> Copy</>}</button>}
+                {open.script && (
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    {editing ? (
+                      <>
+                        <button onClick={saveScript} disabled={savingScript} style={{ border: 'none', background: 'none', cursor: savingScript ? 'default' : 'pointer', color: 'var(--purple)', fontSize: '11.5px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>{savingScript ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> saving…</> : <><Check size={12} /> Save</>}</button>
+                        <button onClick={() => setEditing(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '11.5px', fontWeight: 700 }}>Cancel</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => { setScriptDraft(open.script); setEditing(true) }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '11.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}><Pencil size={12} /> Edit</button>
+                        <button onClick={async () => { try { await navigator.clipboard.writeText(open.script); setCopied(true); setTimeout(() => setCopied(false), 1400) } catch { /* ignore */ } }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: copied ? 'var(--purple)' : 'var(--text-subtle)', fontSize: '11.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>{copied ? <><Check size={12} /> Copied</> : <><Copy size={12} /> Copy</>}</button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
               {open.script ? (
-                <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '16px 18px', maxHeight: '340px', overflowY: 'auto', fontSize: '15px', lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{open.script}</div>
+                editing ? (
+                  <textarea value={scriptDraft} onChange={e => setScriptDraft(e.target.value)} style={{ width: '100%', minHeight: '340px', resize: 'vertical', background: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--border)', padding: '16px 18px', fontSize: '15px', lineHeight: 1.7, color: 'var(--text)', fontFamily: 'inherit' }} />
+                ) : (
+                  <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '16px 18px', maxHeight: '340px', overflowY: 'auto', fontSize: '15px', lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{open.script}</div>
+                )
               ) : (
                 <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
                   <p style={{ fontSize: '13px', color: 'var(--text-subtle)', marginBottom: '12px' }}>No script yet.</p>
@@ -213,22 +280,50 @@ export default function PodcastStudio() {
                   </button>
                 </div>
               )}
+
+              {/* Rewrite the FINAL script from raw feedback — not the raw banked input. */}
+              {open.script && !editing && (
+                <div style={{ marginTop: '10px', background: 'var(--surface-raised)', borderRadius: '12px', padding: '12px 13px' }}>
+                  <p style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-subtle)', marginBottom: '7px', display: 'flex', alignItems: 'center', gap: '5px' }}><Wand2 size={11} /> Rewrite from your feedback</p>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                    <textarea value={feedback} onChange={e => setFeedback(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); reviseScript() } }} rows={2} placeholder="e.g. &quot;punch up the cold open, cut the middle story, make the close about the Sunday Reset&quot;" style={{ flex: 1, resize: 'vertical', border: '1px solid var(--border)', borderRadius: '10px', padding: '9px 11px', fontSize: '13px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' }} />
+                    <button onClick={reviseScript} disabled={revising || !feedback.trim()} style={{ ...btn('var(--purple)'), alignSelf: 'stretch', opacity: feedback.trim() ? 1 : 0.5 }}>{revising ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> rewriting…</> : <><Wand2 size={13} /> Rewrite</>}</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
       {/* Banked script viewer */}
       {banked && (
-        <div onClick={() => setBanked(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,16,40,0.6)', zIndex: 110, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 18px', overflowY: 'auto' }}>
+        <div onClick={closeBanked} style={{ position: 'fixed', inset: 0, background: 'rgba(20,16,40,0.6)', zIndex: 110, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 18px', overflowY: 'auto' }}>
           <div onClick={ev => ev.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: '18px', padding: '24px', maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
               <div>
                 <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--purple)' }}>Banked · Note #{banked.id}</span>
                 <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)', marginTop: '3px', lineHeight: 1.25 }}>{banked.title}</h2>
               </div>
-              <button onClick={() => setBanked(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={18} /></button>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                {bankedEditing ? (
+                  <>
+                    <button onClick={saveBanked} disabled={savingBanked} style={{ border: 'none', background: 'none', cursor: savingBanked ? 'default' : 'pointer', color: 'var(--purple)', fontSize: '11.5px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>{savingBanked ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> saving…</> : <><Check size={12} /> Save</>}</button>
+                    <button onClick={() => setBankedEditing(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '11.5px', fontWeight: 700 }}>Cancel</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => { setBankedDraft(banked.body); setBankedEditing(true) }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '11.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}><Pencil size={12} /> Edit</button>
+                    <button onClick={async () => { try { await navigator.clipboard.writeText(banked.body); setBankedCopied(true); setTimeout(() => setBankedCopied(false), 1400) } catch { /* ignore */ } }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: bankedCopied ? 'var(--purple)' : 'var(--text-subtle)', fontSize: '11.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>{bankedCopied ? <><Check size={12} /> Copied</> : <><Copy size={12} /> Copy</>}</button>
+                  </>
+                )}
+                <button onClick={closeBanked} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={18} /></button>
+              </div>
             </div>
-            <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '16px 18px', maxHeight: '60vh', overflowY: 'auto', fontSize: '14px', lineHeight: 1.65, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{banked.body}</div>
+            {bankedEditing ? (
+              <textarea value={bankedDraft} onChange={e => setBankedDraft(e.target.value)} style={{ width: '100%', minHeight: '50vh', resize: 'vertical', background: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--border)', padding: '16px 18px', fontSize: '14px', lineHeight: 1.65, color: 'var(--text)', fontFamily: 'inherit' }} />
+            ) : (
+              <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '16px 18px', maxHeight: '60vh', overflowY: 'auto', fontSize: '14px', lineHeight: 1.65, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{banked.body}</div>
+            )}
           </div>
         </div>
       )}
