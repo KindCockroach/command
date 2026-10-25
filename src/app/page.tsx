@@ -113,6 +113,24 @@ export default function Home() {
         </div>
       </section>
 
+      {/* The philosophy — the mindfulness behind the business → Be There For Her */}
+      <section className="philo">
+        <div className="wrap">
+          <p className="tag light">THE PHILOSOPHY</p>
+          <h2>The mindfulness behind the business.</h2>
+          <p className="plead">
+            For the mother in you, the CEO in you, and the woman in you. Prevent burnout with mindful
+            products that help you show up more fully to your life&rsquo;s work, your business, and your family.
+          </p>
+          <div className="trio">
+            <div><span>🌙</span><h3>The mother in you</h3><p>Present with your family, not just there.</p></div>
+            <div><span>🗝</span><h3>The CEO in you</h3><p>Clear decisions from a calm mind, not an empty tank.</p></div>
+            <div><span>🌿</span><h3>The woman in you</h3><p>Room to come back to yourself, every single day.</p></div>
+          </div>
+          <a className="cta light" href="https://www.bethereforher.com">This is where we connect: Be There For Her →</a>
+        </div>
+      </section>
+
       <section className="how">
         <div className="wrap">
           <h2>How it works</h2>
@@ -181,6 +199,15 @@ const css = `
 .h .cbtn { font-weight:800; color:var(--nebula); text-decoration:none; border-bottom:2px solid rgba(90,79,207,0.3); }
 .h .cbtn:hover { border-color:var(--nebula); }
 
+.h .philo { background:linear-gradient(165deg,#2a1c3f,var(--nebula) 70%,var(--copper)); color:#fff; text-align:center; padding:84px 0; }
+.h .philo h2 { font-size:clamp(26px,4.4vw,40px); line-height:1.15; margin:0 auto 16px; max-width:760px; color:#fff; }
+.h .philo .plead { font-size:19px; color:#efe9f7; max-width:720px; margin:0 auto 36px; }
+.h .philo .trio { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin:0 0 36px; }
+.h .philo .trio div { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:18px; padding:24px 18px; }
+.h .philo .trio span { font-size:28px; }
+.h .philo .trio h3 { font-size:21px; margin:8px 0 6px; color:#fff; }
+.h .philo .trio p { margin:0; color:#e7e2f2; font-size:16px; }
+.h .cta.light { background:#fff; color:var(--nebula); box-shadow:0 10px 26px rgba(0,0,0,0.2); }
 .h .how h2 { font-size:clamp(24px,4vw,32px); margin:0 0 18px; }
 .h .how ol { font-size:18px; color:#3f3a52; max-width:720px; padding-left:24px; margin:0 0 20px; }
 .h .how li { margin-bottom:10px; }
@@ -196,6 +223,7 @@ const css = `
 
 @media (max-width:620px){
   .h .grid { grid-template-columns:1fr; }
+  .h .philo .trio { grid-template-columns:1fr; }
   .h section { padding:56px 0; }
 }
 `

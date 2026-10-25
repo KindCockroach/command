@@ -20,7 +20,7 @@ export default function ManageMeet() {
   const [msg, setMsg] = useState('')
 
   const load = () => fetch('/api/wfh?admin=1').then(r => r.json()).then(d => {
-    if (d.error) { setMsg('Locked — open the station first.'); return }
+    if (d.error) { setMsg('Locked: set STATION_KEY on Railway, then open /station?k=YOUR-KEY once. Bookings + leads also land in Activity and GHL.'); return }
     setWeekly(d.weekly || []); setBookings(d.bookings || []); setLeads(d.leads || [])
   }).catch(() => {})
   useEffect(() => { document.title = 'WFH · manage'; load() }, [])

@@ -11,10 +11,11 @@ export const dynamic = 'force-dynamic'
 // POST {book}       → book a meeting
 // POST {weekly}     → hers: set her weekly meeting slots
 // DELETE ?id=       → hers: remove a booking
-// Admin calls need the station cookie whenever STATION_KEY is set (the route itself is public).
+// Admin calls need the station cookie. FAIL-CLOSED: with no STATION_KEY set, client
+// contact details are never served (this route is public), so set STATION_KEY to use /meet/manage.
 function isAdmin(req: NextRequest) {
   const key = process.env.STATION_KEY
-  return !key || req.cookies.get('station_auth')?.value === key
+  return !!key && req.cookies.get('station_auth')?.value === key
 }
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
 const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
