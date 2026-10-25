@@ -7,17 +7,17 @@ export const metadata: Metadata = {
   description: "Your AI content OS",
   icons: { icon: "/favicon.ico", apple: "/apple-icon.png" },
   openGraph: {
-    title: "AI Works For Her",
-    description: "From invisible to impactful.",
+    title: "AI Mom",
+    description: "Podcast · Host · Speaker",
     url: "https://www.aiworksforher.com",
-    siteName: "AI Works For Her",
+    siteName: "AI Mom",
     images: [{ url: "/og.png", width: 1200, height: 630 }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Works For Her",
-    description: "From invisible to impactful.",
+    title: "AI Mom",
+    description: "Podcast · Host · Speaker",
     images: ["/og.png"],
   },
 };

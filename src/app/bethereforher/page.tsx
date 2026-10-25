@@ -10,7 +10,18 @@ export const metadata: Metadata = {
   title: 'Be There For Her — Mindful Products to Bring You Back to Yourself',
   description:
     'A growing line of mindful products — guided meditations and gentle practices for your intuition, your inner child, and your way back home to yourself. Start with a free beginner meditation.',
-  openGraph: { title: 'Be There For Her', description: 'Mindful products that bring women back to themselves.', type: 'website' },
+  openGraph: {
+    title: 'You Deserve It All',
+    description: 'Be there for the woman in the mirror.',
+    type: 'website',
+    images: [{ url: '/og-bethereforher.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'You Deserve It All',
+    description: 'Be there for the woman in the mirror.',
+    images: ['/og-bethereforher.png'],
+  },
 }
 
 const SERIES = [
