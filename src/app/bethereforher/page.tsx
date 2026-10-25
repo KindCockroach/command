@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 }
 
 const SERIES = [
+  { title: 'The Reset', line: '1 hour to yourself. Sundays, 8 PM. Your accountability and guide to press reset before the week begins again.', href: '/reset', status: 'Available now' },
   { title: 'Turning Up Your Intuition', line: 'The quiet knowing you were taught to silence — turned back up, meditation by meditation.', href: '/bethereforher/intuition', status: 'Available now' },
   { title: 'Inner Child Healing', line: 'Meet the girl you left behind. Become the one who finally stays.', href: '', status: 'In the works' },
   { title: 'Reconnecting to Yourself', line: 'Find your way back from everyone else’s needs to your own center.', href: '', status: 'In the works' },
@@ -73,19 +74,6 @@ export default function BeThereForHer() {
             ))}
           </div>
           <p className="more">&hellip;and more in this lane &mdash; whatever brings women back to themselves.</p>
-        </div>
-      </section>
-
-      {/* The Reset — the live flagship, first under the series */}
-      <section className="reset">
-        <span className="spark s1">&#10022;</span><span className="spark s2">&#10022;</span><span className="spark s3">&#10022;</span>
-        <div className="wrap">
-          <img src="/the-reset-logo.png" alt="The Reset" className="resetLogo" />
-          <p className="tag">THE LIVE ONE &middot; EVERY SUNDAY</p>
-          <h2>Press your own reset button.</h2>
-          <p>One hour, Sunday evenings. Camera off, nothing required but you. A live, guided reset for the
-            woman who&rsquo;s been everyone&rsquo;s everything &mdash; come home to the one in the mirror.</p>
-          <a className="cta glow" href="/reset">Join the next Reset &rarr;</a>
         </div>
       </section>
 
