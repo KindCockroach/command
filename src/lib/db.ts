@@ -356,6 +356,31 @@ export type PodcastEpisode = {
   created_at: string
 }
 
+// A podcast GUEST prospect — contact info, the drafted pitch, and the outreach
+// pipeline. Each checked stage stores the date it was checked. media_folder is the
+// R2 prefix (guests/<slug>) where her clips, headshots and assets live.
+export const GUEST_STAGES = ['attempt1', 'attempt2', 'attempt3', 'connected', 'link_sent', 'scheduled', 'promo', 'reminders', 'recorded', 'posted', 'cross_pollinated', 'their_show', 'their_promo'] as const
+export type GuestStage = typeof GUEST_STAGES[number]
+export type PodcastGuest = {
+  id: string
+  name: string
+  show: string
+  tier?: string
+  why?: string
+  ask?: string
+  website?: string
+  instagram?: string
+  email?: string
+  contact_notes?: string
+  pitch: string
+  stages: Partial<Record<GuestStage, string>>
+  their_show_date?: string
+  media_folder: string
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
 // MEDIA MEMORY — what's actually IN a dropped file, so it's findable by meaning and
 // matchable to a thought. Keyed by the R2 object key. has_children flags kids so posts
 // can exclude those clips (hard rule: never use media with her children).
@@ -391,6 +416,7 @@ type Db = {
   trend_audio?: { audio: string; format: string; sounds?: string[]; when: string }
   podcast_schedule?: PodcastSchedule
   podcast_episodes?: PodcastEpisode[]
+  podcast_guests?: PodcastGuest[]
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
   memories: Memory[]
@@ -1728,4 +1754,41 @@ export function deletePodcastEpisode(id: string): boolean {
   db.podcast_episodes = (db.podcast_episodes ?? []).filter(e => e.id !== id)
   writeDb(db)
   return (db.podcast_episodes.length < before)
+}
+
+// ── PODCAST GUESTS — prospects, outreach pipeline, media folder ──
+const guestSlug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'guest'
+export function getPodcastGuests(): PodcastGuest[] {
+  return readDb().podcast_guests ?? []
+}
+export function createPodcastGuest(data: Partial<PodcastGuest>): PodcastGuest {
+  const db = readDb()
+  if (!db.podcast_guests) db.podcast_guests = []
+  const now = new Date().toISOString()
+  const id = Math.random().toString(36).slice(2, 10)
+  const g: PodcastGuest = {
+    id, name: data.name ?? 'New guest', show: data.show ?? '', tier: data.tier ?? '', why: data.why ?? '', ask: data.ask ?? '',
+    website: data.website ?? '', instagram: data.instagram ?? '', email: data.email ?? '', contact_notes: data.contact_notes ?? '',
+    pitch: data.pitch ?? '', stages: data.stages ?? {}, their_show_date: data.their_show_date ?? '',
+    media_folder: data.media_folder || `guests/${guestSlug(data.name ?? id)}`, notes: data.notes ?? '',
+    created_at: now, updated_at: now,
+  }
+  db.podcast_guests.push(g)
+  writeDb(db)
+  return g
+}
+export function updatePodcastGuest(id: string, patch: Partial<PodcastGuest>): PodcastGuest | null {
+  const db = readDb()
+  const g = (db.podcast_guests ?? []).find(x => x.id === id)
+  if (!g) return null
+  Object.assign(g, patch, { id: g.id, created_at: g.created_at, updated_at: new Date().toISOString() })
+  writeDb(db)
+  return g
+}
+export function deletePodcastGuest(id: string): boolean {
+  const db = readDb()
+  const before = (db.podcast_guests ?? []).length
+  db.podcast_guests = (db.podcast_guests ?? []).filter(x => x.id !== id)
+  writeDb(db)
+  return db.podcast_guests.length < before
 }

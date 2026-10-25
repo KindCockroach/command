@@ -22,6 +22,7 @@ import InstantCompose from './InstantCompose'
 import StationChat from './StationChat'
 import PodcastEngine from './PodcastEngine'
 import PodcastStudio from './PodcastStudio'
+import GuestsPanel from './GuestsPanel'
 import PitchStudio from './PitchStudio'
 import StoryProcessor from './StoryProcessor'
 import StoryStudio from './StoryStudio'
@@ -34,7 +35,7 @@ import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'lines' | 'command' | 'activity' | 'contentday' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
+type View = 'lines' | 'command' | 'activity' | 'contentday' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'guests' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
 
 // Renders children on first activation and KEEPS them mounted after — hidden with
 // display:none when inactive — so long-running work (podcast generation) and state
@@ -104,6 +105,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'avatars',    label: 'Avatars',       icon: <span style={{fontSize:'12px'}}>🎭</span> },
     { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
     { id: 'podcast',    label: 'Podcast',       icon: <Mic size={12} /> },
+    { id: 'guests',     label: 'Guests',        icon: <Users size={12} /> },
     { id: 'story',      label: 'Story',         icon: <PenLine size={12} /> },
     { id: 'pitch',      label: 'Travel Pitch',  icon: <Globe size={12} /> },
   ]
@@ -261,6 +263,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
             <PodcastEngine />
           </div>
         </KeepAlive>
+        {view === 'guests'     && <GuestsPanel />}
         {view === 'story'      && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <StoryStudio />
