@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 }
 
 type Service = {
-  emoji: string; name: string; who: string; what: string[]
+  emoji: string; name: string; who: string; what: string[]; body?: string
   cta: { label: string; href: string }; more?: { label: string; href: string }
 }
 
@@ -90,12 +90,9 @@ const SERVICES: Service[] = [
   {
     emoji: '🔑',
     name: 'RETIRE',
-    who: 'Ready to step back from your business and pass down the keys?',
-    what: [
-      'Capture what lives in your head before you hand it over',
-      'AI turns your know-how into guides, playbooks, and an assistant your successor can ask',
-      'A simpler, calmer handoff for you and the next owner',
-    ],
+    who: 'For owners ready to step back from daily involvement in their business.',
+    what: [],
+    body: 'Work with Mandi “AI Mom” to turn what’s in your head into guides, playbooks, and an assistant the next owner can ask, while you sip piña coladas and watch your grandbabies play on the beach.',
     cta: { label: 'Book a call about retiring', href: '/meet?service=retire' },
   },
 ]
@@ -106,7 +103,7 @@ function Card({ s }: { s: Service }) {
       <span className="cemoji">{s.emoji}</span>
       <h3>{s.name}</h3>
       <p className="cwho">{s.who}</p>
-      <ul>{s.what.map((w) => <li key={w}>{w}</li>)}</ul>
+      {s.body ? <p className="cbody">{s.body}</p> : <ul>{s.what.map((w) => <li key={w}>{w}</li>)}</ul>}
       <div className="clinks">
         <a className="cbtn" href={s.cta.href}>{s.cta.label} →</a>
         {s.more && <a className="cmore" href={s.more.href}>{s.more.label}</a>}
@@ -245,6 +242,7 @@ const css = `
 .h .cwho { font-size:16px; color:#3f3a52; margin:0 0 12px; font-style:italic; }
 .h .card ul { margin:0 0 18px; padding-left:20px; color:#4a4560; font-size:15px; flex:1; }
 .h .card li { margin-bottom:6px; }
+.h .cbody { margin:0 0 18px; color:#4a4560; font-size:15px; flex:1; }
 .h .clinks { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
 .h .cmore { font-weight:700; color:#6b6585; text-decoration:none; font-size:15px; }
 .h .cmore:hover { color:var(--nebula); }
