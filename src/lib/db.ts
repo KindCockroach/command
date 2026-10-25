@@ -356,6 +356,8 @@ export type PodcastEpisode = {
   thread?: string         // the human thread woven in (mindfulness, creativity, human potential, women's intuition)
   pushback?: string       // the episode's pushback move (data centers, water, children)
   note_id?: number        // banked script / raw transcript in Notes
+  news?: string           // the headline she picked to highlight this week (feeds [THE NEWS] in the script)
+  news_url?: string       // link to read/educate on the picked headline
   created_at: string
 }
 

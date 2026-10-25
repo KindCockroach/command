@@ -33,7 +33,7 @@ Structure, with a one-line [SEGMENT] marker before each part:
 Mark natural [pause] beats sparingly. Put [VERIFY] after any fact, name, price, or date that must be checked before recording. 1,600–2,200 words.`
     const banked = ep.note_id ? getAllNotes().find(n => n.id === ep.note_id) : undefined
     const source = body.source ? String(body.source) : banked?.body ?? ''
-    const input = `${ep.number ? `EPISODE ${ep.number}\n` : ''}EPISODE TITLE: ${ep.title}\nTOPIC: ${ep.topic}${ep.guest ? `\nGUEST: ${ep.guest}` : ''}${ep.thread ? `\nHUMAN THREAD: ${ep.thread}` : ''}${ep.pushback ? `\nPUSHBACK: ${ep.pushback}` : ''}${source ? `\n\nBUILD FROM THIS ORIGINAL (her banked words — keep her stories, jokes, and lines; sharpen, tighten, raise the stakes):\n${source.slice(0, 12000)}` : ''}\n\nWrite the teleprompter script.`
+    const input = `${ep.number ? `EPISODE ${ep.number}\n` : ''}EPISODE TITLE: ${ep.title}\nTOPIC: ${ep.topic}${ep.guest ? `\nGUEST: ${ep.guest}` : ''}${ep.thread ? `\nHUMAN THREAD: ${ep.thread}` : ''}${ep.pushback ? `\nPUSHBACK: ${ep.pushback}` : ''}${ep.news ? `\nTHIS WEEK'S HEADLINE (she picked this — build [THE NEWS] around it, don't leave a NEWS SLOT): ${ep.news}${ep.news_url ? ` — ${ep.news_url}` : ''}` : ''}${source ? `\n\nBUILD FROM THIS ORIGINAL (her banked words — keep her stories, jokes, and lines; sharpen, tighten, raise the stakes):\n${source.slice(0, 12000)}` : ''}\n\nWrite the teleprompter script.`
     try {
       // 12k budget: adaptive thinking shares max_tokens with the output, so a tight
       // budget was starving the script and it came back very short. Give it room.

@@ -1,13 +1,13 @@
 'use client'
 import { useState, useEffect, useCallback, type CSSProperties } from 'react'
-import { Loader2, Mic, Calendar, FileText, Link2, Copy, Check, Sparkles, X, ExternalLink, Newspaper, Send, BookOpen, Pencil, Wand2 } from 'lucide-react'
+import { Loader2, Mic, Calendar, FileText, Link2, Copy, Check, Sparkles, X, ExternalLink, Newspaper, Send, BookOpen, Pencil, Wand2, MessagesSquare, Star } from 'lucide-react'
 
 // PODCAST STUDIO — the robust podcast tab. Top: a scrollable weekly schedule (each
 // week's shows with topic + recording time). Click a show for its teleprompter script
 // + reference links. Bottom: a table of every episode. Sundays = solo (scripted),
 // Wednesdays = guest (booked via /book).
 type Ref = { label: string; url: string }
-type Episode = { id: string; date: string; day: 'sun' | 'wed'; time?: string; title: string; topic: string; guest?: string; script: string; references: Ref[]; status: string; number?: number; thread?: string; pushback?: string; note_id?: number }
+type Episode = { id: string; date: string; day: 'sun' | 'wed'; time?: string; title: string; topic: string; guest?: string; script: string; references: Ref[]; status: string; number?: number; thread?: string; pushback?: string; note_id?: number; news?: string; news_url?: string }
 type Turn = { role: 'user' | 'commander'; text: string }
 
 const COLS = '0.45fr 1.3fr 1.3fr 0.7fr 0.9fr 1.1fr 0.6fr'
@@ -40,6 +40,15 @@ export default function PodcastStudio() {
   const [bankedDraft, setBankedDraft] = useState('')
   const [savingBanked, setSavingBanked] = useState(false)
   const [bankedCopied, setBankedCopied] = useState(false)
+  // Collaborate — the pre-writing room for an episode with no script yet.
+  type Headline = { headline: string; outlet?: string; url: string; why?: string }
+  const [brainDump, setBrainDump] = useState('')
+  const [collab, setCollab] = useState<Turn[]>([])
+  const [collabDraft, setCollabDraft] = useState('')
+  const [collaborating, setCollaborating] = useState(false)
+  const [headlines, setHeadlines] = useState<Headline[]>([])
+  // Fresh room whenever a different episode opens.
+  useEffect(() => { setBrainDump(''); setCollab([]); setCollabDraft(''); setHeadlines([]); setEditing(false); setFeedback('') }, [open?.id])
 
   const closeDetail = () => { setOpen(null); setEditing(false); setFeedback('') }
   const closeBanked = () => { setBanked(null); setBankedEditing(false) }
@@ -77,6 +86,48 @@ export default function PodcastStudio() {
       setBankedEditing(false)
     } catch { /* keep editing */ }
     setSavingBanked(false)
+  }
+
+  // Collaborate on an episode: first turn sends the brain dump; later turns continue.
+  const collaborate = async () => {
+    if (!open || collaborating) return
+    const firstTurn = collab.length === 0
+    const said = (firstTurn ? brainDump : collabDraft).trim()
+    if (!said) return
+    const base = firstTurn ? [] : collab
+    const withUser: Turn[] = [...base, { role: 'user', text: said }]
+    setCollab(withUser); if (!firstTurn) setCollabDraft('')
+    setCollaborating(true)
+    try {
+      const d = await fetch('/api/podcast/episodes/collaborate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: open.id, brainDump: firstTurn ? said : brainDump, history: base, message: firstTurn ? '' : said }) }).then(r => r.json())
+      setCollab([...withUser, { role: 'commander', text: d.reply || d.error || 'Try that again.' }])
+      if (Array.isArray(d.headlines)) setHeadlines(d.headlines)
+    } catch { setCollab([...withUser, { role: 'commander', text: '⚠ Connection hiccup — try again.' }]) }
+    setCollaborating(false)
+  }
+
+  // Turn the whole collaboration into the teleprompter script (the View).
+  const writeEpisode = async () => {
+    if (!open || gen) return
+    setGen(true)
+    try {
+      const transcript = collab.map(t => `${t.role === 'user' ? 'MANDI' : 'COMMANDER'}: ${t.text}`).join('\n\n')
+      const source = [brainDump, transcript].filter(Boolean).join('\n\n')
+      const d = await fetch('/api/podcast/episodes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ generate_script: true, id: open.id, source }) }).then(r => r.json())
+      if (d.episode) { setOpen(d.episode); load() }
+    } catch { /* ignore */ }
+    setGen(false)
+  }
+
+  // Pick a headline to highlight — stores it on the episode (feeds [THE NEWS]) and
+  // keeps the link in the episode's Read/reference list.
+  const highlightHeadline = async (h: Headline) => {
+    if (!open) return
+    const refs = [...open.references, { label: h.headline, url: h.url }].filter((r, i, a) => a.findIndex(x => x.url === r.url) === i)
+    try {
+      const d = await fetch('/api/podcast/episodes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: open.id, news: `${h.headline}${h.why ? ` — ${h.why}` : ''}`, news_url: h.url, references: refs }) }).then(r => r.json())
+      if (d.episode) { setOpen(d.episode); load() }
+    } catch { /* ignore */ }
   }
 
   // Commander on the table: recommend the next episode, pull headlines, or talk.
@@ -229,6 +280,7 @@ export default function PodcastStudio() {
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{open.topic}{open.day === 'wed' && open.guest ? ` · with ${open.guest}` : ''}</p>
                 {open.thread ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '4px' }}><strong>Human thread:</strong> {open.thread}</p> : null}
                 {open.pushback ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '2px' }}><strong>Pushback:</strong> {open.pushback}</p> : null}
+                {open.news ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '2px' }}><Star size={11} style={{ display: 'inline', verticalAlign: '-1px', color: 'var(--purple)' }} /> <strong>Highlighted:</strong> {open.news_url ? <a href={open.news_url} target="_blank" rel="noreferrer" style={{ color: 'var(--purple)', textDecoration: 'none' }}>{open.news}</a> : open.news}</p> : null}
                 {open.note_id ? <button onClick={() => openBanked(open.note_id!)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0, marginTop: '6px' }}><BookOpen size={12} /> Banked script (Note #{open.note_id})</button> : null}
               </div>
               <button onClick={closeDetail} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={18} /></button>
@@ -272,12 +324,53 @@ export default function PodcastStudio() {
                 ) : (
                   <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '16px 18px', maxHeight: '340px', overflowY: 'auto', fontSize: '15px', lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{open.script}</div>
                 )
+              ) : collab.length === 0 ? (
+                <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '16px 18px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}><MessagesSquare size={14} color="var(--purple)" /> Let&rsquo;s build this one together</p>
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.55, marginBottom: '10px' }}>Dump it all in — your thoughts, what you&rsquo;ve been working on, what you&rsquo;re curious about, any headlines you&rsquo;ve seen. I&rsquo;ll bring back stories we&rsquo;ve already told and real articles to read, and we&rsquo;ll shape it before I write a word.</p>
+                  <textarea value={brainDump} onChange={e => setBrainDump(e.target.value)} rows={5} placeholder="Brain dump for this episode…" style={{ width: '100%', resize: 'vertical', border: '1px solid var(--border)', borderRadius: '10px', padding: '11px 12px', fontSize: '13.5px', lineHeight: 1.6, background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit' }} />
+                  <button onClick={collaborate} disabled={collaborating || !brainDump.trim()} style={{ ...btn('var(--purple)'), marginTop: '10px', opacity: brainDump.trim() ? 1 : 0.5 }}>{collaborating ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> thinking with you…</> : <><MessagesSquare size={13} /> Collaborate</>}</button>
+                </div>
               ) : (
-                <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '13px', color: 'var(--text-subtle)', marginBottom: '12px' }}>No script yet.</p>
-                  <button onClick={() => generate(open)} disabled={gen} style={{ border: 'none', background: 'var(--purple)', color: '#fff', borderRadius: '10px', padding: '10px 18px', fontWeight: 800, fontSize: '13px', cursor: gen ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
-                    {gen ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> writing…</> : <><Sparkles size={14} /> Write the script</>}
-                  </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {/* The collaboration */}
+                  <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '9px', maxHeight: '300px', overflowY: 'auto' }}>
+                    {collab.map((t, i) => (
+                      <div key={i} style={{ alignSelf: t.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '88%', background: t.role === 'user' ? 'var(--purple)' : 'var(--surface)', color: t.role === 'user' ? '#fff' : 'var(--text)', borderRadius: '12px', padding: '9px 12px', fontSize: '13px', lineHeight: 1.55, whiteSpace: 'pre-wrap', border: t.role === 'user' ? 'none' : '1px solid var(--border)' }}>{t.text}</div>
+                    ))}
+                    {collaborating && <div style={{ display: 'flex', gap: '6px', alignItems: 'center', color: 'var(--text-muted)', fontSize: '12.5px' }}><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> reading up &amp; thinking…</div>}
+                  </div>
+
+                  {/* Headlines to read / pick */}
+                  {headlines.length > 0 && (
+                    <div>
+                      <p style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-subtle)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}><Newspaper size={11} /> Headlines to read — pick one to highlight</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                        {headlines.map((h, i) => {
+                          const picked = open.news_url === h.url
+                          return (
+                            <div key={i} style={{ border: `1px solid ${picked ? 'var(--purple)' : 'var(--border)'}`, borderRadius: '11px', padding: '10px 12px', background: picked ? 'var(--purple-light)' : 'var(--surface)' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'flex-start' }}>
+                                <a href={h.url} target="_blank" rel="noreferrer" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', textDecoration: 'none', lineHeight: 1.35 }}>{h.headline}</a>
+                                <button onClick={() => highlightHeadline(h)} title="Highlight in this episode" style={{ flexShrink: 0, border: 'none', background: 'none', cursor: 'pointer', color: picked ? 'var(--purple)' : 'var(--text-subtle)', fontWeight: 800, fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{picked ? <><Check size={12} /> Picked</> : <><Star size={12} /> Highlight</>}</button>
+                              </div>
+                              {(h.outlet || h.why) && <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '3px', lineHeight: 1.45 }}>{h.outlet ? <strong>{h.outlet}. </strong> : ''}{h.why}</p>}
+                              <a href={h.url} target="_blank" rel="noreferrer" style={{ fontSize: '11px', color: 'var(--purple)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}><ExternalLink size={10} /> Read it</a>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Continue the conversation */}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <textarea value={collabDraft} onChange={e => setCollabDraft(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); collaborate() } }} rows={2} placeholder="Keep going… react to a headline, add a story, tell me the angle." style={{ flex: 1, resize: 'vertical', border: '1px solid var(--border)', borderRadius: '10px', padding: '9px 11px', fontSize: '13px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' }} />
+                    <button onClick={collaborate} disabled={collaborating || !collabDraft.trim()} style={{ ...btn('var(--purple)'), alignSelf: 'stretch', opacity: collabDraft.trim() ? 1 : 0.5 }}><Send size={13} /></button>
+                  </div>
+
+                  {/* Write the episode from everything we worked out */}
+                  <button onClick={writeEpisode} disabled={gen} style={{ ...btn('#C2477E'), justifyContent: 'center' }}>{gen ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> writing the episode…</> : <><Sparkles size={14} /> Write the Episode</>}</button>
                 </div>
               )}
 
