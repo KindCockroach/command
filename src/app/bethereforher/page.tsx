@@ -65,6 +65,19 @@ export default function BeThereForHer() {
         </div>
       </section>
 
+      {/* The Reset — the live flagship, first under the series */}
+      <section className="reset">
+        <span className="spark s1">&#10022;</span><span className="spark s2">&#10022;</span><span className="spark s3">&#10022;</span>
+        <div className="wrap">
+          <img src="/the-reset-logo.png" alt="The Reset" className="resetLogo" />
+          <p className="tag">THE LIVE ONE &middot; EVERY SUNDAY</p>
+          <h2>Press your own reset button.</h2>
+          <p>One hour, Sunday evenings. Camera off, nothing required but you. A live, guided reset for the
+            woman who&rsquo;s been everyone&rsquo;s everything &mdash; come home to the one in the mirror.</p>
+          <a className="cta glow" href="/reset">Join the next Reset &rarr;</a>
+        </div>
+      </section>
+
       <section className="start">
         <div className="wrap">
           <p className="tag">NEW HERE?</p>
@@ -115,6 +128,22 @@ const css = `
 .b .cline { font-size:15.5px; color:var(--soft); flex:1; line-height:1.5; }
 .b .cgo { font-weight:800; color:var(--rose); margin-top:4px; }
 .b .series .more { font-size:16px; color:var(--soft); font-style:italic; margin:24px 0 0; text-align:center; }
+
+/* The Reset — vibrant flagship */
+.b .reset { position:relative; overflow:hidden; text-align:center;
+  background:radial-gradient(120% 120% at 50% 0%, #2a1630 0%, #3B2A3A 40%, #7a2e52 72%, #C94E86 100%); color:#fff; }
+.b .reset .wrap { position:relative; z-index:2; }
+.b .resetLogo { width:min(230px,56vw); height:auto; margin:0 auto 8px; display:block;
+  filter:drop-shadow(0 0 26px rgba(224,88,140,0.5)) drop-shadow(0 0 10px rgba(224,164,88,0.5)); }
+.b .reset .tag { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--gold); margin:0 0 10px; }
+.b .reset h2 { color:#fff; font-size:clamp(26px,4.4vw,38px); margin:0 0 14px;
+  background:linear-gradient(90deg,#F2C45A,#F28CB6,#C94E86); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.b .reset p { font-size:18px; color:#f3e3ea; max-width:600px; margin:0 auto 26px; }
+.b .cta.glow { background:linear-gradient(90deg,#E0A458,#E0588C,#C94E86); box-shadow:0 10px 34px rgba(224,88,140,0.5); }
+.b .reset .spark { position:absolute; color:#F2C45A; opacity:0.85; font-size:26px; z-index:1; text-shadow:0 0 14px rgba(242,196,90,0.8); pointer-events:none; }
+.b .reset .spark.s1 { top:12%; left:12%; font-size:20px; }
+.b .reset .spark.s2 { top:22%; right:14%; font-size:30px; }
+.b .reset .spark.s3 { bottom:16%; left:20%; font-size:18px; opacity:0.6; }
 
 .b .start { background:linear-gradient(165deg,#3B2A3A,#4d3a49 80%,var(--rose)); color:#fff; text-align:center; }
 .b .start .tag { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--gold); margin:0 0 12px; }
