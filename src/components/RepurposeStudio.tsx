@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Copy, CheckCheck, Zap, ChevronDown, ChevronUp, Loader2, Sparkles, Video, Mail, Pin, BookOpen, MessageSquare, Hash, Link2, FileText, Layout } from 'lucide-react'
 import type { RepurposeOutput } from '@/lib/ai'
 import ContentPreview from './ContentPreview'
@@ -76,6 +76,20 @@ export default function RepurposeStudio() {
   // River state
   const [riverStatus, setRiverStatus] = useState<'idle' | 'sending' | 'done'>('idle')
   const [riverMsg, setRiverMsg] = useState('')
+
+  // A podcast script sent over from the Podcast Studio ("Turn into a short-form
+  // series"). Prefill the title + transcript so she can work on reels from it —
+  // never auto-run, so it doesn't run away with ideas.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('repurpose-carryover')
+      if (!raw) return
+      localStorage.removeItem('repurpose-carryover')
+      const d = JSON.parse(raw)
+      if (d?.title) setTitle(String(d.title))
+      if (d?.transcript) setTranscript(String(d.transcript))
+    } catch { /* ignore */ }
+  }, [])
 
   const fileToRiver = async () => {
     if (!result) return

@@ -90,7 +90,7 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, onRestore }: { pr
             <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>{project.name}</span>
             <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: `${STATUS_COLORS[project.status]}20`, color: STATUS_COLORS[project.status], textTransform: 'uppercase', letterSpacing: '0.06em' }}>{project.status}</span>
             <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: `${PRIORITY_COLORS[project.priority]}18`, color: PRIORITY_COLORS[project.priority], textTransform: 'uppercase', letterSpacing: '0.06em' }}>{project.priority}</span>
-            {(() => { const l = LABEL_META[project.label ?? 'general']; return <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: `${l.color}18`, color: l.color, letterSpacing: '0.04em' }}>{l.name}</span> })()}
+            {(() => { const l = LABEL_META[project.label as ProjectLabel] ?? LABEL_META.general; return <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: `${l.color}18`, color: l.color, letterSpacing: '0.04em' }}>{l.name}</span> })()}
           </div>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{project.description}</p>
           <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>

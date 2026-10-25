@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, type CSSProperties } from 'react'
-import { Loader2, Mic, Calendar, FileText, Link2, Copy, Check, Sparkles, X, ExternalLink, Newspaper, Send, BookOpen, Pencil, Wand2, MessagesSquare, Star } from 'lucide-react'
+import { Loader2, Mic, Calendar, FileText, Link2, Copy, Check, Sparkles, X, ExternalLink, Newspaper, Send, BookOpen, Pencil, Wand2, MessagesSquare, Star, Clapperboard } from 'lucide-react'
 
 // PODCAST STUDIO — the robust podcast tab. Top: a scrollable weekly schedule (each
 // week's shows with topic + recording time). Click a show for its teleprompter script
@@ -383,6 +383,12 @@ export default function PodcastStudio() {
                     <button onClick={reviseScript} disabled={revising || !feedback.trim()} style={{ ...btn('var(--purple)'), alignSelf: 'stretch', opacity: feedback.trim() ? 1 : 0.5 }}>{revising ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> rewriting…</> : <><Wand2 size={13} /> Rewrite</>}</button>
                   </div>
                 </div>
+              )}
+
+              {/* Carry the finished script over to the 1→30 Repurpose page to work on
+                  reels — just hands it off, doesn't auto-generate anything. */}
+              {open.script && !editing && (
+                <button onClick={() => { try { localStorage.setItem('repurpose-carryover', JSON.stringify({ title: open.title, transcript: open.script })) } catch { /* ignore */ } window.location.href = '/repurpose' }} style={{ ...btn('#5A4FCF'), justifyContent: 'center', width: '100%', marginTop: '8px' }}><Clapperboard size={14} /> Turn into a short-form series</button>
               )}
             </div>
           </div>

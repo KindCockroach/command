@@ -28,10 +28,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY not set — add it in Railway so the scout can research.' }, { status: 400 })
   }
 
-  const instructions = `You are RISE's trending-audio scout. Using live web search, find what SOUNDS/AUDIO are trending on Instagram Reels and TikTok RIGHT NOW (this week). Name real, specific tracks (song + artist, or the named original audio) that a creator could search and use today. Ground everything in current roundups/creator reports — never invent a trend. Mandi's lane: intuition, self-trust, reparenting, mindful + playful content for tired women (silly-serious tone), so favor sounds that fit emotional/relatable/aesthetic storytelling, but include a couple of broadly-trending ones too.`
+  // What she's already seen — so the scout doesn't keep handing back the same lead
+  // sound every refresh (the "it reverted to Iris" problem). We tell it to avoid these
+  // as the top pick, and rotate below if it circles back anyway.
+  const prev = getTrendAudio()
+  const avoid = [prev?.audio, ...(prev?.sounds ?? [])]
+    .filter(Boolean).map(s => String(s).split('—')[0].replace(/["“”']/g, '').trim()).filter(Boolean)
+  const avoidList = Array.from(new Set(avoid)).slice(0, 6)
+
+  const instructions = `You are RISE's trending-audio scout. Using live web search, find what SOUNDS/AUDIO are trending on Instagram Reels and TikTok RIGHT NOW (this week). Name real, specific tracks (song + artist, or the named original audio) that a creator could search and use today. Ground everything in current roundups/creator reports — never invent a trend. Mandi's lane: intuition, self-trust, reparenting, mindful + playful content for tired women (silly-serious tone), so favor sounds that fit emotional/relatable/aesthetic storytelling, but include a couple of broadly-trending ones too. Give her VARIETY each time — rotate the lead pick, don't keep returning the same evergreen song.`
   const input = `Return ONLY JSON:
 {"sounds":["'Track Name' — Artist — one line on the vibe/why it's trending", "... 2-4 total"], "format":"one trending on-screen-text FORMAT to try this week (short, concrete)"}
-Name real current tracks a creator can find in the app today. No preamble.`
+Name real current tracks a creator can find in the app today. No preamble.${avoidList.length ? `\nShe has ALREADY seen these recently — do NOT lead with them; surface something different and current instead: ${avoidList.join('; ')}.` : ''}`
 
   const pull = async () => {
     // Opus + web-search + JSON needs headroom or the JSON never lands (3000, not 1500).
@@ -48,7 +56,14 @@ Name real current tracks a creator can find in the app today. No preamble.`
     if (!sounds.length && !format) ({ sounds, format } = await pull())
     if (!sounds.length && !format) return NextResponse.json({ error: 'The scout came back empty — try again.' }, { status: 502 })
 
-    const audio = sounds[0] || ''  // the headline sound for the one-glance banner
+    let audio = sounds[0] || ''  // the headline sound for the one-glance banner
+    // If it circled back to the same lead sound she already has, rotate to the next
+    // distinct one so a refresh actually changes.
+    const prevLead = (prev?.audio ?? '').toLowerCase()
+    if (prevLead && audio.toLowerCase() === prevLead) {
+      const alt = sounds.find(s => s.toLowerCase() !== prevLead)
+      if (alt) audio = alt
+    }
     setTrendAudio({ audio, format, sounds })
     logActivity({ type: 'trend_checkin', title: 'Trending audio refreshed', detail: audio ? audio.slice(0, 120) : format.slice(0, 120), icon: '🎵', source: 'audio-scout' })
     return NextResponse.json({ ok: true, trend_audio: getTrendAudio() })

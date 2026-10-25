@@ -39,10 +39,17 @@ export default function LinesPanel() {
     if (pulseBusy) return
     setPulseBusy(true)
     try {
-      await fetch('/api/trends/audio', { method: 'POST' })
-      const d = await fetch('/api/trends/latest').then(r => r.json())
-      if (d.pulse && (d.pulse.audio || d.pulse.format)) setPulse(d.pulse)
-    } catch { /* ignore */ }
+      // Use the scout's OWN response — don't fire-and-forget then re-GET /latest,
+      // which could read the store before the scout finished writing and show the
+      // STALE pick (the "it reverted back to Iris" bug). If the scout fails, keep
+      // what's on screen rather than overwriting it with a stale read.
+      const r = await fetch('/api/trends/audio', { method: 'POST' })
+      const d = await r.json().catch(() => null)
+      const ta = d?.trend_audio
+      if (ta && (ta.audio || ta.format)) {
+        setPulse({ audio: ta.audio || '', audio_from: 'fresh today', format: ta.format || '', when: ta.when ?? null })
+      }
+    } catch { /* keep the current pulse */ }
     setPulseBusy(false)
   }
 
