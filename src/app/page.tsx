@@ -88,7 +88,7 @@ const SERVICES: Service[] = [
     cta: { label: 'Visit Be There For Her', href: 'https://www.bethereforher.com' },
   },
   {
-    emoji: '🗝',
+    emoji: '🔑',
     name: 'RETIRE',
     who: 'Ready to step back from your business and pass down the keys?',
     what: [
@@ -180,7 +180,7 @@ export default function Home() {
           <ol>
             <li><strong>Pick a service.</strong></li>
             <li><strong>Take the quick questionnaire</strong> for an instant AI assessment &mdash; or pick from the UGC &amp; marketing menu.</li>
-            <li><strong>Book a time with Mandi</strong> right on the page. We meet on Google Meet.</li>
+            <li><strong>Book a time with Mandi</strong> right on the page. You&rsquo;ll meet on Google Meet.</li>
           </ol>
           <p className="unsure">
             Not sure where you fit? <a href="/assessment">Start with the questionnaire</a> &mdash; it&rsquo;ll show you where AI can help most.
