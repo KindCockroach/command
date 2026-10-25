@@ -11,14 +11,14 @@ export const metadata: Metadata = {
     description: "Podcast · Host · Speaker",
     url: "https://www.aiworksforher.com",
     siteName: "AI Mom",
-    images: [{ url: "/og.png", width: 1200, height: 630 }],
+    images: [{ url: "/og-aimom.png", width: 1200, height: 630 }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "AI Mom",
     description: "Podcast · Host · Speaker",
-    images: ["/og.png"],
+    images: ["/og-aimom.png"],
   },
 };
 
