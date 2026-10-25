@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
   const history: Turn[] = Array.isArray(body.history) ? body.history : []
   const message = String(body.message || '').trim()
 
-  // Her recent SCRIPTED episodes before this one — the "stories we told," so the
+  // Her last 4 SCRIPTED episodes before this one — the "stories we told," so the
   // Commander can remind her and she can call back instead of repeating herself.
   const prior = eps
     .filter(e => e.script && e.id !== id && (ep.number ? (e.number ?? 0) < ep.number : e.date < ep.date))
     .sort((a, b) => (b.number ?? 0) - (a.number ?? 0))
-    .slice(0, 2)
+    .slice(0, 4)
   const priorDigest = prior.length
     ? prior.map(e => `• Ep ${e.number ?? '?'} "${e.title}" — thread: ${e.thread || '—'}; pushback: ${e.pushback || '—'}\n  ${(e.script || '').replace(/\s+/g, ' ').slice(0, 1200)}…`).join('\n\n')
     : '(no earlier scripted episodes yet)'
