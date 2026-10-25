@@ -1,304 +1,129 @@
 export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
-import { MetaPixel, BuyButton, salesCss } from '@/components/funnel/shared'
-import FreeOptin from './FreeOptin'
-import { MEDS, PREVIEW_FILE } from './meds'
+import { MetaPixel } from '@/components/funnel/shared'
 
-const TITLE = 'Listen To Your Intuition — Guided Meditations by Mandi'
-const SHARE_TITLE = 'Mindful Listening by Joyful Media'
-const DESC =
-  'Guided inner-child meditations and mindful listening, in a real warm voice, for the woman who’s cared for everyone but herself. Listen to your intuition — become your own resting place.'
-
+// bethereforher.com — the new face: an intro to a growing line of mindful products that
+// bring women back to themselves (intuition, inner-child, reconnection, postpartum).
+// The former "Listen To Your Intuition" sales page now lives at /bethereforher/intuition.
 export const metadata: Metadata = {
-  title: TITLE,
-  description: DESC,
-  keywords: ['guided meditations', 'meditation', 'inner child healing', 'inner child work', 'mindful listening', 'mindfulness', 'intuition', 'listen to your intuition', 'meditation for women', 'self-trust', 'nervous system regulation', 'reparenting'],
-  openGraph: { title: SHARE_TITLE, description: DESC, type: 'website', siteName: 'Joyful Media' },
-  twitter: { card: 'summary_large_image', title: SHARE_TITLE, description: DESC },
+  title: 'Be There For Her — Mindful Products to Bring You Back to Yourself',
+  description:
+    'A growing line of mindful products — guided meditations and gentle practices for your intuition, your inner child, and your way back home to yourself. Start with a free beginner meditation.',
+  openGraph: { title: 'Be There For Her', description: 'Mindful products that bring women back to themselves.', type: 'website' },
 }
 
-const CHECKOUT = process.env.NEXT_PUBLIC_BETHEREFORHER_CHECKOUT || 'https://link.fastpaydirect.com/payment-link/6ab2eef69a013c156f1f990f'
+const SERIES = [
+  { title: 'Turning Up Your Intuition', line: 'The quiet knowing you were taught to silence — turned back up, meditation by meditation.', href: '/bethereforher/intuition', status: 'Available now' },
+  { title: 'Inner Child Healing', line: 'Meet the girl you left behind. Become the one who finally stays.', href: '', status: 'In the works' },
+  { title: 'Reconnecting to Yourself', line: 'Find your way back from everyone else’s needs to your own center.', href: '', status: 'In the works' },
+  { title: 'Postpartum Support', line: 'For the tender, unspooled months no one prepares you for.', href: '', status: 'In the works' },
+]
 
 export default function BeThereForHer() {
   return (
-    <main className="sales bthf">
+    <main className="b">
       <MetaPixel />
-      <style>{salesCss}</style>
-      <style>{extraCss}</style>
+      <style>{css}</style>
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">LISTEN TO YOUR INTUITION</p>
-          <h1>A woman&rsquo;s intuition is her single most important <em>superpower.</em></h1>
+          <p className="eyebrow">BE THERE FOR HER</p>
+          <h1>Come back to <em>yourself.</em></h1>
           <p className="sub">
-            You are about to radically change your life, align with everything you&rsquo;ve been calling
-            in, and step into future you &mdash; virtually overnight. This is what you&rsquo;ve been waiting
-            for. And I&rsquo;m not being dramatic.
+            A growing line of mindful products &mdash; guided meditations and gentle practices that bring
+            women home to themselves. Because you&rsquo;ve been there for everyone else. This is for her:
+            the one in the mirror.
           </p>
-          <BuyButton href={CHECKOUT} label="Listen to your intuition — $9" />
-          <p className="preview-label">Grab your headphones after bedtime and drop in. &nbsp;·&nbsp; Listen free &mdash; &ldquo;The Little You&rdquo;:</p>
-          <audio controls preload="none" src={PREVIEW_FILE} className="preview" />
+          <a className="cta" href="/bethereforher/intuition">Start with a free beginner meditation</a>
         </div>
       </section>
 
-      <section className="band">
+      <section className="series">
         <div className="wrap">
-          <h2>Your intuition is a wellspring.</h2>
-          <p>The quiet knowing underneath everything. Follow it and the doors fly open &mdash; every yes
-            you&rsquo;ve been waiting for, your people, the life you want but haven&rsquo;t let yourself step
-            into yet.</p>
-          <p>Turn away from it &mdash; for all the good reasons: comfort, convenience, consistency &mdash; and
-            your superpower sense of knowing slips through unnoticed. Until you&rsquo;re the one going unnoticed.</p>
-          <p>After years of being there for everyone else, your intuition turned its own volume all the way
-            down.</p>
-          <p className="untilnow"><strong>Until now.</strong></p>
-          <p className="callout">This is for the woman who&rsquo;s done saying &ldquo;yes&rdquo; when she means
-            &ldquo;no&rdquo; &mdash; done abandoning herself in the parking lot, at the menu, in her own
-            marriage. Your knowing didn&rsquo;t leave. It&rsquo;s about to come roaring back.</p>
-        </div>
-      </section>
-
-      <section className="what">
-        <div className="wrap">
-          <h2>You know exactly what I mean.</h2>
-          <ul className="walkaway">
-            <li>You&rsquo;ve left 45 minutes early and sat in the parking lot, because you can&rsquo;t tell when to go anymore.</li>
-            <li>You ordered what she ordered so you wouldn&rsquo;t have to choose.</li>
-            <li>You said yes when you meant no &mdash; then canceled last minute and called yourself a flake.</li>
-            <li>Your stomach&rsquo;s been side-eyeing that mom friend for months &mdash; and you just booked the next playdate anyway.</li>
-            <li>You lie awake wondering if it&rsquo;s him or if it&rsquo;s you, studying his moods for an answer your gut already has.</li>
-            <li>You keep a running list of what you want, right next to the list of what you won&rsquo;t let yourself have.</li>
-          </ul>
-          <p className="callout">That&rsquo;s not indecision. That&rsquo;s a signal you stopped listening to your intuition &mdash; and we&rsquo;re about to turn the volume back up.</p>
-        </div>
-      </section>
-
-      <section className="midcta">
-        <div className="wrap">
-          <BuyButton href={CHECKOUT} label="Call your intuition 📞" />
-        </div>
-      </section>
-
-      <section className="what">
-        <div className="wrap">
-          <h2>What&rsquo;s inside</h2>
-          <p className="lead"><strong>Listen To Your Intuition</strong>{' '}is seven guided sessions in my
-            real voice. Not the meditation you&rsquo;ve quit before &mdash; you don&rsquo;t have to empty your
-            mind, sit still, or get it right. You just listen. Ten minutes after bedtime, headphones in, drop in.</p>
-          <p className="walkhead">You won&rsquo;t believe how you feel when you wake up tomorrow.</p>
-          <ul className="walkaway">
-            <li>Your intuition, turned all the way back up</li>
-            <li>The little girl who went quiet &mdash; safe again</li>
-            <li>Your yes and your no, trustworthy for the first time in years</li>
-          </ul>
-          <p className="lead sevenhead">Seven sessions. Ten minutes of your day.</p>
-          <ol className="medlist">
-            {MEDS.map((m) => (
-              <li key={m.n}>
-                <span className="mt">{m.title}</span>
-                <span className="ml">{m.line}</span>
-              </li>
+          <h2>The series</h2>
+          <p className="ssub">Each one is a doorway back to the woman underneath the to-do list.</p>
+          <div className="grid">
+            {SERIES.map((s) => (
+              s.href ? (
+                <a className="card live" href={s.href} key={s.title}>
+                  <span className="status live">{s.status}</span>
+                  <span className="ctitle">{s.title}</span>
+                  <span className="cline">{s.line}</span>
+                  <span className="cgo">Explore &rarr;</span>
+                </a>
+              ) : (
+                <div className="card" key={s.title}>
+                  <span className="status">{s.status}</span>
+                  <span className="ctitle">{s.title}</span>
+                  <span className="cline">{s.line}</span>
+                </div>
+              )
             ))}
-          </ol>
-          <p className="bonus"><strong>Bonus:</strong>{' '}these audios also help you become your own resting
-            place &mdash; even if there&rsquo;s no &ldquo;rest for the wicked,&rdquo; or time to sit.</p>
-        </div>
-      </section>
-
-      <section className="product">
-        <div className="wrap">
-          <p className="ptag">Where this comes from</p>
-          <p>Hi, I&rsquo;m Mama Mandi &mdash; owner of Joyful Media, mother to four babies here on earth and
-            one in the heavens.</p>
-          <p>After 15 years of yoga, meditation, and mushrooms, mindful listening was the single most powerful
-            modality I have ever touched &mdash; the exact thing that broke a lifetime of my own annoying
-            patterns, outdated beliefs, and problematic behaviors.</p>
-          <p>Now I&rsquo;m using this work to move through my life standing up for the women who came before
-            me, and the ones coming after.</p>
-          <p>I&rsquo;m not here to sell you calm. I&rsquo;m handing you the exact thing that changed everything
-            for me.</p>
-          <p>I&rsquo;ve been told I have a voice that commands and an imagination that expands. So if
-            you&rsquo;ve never made it through a meditation in your life &mdash; perfect. This isn&rsquo;t that.</p>
-          <p>Grab your headphones. Meet me in the quiet. Let&rsquo;s get you back.</p>
-          <blockquote className="pullquote">&ldquo;I&rsquo;m here now. I&rsquo;ve got you. I&rsquo;m not leaving again.&rdquo;</blockquote>
-        </div>
-      </section>
-
-      <section className="midcta">
-        <div className="wrap">
-          <BuyButton href={CHECKOUT} label="I'm ready to meet myself again" />
-        </div>
-      </section>
-
-      <section className="bump">
-        <div className="wrap">
-          <div className="bumpcard">
-            <p className="bumpsell">Add the <strong>Box Breathing Pack</strong>{' '}at checkout &mdash; <strong>+$7</strong></p>
-            <p className="bumpsmall">Two real breathwork sessions to settle your nervous system in about 90
-              seconds &mdash; for the moments the ache shows up and you need to come back to your body fast.
-              One checkbox on the payment page.</p>
           </div>
+          <p className="more">&hellip;and more in this lane &mdash; whatever brings women back to themselves.</p>
         </div>
       </section>
 
-      <section className="optin">
+      <section className="start">
         <div className="wrap">
-          <p className="eyebrow2">START FREE</p>
-          <h2>Not ready? Take one on me.</h2>
-          <p className="osub">Drop your email and &ldquo;The Little You&rdquo; is yours right now &mdash; free.
-            Grab your headphones after bedtime and drop in. You won&rsquo;t believe how you feel when you wake up
-            tomorrow.</p>
-          <FreeOptin />
+          <p className="tag">NEW HERE?</p>
+          <h2>Start with a free beginner meditation.</h2>
+          <p>Short, gentle, and made for the woman who&rsquo;s never had time to sit with herself. One press play, and you begin.</p>
+          <a className="cta dark" href="/bethereforher/intuition">Begin here &rarr;</a>
         </div>
       </section>
 
-      <section className="proof">
+      <footer className="foot">
         <div className="wrap">
-          <h2>What changes</h2>
-          <p>You stop asking everyone else what they think before you let yourself know. You feel the yes and
-            the no again &mdash; and you <em>move</em> on them. You stop second-guessing your gut about your kid,
-            your marriage, your money, your whole life. The woman who knew comes roaring back &mdash; and this
-            time, she doesn&rsquo;t leave.</p>
+          <p><a href="/">AI Works For Her</a> &middot; <a href="/listen">The AI Mom Podcast</a></p>
+          <p className="fine">Be There For Her &middot; by Mandi Beck</p>
         </div>
-      </section>
-
-      <section className="band faq">
-        <div className="wrap">
-          <h2>Questions</h2>
-          <dl>
-            <dt>How do I listen after I buy?</dt>
-            <dd>You get instant access to a private page with every meditation. Press play right there, or
-              download them to your phone and listen anywhere &mdash; the car, the bath, the dark at 2am.</dd>
-            <dt>Is this really your voice?</dt>
-            <dd>Yes. Every word is me, recorded for the woman and the little girl in you.</dd>
-            <dt>Do I need any experience with meditation?</dt>
-            <dd>None. In fact, if you&rsquo;ve never made it through a meditation in your life &mdash; perfect.
-              This isn&rsquo;t that. Press play, drop in, I do the rest.</dd>
-            <dt>Is it a subscription?</dt>
-            <dd>No &mdash; one payment, yours to keep forever. (If you want a new meditation every week, a
-              membership is coming; you can join when it opens.)</dd>
-            <dt>What if it&rsquo;s not for me?</dt>
-            <dd>Because this is a digital product with instant access, all sales are final. So listen to the
-              free one first &mdash; &ldquo;The Little You&rdquo; &mdash; and feel my voice before you buy.</dd>
-          </dl>
-        </div>
-      </section>
-
-      <section className="final">
-        <div className="wrap">
-          <h2>You&rsquo;ve been there for everyone.<br />Now listen to yourself.</h2>
-          <BuyButton href={CHECKOUT} label="I'm ready — $9" tagline="Instant access · Listen anywhere · Yours to keep" />
-          <p className="terms">Digital product &mdash; no refunds. Not a licensed therapist; these meditations
-            aren&rsquo;t therapy or medical advice. Please use alongside professional care, not in place of it.</p>
-        </div>
-      </section>
+      </footer>
     </main>
   )
 }
 
-const extraCss = `
-/* ── Cozy, warm palette for Be There For Her (overrides shared salesCss) ── */
-.sales.bthf{ --light:#F4E9DB; --midnight:#3c2a37; --nebula:#9b6a86; --pink:#cf8aa0; --ember:#d98c5f;
-  color:#463640; background:#F4E9DB; }
-.bthf .hero{ background:linear-gradient(165deg,#382634 0%,#6b3f52 58%,#a86a72 100%); }
-.bthf .hero h1{ color:#fdf3ea; }
-.bthf .hero h1 em{ color:#f2b872; font-style:italic; font-size:1.12em; text-shadow:0 2px 20px rgba(242,166,90,.45); }
-.bthf .hero .sub{ color:#f2e2d7; }
-.bthf .hero .sub strong,.bthf .hero strong{ color:#fff; }
-.bthf h1,.bthf h2{ color:#3c2a37; }
-.bthf .band,.bthf .band.faq{ background:#FBF3EA; }
-.bthf .what,.bthf .proof{ background:#F4E9DB; }
-.bthf .lead{ color:#5a4a52; }
-.bthf blockquote{ background:#3c2a37; border-left-color:#d98c5f; }
-.bthf .product{ background:linear-gradient(160deg,#382634,#5f3a4f 68%,#a86a72); }
-.bthf .product .psub,.bthf .product .ptag .arw{ color:#f0c9a3; }
-.bthf .final{ background:linear-gradient(160deg,#a86a72,#d5a279); }
-.bthf .final h2{ color:#402a34; }
-.bthf .buy{ background:linear-gradient(135deg,#c96f7e,#d98c5f); color:#fff; box-shadow:0 10px 26px rgba(110,55,64,.32); }
-.bthf .tagline{ color:#402a34; opacity:.85; }
-.bthf .bumpcard{ background:#F6EBDC; border-color:#d3a488; }
-.bthf .bumpsell strong{ color:#b26a52; }
+const css = `
+.b { --plum:#3B2A3A; --rose:#C97B63; --gold:#E0A458; --cream:#FBF6F0; --soft:#6B5A63;
+  background:var(--cream); color:var(--plum); line-height:1.65; margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+.b .wrap { max-width:900px; margin:0 auto; padding:0 24px; }
+.b h1,.b h2 { font-family:Georgia,"Times New Roman",serif; letter-spacing:-0.3px; }
+.b em { font-style:italic; color:var(--rose); }
+.b section { padding:70px 0; }
+.b .cta { display:inline-block; background:var(--rose); color:#fff; font-weight:800; font-size:17px;
+  text-decoration:none; padding:15px 30px; border-radius:999px; box-shadow:0 10px 28px rgba(201,123,99,0.35); transition:transform .12s ease; }
+.b .cta:hover { transform:translateY(-2px); }
+.b .cta.dark { background:var(--plum); box-shadow:0 10px 28px rgba(59,42,58,0.35); }
 
-.bthf .preview-label { font-size:14px; color:#f2e2d7; margin:22px 0 8px; letter-spacing:.3px; }
-.bthf audio.preview { width:100%; max-width:420px; }
-.bthf .medlist { list-style:none; counter-reset:med; padding:0; margin:18px 0; }
-.bthf .medlist li { counter-increment:med; display:flex; flex-direction:column; gap:2px;
-  padding:14px 0 14px 44px; border-top:1px solid #e7e0d3; position:relative; }
-.bthf .medlist li:first-child { border-top:none; }
-.bthf .medlist li::before { content:counter(med); position:absolute; left:0; top:14px;
-  width:30px; height:30px; border-radius:999px; background:var(--pink); color:#fff;
-  font-family:Georgia,serif; font-weight:700; display:grid; place-items:center; font-size:15px; }
-.bthf .medlist .mt { font-family:Georgia,serif; font-size:19px; font-weight:700; color:var(--midnight); }
-.bthf .medlist .ml { font-size:15px; color:#6a6280; }
-.bthf .bonus { font-size:16px; background:#F3E4D3; border:1px solid #e6cdb6; border-radius:12px; padding:14px 16px; margin-top:18px; color:#4a3a42; }
-.bthf .guarantee { font-size:15px; color:#7a6a72; font-style:italic; margin-top:18px; }
-.bthf .walkhead { font-weight:700; color:var(--midnight); margin:18px 0 8px; }
-.bthf .walkaway { list-style:none; padding:0; margin:0 0 8px; }
-.bthf .walkaway li { position:relative; padding:8px 0 8px 28px; border-top:1px solid #e7e0d3; font-size:16px; color:#4a3a42; }
-.bthf .walkaway li:first-child { border-top:none; }
-.bthf .walkaway li::before { content:"\\2022"; position:absolute; left:6px; top:8px; color:var(--ember); font-weight:800; }
-.bthf .sevenhead { margin-top:26px; font-weight:700; color:var(--midnight); }
-.bthf .final .terms { font-size:12px; color:#5a4a52; opacity:.85; max-width:60ch; margin:16px auto 0; line-height:1.5; }
+.b .hero { background:linear-gradient(165deg,#f6e9df,#f3ddd3 70%,#eccdbe); text-align:center; padding:92px 0; }
+.b .hero .eyebrow { letter-spacing:3px; font-size:12px; font-weight:800; color:var(--rose); margin:0 0 18px; }
+.b .hero h1 { font-size:clamp(34px,6vw,54px); line-height:1.1; margin:0 0 20px; }
+.b .hero .sub { font-size:19px; color:var(--soft); max-width:620px; margin:0 auto 28px; }
 
-/* Opt-in (warm candlelit) */
-.bthf .optin { background:linear-gradient(160deg,#4a2f44,#8a5470 66%,#cf8aa0); color:#fff; }
-.bthf .optin .eyebrow2 { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--ember); margin:0 0 8px; }
-.bthf .optin h2 { color:#fff; }
-.bthf .optin .osub { font-size:18px; color:#f3ecf7; max-width:60ch; margin:0 0 6px; }
-.bthf .optin .fo-form { display:grid; grid-template-columns:1fr auto; gap:12px; margin-top:14px; max-width:560px; align-items:start; }
-.bthf .optin .fo-form input { box-sizing:border-box; padding:15px 16px; border-radius:12px;
-  border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.96); color:var(--midnight);
-  font-size:16px; font-family:inherit; }
-.bthf .optin .fo-form input:focus { outline:none; border-color:var(--ember); box-shadow:0 0 0 3px rgba(242,166,90,0.35); }
-.bthf .optin .fo-form button { background:var(--ember); color:var(--midnight); font-weight:800; font-size:16px;
-  border:none; cursor:pointer; padding:15px 24px; border-radius:999px; white-space:nowrap; }
-.bthf .optin .fo-form button:disabled { opacity:0.7; cursor:default; }
-.bthf .optin .fo-fine { grid-column:1 / -1; font-size:13px; opacity:0.85; margin:2px 0 0; color:#f3ecf7; }
-.bthf .optin .fo-err { grid-column:1 / -1; color:#ffd7c2; font-size:14px; margin:0; }
-.bthf .optin .fo-done { background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.4);
-  border-radius:16px; padding:22px 24px; margin-top:8px; display:flex; flex-direction:column; gap:12px; max-width:560px; }
-.bthf .optin .fo-done p { font-size:18px; color:#fff; margin:0; }
-.bthf .optin .fo-done audio { width:100%; }
-.bthf .optin .fo-dl { color:var(--ember); font-weight:800; text-decoration:none; }
-@media (max-width:560px){ .bthf .optin .fo-form { grid-template-columns:1fr; } }
+.b .series { background:var(--cream); }
+.b .series h2 { font-size:clamp(26px,4vw,36px); margin:0 0 6px; }
+.b .series .ssub { font-size:17px; color:var(--soft); margin:0 0 28px; }
+.b .series .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.b .card { display:flex; flex-direction:column; gap:8px; background:#fff; border:1px solid #ecdccf; border-radius:18px; padding:24px 24px; text-decoration:none; color:var(--plum); }
+.b .card.live { border:1.5px solid var(--rose); transition:transform .12s ease, box-shadow .12s ease; }
+.b .card.live:hover { transform:translateY(-3px); box-shadow:0 16px 36px rgba(201,123,99,0.2); }
+.b .status { font-size:10.5px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:#b7a79b; }
+.b .status.live { color:var(--rose); }
+.b .ctitle { font-family:Georgia,serif; font-size:22px; font-weight:700; }
+.b .cline { font-size:15.5px; color:var(--soft); flex:1; line-height:1.5; }
+.b .cgo { font-weight:800; color:var(--rose); margin-top:4px; }
+.b .series .more { font-size:16px; color:var(--soft); font-style:italic; margin:24px 0 0; text-align:center; }
 
-/* ── Float + glimmer ── */
-@keyframes bthfFloat { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
-@keyframes bthfSheen { 0%{ transform:translateX(-140%) rotate(10deg); } 55%,100%{ transform:translateX(260%) rotate(10deg); } }
-@keyframes bthfGlow { 0%,100%{ opacity:.45; } 50%{ opacity:.9; } }
+.b .start { background:linear-gradient(165deg,#3B2A3A,#4d3a49 80%,var(--rose)); color:#fff; text-align:center; }
+.b .start .tag { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--gold); margin:0 0 12px; }
+.b .start h2 { color:#fff; font-size:clamp(24px,4vw,34px); margin:0 0 14px; }
+.b .start p { font-size:18px; color:#efe4ea; max-width:600px; margin:0 auto 26px; }
 
-.bthf .buy{ position:relative; overflow:hidden; animation:bthfFloat 3.6s ease-in-out infinite;
-  transition:transform .25s ease, box-shadow .25s ease; }
-.bthf .buy:hover{ transform:translateY(-8px) scale(1.015); box-shadow:0 22px 46px rgba(110,55,64,.45); }
-.bthf .buy::after{ content:""; position:absolute; top:-40%; left:0; width:38%; height:180%;
-  background:linear-gradient(115deg, transparent, rgba(255,255,255,.55), transparent);
-  transform:translateX(-140%) rotate(10deg); animation:bthfSheen 4.8s ease-in-out infinite; pointer-events:none; }
+.b .foot { background:var(--plum); color:#cdbfc8; text-align:center; padding:40px 0; font-size:14px; }
+.b .foot a { color:var(--gold); text-decoration:none; font-weight:600; }
+.b .foot .fine { font-size:12px; color:#8f8089; margin:10px 0 0; }
 
-/* soft glimmer behind the dark sections */
-.bthf .hero, .bthf .product, .bthf .optin, .bthf .final { position:relative; overflow:hidden; }
-.bthf .hero > .wrap, .bthf .product > .wrap, .bthf .optin > .wrap, .bthf .final > .wrap { position:relative; z-index:1; }
-.bthf .hero::before, .bthf .product::before, .bthf .final::before { content:""; position:absolute; z-index:0;
-  width:70vw; height:70vw; top:-25%; right:-15%; pointer-events:none;
-  background:radial-gradient(circle, rgba(242,184,114,.20), transparent 62%);
-  animation:bthfGlow 6.5s ease-in-out infinite; }
-.bthf .optin::before { content:""; position:absolute; z-index:0; width:60vw; height:60vw; bottom:-25%; left:-15%;
-  pointer-events:none; background:radial-gradient(circle, rgba(255,255,255,.12), transparent 62%);
-  animation:bthfGlow 7.5s ease-in-out infinite; }
-
-@media (prefers-reduced-motion: reduce){
-  .bthf .buy, .bthf .buy::after, .bthf .hero::before, .bthf .product::before, .bthf .final::before, .bthf .optin::before { animation:none; }
-}
-
-/* ── Emphasis + quote (batch tweaks) ── */
-.bthf .hero .eyebrow{ color:#f2d3a8; text-shadow:0 0 26px rgba(242,184,114,.8), 0 0 8px rgba(242,184,114,.55); }
-.bthf .reframe{ font-size:14px; color:#7a6a72; }
-.bthf .callout{ font-family:Georgia,serif; font-size:26px; line-height:1.42; color:var(--midnight); margin-top:8px; }
-.bthf .untilnow{ margin:6px 0 18px; }
-.bthf .product .pullquote{ margin:28px auto 0; max-width:52ch; background:rgba(255,255,255,.09);
-  border-left:3px solid var(--ember); border-radius:12px; padding:20px 24px; font-family:Georgia,serif;
-  font-style:italic; font-size:23px; line-height:1.4; color:#fdf3ea; }
-.bthf .bump{ padding-top:12px; }
-.bthf .bumpcard{ margin-top:24px; }
-@media (max-width:560px){ .bthf .callout{ font-size:22px; } .bthf .product .pullquote{ font-size:20px; } }
+@media (max-width:640px){ .b .series .grid { grid-template-columns:1fr; } }
 `
