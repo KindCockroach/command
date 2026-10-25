@@ -5,7 +5,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.aiworksforher.com"),
   title: "RISE Station",
   description: "Your AI content OS",
-  icons: { icon: "/favicon.ico", apple: "/apple-icon.png" },
+  // Balloon everywhere on aiworksforher.com (?v= busts browsers' sticky favicon cache).
+  // bethereforher.com keeps its "Hers" icon via app/bethereforher/layout.tsx.
+  icons: { icon: "/favicon.ico?v=2", apple: "/apple-icon.png?v=2" },
   openGraph: {
     title: "AI Mom",
     description: "Podcast · Host · Speaker",

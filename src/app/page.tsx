@@ -13,6 +13,15 @@ export const metadata: Metadata = {
   title: 'WFH — Works For Her · AI services by Mandi Beck',
   description:
     "WFH — Works For Her. Mandi Beck's AI services: the AI Mom Podcast, AI integration for small businesses, UGC for brands, and speaking on AI, new-age business models for women, and mindfulness in the digital age.",
+  openGraph: {
+    title: 'WFH — Works For Her',
+    description: 'AI that works for her. Podcast · Small business AI integration · UGC · Speaking.',
+    url: 'https://www.aiworksforher.com',
+    siteName: 'WFH — Works For Her',
+    images: [{ url: '/og-wfh.png', width: 1200, height: 630 }],
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image', title: 'WFH — Works For Her', description: 'AI that works for her.', images: ['/og-wfh.png'] },
 }
 
 type Service = {
@@ -97,7 +106,7 @@ export default function Home() {
           <h1>AI that <em>works for her.</em></h1>
           <p className="sub">
             I&rsquo;m Mandi Beck &mdash; the AI Mom. WFH is my business: a podcast, AI integration for small
-            businesses, real-mom UGC for brands, and talks on AI, new-age business for women, and
+            businesses, trending UGC for brands, and talks on AI, new-age business for women, and
             mindfulness in the digital age. Pick where you fit. Start there.
           </p>
           <div className="ctaRow">
