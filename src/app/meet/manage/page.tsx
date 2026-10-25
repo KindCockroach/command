@@ -39,7 +39,7 @@ export default function ManageMeet() {
   return (
     <main className="w">
       <style>{wfhCss + css}</style>
-      <header className="top"><div className="wrap"><a className="home" href="/">WFH · WORKS FOR HER</a><h1>Meetings &amp; <em>leads</em></h1><p>Clients book at aiworksforher.com/meet. {msg}</p></div></header>
+      <header className="top"><div className="wrap"><a className="home" href="/"><img src="/wfh-logo-white.png" alt="AI WFH — Works For Her" /></a><h1>Meetings &amp; <em>leads</em></h1><p>Clients book at aiworksforher.com/meet. {msg}</p></div></header>
 
       <section className="wrap grid">
         <div className="panel">

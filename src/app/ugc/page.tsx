@@ -62,7 +62,7 @@ export default function UgcPage() {
       <CopyEditor />
       <header className="top">
         <div className="wrap">
-          <a className="home" href="/">WFH · WORKS FOR HER</a>
+          <a className="home" href="/"><img src="/wfh-logo-white.png" alt="AI WFH — Works For Her" /></a>
           <h1>Trending content that gets <em>traffic and new customers.</em></h1>
           <p>Hooks, scripts, and edits built for how the algorithm rewards interesting brands.</p>
         </div>

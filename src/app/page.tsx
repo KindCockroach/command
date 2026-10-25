@@ -93,7 +93,7 @@ export default function Home() {
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">WFH · WORKS FOR HER</p>
+          <img className="logo" src="/wfh-logo-white.png" alt="AI WFH — Works For Her" />
           <h1>AI that <em>works for her.</em></h1>
           <p className="sub">
             I&rsquo;m Mandi Beck &mdash; the AI Mom. WFH is my business: a podcast, AI integration for small
@@ -182,6 +182,7 @@ const css = `
 .h .cta.ghost { background:transparent; color:#fff; box-shadow:none; border:1.5px solid rgba(255,255,255,0.6); }
 
 .h .hero { background:linear-gradient(165deg,var(--midnight),#241f49 62%,var(--nebula)); color:var(--cream); padding:88px 0; }
+.h .hero .logo { display:block; width:min(340px,78vw); height:auto; margin:0 0 28px; }
 .h .hero .eyebrow { letter-spacing:3px; font-size:13px; font-weight:800; color:var(--ember); margin:0 0 18px; }
 .h .hero h1 { font-size:clamp(32px,5.5vw,54px); line-height:1.1; margin:0 0 20px; color:#fff; max-width:820px; }
 .h .hero h1 em { color:var(--ember); }

@@ -86,7 +86,7 @@ export default function MeetPage() {
       <CopyEditor />
       <header className="top">
         <div className="wrap">
-          <a className="home" href="/">WFH · WORKS FOR HER</a>
+          <a className="home" href="/"><img src="/wfh-logo-white.png" alt="AI WFH — Works For Her" /></a>
           <h1>{done ? <>You&rsquo;re booked, <em>{form.name.split(' ')[0]}</em>.</> : <>Book a time <em>with me.</em></>}</h1>
           <p>{done ? 'I’ll send the Google Meet link and a quick note before we talk.' : <>For: <strong>{label}</strong>. Pick a time that works &mdash; all times are Central.</>}</p>
         </div>

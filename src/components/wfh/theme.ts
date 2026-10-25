@@ -9,7 +9,8 @@ export const wfhCss = `
 .w h1,.w h2,.w h3 { font-family:Georgia,"Times New Roman",serif; letter-spacing:-0.3px; }
 .w em { font-style:italic; }
 .w .top { background:linear-gradient(165deg,var(--midnight),#241f49 62%,var(--nebula)); color:var(--cream); padding:44px 0 52px; }
-.w .top .home { color:var(--ember); font-weight:800; font-size:12px; letter-spacing:2.5px; text-decoration:none; }
+.w .top .home { display:inline-block; }
+.w .top .home img { display:block; height:52px; width:auto; }
 .w .top h1 { font-size:clamp(28px,5vw,44px); line-height:1.12; margin:16px 0 12px; color:#fff; }
 .w .top h1 em { color:var(--ember); }
 .w .top p { font-size:18px; color:#e7e2f2; max-width:640px; margin:0; }

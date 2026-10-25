@@ -53,7 +53,7 @@ export default function AssessmentPage() {
       <CopyEditor />
       <header className="top">
         <div className="wrap">
-          <a className="home" href="/">WFH · WORKS FOR HER</a>
+          <a className="home" href="/"><img src="/wfh-logo-white.png" alt="AI WFH — Works For Her" /></a>
           {result
             ? <><h1>{result.headline}</h1><p>A copy is on its way to your inbox.</p></>
             : <><h1>Where could AI <em>work for you?</em></h1><p>Eight quick taps. You&rsquo;ll get a personalized recommendation for how RISE, my AI command center, can work for you.</p></>}
