@@ -6,14 +6,13 @@ import { MetaPixel } from '@/components/funnel/shared'
 // The aiworksforher.com homepage — WFH (Works For Her), Mandi's business, and its four
 // services: the AI Mom Podcast, Small Business AI Integration, UGC, and speaking.
 // Podcast / be-a-guest / her story live at /aimom; the keynote page is /thesis.
+// No email links: every service routes to an automated step (questionnaire, UGC menu)
+// and ends on /meet (book a time).
 export const metadata: Metadata = {
   title: 'WFH — Works For Her · AI services by Mandi Beck',
   description:
     "WFH — Works For Her. Mandi Beck's AI services: the AI Mom Podcast, AI integration for small businesses, UGC for brands, and speaking on AI, new-age business models for women, and mindfulness in the digital age.",
 }
-
-const EMAIL = 'hi@aimomeducation.com'
-const mail = (subject: string) => `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}`
 
 type Service = {
   emoji: string; name: string; who: string; what: string[]
@@ -23,7 +22,7 @@ type Service = {
 const SERVICES: Service[] = [
   {
     emoji: '🎙',
-    name: 'The AI Mom Podcast',
+    name: 'AI Mom Podcast',
     who: 'Not what to think about AI. How to think about it.',
     what: [
       'Honest conversations for women staying human while everything changes',
@@ -42,18 +41,18 @@ const SERVICES: Service[] = [
       'Assistants, automations, follow-ups, and content workflows',
       'Built for your business, then handed over so you can run it',
     ],
-    cta: { label: 'Tell me what to fix', href: mail('Small Business AI Integration') },
+    cta: { label: 'Take the AI integration questionnaire', href: '/assessment' },
   },
   {
     emoji: '🎬',
     name: 'UGC for Brands',
-    who: 'Real-mom content your customers actually trust.',
+    who: 'Trending content that gets traffic and new customers.',
     what: [
-      'Authentic, on-camera video from a real mom of five',
-      'Hooks, scripts, and edits built for how the algorithm rewards',
-      'For brands serving women, moms, families, and wellness',
+      'Hooks, scripts, and edits built for how the algorithm rewards interesting brands',
+      'For brands serving women, moms, families, and wellness — and unique experiences and travel',
+      'Video creation and marketing assessments, priced up front',
     ],
-    cta: { label: 'Work with me on UGC', href: mail('UGC collaboration') },
+    cta: { label: 'See the menu & pricing', href: '/ugc' },
   },
   {
     emoji: '🎤',
@@ -64,7 +63,7 @@ const SERVICES: Service[] = [
       'New-age business models for women',
       'Mindfulness in the digital age',
     ],
-    cta: { label: 'Book me to speak', href: mail('Speaking inquiry') },
+    cta: { label: 'Book me to speak', href: '/meet?service=speaking' },
     more: { label: 'See the keynote', href: '/thesis' },
   },
 ]
@@ -101,7 +100,7 @@ export default function Home() {
           </p>
           <div className="ctaRow">
             <a className="cta" href="#services">See the services</a>
-            <a className="cta ghost" href="/aimom">Meet the AI Mom →</a>
+            <a className="cta ghost" href="/aimom">Meet AI Mom →</a>
           </div>
         </div>
       </section>
@@ -109,7 +108,7 @@ export default function Home() {
       <section className="tier" id="services">
         <div className="wrap">
           <p className="tag">WHAT WFH DOES</p>
-          <h2>Four ways to work with me.</h2>
+          <h2>4 ways I work for you.</h2>
           <div className="grid">{SERVICES.map((s) => <Card s={s} key={s.name} />)}</div>
         </div>
       </section>
@@ -118,12 +117,12 @@ export default function Home() {
         <div className="wrap">
           <h2>How it works</h2>
           <ol>
-            <li><strong>Pick a service</strong> and tap the button &mdash; it opens an email to me.</li>
-            <li><strong>Tell me one line</strong> about what you need. That&rsquo;s it.</li>
-            <li><strong>I reply with next steps</strong> and a time to talk on Google Meet.</li>
+            <li><strong>Pick a service.</strong></li>
+            <li><strong>Take the quick questionnaire</strong> for an instant AI assessment &mdash; or pick from the UGC &amp; marketing menu.</li>
+            <li><strong>Book a time with me</strong> right on the page. We meet on Google Meet.</li>
           </ol>
           <p className="unsure">
-            Not sure where you fit? <a href={mail('Which WFH service is right for me?')}>Email me and ask.</a> I&rsquo;ll tell you honestly.
+            Not sure where you fit? <a href="/assessment">Start with the questionnaire</a> &mdash; it&rsquo;ll show you where AI can help most.
           </p>
         </div>
       </section>
@@ -134,7 +133,8 @@ export default function Home() {
             <a href="/aimom">Podcast</a>
             <a href="/book">Be a guest</a>
             <a href="/thesis">Speaking</a>
-            <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+            <a href="/ugc">UGC &amp; marketing</a>
+            <a href="/assessment">AI questionnaire</a>
             <a href="https://instagram.com/aimompodcast">@aimompodcast</a>
             <a href="https://linkedin.com/in/amanda-beck-588200378">LinkedIn</a>
           </div>

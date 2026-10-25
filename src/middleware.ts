@@ -17,6 +17,7 @@ function isPublic(path: string): boolean {
   if (path === '/reset' || path === '/cheatcode' || path === '/workshop') return true // public session pages (+ /workshop redirect)
   if (path === '/insait') return true // private $10 Reset (unlisted, no-index)
   if (path === '/bethereforher' || path === '/bethereforher/library') return true // Be There For Her product
+  if (path === '/assessment' || path === '/ugc' || path === '/meet' || path === '/api/wfh') return true // WFH funnel (/meet/manage stays private)
   if (path === '/aimom') return true // podcast · be a guest · speaking (former homepage)
   if (path === '/aimomeducation') return true // AI Mom Podcast landing (aimomeducation.com)
   if (path === '/wellspring' || path === '/bethereforher/wellspring') return true // The Wellspring membership

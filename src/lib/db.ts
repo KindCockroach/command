@@ -327,6 +327,23 @@ export type ActivityEvent = {
 export type InboxItem = { icon?: string; text: string; view_url?: string }
 export type InboxBrief = { items: InboxItem[]; checked_at: string; count_total?: number }
 
+// WFH (Works For Her) — public leads from aiworksforher.com (the AI integration
+// questionnaire, UGC menu picks) and client meetings booked on /meet.
+export type WfhLead = {
+  id: string; kind: 'assessment' | 'ugc' | 'speaking' | 'other'
+  name: string; email: string; business?: string; website?: string
+  answers?: Record<string, string | string[]>
+  result?: { score: number; level: string; hours_per_month: number; top: string[]; next_step: string }
+  service?: string
+  created_at: string
+}
+export type WfhBooking = {
+  id: string; date: string; time: string; end?: string
+  name: string; email: string; phone?: string; business?: string; service?: string; notes?: string
+  lead_id?: string; created_at: string
+}
+export type WfhSchedule = { weekly: PodcastSlot[]; booked: WfhBooking[]; from?: string }
+
 // PODCAST SCHEDULER — her available weekly slot(s) + guest bookings.
 export type PodcastBooking = {
   id: string; date: string; time: string
@@ -436,6 +453,8 @@ type Db = {
   podcast_schedule?: PodcastSchedule
   podcast_episodes?: PodcastEpisode[]
   podcast_guests?: PodcastGuest[]
+  wfh_leads?: WfhLead[]
+  wfh_schedule?: WfhSchedule
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
   memories: Memory[]
@@ -1766,6 +1785,56 @@ export function removePodcastBooking(id: string): boolean {
   const before = sched.booked.length
   sched.booked = sched.booked.filter(b => b.id !== id)
   db.podcast_schedule = sched
+  writeDb(db)
+  return sched.booked.length < before
+}
+
+// ── WFH (Works For Her) — leads + client meeting scheduler ──
+// Default availability until she sets her own on /meet/manage: Tue + Thu, 30 min.
+const WFH_DEFAULT_WEEKLY: PodcastSlot[] = [
+  { dow: 2, time: '10:00', end: '10:30' }, { dow: 2, time: '13:00', end: '13:30' },
+  { dow: 4, time: '10:00', end: '10:30' }, { dow: 4, time: '13:00', end: '13:30' },
+]
+export function getWfhLeads(): WfhLead[] {
+  return (readDb().wfh_leads ?? []).slice().sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+export function addWfhLead(data: Omit<WfhLead, 'id' | 'created_at'>): WfhLead {
+  const db = readDb()
+  if (!db.wfh_leads) db.wfh_leads = []
+  const lead: WfhLead = { ...data, email: data.email.trim().toLowerCase(), id: Math.random().toString(36).slice(2, 10), created_at: new Date().toISOString() }
+  db.wfh_leads.push(lead)
+  writeDb(db)
+  return lead
+}
+export function getWfhSchedule(): WfhSchedule {
+  return readDb().wfh_schedule ?? { weekly: WFH_DEFAULT_WEEKLY, booked: [] }
+}
+export function setWfhWeekly(weekly: PodcastSlot[], from?: string): WfhSchedule {
+  const db = readDb()
+  const cur = db.wfh_schedule ?? { weekly: WFH_DEFAULT_WEEKLY, booked: [] }
+  db.wfh_schedule = { ...cur, weekly, from: from !== undefined ? from : cur.from }
+  writeDb(db)
+  return db.wfh_schedule
+}
+export function addWfhBooking(data: Omit<WfhBooking, 'id' | 'created_at'>): { booking?: WfhBooking; error?: string } {
+  const db = readDb()
+  const sched = db.wfh_schedule ?? { weekly: WFH_DEFAULT_WEEKLY, booked: [] }
+  // One Mandi: a client slot can't collide with another client or a podcast guest.
+  const taken = sched.booked.some(b => b.date === data.date && b.time === data.time)
+    || (db.podcast_schedule?.booked ?? []).some(b => b.date === data.date && b.time === data.time)
+  if (taken) return { error: 'That time was just taken — please pick another.' }
+  const booking: WfhBooking = { ...data, id: Math.random().toString(36).slice(2, 10), created_at: new Date().toISOString() }
+  sched.booked.push(booking)
+  db.wfh_schedule = sched
+  writeDb(db)
+  return { booking }
+}
+export function removeWfhBooking(id: string): boolean {
+  const db = readDb()
+  const sched = db.wfh_schedule ?? { weekly: WFH_DEFAULT_WEEKLY, booked: [] }
+  const before = sched.booked.length
+  sched.booked = sched.booked.filter(b => b.id !== id)
+  db.wfh_schedule = sched
   writeDb(db)
   return sched.booked.length < before
 }
