@@ -14,6 +14,7 @@ export const WFH_SERVICES: Record<string, string> = {
   'mkt-website': 'Website Marketing Assessment',
   'mkt-full': 'Full Marketing Assessment',
   'ugc-unsure': 'UGC & marketing — help me choose',
+  'retire': 'RETIRE · Pass down the keys',
 }
 export const serviceLabel = (key?: string | null) => (key && WFH_SERVICES[key]) || 'A time with Mandi'
 

@@ -12,7 +12,7 @@ import CopyEditor from '@/components/CopyEditor'
 export const metadata: Metadata = {
   title: 'WFH — Works For Her · AI services by Mandi Beck',
   description:
-    "WFH — Works For Her. Mandi Beck's AI services: the AI Mom Podcast, AI integration for small businesses, UGC for brands, and speaking on AI, running a business as a mom, and mindfulness in the digital age.",
+    "WFH — Works For Her, the parent company of the AI Mom Podcast, founded by Amanda \"Mandi\" Beck. Speaking, small business AI integration, UGC, the podcast, mindfulness for women, and RETIRE: passing down your business with AI.",
   openGraph: {
     title: 'WFH — Works For Her',
     description: 'By AI Mom. Podcast · Small business AI integration · UGC · Speaking.',
@@ -66,15 +66,37 @@ const SERVICES: Service[] = [
   },
   {
     emoji: '🎤',
-    name: 'Book Me as a Speaker',
+    name: 'Book Mandi as a Speaker',
     who: 'Bring the conversation women need to your stage.',
     what: [
       'AI — how to think about it, and how to use it without being used by it',
       'Running a business as a mom',
       'Mindfulness in the digital age',
     ],
-    cta: { label: 'Book me to speak', href: '/meet?service=speaking' },
+    cta: { label: 'Book Mandi to speak', href: '/meet?service=speaking' },
     more: { label: 'See the keynote', href: '/thesis' },
+  },
+  {
+    emoji: '🌿',
+    name: 'Mindfulness for Women',
+    who: 'Prevent burnout before it costs you your business, your family, or yourself.',
+    what: [
+      'Guided meditations in Mandi’s own voice',
+      'For the mother, the CEO, and the woman in you',
+      'Show up more fully to your life’s work',
+    ],
+    cta: { label: 'Visit Be There For Her', href: 'https://www.bethereforher.com' },
+  },
+  {
+    emoji: '🗝',
+    name: 'RETIRE',
+    who: 'Ready to step back from your business and pass down the keys?',
+    what: [
+      'Capture what lives in your head before you hand it over',
+      'AI turns your know-how into guides, playbooks, and an assistant your successor can ask',
+      'A simpler, calmer handoff for you and the next owner',
+    ],
+    cta: { label: 'Book a call about retiring', href: '/meet?service=retire' },
   },
 ]
 
@@ -104,16 +126,19 @@ export default function Home() {
         <div className="wrap">
           <img className="logo" src="/wfh-logo-white.png" alt="AI WFH — Works For Her" />
           <p className="sub">
-            WFH is the umbrella for all things AI, business development, and social media. It stands for
-            <strong> Works For Her</strong> &mdash; because it gets you working from home, or from wherever you
-            want in the world.
+            WFH is the parent company of the AI Mom Podcast, founded and operated by Amanda &ldquo;Mandi&rdquo; Beck.
+            She has a theory that <strong>women are the answer, and their intuition the antidote, to mankind&rsquo;s
+            potential for coexistence with exponential technology.</strong>
           </p>
-          <p className="sub whether">Whether you want to:</p>
+          <p className="sub whether">You can work with her in several ways:</p>
           <ul className="fits">
-            <li><a href="/meet?service=speaking">Invite me to speak on your stage</a></li>
-            <li><a href="/assessment">Assess your business or social media for AI integration</a></li>
-            <li><a href="/ugc">Hire me for UGC</a></li>
-            <li><a href="/aimom">Just tune in and hear what a mom of four and solopreneur has to say about mindfulness in the digital age</a></li>
+            <li><a href="/meet?service=speaking">Hire her to speak on your stage</a></li>
+            <li><a href="/assessment">Assess your business for AI integration</a></li>
+            <li><a href="/assessment">Assess your social media for AI integration</a></li>
+            <li><a href="/ugc">Hire her for UGC</a></li>
+            <li><a href="/aimom">Tune into the podcast</a></li>
+            <li><a href="https://www.bethereforher.com">Prevent burnout with meditation</a></li>
+            <li><a href="/meet?service=retire">Retire: pass down the keys with AI</a></li>
           </ul>
           <p className="sub">Pick where you fit. Start there.</p>
           <div className="ctaRow">
@@ -126,7 +151,7 @@ export default function Home() {
       <section className="tier" id="services">
         <div className="wrap">
           <p className="tag">WHAT WFH DOES</p>
-          <h2>4 ways I work for you.</h2>
+          <h2>6 ways to work together.</h2>
           <div className="grid">{SERVICES.map((s) => <Card s={s} key={s.name} />)}</div>
         </div>
       </section>
@@ -155,7 +180,7 @@ export default function Home() {
           <ol>
             <li><strong>Pick a service.</strong></li>
             <li><strong>Take the quick questionnaire</strong> for an instant AI assessment &mdash; or pick from the UGC &amp; marketing menu.</li>
-            <li><strong>Book a time with me</strong> right on the page. We meet on Google Meet.</li>
+            <li><strong>Book a time with Mandi</strong> right on the page. We meet on Google Meet.</li>
           </ol>
           <p className="unsure">
             Not sure where you fit? <a href="/assessment">Start with the questionnaire</a> &mdash; it&rsquo;ll show you where AI can help most.
@@ -212,7 +237,8 @@ const css = `
 .h .hero .fits a:hover { border-color:var(--ember); }
 
 .h .tier h2 { font-size:clamp(24px,4vw,34px); margin:0 0 28px; }
-.h .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+.h .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+@media (max-width:960px){ .h .grid { grid-template-columns:repeat(2,1fr); } }
 .h .card { display:flex; flex-direction:column; background:#fff; border:1px solid #e7e0d3; border-radius:18px; padding:24px 22px; }
 .h .cemoji { font-size:30px; }
 .h .card h3 { font-size:22px; margin:4px 0 8px; }

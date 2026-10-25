@@ -22,7 +22,7 @@ const VIDEO: Item[] = [
   { key: 'ugc-pack', name: 'Trend Test Pack', price: '$600', badge: 'Most popular', what: [
     '3 trending videos', '3 hook variations each, so you find the winner fast', 'Captions and posting notes included'] },
   { key: 'ugc-location', name: 'On-Location Content Day', price: '$1,200', what: [
-    'I come to you — Central Texas venues, camps, and experiences', 'A full day of filming your place and your people', '6 edited videos + the raw footage'] },
+    'Mandi comes to you — Central Texas venues, camps, and experiences', 'A full day of filming your place and your people', '6 edited videos + the raw footage'] },
   { key: 'ugc-monthly', name: 'Monthly Trending Content', price: '$1,600/mo', what: [
     '8 trend-matched videos every month', 'Hooks, scripts, edits, and a posting plan', 'Monthly check-in on what’s winning'] },
 ]
@@ -86,7 +86,7 @@ export default function UgcPage() {
         <div className="panel unsure">
           <div>
             <h3>Not sure which one fits?</h3>
-            <p>Book a time and tell me about your brand. I&rsquo;ll recommend the right starting point.</p>
+            <p>Book a time and tell Mandi about your brand. She&rsquo;ll recommend the right starting point.</p>
           </div>
           <a className="btn" href="/meet?service=ugc-unsure">Book a time →</a>
         </div>

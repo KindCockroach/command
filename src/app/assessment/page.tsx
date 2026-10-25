@@ -7,7 +7,7 @@ import CopyEditor from '@/components/CopyEditor'
 // WFH — the AI integration questionnaire. One question per screen, then contact
 // details, then a personalized recommendation of the RISE features that fit them
 // (written by Claude in /api/wfh, emailed to them and to Mandi) that ends on
-// "Book a call with me" → /meet. The lead rides to /meet in sessionStorage, never the URL.
+// "Book a call with Mandi" → /meet. The lead rides to /meet in sessionStorage, never the URL.
 
 export default function AssessmentPage() {
   const [step, setStep] = useState(0) // 0..QUESTIONS.length-1 = questions, then contact
@@ -56,7 +56,7 @@ export default function AssessmentPage() {
           <a className="home" href="/"><img src="/wfh-logo-white.png" alt="AI WFH — Works For Her" /></a>
           {result
             ? <><h1>{result.headline}</h1><p>A copy is on its way to your inbox.</p></>
-            : <><h1>Where could AI <em>work for you?</em></h1><p>Eight quick taps. You&rsquo;ll get a personalized recommendation for how RISE, my AI command center, can work for you.</p></>}
+            : <><h1>Where could AI <em>work for you?</em></h1><p>Eight quick taps. You&rsquo;ll get a personalized recommendation for how RISE, Mandi&rsquo;s AI command center, can work for you.</p></>}
         </div>
       </header>
 
@@ -78,7 +78,7 @@ export default function AssessmentPage() {
             </div>
             <div className="panel next">
               {result.closing && <p className="muted">{result.closing}</p>}
-              <a className="btn" href="/meet?service=ai-integration">Book a call with me →</a>
+              <a className="btn" href="/meet?service=ai-integration">Book a call with Mandi →</a>
             </div>
           </div>
         ) : (

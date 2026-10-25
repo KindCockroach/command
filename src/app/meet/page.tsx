@@ -87,8 +87,8 @@ export default function MeetPage() {
       <header className="top">
         <div className="wrap">
           <a className="home" href="/"><img src="/wfh-logo-white.png" alt="AI WFH — Works For Her" /></a>
-          <h1>{done ? <>You&rsquo;re booked, <em>{form.name.split(' ')[0]}</em>.</> : <>Book a time <em>with me.</em></>}</h1>
-          <p>{done ? 'I’ll send the Google Meet link and a quick note before we talk.' : <>For: <strong>{label}</strong>. Pick a time that works &mdash; all times are Central.</>}</p>
+          <h1>{done ? <>You&rsquo;re booked, <em>{form.name.split(' ')[0]}</em>.</> : <>Book a time <em>with Mandi.</em></>}</h1>
+          <p>{done ? 'Mandi will send the Google Meet link and a quick note before you talk.' : <>For: <strong>{label}</strong>. Pick a time that works &mdash; all times are Central.</>}</p>
         </div>
       </header>
 
@@ -99,7 +99,7 @@ export default function MeetPage() {
             <h2>{fmtDay(picked.date)} · {fmtTime(picked.time)} CT</h2>
             <p className="muted">{label}</p>
             <a className="btn ghost" target="_blank" rel="noreferrer" href={gcal(picked.date, picked.time, picked.end, `Mandi Beck · ${label}`)}>📅 Add to your calendar</a>
-            <p className="muted small">While you wait, the <a href="/aimom">AI Mom Podcast</a> is a good place to get to know me.</p>
+            <p className="muted small">While you wait, the <a href="/aimom">AI Mom Podcast</a> is a good place to get to know her.</p>
           </div>
         ) : !loaded ? (
           <div className="panel center muted">Loading open times…</div>
@@ -123,7 +123,7 @@ export default function MeetPage() {
         ) : days.length === 0 ? (
           <div className="panel center muted">
             {err && <p className="err">{err}</p>}
-            No open times in the next three weeks — check back soon, or reach me on Instagram <strong>@aimompodcast</strong>.
+            No open times in the next three weeks — check back soon, or reach Mandi on Instagram <strong>@aimompodcast</strong>.
           </div>
         ) : (
           <div className="panel">
