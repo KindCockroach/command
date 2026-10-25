@@ -27,8 +27,7 @@ export const metadata: Metadata = {
 const SERIES = [
   { title: 'The Reset', line: '1 hour to yourself. Sundays, 8 PM. Your accountability and guide to press reset before the week begins again.', href: '/reset', status: 'Available now' },
   { title: 'Turning Up Your Intuition', line: 'The quiet knowing you were taught to silence — turned back up, meditation by meditation.', href: '/bethereforher/intuition', status: 'Available now' },
-  { title: 'Inner Child Healing', line: 'Meet the girl you left behind. Become the one who finally stays.', href: '', status: 'In the works' },
-  { title: 'Reconnecting to Yourself', line: 'Find your way back from everyone else’s needs to your own center.', href: '', status: 'In the works' },
+  { title: 'The Whole Integrated Woman', line: 'Every scattered part of you — warrior, woman, lover, mother — gathered back into one whole.', href: '', status: 'In the works' },
   { title: 'Postpartum Support', line: 'For the tender, unspooled months no one prepares you for.', href: '', status: 'In the works' },
 ]
 
