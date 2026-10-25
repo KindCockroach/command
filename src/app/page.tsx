@@ -12,7 +12,7 @@ import CopyEditor from '@/components/CopyEditor'
 export const metadata: Metadata = {
   title: 'WFH — Works For Her · AI services by Mandi Beck',
   description:
-    "WFH — Works For Her. Mandi Beck's AI services: the AI Mom Podcast, AI integration for small businesses, UGC for brands, and speaking on AI, new-age business models for women, and mindfulness in the digital age.",
+    "WFH — Works For Her. Mandi Beck's AI services: the AI Mom Podcast, AI integration for small businesses, UGC for brands, and speaking on AI, running a business as a mom, and mindfulness in the digital age.",
   openGraph: {
     title: 'WFH — Works For Her',
     description: 'AI that works for her. Podcast · Small business AI integration · UGC · Speaking.',
@@ -70,7 +70,7 @@ const SERVICES: Service[] = [
     who: 'Bring the conversation women need to your stage.',
     what: [
       'AI — how to think about it, and how to use it without being used by it',
-      'New-age business models for women',
+      'Running a business as a mom',
       'Mindfulness in the digital age',
     ],
     cta: { label: 'Book me to speak', href: '/meet?service=speaking' },
@@ -103,12 +103,19 @@ export default function Home() {
       <section className="hero">
         <div className="wrap">
           <img className="logo" src="/wfh-logo-white.png" alt="AI WFH — Works For Her" />
-          <h1>AI that <em>works for her.</em></h1>
           <p className="sub">
-            I&rsquo;m Mandi Beck &mdash; the AI Mom. WFH is my business: a podcast, AI integration for small
-            businesses, trending UGC for brands, and talks on AI, new-age business for women, and
-            mindfulness in the digital age. Pick where you fit. Start there.
+            WFH is the umbrella for all things AI, business development, and social media. It stands for
+            <strong> Works For Her</strong> &mdash; because it gets you working from home, or from wherever you
+            want in the world.
           </p>
+          <p className="sub whether">Whether you want to:</p>
+          <ul className="fits">
+            <li><a href="/meet?service=speaking">Invite me to speak on your stage</a></li>
+            <li><a href="/assessment">Assess your business or social media for AI integration</a></li>
+            <li><a href="/ugc">Hire me for UGC</a></li>
+            <li><a href="/aimom">Just tune in and hear what a mom of four and solopreneur has to say about mindfulness in the digital age</a></li>
+          </ul>
+          <p className="sub">Pick where you fit. Start there.</p>
           <div className="ctaRow">
             <a className="cta" href="#services">See the services</a>
             <a className="cta ghost" href="/aimom">Meet AI Mom →</a>
@@ -195,7 +202,14 @@ const css = `
 .h .hero .eyebrow { letter-spacing:3px; font-size:13px; font-weight:800; color:var(--ember); margin:0 0 18px; }
 .h .hero h1 { font-size:clamp(32px,5.5vw,54px); line-height:1.1; margin:0 0 20px; color:#fff; max-width:820px; }
 .h .hero h1 em { color:var(--ember); }
-.h .hero .sub { font-size:19px; color:#e7e2f2; max-width:640px; margin:0; }
+.h .hero .sub { font-size:19px; color:#e7e2f2; max-width:640px; margin:0 0 14px; }
+.h .hero .sub strong { color:#fff; }
+.h .hero .whether { margin-bottom:8px; }
+.h .hero .fits { list-style:none; padding:0; margin:0 0 18px; max-width:640px; display:grid; gap:8px; }
+.h .hero .fits li { position:relative; padding-left:24px; font-size:17px; }
+.h .hero .fits li::before { content:'→'; position:absolute; left:0; color:var(--ember); font-weight:800; }
+.h .hero .fits a { color:#fff; text-decoration:none; border-bottom:1px solid rgba(242,166,90,0.5); }
+.h .hero .fits a:hover { border-color:var(--ember); }
 
 .h .tier h2 { font-size:clamp(24px,4vw,34px); margin:0 0 28px; }
 .h .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
