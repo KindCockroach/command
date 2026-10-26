@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
+import SocialIcons from '@/components/wfh/SocialIcons'
 
 // bethereforher.com — the new face: an intro to a growing line of mindful products that
 // bring women back to themselves (intuition, inner-child, reconnection, postpartum).
@@ -24,9 +25,16 @@ export const metadata: Metadata = {
   },
 }
 
+// Be There For Her's own accounts for the footer icons.
+const BTFH_SOCIALS = [
+  { name: 'Instagram', icon: 'instagram', href: 'https://www.instagram.com/mandijoybeck/' },
+  { name: 'YouTube', icon: 'youtube', href: 'https://www.youtube.com/@Joyfulmediapresents' },
+]
+
 const SERIES: { title: string; line: string; href: string; status: string; icon?: string }[] = [
   { title: 'The Reset', line: '1 hour to yourself. Sundays, 8 PM. Your accountability and guide to press reset before the week begins again.', href: '/reset', status: 'Available now', icon: '/bethereforher/icon-reset.png' },
-  { title: 'Turning Up Your Intuition', line: 'The quiet knowing you were taught to silence — turned back up, meditation by meditation.', href: '/bethereforher/intuition', status: 'Available now', icon: '/bethereforher/icon-intuition.png' },
+  { title: 'Turning Up Your Intuition', line: 'The quiet knowing you were taught to silence — turned back up 15 minutes at a time before you sleep at night.', href: '/bethereforher/intuition', status: 'Available now', icon: '/bethereforher/icon-intuition.png' },
+  { title: 'Love Yourself In The Kitchen', line: 'Seasonal cookbooks with notes in the margin that encourage play, joy, and relief in the kitchen.', href: '/bethereforher/in-the-kitchen', status: 'Free' },
   { title: 'The Whole Integrated Woman', line: 'Every scattered part of you — warrior, woman, lover, mother — gathered back into one whole.', href: '', status: 'In the works' },
   { title: 'Postpartum Support', line: 'For the tender, unspooled months no one prepares you for.', href: '', status: 'In the works' },
 ]
@@ -109,6 +117,7 @@ export default function BeThereForHer() {
             We are, and have always been, the answer to making the world a better place for all.
             <strong>Rise with us. Be there for her.</strong>
           </p>
+          <a className="cta subscribe" href="/bethereforher/in-the-kitchen">Subscribe &rarr;</a>
         </div>
       </section>
 
@@ -123,6 +132,7 @@ export default function BeThereForHer() {
 
       <footer className="foot">
         <div className="wrap">
+          <SocialIcons color="#E0A458" links={BTFH_SOCIALS} />
           <p><a href="/">AI Works For Her</a> &middot; <a href="/listen">The AI Mom Podcast</a></p>
           <p className="fine">Be There For Her &middot; by Mandi Beck</p>
         </div>
@@ -158,13 +168,14 @@ const css = `
 .b .emblem { padding:56px 0 8px; text-align:center; }
 .b .emblem img { width:min(420px,82vw); height:auto; filter:drop-shadow(0 24px 40px rgba(217,140,95,0.28)); }
 .b .meaning { padding:24px 0 72px; }
-.b .meaning .wrap { max-width:720px; }
+.b .meaning .wrap { max-width:720px; text-align:center; }
 .b .meaning .tag { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--ember); margin:0 0 10px; }
 .b .meaning h2 { font-size:clamp(28px,4.4vw,40px); margin:0 0 18px; }
 .b .meaning h2 em { color:var(--ember); }
 .b .meaning p { font-size:18px; color:var(--soft); margin:0 0 16px; }
 .b .meaning p em { color:var(--plum); }
-.b .meaning .rise { margin-top:24px; padding:20px 22px; border-radius:18px; background:var(--band); border-left:4px solid var(--ember); color:var(--plum); }
+.b .meaning .rise { margin-top:24px; padding:20px 22px; border-radius:18px; background:var(--band); border-top:3px solid var(--ember); color:var(--plum); }
+.b .meaning .subscribe { margin-top:10px; }
 .b .meaning .rise strong { display:block; margin-top:6px; font-size:20px; color:var(--ember); }
 .b .series h2 { font-size:clamp(26px,4vw,36px); margin:0 0 6px; }
 .b .series .ssub { font-size:17px; color:var(--soft); margin:0 0 28px; }

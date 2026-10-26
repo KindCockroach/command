@@ -17,6 +17,7 @@ function isPublic(path: string): boolean {
   if (path === '/reset' || path === '/cheatcode' || path === '/workshop') return true // public session pages (+ /workshop redirect)
   if (path === '/insait') return true // private $10 Reset (unlisted, no-index)
   if (path === '/bethereforher' || path === '/bethereforher/library' || path === '/bethereforher/intuition') return true // Be There For Her product
+  if (path === '/bethereforher/in-the-kitchen' || path === '/api/kitchen') return true // Love Yourself In The Kitchen signup
   if (path === '/assessment' || path === '/ugc' || path === '/meet' || path === '/api/wfh') return true // WFH funnel (/meet/manage stays private)
   if (path === '/api/copy') return true // site copy editor (writes are owner-only inside the route)
   if (path === '/retire' || path === '/speak' || path === '/api/wfh/intake') return true // WFH questionnaires
@@ -44,6 +45,12 @@ export function middleware(req: NextRequest) {
     }
     if (p === '/bethereforher/intuition') {
       const u = req.nextUrl.clone(); u.pathname = '/intuition'; return NextResponse.redirect(u, 308)
+    }
+    if (p === '/in-the-kitchen') {
+      const u = req.nextUrl.clone(); u.pathname = '/bethereforher/in-the-kitchen'; return NextResponse.rewrite(u)
+    }
+    if (p === '/bethereforher/in-the-kitchen') {
+      const u = req.nextUrl.clone(); u.pathname = '/in-the-kitchen'; return NextResponse.redirect(u, 308)
     }
     if (p === '/library' || p === '/bethereforher/library') {
       const u = req.nextUrl.clone(); u.pathname = '/bethereforher/library'; return NextResponse.rewrite(u)

@@ -1,6 +1,7 @@
 // Social icons for the bottom of every WFH page. Icons are simple-icons SVGs in
 // /public/icons, tinted with a CSS mask so they match each page's footer color.
 // A network with no URL yet is simply not shown — fill in FB/TikTok when known.
+// Pass `links` to show a different set (e.g. Be There For Her's own accounts).
 export const SOCIALS: { name: string; icon: string; href: string }[] = [
   { name: 'Instagram', icon: 'instagram', href: 'https://instagram.com/aimompodcast' },
   { name: 'Facebook', icon: 'facebook', href: '' },
@@ -9,10 +10,12 @@ export const SOCIALS: { name: string; icon: string; href: string }[] = [
   { name: 'TikTok', icon: 'tiktok', href: '' },
 ]
 
-export default function SocialIcons({ color = '#cfc9dd' }: { color?: string }) {
+type Link = { name: string; icon: string; href: string }
+
+export default function SocialIcons({ color = '#cfc9dd', links = SOCIALS }: { color?: string; links?: Link[] }) {
   return (
     <div style={{ display: 'flex', gap: 14, justifyContent: 'center', margin: '0 0 18px' }}>
-      {SOCIALS.filter(s => s.href).map(s => (
+      {links.filter(s => s.href).map(s => (
         <a key={s.name} href={s.href} target="_blank" rel="noreferrer" aria-label={s.name} title={s.name}
           className="wfh-social"
           style={{ width: 42, height: 42, borderRadius: '50%', display: 'grid', placeItems: 'center',
