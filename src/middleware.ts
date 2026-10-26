@@ -22,6 +22,7 @@ function isPublic(path: string): boolean {
   if (path === '/api/copy') return true // site copy editor (writes are owner-only inside the route)
   if (path === '/retire' || path === '/speak' || path === '/api/wfh/intake') return true // WFH questionnaires
   if (path === '/welcome') return true // thank-you page after any email signup
+  if (path === '/intro-to-ai') return true // private intro-to-AI session (unlisted)
   if (path === '/cookbook') return true // unlisted podcast-listener cookbook signup
   if (path === '/aimom') return true // podcast · be a guest · speaking (former homepage)
   if (path === '/aimomeducation') return true // AI Mom Podcast landing (aimomeducation.com)
