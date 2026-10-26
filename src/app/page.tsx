@@ -54,15 +54,15 @@ const SERVICES: Service[] = [
     cta: { label: 'Take the AI integration questionnaire', href: '/assessment' },
   },
   {
-    emoji: '🎬',
-    name: 'UGC for Brands',
-    who: 'Trending content that gets traffic and new customers.',
+    emoji: '🌿',
+    name: 'Mindfulness for Women',
+    who: 'Prevent burnout before it costs you your business, your family, or yourself.',
     what: [
-      'Hooks, scripts, and edits built for how the algorithm rewards interesting brands',
-      'For brands serving women, moms, families, and wellness — and unique experiences and travel',
-      'Video creation and marketing assessments, priced up front',
+      'Guided meditations recorded by Mandi in her studio',
+      'For the mother, the CEO, and the woman in you',
+      'Show up for your life’s work. Show up for yourself.',
     ],
-    cta: { label: 'See the menu & pricing', href: '/ugc' },
+    cta: { label: 'Be There For Her', href: 'https://www.bethereforher.com' },
   },
   {
     emoji: '🎤',
@@ -77,15 +77,15 @@ const SERVICES: Service[] = [
     more: { label: 'See the keynote', href: '/thesis' },
   },
   {
-    emoji: '🌿',
-    name: 'Mindfulness for Women',
-    who: 'Prevent burnout before it costs you your business, your family, or yourself.',
+    emoji: '🎬',
+    name: 'UGC for Brands',
+    who: 'Trending content that gets traffic and new customers.',
     what: [
-      'Guided meditations in Mandi’s own voice',
-      'For the mother, the CEO, and the woman in you',
-      'Show up more fully to your life’s work',
+      'Hooks, scripts, and edits built for how the algorithm rewards interesting brands',
+      'For brands serving women, moms, families, and wellness — and unique experiences and travel',
+      'Video creation and marketing assessments, priced up front',
     ],
-    cta: { label: 'Visit Be There For Her', href: 'https://www.bethereforher.com' },
+    cta: { label: 'See the menu & pricing', href: '/ugc' },
   },
   {
     emoji: '🔑',
@@ -147,8 +147,8 @@ export default function Home() {
 
       <section className="tier" id="services">
         <div className="wrap">
-          <p className="tag">WHAT WFH DOES</p>
-          <h2>6 ways to work together.</h2>
+          <p className="tag">HIRE MANDI</p>
+          <h2>Six ways to work together.</h2>
           <div className="grid">{SERVICES.map((s) => <Card s={s} key={s.name} />)}</div>
         </div>
       </section>
@@ -167,7 +167,7 @@ export default function Home() {
             <div><span>🗝</span><h3>The CEO in you</h3><p>Clear decisions from a calm mind, not an empty tank.</p></div>
             <div><span>🌿</span><h3>The woman in you</h3><p>Room to come back to yourself, every single day.</p></div>
           </div>
-          <a className="cta light" href="https://www.bethereforher.com">This is where we connect: Be There For Her →</a>
+          <a className="cta light" href="https://www.bethereforher.com">This is where you learn to listen to your intuition again →</a>
         </div>
       </section>
 
@@ -177,7 +177,7 @@ export default function Home() {
           <ol>
             <li><strong>Pick a service.</strong></li>
             <li><strong>Take the quick questionnaire</strong> for an instant AI assessment &mdash; or pick from the UGC &amp; marketing menu.</li>
-            <li><strong>Book a time with Mandi</strong> right on the page. You&rsquo;ll meet on Google Meet.</li>
+            <li><strong>Book a time with Mandi</strong> right on the page. You&rsquo;ll receive a link for Google Meet.</li>
           </ol>
           <p className="unsure">
             Not sure where you fit? <a href="/assessment">Start with the questionnaire</a> &mdash; it&rsquo;ll show you where AI can help most.
@@ -217,7 +217,7 @@ const css = `
 .h .cta { display:inline-block; background:var(--nebula); color:#fff; font-weight:800; font-size:16px;
   text-decoration:none; padding:14px 26px; border-radius:999px; box-shadow:0 10px 26px rgba(90,79,207,0.3); transition:transform .12s ease; }
 .h .cta:hover { transform:translateY(-2px); }
-.h .cta.ghost { background:transparent; color:#fff; box-shadow:none; border:1.5px solid rgba(255,255,255,0.6); }
+.h .cta.ghost { background:rgba(255,255,255,0.06); color:#fff; box-shadow:0 10px 26px rgba(0,0,0,0.25); border:1.5px solid rgba(255,255,255,0.6); }
 
 .h .hero { background:linear-gradient(165deg,var(--midnight),#241f49 62%,var(--nebula)); color:var(--cream); padding:88px 0; }
 .h .hero .logo { display:block; width:min(340px,78vw); height:auto; margin:0 0 28px; }
@@ -243,11 +243,12 @@ const css = `
 .h .card ul { margin:0 0 18px; padding-left:20px; color:#4a4560; font-size:15px; flex:1; }
 .h .card li { margin-bottom:6px; }
 .h .cbody { margin:0 0 18px; color:#4a4560; font-size:15px; flex:1; }
-.h .clinks { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
-.h .cmore { font-weight:700; color:#6b6585; text-decoration:none; font-size:15px; }
-.h .cmore:hover { color:var(--nebula); }
-.h .cbtn { font-weight:800; color:var(--nebula); text-decoration:none; border-bottom:2px solid rgba(90,79,207,0.3); }
-.h .cbtn:hover { border-color:var(--nebula); }
+.h .clinks { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.h .cbtn, .h .cmore { display:inline-block; font-weight:800; font-size:15px; text-decoration:none; padding:11px 20px; border-radius:999px;
+  transition:transform .15s ease, box-shadow .15s ease; }
+.h .cbtn { background:var(--nebula); color:#fff; box-shadow:0 10px 24px rgba(90,79,207,0.32); }
+.h .cmore { background:#fff; color:var(--nebula); border:1.5px solid rgba(90,79,207,0.35); box-shadow:0 8px 20px rgba(23,28,58,0.10); }
+.h .cbtn:hover, .h .cmore:hover, .h .cta:hover { transform:translateY(-3px); box-shadow:0 16px 32px rgba(90,79,207,0.38); }
 
 .h .philo { background:linear-gradient(165deg,#2a1c3f,var(--nebula) 70%,var(--copper)); color:#fff; text-align:center; padding:84px 0; }
 .h .philo h2 { font-size:clamp(26px,4.4vw,40px); line-height:1.15; margin:0 auto 16px; max-width:760px; color:#fff; }
