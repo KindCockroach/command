@@ -73,7 +73,7 @@ const SERVICES: Service[] = [
       'Running a business as a mom',
       'Mindfulness in the digital age',
     ],
-    cta: { label: 'Book Mandi to speak', href: '/meet?service=speaking' },
+    cta: { label: 'Book Mandi to speak', href: '/speak' },
     more: { label: 'See the keynote', href: '/thesis' },
   },
   {
@@ -93,7 +93,7 @@ const SERVICES: Service[] = [
     who: 'For owners ready to step back from daily involvement in their business.',
     what: [],
     body: 'Work with Mandi “AI Mom” to turn what’s in your head into guides, playbooks, and an assistant the next owner can ask, while you sip piña coladas and watch your grandbabies play on the beach.',
-    cta: { label: 'Book a call about retiring', href: '/meet?service=retire' },
+    cta: { label: 'Start the RETIRE questionnaire', href: '/retire' },
   },
 ]
 
@@ -120,24 +120,28 @@ export default function Home() {
       <CopyEditor />
 
       <section className="hero">
-        <div className="wrap">
+        <div className="glow g1" /><div className="glow g2" /><div className="glow g3" />
+        <img className="drift" src="/balloon-512.png" alt="" aria-hidden="true" />
+        <div className="wrap heroIn">
           <img className="logo" src="/wfh-logo-white.png" alt="AI WFH — Works For Her" />
           <p className="sub">
             WFH is the parent company of the AI Mom Podcast, founded and operated by Amanda &ldquo;Mandi&rdquo; Beck.
             She has a theory that <strong>women are the answer, and their intuition the antidote, to mankind&rsquo;s
             potential for coexistence with exponential technology.</strong>
           </p>
-          <p className="sub whether">You can work with her in several ways:</p>
-          <ul className="fits">
-            <li><a href="/meet?service=speaking">Hire her to speak on your stage</a></li>
-            <li><a href="/assessment">Assess your business for AI integration</a></li>
-            <li><a href="/assessment">Assess your social media for AI integration</a></li>
-            <li><a href="/ugc">Hire her for UGC</a></li>
-            <li><a href="/aimom">Tune into the podcast</a></li>
-            <li><a href="https://www.bethereforher.com">Prevent burnout with meditation</a></li>
-            <li><a href="/meet?service=retire">RETIRE: step back from your business with the help of AI</a></li>
-          </ul>
-          <p className="sub">Pick where you fit. Start there.</p>
+          <div className="glass">
+            <p className="whether">You can work with her in several ways:</p>
+            <ul className="fits">
+              <li><a href="/speak"><span>🎤</span>Hire her to speak on your stage</a></li>
+              <li><a href="/assessment"><span>⚙️</span>Assess your business for AI integration</a></li>
+              <li><a href="/assessment"><span>📱</span>Assess your social media for AI integration</a></li>
+              <li><a href="/ugc"><span>🎬</span>Hire her for UGC</a></li>
+              <li><a href="/aimom"><span>🎙</span>Tune into the podcast</a></li>
+              <li><a href="https://www.bethereforher.com"><span>🌿</span>Prevent burnout with meditation</a></li>
+              <li className="wide"><a href="/retire"><span>🔑</span>RETIRE: step back from your business with the help of AI</a></li>
+            </ul>
+          </div>
+          <p className="sub pick">Pick where you fit. Start there.</p>
           <div className="ctaRow">
             <a className="cta" href="#services">See the services</a>
             <a className="cta ghost" href="/aimom">Meet AI Mom →</a>
@@ -159,8 +163,9 @@ export default function Home() {
           <p className="tag light">THE PHILOSOPHY</p>
           <h2>The mindfulness behind the business.</h2>
           <p className="plead">
-            For the mother in you, the CEO in you, and the woman in you. Prevent burnout with mindful
-            products that help you show up more fully to your life&rsquo;s work, your business, and your family.
+            For the mother, the leader, and the CEO. It is our responsibility to protect our feminine nature. Prevent burnout
+            with mindfulness. For beginners to advanced practitioners, these audios and guides are sure to help you show up
+            more fully to your life&rsquo;s work, your business, and your family.
           </p>
           <div className="trio">
             <div><span>🌙</span><h3>The mother in you</h3><p>Present with your family, not just there.</p></div>
@@ -219,19 +224,47 @@ const css = `
 .h .cta:hover { transform:translateY(-2px); }
 .h .cta.ghost { background:rgba(255,255,255,0.06); color:#fff; box-shadow:0 10px 26px rgba(0,0,0,0.25); border:1.5px solid rgba(255,255,255,0.6); }
 
-.h .hero { background:linear-gradient(165deg,var(--midnight),#241f49 62%,var(--nebula)); color:var(--cream); padding:88px 0; }
-.h .hero .logo { display:block; width:min(340px,78vw); height:auto; margin:0 0 28px; }
-.h .hero .eyebrow { letter-spacing:3px; font-size:13px; font-weight:800; color:var(--ember); margin:0 0 18px; }
-.h .hero h1 { font-size:clamp(32px,5.5vw,54px); line-height:1.1; margin:0 0 20px; color:#fff; max-width:820px; }
-.h .hero h1 em { color:var(--ember); }
-.h .hero .sub { font-size:19px; color:#e7e2f2; max-width:640px; margin:0 0 14px; }
-.h .hero .sub strong { color:#fff; }
-.h .hero .whether { margin-bottom:8px; }
-.h .hero .fits { list-style:none; padding:0; margin:0 0 18px; max-width:640px; display:grid; gap:8px; }
-.h .hero .fits li { position:relative; padding-left:24px; font-size:17px; }
-.h .hero .fits li::before { content:'→'; position:absolute; left:0; color:var(--ember); font-weight:800; }
-.h .hero .fits a { color:#fff; text-decoration:none; border-bottom:1px solid rgba(242,166,90,0.5); }
-.h .hero .fits a:hover { border-color:var(--ember); }
+/* Hero — night sky with depth: layered glows, faint stars, a drifting balloon, glass panel */
+.h .hero { position:relative; overflow:hidden; isolation:isolate; color:var(--cream); padding:88px 0 96px;
+  background:
+    radial-gradient(1100px 560px at 50% -12%, rgba(90,79,207,0.55), transparent 62%),
+    radial-gradient(760px 520px at 105% 105%, rgba(226,80,138,0.30), transparent 60%),
+    radial-gradient(640px 520px at -8% 92%, rgba(242,166,90,0.20), transparent 60%),
+    linear-gradient(180deg,#0f0b26 0%,#17123a 55%,#221a52 100%);
+  border-radius:0 0 44px 44px; box-shadow:0 40px 70px -40px rgba(23,28,58,0.65); }
+.h .hero::before { content:''; position:absolute; inset:0; z-index:-1; opacity:.55; pointer-events:none;
+  background-image:
+    radial-gradient(1.2px 1.2px at 12% 18%, #fff, transparent 60%), radial-gradient(1px 1px at 78% 12%, #fff, transparent 60%),
+    radial-gradient(1.4px 1.4px at 64% 38%, #fff, transparent 60%), radial-gradient(1px 1px at 30% 62%, #fff, transparent 60%),
+    radial-gradient(1.2px 1.2px at 88% 70%, #fff, transparent 60%), radial-gradient(1px 1px at 46% 84%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 6% 48%, #fff, transparent 60%), radial-gradient(1.3px 1.3px at 94% 34%, #fff, transparent 60%);
+  background-size:520px 520px; }
+.h .hero .glow { position:absolute; z-index:-1; border-radius:50%; filter:blur(70px); opacity:.5; pointer-events:none; animation:wfhDrift 16s ease-in-out infinite alternate; }
+.h .hero .g1 { width:420px; height:420px; background:#5A4FCF; top:-140px; left:8%; }
+.h .hero .g2 { width:360px; height:360px; background:#E2508A; bottom:-160px; right:4%; animation-delay:-6s; }
+.h .hero .g3 { width:280px; height:280px; background:#F2A65A; top:38%; left:-120px; opacity:.32; animation-delay:-11s; }
+.h .hero .drift { position:absolute; z-index:-1; width:150px; right:7%; top:84px; opacity:.92; pointer-events:none;
+  filter:drop-shadow(0 24px 40px rgba(226,80,138,0.35)); animation:wfhFloat 7s ease-in-out infinite; }
+@keyframes wfhDrift { from { transform:translate(0,0) scale(1); } to { transform:translate(40px,30px) scale(1.12); } }
+@keyframes wfhFloat { 0%,100% { transform:translateY(0) rotate(-2deg); } 50% { transform:translateY(-16px) rotate(2deg); } }
+@media (prefers-reduced-motion:reduce){ .h .hero .glow, .h .hero .drift { animation:none; } }
+.h .hero .heroIn { position:relative; max-width:860px; text-align:center; }
+.h .hero .logo { display:block; width:min(360px,78vw); height:auto; margin:0 auto 26px; filter:drop-shadow(0 10px 30px rgba(0,0,0,0.35)); }
+.h .hero .sub { font-size:19px; line-height:1.65; color:#e9e4f5; max-width:720px; margin:0 auto 22px; }
+.h .hero .sub strong { font-weight:700; background:linear-gradient(90deg,#fff,#F7C79A 55%,#F4A3C4); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.h .hero .glass { max-width:780px; margin:0 auto 22px; padding:20px 20px 16px; border-radius:24px; text-align:left;
+  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.12), 0 24px 50px -30px rgba(0,0,0,0.6); }
+.h .hero .whether { margin:0 0 12px; font-size:13px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--ember); text-align:center; }
+.h .hero .fits { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.h .hero .fits li.wide { grid-column:1 / -1; }
+.h .hero .fits a { display:flex; align-items:center; gap:10px; height:100%; padding:12px 14px; border-radius:14px; font-size:16px; font-weight:600;
+  color:#fff; text-decoration:none; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.10);
+  transition:transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.h .hero .fits a span { flex:none; font-size:18px; }
+.h .hero .fits a:hover { transform:translateY(-2px); background:rgba(255,255,255,0.10); border-color:rgba(242,166,90,0.6); box-shadow:0 12px 24px -14px rgba(0,0,0,0.6); }
+.h .hero .pick { margin-bottom:0; font-weight:600; }
+.h .hero .ctaRow { justify-content:center; }
 
 .h .tier h2 { font-size:clamp(24px,4vw,34px); margin:0 0 28px; }
 .h .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
@@ -274,6 +307,14 @@ const css = `
 
 @media (max-width:620px){
   .h .grid { grid-template-columns:1fr; }
+  .h .hero { padding:56px 0 64px; border-radius:0 0 28px 28px; }
+  .h .hero .heroIn { text-align:left; }
+  .h .hero .logo { margin:0 0 22px; width:min(280px,74vw); }
+  .h .hero .sub { margin-left:0; font-size:17.5px; }
+  .h .hero .fits { grid-template-columns:1fr; }
+  .h .hero .whether { text-align:left; }
+  .h .hero .ctaRow { justify-content:flex-start; }
+  .h .hero .drift { width:76px; top:20px; right:14px; opacity:.75; }
   .h .philo .trio { grid-template-columns:1fr; }
   .h section { padding:56px 0; }
 }

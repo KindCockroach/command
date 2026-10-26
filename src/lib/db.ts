@@ -330,7 +330,7 @@ export type InboxBrief = { items: InboxItem[]; checked_at: string; count_total?:
 // WFH (Works For Her) — public leads from aiworksforher.com (the AI integration
 // questionnaire, UGC menu picks) and client meetings booked on /meet.
 export type WfhLead = {
-  id: string; kind: 'assessment' | 'ugc' | 'speaking' | 'other'
+  id: string; kind: 'assessment' | 'retire' | 'ugc' | 'speaking' | 'other'
   name: string; email: string; business?: string; website?: string
   answers?: Record<string, string | string[]>
   result?: { score: number; level: string; hours_per_month: number; top: string[]; next_step: string }

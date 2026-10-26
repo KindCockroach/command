@@ -14,12 +14,18 @@ export const WFH_SERVICES: Record<string, string> = {
   'mkt-website': 'Website Marketing Assessment',
   'mkt-full': 'Full Marketing Assessment',
   'ugc-unsure': 'UGC & marketing — help me choose',
-  'retire': 'RETIRE · Pass down the keys',
+  'retire': 'RETIRE · Step back with AI',
 }
 export const serviceLabel = (key?: string | null) => (key && WFH_SERVICES[key]) || 'A time with Mandi'
 
 type Opt = { value: string; label: string }
-export type Question = { id: string; q: string; hint?: string; multi?: boolean; options: Opt[] }
+export type Question = {
+  id: string; q: string; hint?: string; multi?: boolean; options: Opt[]
+  text?: boolean                              // free-text answer (options unused)
+  placeholder?: string
+  other?: boolean                             // adds "Other" with its own text box (saved as <id>_other)
+  showIf?: { id: string; in: string[] }       // only asked when an earlier answer matches
+}
 
 export const QUESTIONS: Question[] = [
   { id: 'role', q: 'Which sounds most like you?', options: [
@@ -163,3 +169,181 @@ export type RiseRecommendation = {
   features: { name: string; why: string; first_step: string }[]
   closing: string
 }
+
+// RETIRE — getting to know an owner who wants to step back. Generous options on
+// purpose: picking from them helps the owner think it through, and gives Mandi a
+// clear picture before the call. Scored by nobody; read by Mandi.
+export const RETIRE_QUESTIONS: Question[] = [
+  { id: 'business_type', q: 'What kind of business do you own?', other: true, options: [
+    { value: 'professional', label: 'Professional services (law, accounting, insurance, consulting)' },
+    { value: 'realestate', label: 'Real estate or property management' },
+    { value: 'trades', label: 'Trades & home services (construction, HVAC, plumbing, landscaping)' },
+    { value: 'retail', label: 'Retail or e-commerce' },
+    { value: 'food', label: 'Restaurant, food, or hospitality' },
+    { value: 'health', label: 'Health, wellness, or a medical practice' },
+    { value: 'creative', label: 'Creative or agency (design, marketing, photography)' },
+    { value: 'manufacturing', label: 'Manufacturing or distribution' },
+    { value: 'experience', label: 'Farm, ranch, camp, or an outdoor/experience business' },
+  ] },
+  { id: 'years', q: 'How long have you been running it?', options: [
+    { value: 'lt5', label: 'Less than 5 years' }, { value: '5to10', label: '5–10 years' },
+    { value: '10to20', label: '10–20 years' }, { value: '20to30', label: '20–30 years' }, { value: 'gt30', label: 'More than 30 years' },
+  ] },
+  { id: 'team', q: 'How many people work in it, including you?', options: [
+    { value: 'me', label: 'Just me' }, { value: 'small', label: '2–5' }, { value: 'mid', label: '6–20' },
+    { value: 'large', label: '21–50' }, { value: 'xl', label: 'More than 50' },
+  ] },
+  { id: 'plan', q: 'What would you like to happen to the business?', hint: 'Pick all that you’re considering.', multi: true, options: [
+    { value: 'family', label: 'Pass it to family' },
+    { value: 'employee', label: 'Pass it to a key employee or partner' },
+    { value: 'sell', label: 'Sell it to an outside buyer' },
+    { value: 'owner', label: 'Keep owning it, but step out of the day-to-day' },
+    { value: 'wind', label: 'Wind it down gracefully' },
+    { value: 'unsure', label: 'Not sure yet — that’s part of why I’m here' },
+  ] },
+  { id: 'successor', q: 'Do you have a successor in mind?', options: [
+    { value: 'involved', label: 'Yes, and they’re already involved in the business' },
+    { value: 'notyet', label: 'Yes, but they’re not involved yet' },
+    { value: 'few', label: 'A few possibilities, nothing decided' },
+    { value: 'none', label: 'Not yet' },
+    { value: 'buyer', label: 'I plan to sell, so it’ll be a buyer' },
+  ] },
+  { id: 'timeline', q: 'When would you like to step back?', options: [
+    { value: '6mo', label: 'Within 6 months' }, { value: '1yr', label: '6–12 months' },
+    { value: '3yr', label: '1–3 years' }, { value: '5yr', label: '3–5 years' }, { value: 'open', label: 'No set date yet' },
+  ] },
+  { id: 'time_now', q: 'Where does most of your time go now?', hint: 'Pick all that apply.', multi: true, options: [
+    { value: 'clients', label: 'Serving customers or clients' },
+    { value: 'sales', label: 'Sales and bringing in new business' },
+    { value: 'people', label: 'Managing and training people' },
+    { value: 'ops', label: 'Operations and day-to-day problem solving' },
+    { value: 'admin', label: 'Bookkeeping, payroll, and admin' },
+    { value: 'marketing', label: 'Marketing and social media' },
+    { value: 'questions', label: 'Answering questions only I know the answer to' },
+    { value: 'fires', label: 'Putting out fires' },
+  ] },
+  { id: 'in_head', q: 'What lives mostly in your head right now?', hint: 'This is what we’d capture first. Pick all that apply.', multi: true, options: [
+    { value: 'customers', label: 'Customer relationships and history' },
+    { value: 'pricing', label: 'How we price, quote, and negotiate' },
+    { value: 'vendors', label: 'Vendor and supplier relationships' },
+    { value: 'craft', label: 'How to actually do the work — the craft' },
+    { value: 'people', label: 'Hiring, managing, and who’s good at what' },
+    { value: 'numbers', label: 'The numbers and what they really mean' },
+    { value: 'where', label: 'Passwords, accounts, and where everything is' },
+    { value: 'culture', label: 'The unwritten rules and the culture' },
+  ] },
+  { id: 'time_future', q: 'Where do you plan to spend your time instead?', hint: 'Pick all that apply.', multi: true, other: true, options: [
+    { value: 'family', label: 'Grandkids and family' },
+    { value: 'travel', label: 'Travel' },
+    { value: 'health', label: 'Health and rest' },
+    { value: 'hobby', label: 'A hobby or passion project' },
+    { value: 'give', label: 'Volunteering or giving back' },
+    { value: 'mentor', label: 'Mentoring the next owner, part-time' },
+    { value: 'new', label: 'A new business or venture' },
+    { value: 'unsure', label: 'Honestly, I don’t know yet' },
+  ] },
+  { id: 'tech', q: 'How comfortable are you with technology?', options: [
+    { value: 'avoid', label: 'I avoid it — paper and phone calls work for me' },
+    { value: 'basic', label: 'I get by with email and texting' },
+    { value: 'apps', label: 'Comfortable with everyday apps' },
+    { value: 'ai', label: 'I’ve tried ChatGPT or another AI tool' },
+    { value: 'love', label: 'I love trying new tools' },
+  ] },
+  { id: 'attachment', q: 'How do you feel about letting go?', options: [
+    { value: 'lifework', label: 'It’s my life’s work — letting go will be hard' },
+    { value: 'ready', label: 'Very attached, but I’m ready' },
+    { value: 'middle', label: 'Somewhere in the middle' },
+    { value: 'business', label: 'It’s a business — I’m ready to move on' },
+    { value: 'mixed', label: 'Mixed feelings I haven’t sorted out yet' },
+  ] },
+  { id: 'consultant', q: 'Have you worked with a consultant or advisor before?', options: [
+    { value: 'great', label: 'Yes, and it was great' },
+    { value: 'mixed', label: 'Yes, and it was mixed' },
+    { value: 'bad', label: 'Yes, and it wasn’t helpful' },
+    { value: 'pro', label: 'Only my accountant or attorney' },
+    { value: 'never', label: 'No, this would be my first' },
+  ] },
+  { id: 'consultant_exp', q: 'What made that experience what it was?', hint: 'Pick all that apply.', multi: true, other: true,
+    showIf: { id: 'consultant', in: ['great', 'mixed', 'bad', 'pro'] }, options: [
+    { value: 'understood', label: 'They really understood my business' },
+    { value: 'simpler', label: 'They made things simpler' },
+    { value: 'responsive', label: 'Easy to reach and responsive' },
+    { value: 'planonly', label: 'Great plan, but no help doing it' },
+    { value: 'generic', label: 'Too generic — cookie-cutter advice' },
+    { value: 'complicated', label: 'Made things more complicated' },
+    { value: 'expensive', label: 'Too expensive for what I got' },
+    { value: 'hard', label: 'Hard to reach' },
+  ] },
+  { id: 'want', q: 'What do you want out of working with Mandi?', text: true, options: [],
+    placeholder: 'For example: everything I know written down, a smooth handoff to my daughter, a business that runs without me…' },
+  { id: 'unique', q: 'What’s one thing Mandi should know that makes your business unique?', text: true, options: [],
+    placeholder: 'The story, the secret sauce, the thing your customers always mention…' },
+]
+
+// SPEAKING — event details before an organizer books a call about Mandi speaking.
+export const SPEAKING_QUESTIONS: Question[] = [
+  { id: 'event_type', q: 'What kind of event is it?', other: true, options: [
+    { value: 'womens_conf', label: 'A women’s conference' },
+    { value: 'women_tech', label: 'A women in tech event or employee resource group' },
+    { value: 'leadership', label: 'A women’s leadership summit or retreat' },
+    { value: 'corporate', label: 'A corporate event or team offsite' },
+    { value: 'entrepreneur', label: 'An entrepreneur or small-business event' },
+    { value: 'moms', label: 'A moms’ group, PTA, or school event' },
+    { value: 'faith', label: 'A church or faith community' },
+    { value: 'media', label: 'A podcast, panel, or livestream' },
+  ] },
+  { id: 'format', q: 'What format are you picturing?', options: [
+    { value: 'keynote', label: 'Keynote (30–60 minutes)' },
+    { value: 'workshop', label: 'Workshop or breakout (60–90 minutes)' },
+    { value: 'panel', label: 'Panel' },
+    { value: 'fireside', label: 'Fireside chat or interview' },
+    { value: 'virtual', label: 'Virtual talk' },
+    { value: 'unsure', label: 'Not sure yet' },
+  ] },
+  { id: 'topics', q: 'Which topics fit your audience?', hint: 'Pick all that interest you.', multi: true, options: [
+    { value: 'antidote', label: 'Women’s intuition as the antidote in the age of AI' },
+    { value: 'think', label: 'How to think — not what to think — about AI' },
+    { value: 'naptime', label: 'Building with AI as a non-technical woman' },
+    { value: 'mombiz', label: 'Running a business as a mom' },
+    { value: 'mindful', label: 'Mindfulness and burnout prevention in the digital age' },
+    { value: 'kids', label: 'AI, kids, and education' },
+  ] },
+  { id: 'audience', q: 'Who will be in the room?', hint: 'Pick all that apply.', multi: true, options: [
+    { value: 'leaders', label: 'Women in leadership' },
+    { value: 'tech', label: 'Women in tech' },
+    { value: 'founders', label: 'Entrepreneurs and small-business owners' },
+    { value: 'moms', label: 'Working moms' },
+    { value: 'educators', label: 'Educators and parents' },
+    { value: 'teams', label: 'Corporate teams' },
+    { value: 'students', label: 'Students and the next generation' },
+  ] },
+  { id: 'size', q: 'About how many people?', options: [
+    { value: 'lt50', label: 'Under 50' }, { value: '50to150', label: '50–150' },
+    { value: '150to500', label: '150–500' }, { value: 'gt500', label: 'More than 500' }, { value: 'unknown', label: 'Not sure yet' },
+  ] },
+  { id: 'when', q: 'When is it?', options: [
+    { value: '1mo', label: 'Within a month' }, { value: '3mo', label: '1–3 months' },
+    { value: '6mo', label: '3–6 months' }, { value: 'later', label: 'More than 6 months out' }, { value: 'flex', label: 'Flexible — we’re planning' },
+  ] },
+  { id: 'where', q: 'Where is it?', options: [
+    { value: 'austin', label: 'Central Texas' }, { value: 'texas', label: 'Elsewhere in Texas' },
+    { value: 'travel', label: 'Out of state' }, { value: 'virtual', label: 'Virtual' },
+  ] },
+  { id: 'budget', q: 'What does your speaker budget look like?', options: [
+    { value: 'fee', label: 'A paid speaking fee' },
+    { value: 'travel', label: 'Travel covered plus an honorarium' },
+    { value: 'community', label: 'No budget, but a great audience fit' },
+    { value: 'tbd', label: 'Still working it out' },
+  ] },
+  { id: 'hope', q: 'What do you hope your audience walks away with?', text: true, options: [],
+    placeholder: 'A feeling, a skill, a decision, a conversation they keep having afterward…' },
+  { id: 'details', q: 'Event name, date, and link — plus anything else Mandi should know.', text: true, options: [],
+    placeholder: 'Event name · date · city or link · theme of the event…' },
+]
+
+// The questionnaires served by /api/wfh/intake — one engine, one entry per kind.
+export const INTAKES = {
+  retire: { questions: RETIRE_QUESTIONS, service: 'retire', tag: 'wfh-retire', icon: '🔑', title: 'RETIRE questionnaire', summary: ['plan', 'timeline'] },
+  speaking: { questions: SPEAKING_QUESTIONS, service: 'speaking', tag: 'wfh-speaking', icon: '🎤', title: 'Speaking inquiry', summary: ['event_type', 'when'] },
+} as const
+export type IntakeKind = keyof typeof INTAKES
