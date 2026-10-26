@@ -135,7 +135,7 @@ export default function Home() {
             <li><a href="/ugc">Hire her for UGC</a></li>
             <li><a href="/aimom">Tune into the podcast</a></li>
             <li><a href="https://www.bethereforher.com">Prevent burnout with meditation</a></li>
-            <li><a href="/meet?service=retire">Retire: pass down the keys with AI</a></li>
+            <li><a href="/meet?service=retire">RETIRE: step back from your business with the help of AI</a></li>
           </ul>
           <p className="sub">Pick where you fit. Start there.</p>
           <div className="ctaRow">
