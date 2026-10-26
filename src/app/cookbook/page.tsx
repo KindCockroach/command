@@ -34,7 +34,7 @@ export default function Cookbook() {
       </header>
       <section className="wrap body">
         <div className="panel k">
-          <KitchenForm list="podcast" redirect="/"
+          <KitchenForm list="podcast" redirect="/welcome?from=wfh"
             cookbookLabel="Send me the free cookbook, The Magic Is in the Making."
             newsletterLabel="Subscribe to the AI Works For Her newsletter: new AI Mom episodes, AI tools worth your time, and updates from Mandi."
             button="Send it to me →" />

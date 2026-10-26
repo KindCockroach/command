@@ -7,8 +7,7 @@ type Props = { list?: 'kitchen' | 'podcast'; redirect?: string; cookbookLabel?: 
 
 export default function KitchenForm({
   list = 'kitchen',
-  // /bethereforher/intuition works on both domains (it 308s to /intuition on bethereforher.com).
-  redirect = '/bethereforher/intuition',
+  redirect = '/welcome?from=btfh',
   cookbookLabel = 'Send me the seasonal cookbooks, with notes in the margin that encourage play, joy, and relief in the kitchen.',
   newsletterLabel = 'Subscribe to Be There For Her. Receive updates when new series are released.',
   button = 'Count me in →',
