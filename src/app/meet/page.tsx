@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { serviceLabel } from '@/lib/wfh'
 import { wfhCss } from '@/components/wfh/theme'
 import CopyEditor from '@/components/CopyEditor'
+import SocialIcons from '@/components/wfh/SocialIcons'
 
 // WFH — "Book a time with me." Every service ends here (?service=<key> from lib/wfh.ts).
 // Shows the next three weeks of Mandi's open slots (set on /meet/manage; podcast
@@ -144,7 +145,7 @@ export default function MeetPage() {
         )}
       </section>
 
-      <footer className="foot"><a href="/">WFH home</a>·<a href="/assessment">AI questionnaire</a>·<a href="/ugc">UGC &amp; marketing</a></footer>
+      <footer className="foot"><SocialIcons color="#5A4FCF" /><a href="/">WFH home</a>·<a href="/assessment">AI questionnaire</a>·<a href="/ugc">UGC &amp; marketing</a></footer>
     </main>
   )
 }

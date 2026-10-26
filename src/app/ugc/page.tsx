@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
 import { wfhCss } from '@/components/wfh/theme'
 import CopyEditor from '@/components/CopyEditor'
+import SocialIcons from '@/components/wfh/SocialIcons'
 
 // WFH — UGC & marketing menu. Two separate menus: VIDEO CREATION (trending content
 // made for the brand) and MARKETING ASSESSMENTS (copy / website / full). Every item
@@ -92,7 +93,7 @@ export default function UgcPage() {
         </div>
       </section>
 
-      <footer className="foot"><a href="/">WFH home</a>·<a href="/assessment">AI questionnaire</a>·<a href="/aimom">AI Mom</a></footer>
+      <footer className="foot"><SocialIcons color="#5A4FCF" /><a href="/">WFH home</a>·<a href="/assessment">AI questionnaire</a>·<a href="/aimom">AI Mom</a></footer>
     </main>
   )
 }

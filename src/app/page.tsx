@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
 import CopyEditor from '@/components/CopyEditor'
+import SocialIcons from '@/components/wfh/SocialIcons'
 
 // The aiworksforher.com homepage — WFH (Works For Her), Mandi's business, and its four
 // services: the AI Mom Podcast, Small Business AI Integration, UGC, and speaking.
@@ -192,14 +193,13 @@ export default function Home() {
 
       <footer className="foot">
         <div className="wrap">
+          <SocialIcons />
           <div className="social">
             <a href="/aimom">Podcast</a>
             <a href="/book">Be a guest</a>
             <a href="/thesis">Speaking</a>
             <a href="/ugc">UGC &amp; marketing</a>
             <a href="/assessment">AI questionnaire</a>
-            <a href="https://instagram.com/aimompodcast">@aimompodcast</a>
-            <a href="https://linkedin.com/in/amanda-beck-588200378">LinkedIn</a>
           </div>
           <p className="fname">WFH · Works For Her · Mandi Beck, the AI Mom · From invisible to impactful.</p>
         </div>

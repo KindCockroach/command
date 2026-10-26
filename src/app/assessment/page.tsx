@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { QUESTIONS, type Answers, type RiseRecommendation } from '@/lib/wfh'
 import { wfhCss } from '@/components/wfh/theme'
 import CopyEditor from '@/components/CopyEditor'
+import SocialIcons from '@/components/wfh/SocialIcons'
 
 // WFH — the AI integration questionnaire. One question per screen, then contact
 // details, then a personalized recommendation of the RISE features that fit them
@@ -124,7 +125,7 @@ export default function AssessmentPage() {
         )}
       </section>
 
-      <footer className="foot"><a href="/">WFH home</a>·<a href="/ugc">UGC &amp; marketing</a>·<a href="/aimom">AI Mom</a></footer>
+      <footer className="foot"><SocialIcons color="#5A4FCF" /><a href="/">WFH home</a>·<a href="/ugc">UGC &amp; marketing</a>·<a href="/aimom">AI Mom</a></footer>
     </main>
   )
 }

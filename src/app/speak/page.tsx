@@ -6,6 +6,7 @@ import CopyEditor from '@/components/CopyEditor'
 import Intake, { intakeCss } from '@/components/wfh/Intake'
 import { SPEAKING_QUESTIONS } from '@/lib/wfh'
 import { wfhCss } from '@/components/wfh/theme'
+import SocialIcons from '@/components/wfh/SocialIcons'
 
 // WFH — speaking. Mandi's theory + talks + who they're for, then the speaking
 // questionnaire (emails Mandi every answer), then "Book a time with Mandi".
@@ -72,7 +73,7 @@ export default function SpeakPage() {
           doneBody="Pick a time for a short call to talk through your audience, the right talk, and the logistics." />
       </section>
 
-      <footer className="foot"><a href="/">WFH home</a>·<a href="/aimom">AI Mom</a>·<a href="/thesis">The keynote</a></footer>
+      <footer className="foot"><SocialIcons color="#5A4FCF" /><a href="/">WFH home</a>·<a href="/aimom">AI Mom</a>·<a href="/thesis">The keynote</a></footer>
     </main>
   )
 }

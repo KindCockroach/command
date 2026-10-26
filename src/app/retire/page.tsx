@@ -6,6 +6,7 @@ import CopyEditor from '@/components/CopyEditor'
 import Intake, { intakeCss } from '@/components/wfh/Intake'
 import { RETIRE_QUESTIONS } from '@/lib/wfh'
 import { wfhCss } from '@/components/wfh/theme'
+import SocialIcons from '@/components/wfh/SocialIcons'
 
 // WFH — RETIRE. For owners stepping back from daily involvement: the RETIRE
 // questionnaire (emails Mandi every answer), then "Book a time with Mandi".
@@ -42,7 +43,7 @@ export default function RetirePage() {
           doneBody="Book a time to talk through your plan, your timeline, and the first thing to capture." />
       </section>
 
-      <footer className="foot"><a href="/">WFH home</a>·<a href="/assessment">AI questionnaire</a>·<a href="/aimom">AI Mom</a></footer>
+      <footer className="foot"><SocialIcons color="#5A4FCF" /><a href="/">WFH home</a>·<a href="/assessment">AI questionnaire</a>·<a href="/aimom">AI Mom</a></footer>
     </main>
   )
 }
