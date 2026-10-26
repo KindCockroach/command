@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-const CHECKOUT_URL = '' // paste the $150 Stripe payment link here
+const CHECKOUT_URL = 'https://buy.stripe.com/3cI14n6lv360d7q3HD9IQ05' // $150 private hour (Stripe)
 const BUTTON_HREF = CHECKOUT_URL || '/meet?service=intro-ai'
 
 const WHAT = [
