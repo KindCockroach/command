@@ -16,7 +16,7 @@ function isPublic(path: string): boolean {
   if (path === '/journal') return true
   if (path === '/reset' || path === '/cheatcode' || path === '/workshop') return true // public session pages (+ /workshop redirect)
   if (path === '/insait') return true // private $10 Reset (unlisted, no-index)
-  if (path === '/bethereforher' || path === '/bethereforher/library') return true // Be There For Her product
+  if (path === '/bethereforher' || path === '/bethereforher/library' || path === '/bethereforher/intuition') return true // Be There For Her product
   if (path === '/assessment' || path === '/ugc' || path === '/meet' || path === '/api/wfh') return true // WFH funnel (/meet/manage stays private)
   if (path === '/api/copy') return true // site copy editor (writes are owner-only inside the route)
   if (path === '/retire' || path === '/speak' || path === '/api/wfh/intake') return true // WFH questionnaires
@@ -37,6 +37,13 @@ export function middleware(req: NextRequest) {
     const p = req.nextUrl.pathname
     if (p === '/' || p === '/bethereforher') {
       const u = req.nextUrl.clone(); u.pathname = '/bethereforher'; return NextResponse.rewrite(u)
+    }
+    // Clean link: bethereforher.com/intuition (the old /bethereforher/intuition path redirects to it).
+    if (p === '/intuition') {
+      const u = req.nextUrl.clone(); u.pathname = '/bethereforher/intuition'; return NextResponse.rewrite(u)
+    }
+    if (p === '/bethereforher/intuition') {
+      const u = req.nextUrl.clone(); u.pathname = '/intuition'; return NextResponse.redirect(u, 308)
     }
     if (p === '/library' || p === '/bethereforher/library') {
       const u = req.nextUrl.clone(); u.pathname = '/bethereforher/library'; return NextResponse.rewrite(u)

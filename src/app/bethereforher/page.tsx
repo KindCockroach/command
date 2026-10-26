@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   },
 }
 
-const SERIES = [
-  { title: 'The Reset', line: '1 hour to yourself. Sundays, 8 PM. Your accountability and guide to press reset before the week begins again.', href: '/reset', status: 'Available now' },
-  { title: 'Turning Up Your Intuition', line: 'The quiet knowing you were taught to silence — turned back up, meditation by meditation.', href: '/bethereforher/intuition', status: 'Available now' },
+const SERIES: { title: string; line: string; href: string; status: string; icon?: string }[] = [
+  { title: 'The Reset', line: '1 hour to yourself. Sundays, 8 PM. Your accountability and guide to press reset before the week begins again.', href: '/reset', status: 'Available now', icon: '/bethereforher/icon-reset.png' },
+  { title: 'Turning Up Your Intuition', line: 'The quiet knowing you were taught to silence — turned back up, meditation by meditation.', href: '/bethereforher/intuition', status: 'Available now', icon: '/bethereforher/icon-intuition.png' },
   { title: 'The Whole Integrated Woman', line: 'Every scattered part of you — warrior, woman, lover, mother — gathered back into one whole.', href: '', status: 'In the works' },
   { title: 'Postpartum Support', line: 'For the tender, unspooled months no one prepares you for.', href: '', status: 'In the works' },
 ]
@@ -59,7 +59,10 @@ export default function BeThereForHer() {
               s.href ? (
                 <a className="card live" href={s.href} key={s.title}>
                   <span className="status live">{s.status}</span>
-                  <span className="ctitle">{s.title}</span>
+                  <span className="chead">
+                    {s.icon && <img className="cicon" src={s.icon} alt="" />}
+                    <span className="ctitle">{s.title}</span>
+                  </span>
                   <span className="cline">{s.line}</span>
                   <span className="cgo">Explore &rarr;</span>
                 </a>
@@ -72,7 +75,7 @@ export default function BeThereForHer() {
               )
             ))}
           </div>
-          <p className="more">&hellip;and more in this lane &mdash; whatever brings women back to themselves.</p>
+          <p className="more">&hellip;and more in this lane &mdash; anything to bring women back to themselves.</p>
         </div>
       </section>
 
@@ -123,6 +126,8 @@ const css = `
 .b .series .ssub { font-size:17px; color:var(--soft); margin:0 0 28px; }
 .b .series .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .b .card { display:flex; flex-direction:column; gap:8px; background:#fff; border:1px solid #ecdccf; border-radius:18px; padding:24px 24px; text-decoration:none; color:var(--plum); }
+.b .chead { display:flex; align-items:center; gap:14px; }
+.b .cicon { flex:none; width:64px; height:64px; border-radius:16px; object-fit:cover; box-shadow:0 8px 20px rgba(201,123,99,0.25); }
 .b .card.live { border:1.5px solid var(--ember); transition:transform .12s ease, box-shadow .12s ease; }
 .b .card.live:hover { transform:translateY(-3px); box-shadow:0 16px 36px rgba(201,123,99,0.2); }
 .b .status { font-size:10.5px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:#b7a79b; }
