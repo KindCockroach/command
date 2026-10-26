@@ -18,7 +18,9 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title: SHARE_TITLE, description: DESC },
 }
 
-const CHECKOUT = process.env.NEXT_PUBLIC_BETHEREFORHER_CHECKOUT || 'https://link.fastpaydirect.com/payment-link/6ab2eef69a013c156f1f990f'
+// Listen To Your Intuition ($9) — Stripe payment link. Hardcoded so a stale
+// NEXT_PUBLIC_BETHEREFORHER_CHECKOUT on Railway can't send buyers to the old checkout.
+const CHECKOUT = 'https://buy.stripe.com/4gM7sLeS1dKE4AU4LH9IQ04'
 
 export default function BeThereForHer() {
   return (
