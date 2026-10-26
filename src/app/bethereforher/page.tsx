@@ -79,11 +79,44 @@ export default function BeThereForHer() {
         </div>
       </section>
 
+      <section className="emblem">
+        <div className="wrap">
+          <img src="/bethereforher/emblem.png" alt="Be There For Her" />
+        </div>
+      </section>
+
+      <section className="meaning">
+        <div className="wrap">
+          <p className="tag">WHAT IT MEANS</p>
+          <h2>Be there for <em>her.</em></h2>
+          <p>
+            It started five months postpartum. Mandi was running on coffee and survival, there for everyone in her house and
+            nowhere to be found for herself. The turn didn&rsquo;t come from doing more. It came from sitting down, listening, and
+            saying to the woman inside her, and to the little girl she used to be: <em>I&rsquo;m here now. I&rsquo;ve got you.
+            I&rsquo;ll never leave you again.</em>
+          </p>
+          <p>
+            Be There For Her is for the woman who holds everyone&rsquo;s life together and can&rsquo;t remember the last decision
+            she made just for herself. The one who feels the answer in her gut, then talks herself out of it. You haven&rsquo;t
+            lost your knowing. You&rsquo;ve just been too busy keeping everyone else afloat to hear it.
+          </p>
+          <p>
+            And it matters more than ever. The world is speeding up, the noise is getting louder, and technology is learning to
+            think for us. The one thing it can&rsquo;t replicate is a woman who trusts herself. When she shows up for herself, she
+            shows up for her family, her work, and her world with everything she&rsquo;s got.
+          </p>
+          <p className="rise">
+            We are, and have always been, the answer to making the world a better place for all.
+            <strong>Rise with us. Be there for her.</strong>
+          </p>
+        </div>
+      </section>
+
       <section className="start">
         <div className="wrap">
-          <p className="tag">NEW HERE?</p>
+          <p className="tag">NEW TO MINDFULNESS?</p>
           <h2>Start with a free beginner meditation.</h2>
-          <p>Short, gentle, and made for the woman who&rsquo;s never had time to sit with herself. One press play, and you begin.</p>
+          <p>Never made time to sit with herself. Make the time now. Click below.</p>
           <a className="cta dark" href="/bethereforher/intuition">Begin here &rarr;</a>
         </div>
       </section>
@@ -122,6 +155,17 @@ const css = `
 .b .hero .sub { font-size:19px; color:#f2e2d7; max-width:620px; margin:0 auto 28px; }
 
 .b .series { background:var(--band); }
+.b .emblem { padding:56px 0 8px; text-align:center; }
+.b .emblem img { width:min(420px,82vw); height:auto; filter:drop-shadow(0 24px 40px rgba(217,140,95,0.28)); }
+.b .meaning { padding:24px 0 72px; }
+.b .meaning .wrap { max-width:720px; }
+.b .meaning .tag { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--ember); margin:0 0 10px; }
+.b .meaning h2 { font-size:clamp(28px,4.4vw,40px); margin:0 0 18px; }
+.b .meaning h2 em { color:var(--ember); }
+.b .meaning p { font-size:18px; color:var(--soft); margin:0 0 16px; }
+.b .meaning p em { color:var(--plum); }
+.b .meaning .rise { margin-top:24px; padding:20px 22px; border-radius:18px; background:var(--band); border-left:4px solid var(--ember); color:var(--plum); }
+.b .meaning .rise strong { display:block; margin-top:6px; font-size:20px; color:var(--ember); }
 .b .series h2 { font-size:clamp(26px,4vw,36px); margin:0 0 6px; }
 .b .series .ssub { font-size:17px; color:var(--soft); margin:0 0 28px; }
 .b .series .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
