@@ -102,6 +102,6 @@ export function middleware(req: NextRequest) {
 // Run on everything except Next internals and static asset files.
 export const config = {
   matcher: [
-    '/((?!_next/|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|css|js|woff|woff2|ttf|map|mp3|wav|m4a)).*)',
+    '/((?!_next/|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|css|js|woff|woff2|ttf|map|mp3|wav|m4a|pdf)).*)',
   ],
 }
