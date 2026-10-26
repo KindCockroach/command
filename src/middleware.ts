@@ -21,6 +21,7 @@ function isPublic(path: string): boolean {
   if (path === '/assessment' || path === '/ugc' || path === '/meet' || path === '/api/wfh') return true // WFH funnel (/meet/manage stays private)
   if (path === '/api/copy') return true // site copy editor (writes are owner-only inside the route)
   if (path === '/retire' || path === '/speak' || path === '/api/wfh/intake') return true // WFH questionnaires
+  if (path === '/listeners') return true // unlisted podcast-listener signup
   if (path === '/aimom') return true // podcast · be a guest · speaking (former homepage)
   if (path === '/aimomeducation') return true // AI Mom Podcast landing (aimomeducation.com)
   if (path === '/wellspring' || path === '/bethereforher/wellspring') return true // The Wellspring membership

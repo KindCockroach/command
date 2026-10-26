@@ -1,5 +1,5 @@
 // Minimal Resend client (REST): send one email, add a contact to an audience.
-// Env: RESEND_API_KEY (required), EMAIL_FROM (verified sender), RESEND_AUDIENCE_ID (newsletter list).
+// Env: RESEND_API_KEY (required), EMAIL_FROM (verified sender), RESEND_AUDIENCE_ID (default newsletter list).
 // Every call is best effort and returns false when Resend isn't configured.
 const API = 'https://api.resend.com'
 const FROM = () => process.env.EMAIL_FROM || '"Mandi \\"AI Mom\\" Beck" <hi@aimomeducation.com>'
@@ -24,8 +24,8 @@ export function resendSend(to: string, subject: string, html: string, replyTo = 
   return call('/emails', { from: FROM(), to: [to], subject, html, reply_to: replyTo })
 }
 
-export function resendAddContact(email: string, firstName?: string) {
-  const audience = process.env.RESEND_AUDIENCE_ID
+export function resendAddContact(email: string, firstName?: string, audienceId?: string) {
+  const audience = audienceId || process.env.RESEND_AUDIENCE_ID
   if (!audience) return Promise.resolve({ ok: false, error: 'RESEND_AUDIENCE_ID not set' })
   return call(`/audiences/${audience}/contacts`, { email, first_name: firstName || undefined, unsubscribed: false })
 }

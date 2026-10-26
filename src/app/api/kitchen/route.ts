@@ -16,6 +16,11 @@ type Send = (to: { name: string; email: string }, subject: string, html: string,
 // GHL sender is being renamed ghlEmail → sendSiteEmail by a parallel change; use whichever exists.
 const ghlSend: Send = ((wfhServer as Record<string, unknown>).sendSiteEmail ?? (wfhServer as Record<string, unknown>).ghlEmail) as Send
 
+const LISTS = {
+  kitchen: { source: 'kitchen', label: 'In the Kitchen', icon: '🍳', newsletterTag: 'btfh-newsletter', audienceEnv: 'RESEND_AUDIENCE_ID', ghlSource: 'Be There For Her · In the Kitchen' },
+  podcast: { source: 'podcast-listeners', label: 'Podcast listener', icon: '🎙', newsletterTag: 'wfh-newsletter', audienceEnv: 'RESEND_WFH_AUDIENCE_ID', ghlSource: 'AI Mom Podcast · listeners' },
+} as const
+
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 export async function POST(req: NextRequest) {
@@ -24,18 +29,21 @@ export async function POST(req: NextRequest) {
   const name = typeof b.name === 'string' ? b.name.trim().slice(0, 80) : ''
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'Please add a valid email.' }, { status: 400 })
   const cookbook = b.cookbook === true, newsletter = b.newsletter === true
+  // Two front doors: Be There For Her's /in-the-kitchen, and the unlisted podcast-listener
+  // page (aiworksforher.com/listeners), whose newsletter is the AI Works For Her one.
+  const L = b.list === 'podcast' ? LISTS.podcast : LISTS.kitchen
 
-  addWaitlistEntry({ email, name, source: 'kitchen', note: [cookbook && 'cookbook', newsletter && 'newsletter'].filter(Boolean).join(', ') || 'no boxes checked' })
-  logActivity({ type: 'note', title: `🍳 In the Kitchen signup — ${name || email}`, detail: `${cookbook ? 'cookbook ✓' : 'cookbook ✗'} · ${newsletter ? 'newsletter ✓' : 'newsletter ✗'}`, icon: '🍳', source: 'bethereforher' })
+  addWaitlistEntry({ email, name, source: L.source, note: [cookbook && 'cookbook', newsletter && 'newsletter'].filter(Boolean).join(', ') || 'no boxes checked' })
+  logActivity({ type: 'note', title: `${L.icon} ${L.label} signup — ${name || email}`, detail: `${cookbook ? 'cookbook ✓' : 'cookbook ✗'} · ${newsletter ? 'newsletter ✓' : 'newsletter ✗'}`, icon: L.icon, source: 'bethereforher' })
 
   void (async () => {
     const useResend = !!process.env.RESEND_API_KEY
     const fail = (what: string, err?: string) => logActivity({ type: 'note', title: `⚠ ${what} failed`, detail: `${email}${err ? `: ${err}` : ''}`, icon: '⚠️', source: 'bethereforher' })
     // GHL keeps the list either way (tags), so nobody is lost before Resend is live.
-    if (newsletter) await wfhServer.ghlContact({ name: name || email, email, tag: 'btfh-newsletter', source: 'Be There For Her · In the Kitchen' })
-    if (cookbook) await wfhServer.ghlContact({ name: name || email, email, tag: 'btfh-cookbook', source: 'Be There For Her · In the Kitchen' })
-    if (newsletter && useResend && process.env.RESEND_AUDIENCE_ID) {
-      const r = await resendAddContact(email, name)
+    if (newsletter) await wfhServer.ghlContact({ name: name || email, email, tag: L.newsletterTag, source: L.ghlSource })
+    if (cookbook) await wfhServer.ghlContact({ name: name || email, email, tag: 'btfh-cookbook', source: L.ghlSource })
+    if (newsletter && useResend && process.env[L.audienceEnv]) {
+      const r = await resendAddContact(email, name, process.env[L.audienceEnv])
       if (!r.ok) fail('Newsletter add', r.error)
     }
     if (cookbook) {
@@ -43,7 +51,7 @@ export async function POST(req: NextRequest) {
       if (useResend) {
         const r = await resendSend(email, subject, cookbookHtml(name))
         if (!r.ok) fail('Cookbook email (Resend)', r.error)
-      } else if (!(await ghlSend({ name: name || email, email }, subject, cookbookHtml(name), 'Be There For Her · In the Kitchen'))) {
+      } else if (!(await ghlSend({ name: name || email, email }, subject, cookbookHtml(name), L.ghlSource))) {
         fail('Cookbook email (GHL)')
       }
     }
