@@ -3,16 +3,16 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'The Cheat Code — 2 hours to get ahead, live with Mandi',
+  title: 'The Cheat Code — 2 hours to find your golden thread, live with Mandi',
   description:
-    'AI owns most of the effort, but you still have to show up. Two hours live: we build your writing assistant in your voice, channel the story that’s waiting, and get you out of your own way. $55.',
+    'Everyone’s playing on hard mode. Here’s the cheat code: two hours, one-on-one with Mandi, to find your story, your golden thread, and the thing you’re meant to build with AI. Get started with me.',
 }
 
-// The Cheat Code — standalone page for the $55 live session (also an order bump).
-// Energetic / advantage framing (NOT grounding — that's The Reset).
+// The Cheat Code — a 2-hour 1:1 with Mandi to find your story / product / golden
+// thread and the thing you build with AI. (Was Caption-Writer-centric; re-aimed
+// 2026-10-26 at your own thread, not training a GPT.)
 const CHECKOUT_URL =
   process.env.NEXT_PUBLIC_CHEATCODE_CHECKOUT_URL ||
-  process.env.NEXT_PUBLIC_LITE_CHECKOUT_URL ||
   'https://link.fastpaydirect.com/payment-link/6a67ba88a655fa0b802a6707'
 const META_PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || ''
 
@@ -23,28 +23,28 @@ function MetaPixel() {
       <script dangerouslySetInnerHTML={{ __html: `
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
 fbq('init','${META_PIXEL}');fbq('track','PageView');
-document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a.buy');if(a){fbq('track','InitiateCheckout',{value:55,currency:'USD'});}});
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a.buy');if(a){fbq('track','InitiateCheckout');}});
 ` }} />
       <noscript><img height="1" width="1" style={{ display: 'none' }} alt="" src={`https://www.facebook.com/tr?id=${META_PIXEL}&ev=PageView&noscript=1`} /></noscript>
     </>
   )
 }
 
-function RegisterButton({ label = 'GET AHEAD — $55' }: { label?: string }) {
+function RegisterButton({ label = 'Get started with me' }: { label?: string }) {
   return (
     <div className="cta">
       <a className="buy" href={CHECKOUT_URL}>{label}</a>
-      <p className="tagline">Live · 2 hours · camera optional · you leave already ahead</p>
+      <p className="tagline">Live · 2 hours · 1:1 · camera optional · over Google Meet (link sent when you book)</p>
     </div>
   )
 }
 
 const AGENDA: { mins: string; text: string }[] = [
-  { mins: '10 min', text: 'Technical assistance — the links, the pins, the setup, handled.' },
-  { mins: '30 min', text: 'Writing to train your new assistant.' },
-  { mins: '10 min', text: 'A “Channeling” Practice — call in the story that wants to come out; the message that’s been waiting to be said, that needs to be said by YOU.' },
-  { mins: '30 min', text: 'Writing and giving feedback to your assistant.' },
-  { mins: '30 min', text: 'AI Q&A — every question you’ve been sitting on, answered.' },
+  { mins: '10 min', text: 'Get set up — the tools, the links, the account, handled. No tech stress.' },
+  { mins: '30 min', text: 'Dig for your golden thread — the story only you can tell, the one that ties your whole life together.' },
+  { mins: '10 min', text: 'A “Channeling” practice — call in the message that’s been waiting to come through YOU.' },
+  { mins: '30 min', text: 'Shape it into a thing — turn the thread into the product, offer, or project you’ll build with AI.' },
+  { mins: '30 min', text: 'AI Q&A — every question you’ve been sitting on about building with AI, answered.' },
   { mins: '10 min', text: 'A buffer — so we end with respect for your time.' },
 ]
 
@@ -56,14 +56,13 @@ export default function CheatCodePage() {
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">THE CHEAT CODE · LIVE WITH MANDI</p>
-          <h1>AI isn&rsquo;t effortless. It just owns most of the effort.</h1>
-          <p className="sub">You still have to click the link and pin your new GPT. You could figure it
-            out on your own &mdash; what is AI good for? Or you can grab a dose of human connection and
-            skip the drop-off line with your Cheat Code.</p>
-          <p className="sub">Caption Writer learns your voice; the more you give it, the better it gets.
-            Cheat Code takes you there: the more you give yourself, the better you get.
-            <strong> Channel the story that&rsquo;s ready to come through and fall asleep with your writing assistant installed.</strong></p>
+          <p className="eyebrow">THE CHEAT CODE · LIVE 1:1 WITH MANDI</p>
+          <h1>Everyone&rsquo;s playing on hard mode. Here&rsquo;s the cheat code.</h1>
+          <p className="sub">AI isn&rsquo;t effortless &mdash; it just owns most of the effort. But you
+            still have to know <em>what</em> you&rsquo;re here to build. That&rsquo;s what we find together.</p>
+          <p className="sub">Two hours, one-on-one. We dig for your story and your golden thread &mdash;
+            the one message that ties your whole life together &mdash; and <strong>shape it into the thing
+            you&rsquo;re meant to build with AI.</strong> You bring the raw, real you. I bring the map.</p>
           <RegisterButton />
         </div>
       </section>
@@ -83,18 +82,19 @@ export default function CheatCodePage() {
       <section className="band">
         <div className="wrap">
           <h2>Who this is for</h2>
-          <p>The woman who&rsquo;s done waiting and done holding it all alone. You&rsquo;re ready to move
-            into the next chapter, and you&rsquo;re beginning to believe that YOU could be the answer
-            you&rsquo;ve been waiting for. The Cheat Code is your full tank of gas, extra soft top, and
-            more free time to play &mdash; it&rsquo;s your shortcut to the scenic routes of your life. And if you just need to breathe first, book <a href="/reset">The Reset</a> before
+          <p>The woman who&rsquo;s done waiting and done holding it all alone. You&rsquo;ve got a life full
+            of stories and skills and nobody&rsquo;s helped you see the thread running through them. You&rsquo;re
+            ready to move into the next chapter &mdash; and you&rsquo;re beginning to believe that YOU could be
+            the answer you&rsquo;ve been waiting for. The Cheat Code is your full tank of gas and a shortcut to
+            the scenic route. And if you just need to breathe first, book <a href="/reset">The Reset</a> before
             your Cheat Code.</p>
         </div>
       </section>
 
       <section className="final">
         <div className="wrap">
-          <h2>Caption Writer + Cheat Code is a formidable pair.</h2>
-          <p className="finalsub">Become unstoppable in your clarity and purpose.</p>
+          <h2>You don&rsquo;t need another course. You need your thread.</h2>
+          <p className="finalsub">Become unstoppable the moment your story is clear to you &mdash; then build it, with me.</p>
           <RegisterButton />
         </div>
       </section>
