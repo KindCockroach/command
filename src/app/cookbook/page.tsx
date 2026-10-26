@@ -6,16 +6,16 @@ import CopyEditor from '@/components/CopyEditor'
 import KitchenForm from '@/app/bethereforher/in-the-kitchen/KitchenForm'
 import { wfhCss } from '@/components/wfh/theme'
 
-// aiworksforher.com/listeners — UNLISTED signup Mandi shares on the AI Mom Podcast only.
+// aiworksforher.com/cookbook — UNLISTED signup Mandi shares on the AI Mom Podcast only.
 // Not linked from any page and kept out of search. Opt in to the AI Works For Her
 // newsletter and/or the free cookbook, then on to the homepage.
 export const metadata: Metadata = {
-  title: 'For AI Mom Podcast listeners · WFH — Works For Her',
-  description: 'A thank-you for listening: the AI Works For Her newsletter and a free seasonal cookbook.',
+  title: 'A free cookbook for AI Mom listeners · WFH — Works For Her',
+  description: 'A thank-you for listening to the AI Mom Podcast: The Magic Is in the Making, a free seasonal cookbook, plus the AI Works For Her newsletter.',
   robots: { index: false, follow: false },
 }
 
-export default function Listeners() {
+export default function Cookbook() {
   return (
     <main className="w">
       <MetaPixel />
@@ -24,19 +24,20 @@ export default function Listeners() {
       <header className="top">
         <div className="wrap">
           <a className="home" href="/"><img src="/wfh-logo-white.png" alt="AI WFH — Works For Her" /></a>
-          <h1>Thanks for listening to <em>the AI Mom Podcast.</em></h1>
+          <h1>Hey, AI Mom listener. <em>This one&rsquo;s for you.</em></h1>
           <p>
-            Stay close: get the AI Works For Her newsletter, and grab our free seasonal cookbook,
-            <em> The Magic Is in the Making</em>. Pick one or both.
+            You heard about it on the show, so here it is: <em>The Magic Is in the Making</em>, a free seasonal cookbook with
+            notes in the margin for more play, joy, and relief in your kitchen. Want more from the podcast between episodes?
+            Add the AI Works For Her newsletter too.
           </p>
         </div>
       </header>
       <section className="wrap body">
         <div className="panel k">
           <KitchenForm list="podcast" redirect="/"
-            newsletterLabel="Subscribe to the AI Works For Her newsletter: new episodes, AI tools worth your time, and updates from Mandi."
-            cookbookLabel="Send me the free seasonal cookbook, The Magic Is in the Making, with notes in the margin that encourage play, joy, and relief in the kitchen."
-            button="Sign me up →" />
+            cookbookLabel="Send me the free cookbook, The Magic Is in the Making."
+            newsletterLabel="Subscribe to the AI Works For Her newsletter: new AI Mom episodes, AI tools worth your time, and updates from Mandi."
+            button="Send it to me →" />
         </div>
         <p className="fine">We&rsquo;ll only send what you check. Unsubscribe anytime.</p>
       </section>
