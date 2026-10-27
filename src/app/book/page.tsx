@@ -119,7 +119,7 @@ export default function BookPage() {
           /* ───── Thank you ───── */
           <div style={{ ...card, padding: '34px 28px', textAlign: 'center' }}>
             <div style={{ width: '96px', height: '96px', borderRadius: '50%', overflow: 'hidden', margin: '0 auto', border: `3px solid ${PURPLE}`, background: CREAM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="/host-photo.jpg" alt="Mandi" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.currentTarget as HTMLImageElement).src = '/balloon-512.png'; e.currentTarget.style.objectFit = 'contain'; e.currentTarget.style.padding = '12px' }} />
+              <img src="/aimom-photo.jpg" alt="Mandi" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.currentTarget as HTMLImageElement).src = '/balloon-512.png'; e.currentTarget.style.objectFit = 'contain'; e.currentTarget.style.padding = '12px' }} />
             </div>
             <h2 style={{ fontSize: '22px', fontWeight: 800, marginTop: '16px' }}>You&apos;re on, {done.name.split(' ')[0]}! 🎈</h2>
             <p style={{ fontSize: '14px', color: '#6E678A', marginTop: '8px', lineHeight: 1.55 }}>

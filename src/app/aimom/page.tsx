@@ -224,7 +224,7 @@ const css = `
 .h .doors .dgo { font-weight:800; color:var(--nebula); margin-top:6px; }
 .h .heroGrid { display:grid; grid-template-columns:1.5fr 1fr; gap:40px; align-items:center; }
 .h .photo { width:230px; height:230px; border-radius:50%; justify-self:center; border:4px solid rgba(242,166,90,0.6);
-  background-image:url('/host-photo.jpg'), url('/balloon-512.png'); background-size:cover, 70%;
+  background-image:url('/aimom-photo.jpg'), url('/balloon-512.png'); background-size:cover, 70%;
   background-position:center; background-repeat:no-repeat; background-color:#241f49; box-shadow:0 20px 50px rgba(0,0,0,0.35); }
 
 /* Podcast */
