@@ -12,16 +12,18 @@ export const metadata: Metadata = {
   description:
     'A growing line of mindful products — guided meditations and gentle practices for your intuition, your inner child, and your way back home to yourself. Start with a free beginner meditation.',
   openGraph: {
-    title: 'You Deserve It All',
+    title: 'Practice Mindful Listening',
     description: 'Be there for the woman in the mirror.',
+    url: 'https://www.bethereforher.com',
+    siteName: 'Be There For Her',
+    images: [{ url: '/og-bethereforher-v2.png', width: 1200, height: 630 }],
     type: 'website',
-    images: [{ url: '/og-bethereforher.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'You Deserve It All',
+    title: 'Practice Mindful Listening',
     description: 'Be there for the woman in the mirror.',
-    images: ['/og-bethereforher.png'],
+    images: ['/og-bethereforher-v2.png'],
   },
 }
 
