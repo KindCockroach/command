@@ -36,7 +36,7 @@ export default function JoyfulMedia() {
             <p className="tag">MEET MANDI</p>
             <h2>Amanda &ldquo;Mandi&rdquo; Beck</h2>
             <p>
-              Mom of five: one in heaven, four on earth. Mom to twin cats. Founder of Joyful Media and host of the AI Mom
+              Mom of five: one in heaven, four on earth. She&rsquo;s a mom with two sets of twins: kids and cats. Founder of Joyful Media and host of the AI Mom
               Podcast. A former realtor and Evernote employee, and a long-time yogi and meditation practitioner. In 2026 she
               became a self-taught builder, learning AI during nap times to build a podcast and an AI Command Center that helps
               her run her business.
