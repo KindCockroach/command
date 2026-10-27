@@ -6,7 +6,7 @@ import CopyEditor from '@/components/CopyEditor'
 import JoyfulSignup from '@/components/joyful/JoyfulSignup'
 import { BRANDS, joyfulCss } from '@/components/joyful/shared'
 
-// /joyful — Joyful Media's front door (works on both domains): who Mandi is, her two
+// /joyful-media — Joyful Media's front door (works on both domains): who Mandi is, her two
 // businesses, the mission, and the "updates from Mandi and Joyful Media" signup.
 // Same cards + signup as /welcome, minus the post-signup thank-you.
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: { title: 'You’re invited · Joyful Media', description: 'Meet Mandi Beck and the two worlds she built: Be There For Her and AI Works For Her.', images: [{ url: '/og-wfh-v2.png', width: 1200, height: 630 }] },
 }
 
-export default function Joyful() {
+export default function JoyfulMedia() {
   return (
     <main className="jw">
       <MetaPixel />
