@@ -53,7 +53,7 @@ export const joyfulCss = `
 .jw .jlead { margin:0 auto 22px; max-width:520px; font:600 21px/1.45 Georgia,serif; color:#fff; text-align:center; }
 .jw .jform label { display:block; font-size:11.5px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:rgba(255,255,255,0.7); margin:0 0 14px; }
 .jw .jform label span { font-weight:600; letter-spacing:.5px; text-transform:none; color:rgba(255,255,255,0.5); }
-.jw .jform input { width:100%; margin-top:7px; padding:14px 16px; border-radius:14px; font-size:16px; color:#fff; outline:none; font-family:inherit;
+.jw .jform input { width:100%; margin-top:7px; padding:14px 16px; border-radius:14px; font-size:16px; font-weight:500; letter-spacing:normal; text-transform:none; color:#fff; outline:none; font-family:inherit;
   background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.16); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   transition:border-color .15s ease, background .15s ease, box-shadow .15s ease; }
 .jw .jform input::placeholder { color:rgba(255,255,255,0.35); }
