@@ -35,7 +35,7 @@ const BTFH_SOCIALS = [
 
 const SERIES: { title: string; line: string; href: string; status: string; icon?: string }[] = [
   { title: 'The Reset', line: '1 hour to yourself. Sundays, 8 PM. Your accountability and guide to press reset before the week begins again.', href: '/reset', status: 'Available now', icon: '/bethereforher/icon-reset.png' },
-  { title: 'Turning Up Your Intuition', line: 'The quiet knowing you were taught to silence — turned back up 15 minutes at a time before you sleep at night.', href: '/bethereforher/intuition', status: 'Available now', icon: '/bethereforher/icon-intuition.png' },
+  { title: 'Turning Up Your Intuition', line: 'The quiet knowing you were taught to silence — turned back up 15 minutes at a time before you sleep at night.', href: '/bethereforher/intuition', status: 'Available now', icon: '/bethereforher/icon-intuition-btfh.png' },
   { title: 'Love Yourself In The Kitchen', line: 'Seasonal cookbooks with notes in the margin that encourage play, joy, and relief in the kitchen.', href: '/bethereforher/in-the-kitchen', status: 'Free' },
   { title: 'The Whole Integrated Woman', line: 'Every scattered part of you — warrior, woman, lover, mother — gathered back into one whole.', href: '', status: 'In the works' },
   { title: 'Postpartum Support', line: 'For the tender, unspooled months no one prepares you for.', href: '', status: 'In the works' },
