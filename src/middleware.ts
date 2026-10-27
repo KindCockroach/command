@@ -17,7 +17,7 @@ function isPublic(path: string): boolean {
   if (path === '/reset' || path === '/cheatcode' || path === '/workshop') return true // public session pages (+ /workshop redirect)
   if (path === '/insait') return true // private $10 Reset (unlisted, no-index)
   if (path === '/bethereforher' || path === '/bethereforher/library' || path === '/bethereforher/intuition') return true // Be There For Her product
-  if (path === '/bethereforher/in-the-kitchen' || path === '/api/kitchen') return true // Love Yourself In The Kitchen signup
+  if (path === '/bethereforher/in-the-kitchen' || path === '/api/kitchen' || path === '/api/kitchen/update') return true // Love Yourself In The Kitchen signup
   if (path === '/assessment' || path === '/ugc' || path === '/meet' || path === '/api/wfh') return true // WFH funnel (/meet/manage stays private)
   if (path === '/api/copy') return true // site copy editor (writes are owner-only inside the route)
   if (path === '/retire' || path === '/speak' || path === '/api/wfh/intake') return true // WFH questionnaires

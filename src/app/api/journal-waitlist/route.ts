@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isOwner } from '@/lib/ownerAuth'
 import { addWaitlistEntry, getWaitlist } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -26,15 +27,13 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, duplicate })
 }
 
-// GET — admin: list signups. Gated by ADMIN_KEY (?k=) when that env var is set;
-// with no ADMIN_KEY configured it stays private-by-obscurity on your own deploy.
+// GET — admin: list signups (emails). Mandi only: her station/site-editor cookie, or
+// ?k=ADMIN_KEY when that env var is set. Never public — this is subscriber PII.
 export async function GET(req: NextRequest) {
   const adminKey = process.env.ADMIN_KEY || ''
-  if (adminKey) {
-    const k = req.nextUrl.searchParams.get('k')
-    if (k !== adminKey) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const keyOk = !!adminKey && req.nextUrl.searchParams.get('k') === adminKey
+  if (!keyOk && !isOwner(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const source = req.nextUrl.searchParams.get('source') || undefined
   const list = getWaitlist(source)
