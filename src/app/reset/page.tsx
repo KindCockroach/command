@@ -105,7 +105,7 @@ export default function ResetPage() {
         <div className="wrap">
           <h2>The details</h2>
           <dl className="details">
-            <div><dt>When</dt><dd>Sunday, November 8 at 8 PM CT</dd></div>
+            <div><dt>When</dt><dd>Every Sunday at 8 PM CT, starting November 8</dd></div>
             <div><dt>Where</dt><dd>Virtual (Google Meet link provided upon registration)</dd></div>
             <div><dt>Investment</dt><dd>$33 (beta price for this inaugural vibe check)</dd></div>
           </dl>
