@@ -17,10 +17,10 @@ type Send = (to: { name: string; email: string }, subject: string, html: string,
 const ghlSend: Send = ((wfhServer as Record<string, unknown>).sendSiteEmail ?? (wfhServer as Record<string, unknown>).ghlEmail) as Send
 
 const LISTS = {
-  kitchen: { source: 'kitchen', label: 'In the Kitchen', icon: '🍳', newsletterTag: 'btfh-newsletter', audienceEnv: 'RESEND_AUDIENCE_ID', ghlSource: 'Be There For Her · In the Kitchen' },
-  podcast: { source: 'podcast-listeners', label: 'Podcast listener', icon: '🎙', newsletterTag: 'wfh-newsletter', audienceEnv: 'RESEND_WFH_AUDIENCE_ID', ghlSource: 'AI Mom Podcast · listeners' },
+  kitchen: { key: 'kitchen', source: 'kitchen', label: 'In the Kitchen', icon: '🍳', newsletterTag: 'btfh-newsletter', audienceEnv: 'RESEND_AUDIENCE_ID', ghlSource: 'Be There For Her · In the Kitchen' },
+  podcast: { key: 'podcast', source: 'podcast-listeners', label: 'Podcast listener', icon: '🎙', newsletterTag: 'wfh-newsletter', audienceEnv: 'RESEND_WFH_AUDIENCE_ID', ghlSource: 'AI Mom Podcast · listeners' },
   // The /welcome page's "updates from Mandi and Joyful Media" signup (newsletter only).
-  joyful: { source: 'joyful-media', label: 'Joyful Media updates', icon: '🎈', newsletterTag: 'joyful-newsletter', audienceEnv: 'RESEND_JOYFUL_AUDIENCE_ID', ghlSource: 'Joyful Media · welcome page' },
+  joyful: { key: 'joyful', source: 'joyful-media', label: 'Joyful Media updates', icon: '🎈', newsletterTag: 'joyful-newsletter', audienceEnv: 'RESEND_JOYFUL_AUDIENCE_ID', ghlSource: 'Joyful Media · welcome page' },
 } as const
 
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -50,21 +50,24 @@ export async function POST(req: NextRequest) {
       const r = await resendAddContact(email, name, process.env[L.audienceEnv])
       if (!r.ok) fail('Newsletter add', r.error)
     }
-    if (cookbook) {
-      const subject = 'Your cookbook: The Magic Is in the Making 🍂'
+    // One email per signup: the cookbook (which also confirms the subscription when both
+    // boxes are checked), or a subscription welcome when it's newsletter-only.
+    const send = async (subject: string, html: string, what: string) => {
       if (useResend) {
-        const r = await resendSend(email, subject, cookbookHtml(name))
-        if (!r.ok) fail('Cookbook email (Resend)', r.error)
-      } else if (!(await ghlSend({ name: name || email, email }, subject, cookbookHtml(name), L.ghlSource))) {
-        fail('Cookbook email (GHL)')
+        const r = await resendSend(email, subject, html)
+        if (!r.ok) fail(`${what} (Resend)`, r.error)
+      } else if (!(await ghlSend({ name: name || email, email }, subject, html, L.ghlSource))) {
+        fail(`${what} (GHL)`)
       }
     }
+    if (cookbook) await send('Your cookbook: The Magic Is in the Making 🍂', cookbookHtml(name, newsletter ? L.key : null), 'Cookbook email')
+    else if (newsletter) await send(WELCOME[L.key].subject, welcomeHtml(name, L.key), 'Welcome email')
   })()
 
   return NextResponse.json({ ok: true })
 }
 
-function cookbookHtml(name: string): string {
+function cookbookHtml(name: string, subscribedTo: ListKey | null = null): string {
   const url = COOKBOOK_URL
   const hi = name ? `Hi ${esc(name.split(' ')[0])},` : 'Hi love,'
   const body = url
@@ -74,5 +77,42 @@ function cookbookHtml(name: string): string {
   return `<div style="font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#3C2A37;max-width:560px">
 <p>${hi}</p>${body}
 <p>Start anywhere. Light a candle, play a song, and let the kids make the mess. The magic is in the making.</p>
+${subscribedTo ? `<p>You’re also subscribed to ${WELCOME[subscribedTo].listName}, so you’ll hear from us when there’s something new.</p>` : ''}
 <p>Be there for her,<br>Mandi<br><a href="https://www.bethereforher.com" style="color:#D98C5F">bethereforher.com</a></p></div>`
+}
+
+// Newsletter-only welcome emails, one per list.
+type ListKey = 'kitchen' | 'podcast' | 'joyful'
+const A = (href: string, label: string) => `<a href="${href}" style="color:#D98C5F;font-weight:bold">${label}</a>`
+const WELCOME: Record<ListKey, { subject: string; listName: string; body: string }> = {
+  kitchen: {
+    subject: 'You’re subscribed to Be There For Her 🌙',
+    listName: 'Be There For Her',
+    body: `<p>You’re on the list. You’ll hear from us when a new series is released.</p>
+<p>Until then, two ways to come back to yourself this week:<br>
+• ${A('https://www.bethereforher.com/intuition', 'Listen To Your Intuition')}: guided meditations recorded by Mandi in her studio<br>
+• ${A('https://www.bethereforher.com/reset', 'The Reset')}: a live hour to yourself, every Sunday at 8 PM CT</p>`,
+  },
+  podcast: {
+    subject: 'You’re on the AI Works For Her list 🎙',
+    listName: 'the AI Works For Her newsletter',
+    body: `<p>Thanks for listening, and for signing up. You’ll get new AI Mom episodes, AI tools worth your time, and updates from Mandi.</p>
+<p>${A('https://www.aiworksforher.com/listen', 'Catch up on the AI Mom Podcast')} · ${A('https://www.aiworksforher.com', 'aiworksforher.com')}</p>`,
+  },
+  joyful: {
+    subject: 'Welcome to Joyful Media 🎈',
+    listName: 'Joyful Media updates',
+    body: `<p>You’re subscribed. You’ll get updates from Mandi and Joyful Media on all things, including the AI Mom Podcast and her Seasonal Creations.</p>
+<p>Two worlds built to support one another:<br>
+• ${A('https://www.bethereforher.com', 'Be There For Her')}: mindful products that bring women back to themselves<br>
+• ${A('https://www.aiworksforher.com', 'AI Works For Her')}: the AI Mom Podcast and AI that works for you</p>`,
+  },
+}
+
+function welcomeHtml(name: string, key: ListKey): string {
+  const hi = name ? `Hi ${esc(name.split(' ')[0])},` : 'Hi love,'
+  return `<div style="font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#3C2A37;max-width:560px">
+<p>${hi}</p>${WELCOME[key].body}
+<p>With you,<br>Mandi</p>
+<p style="font-size:13px;color:#8a7a84">Powered by Joyful Media</p></div>`
 }
