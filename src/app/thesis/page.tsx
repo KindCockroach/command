@@ -99,8 +99,8 @@ export default function Thesis() {
           <p>
             I&rsquo;m Mandi Beck &mdash; mom of five (one baby in heaven), former realtor and Evernote
             employee, host of the AI Mom Podcast. Five months
-            postpartum, I taught myself to build with AI during nap times: a podcast, a voice clone, a
-            whole command center. I come from a line of women who broke things open, and I&rsquo;ve done
+            postpartum, I taught myself to build with AI during nap times: a podcast and a
+            whole AI command center that helps run my business. I come from a line of women who broke things open, and I&rsquo;ve done
             the inner work &mdash; parts work, inner-child, timeline integration &mdash; to speak about
             intuition from the inside, not the theory. I&rsquo;m generous, intense, and genuinely funny
             (my brain runs a little off-key), with a big optimism some might call delusional. Audiences
