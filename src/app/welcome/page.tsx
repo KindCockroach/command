@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
 import CopyEditor from '@/components/CopyEditor'
+import JoyfulSignup from './JoyfulSignup'
 
 // /welcome — where every email signup lands (bethereforher.com/in-the-kitchen and
 // aiworksforher.com/cookbook). Thanks them and introduces both Joyful Media brands;
@@ -36,15 +37,12 @@ export default async function Welcome({ searchParams }: { searchParams: Promise<
         <div className="wrap">
           <img className="balloon" src="/balloon-512.png" alt="" />
           <h1>Welcome. <em>You&rsquo;re in.</em></h1>
-          <p>
-            Thank you for subscribing. Whatever you signed up for is headed to your inbox now. If you asked for the cookbook,
-            look for <em>The Magic Is in the Making</em>.
-          </p>
+          <p>Thank you for signing up. Mandi built two radically different worlds to support one another.</p>
         </div>
       </section>
 
       <section className="wrap brands">
-        <p className="intro">You&rsquo;re now part of two places made for women. Come explore:</p>
+        <p className="intro">You&rsquo;re invited:</p>
         <div className="grid">
           {order.map(b => (
             <a className={`brand ${b.key}`} href={b.href} key={b.key}>
@@ -54,6 +52,16 @@ export default async function Welcome({ searchParams }: { searchParams: Promise<
               <span className="go">{b.cta} &rarr;</span>
             </a>
           ))}
+        </div>
+      </section>
+
+      <section className="wrap join">
+        <div className="jcard">
+          <p className="jlead">
+            For updates from Mandi and Joyful Media on all things, including the AI Mom Podcast and her
+            &ldquo;Seasonal Creations,&rdquo; sign up here.
+          </p>
+          <JoyfulSignup />
         </div>
       </section>
 
@@ -91,6 +99,21 @@ const css = `
 .jw .brand h2 { margin:0 0 8px; font-size:26px; }
 .jw .brand p { margin:0 0 18px; color:#efe8f4; font-size:16px; flex:1; }
 .jw .go { font-weight:800; color:#2b2338; background:#fff; padding:11px 20px; border-radius:999px; box-shadow:0 10px 22px rgba(0,0,0,0.25); }
+.jw .join { padding-bottom:20px; }
+.jw .jcard { max-width:620px; margin:0 auto; background:#fff; border:1px solid #e7e0d3; border-radius:22px; padding:26px 24px; box-shadow:0 24px 50px -32px rgba(23,28,58,0.45); }
+.jw .jlead { margin:0 0 18px; font:600 19px/1.45 Georgia,serif; color:var(--ink); text-align:center; }
+.jw .jform label { display:block; font-size:13px; font-weight:700; color:#6b6585; margin:0 0 12px; }
+.jw .jform label span { font-weight:500; color:#9a93b0; }
+.jw .jform input { width:100%; margin-top:5px; padding:12px 14px; border-radius:12px; border:1px solid #ddd5c6; background:var(--cream); font-size:16px; color:var(--ink); outline:none; font-family:inherit; }
+.jw .jform input:focus { border-color:#5A4FCF; }
+.jw .jrow { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.jw .jform button { width:100%; margin-top:6px; background:#5A4FCF; color:#fff; border:0; border-radius:999px; padding:14px; font-size:17px; font-weight:800; cursor:pointer;
+  box-shadow:0 12px 26px rgba(90,79,207,0.35); transition:transform .15s ease; font-family:inherit; }
+.jw .jform button:hover { transform:translateY(-2px); }
+.jw .jform button:disabled { opacity:.6; }
+.jw .jerr { color:#b23b3b; font-size:14px; }
+.jw .jdone { text-align:center; font:600 20px Georgia,serif; color:#5A4FCF; margin:6px 0; }
+@media (max-width:520px){ .jw .jrow { grid-template-columns:1fr; gap:0; } }
 .jw .foot { text-align:center; padding:28px 20px 44px; color:#7b7290; font-size:14px; letter-spacing:.5px; }
 .jw .foot strong { color:var(--ink); }
 @media (max-width:700px){ .jw .grid { grid-template-columns:1fr; } }

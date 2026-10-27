@@ -19,6 +19,8 @@ const ghlSend: Send = ((wfhServer as Record<string, unknown>).sendSiteEmail ?? (
 const LISTS = {
   kitchen: { source: 'kitchen', label: 'In the Kitchen', icon: '🍳', newsletterTag: 'btfh-newsletter', audienceEnv: 'RESEND_AUDIENCE_ID', ghlSource: 'Be There For Her · In the Kitchen' },
   podcast: { source: 'podcast-listeners', label: 'Podcast listener', icon: '🎙', newsletterTag: 'wfh-newsletter', audienceEnv: 'RESEND_WFH_AUDIENCE_ID', ghlSource: 'AI Mom Podcast · listeners' },
+  // The /welcome page's "updates from Mandi and Joyful Media" signup (newsletter only).
+  joyful: { source: 'joyful-media', label: 'Joyful Media updates', icon: '🎈', newsletterTag: 'joyful-newsletter', audienceEnv: 'RESEND_JOYFUL_AUDIENCE_ID', ghlSource: 'Joyful Media · welcome page' },
 } as const
 
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -26,15 +28,17 @@ const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => ({}))
   const email = typeof b.email === 'string' ? b.email.trim().toLowerCase().slice(0, 160) : ''
-  const name = typeof b.name === 'string' ? b.name.trim().slice(0, 80) : ''
+  const lastName = typeof b.lastName === 'string' ? b.lastName.trim().slice(0, 80) : ''
+  const name = [typeof b.name === 'string' ? b.name.trim().slice(0, 80) : '', lastName].filter(Boolean).join(' ')
+  const location = typeof b.location === 'string' ? b.location.trim().slice(0, 120) : ''
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'Please add a valid email.' }, { status: 400 })
   const cookbook = b.cookbook === true, newsletter = b.newsletter === true
   // Two front doors: Be There For Her's /in-the-kitchen, and the unlisted podcast-listener
   // page (aiworksforher.com/listeners), whose newsletter is the AI Works For Her one.
-  const L = b.list === 'podcast' ? LISTS.podcast : LISTS.kitchen
+  const L = b.list === 'podcast' ? LISTS.podcast : b.list === 'joyful' ? LISTS.joyful : LISTS.kitchen
 
-  addWaitlistEntry({ email, name, source: L.source, note: [cookbook && 'cookbook', newsletter && 'newsletter'].filter(Boolean).join(', ') || 'no boxes checked' })
-  logActivity({ type: 'note', title: `${L.icon} ${L.label} signup — ${name || email}`, detail: `${cookbook ? 'cookbook ✓' : 'cookbook ✗'} · ${newsletter ? 'newsletter ✓' : 'newsletter ✗'}`, icon: L.icon, source: 'bethereforher' })
+  addWaitlistEntry({ email, name, source: L.source, note: [cookbook && 'cookbook', newsletter && 'newsletter', location && `from ${location}`].filter(Boolean).join(', ') || 'no boxes checked' })
+  logActivity({ type: 'note', title: `${L.icon} ${L.label} signup — ${name || email}`, detail: `${cookbook ? 'cookbook ✓' : 'cookbook ✗'} · ${newsletter ? 'newsletter ✓' : 'newsletter ✗'}${location ? ` · ${location}` : ''}`, icon: L.icon, source: 'bethereforher' })
 
   void (async () => {
     const useResend = !!process.env.RESEND_API_KEY
