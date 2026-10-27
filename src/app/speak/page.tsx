@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const TALKS = [
   { t: 'The Antidote: Women’s Intuition in the Age of AI', d: 'Intuition isn’t a soft skill. It’s the oldest intelligence we have, and the one technology can’t replicate. A keynote on trusting it again and leading with it.' },
   { t: 'How to Think — Not What to Think — About AI', d: 'A clear-eyed look at jobs, education, and creativity, plus the pushback few people air: data centers, water, and our kids. No fear, no hype.' },
-  { t: 'Built at Nap Time', d: 'How a non-technical mom built a podcast, a voice clone, and an AI command center, and how your audience can use AI without being used by it. Includes a live demo.' },
+  { t: 'Built at Nap Time', d: 'How a non-technical mom built a podcast and an AI command center that helps run her business, and how your audience can use AI without being used by it. Includes a live demo.' },
   { t: 'Running a Business as a Mom', d: 'Systems, AI, and permission to build something that fits your family instead of fighting it.' },
   { t: 'Mindfulness in the Digital Age', d: 'Burnout prevention for women carrying everything: a guided practice and the habits that let you show up for your life’s work, and for yourself.' },
 ]
@@ -49,7 +49,7 @@ export default function SpeakPage() {
           </p>
           <p>
             She&rsquo;s a mom, a former realtor, and a former Evernote employee who taught herself to build with AI during nap
-            times. She brings the honesty of a mom, the practicality of a business owner, and the calm of a longtime meditator.
+            times. She brings the honesty of a mom, the practicality of a business owner, and the calm of a long-time yogi and meditation practitioner.
           </p>
         </div>
       </section>

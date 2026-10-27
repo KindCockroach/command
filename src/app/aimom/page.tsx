@@ -106,7 +106,7 @@ export default function AIMom() {
           <p>
             That journey led me to mindfulness and meditation (before kids, you&rsquo;d find me at Beecroft
             Yoga three times a week). Then AI arrived, and I taught myself to build with it during nap
-            times &mdash; a podcast, a voice clone, a whole command center &mdash; because I couldn&rsquo;t
+            times &mdash; a podcast and a whole AI command center that helps run my business &mdash; because I couldn&rsquo;t
             watch a once-in-history shift happen <em>without us</em> in the room.
           </p>
           <p>

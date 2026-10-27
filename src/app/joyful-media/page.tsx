@@ -25,7 +25,7 @@ export default function JoyfulMedia() {
         <div className="wrap">
           <img className="balloon" src="/balloon-512.png" alt="" />
           <h1>You&rsquo;re <em>invited.</em></h1>
-          <p>Mandi built two radically different worlds to support one another. Come meet her, and find the one you need today.</p>
+          <p>Mandi built two radically different worlds to support one another. Come meet her, and subscribe where you fit in.</p>
         </div>
       </section>
 
@@ -36,9 +36,10 @@ export default function JoyfulMedia() {
             <p className="tag">MEET MANDI</p>
             <h2>Amanda &ldquo;Mandi&rdquo; Beck</h2>
             <p>
-              Mom, founder of Joyful Media, and host of the AI Mom Podcast. A former realtor and Evernote employee, a longtime
-              meditator, and a self-taught builder who learned AI during nap times, building a podcast, a voice clone, and an AI
-              command center that runs her business.
+              Mom of five: one in heaven, four on earth. Mom to twin cats. Founder of Joyful Media and host of the AI Mom
+              Podcast. A former realtor and Evernote employee, and a long-time yogi and meditation practitioner. In 2026 she
+              became a self-taught builder, learning AI during nap times to build a podcast and an AI Command Center that helps
+              her run her business.
             </p>
             <p>
               She has a theory that women are the answer, and their intuition the antidote, to mankind&rsquo;s potential for
@@ -66,9 +67,8 @@ export default function JoyfulMedia() {
         <p className="tag">OUR MISSION</p>
         <h2>From invisible to <em>impactful.</em></h2>
         <p>
-          Joyful Media exists to help women come back to themselves and build what&rsquo;s next. Be There For Her keeps you
-          grounded. AI Works For Her keeps you ahead. Together they hold what keeps us human while everything accelerates:
-          peace, action, and intuition.
+          Joyful Media exists to help women come back to themselves to build the new world as humans in a machine era.
+          Be There For Her keeps you grounded. AI Works For Her keeps you on pace.
         </p>
       </section>
 
