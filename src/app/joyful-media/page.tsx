@@ -15,6 +15,13 @@ export const metadata: Metadata = {
   openGraph: { title: 'You’re invited · Joyful Media', description: 'Meet Mandi Beck and the two worlds she built: Be There For Her and AI Works For Her.', images: [{ url: '/og-wfh-v2.png', width: 1200, height: 630 }] },
 }
 
+// Same platform links as /listen.
+const PODCAST = [
+  { name: 'Spotify', icon: 'spotify', href: 'https://open.spotify.com/show/033I8hRPjXiKlCHhaq5YYc' },
+  { name: 'Apple Podcasts', icon: 'applepodcasts', href: 'https://podcasts.apple.com/us/podcast/ai-mom/id6786440414' },
+  { name: 'YouTube', icon: 'youtube', href: 'https://www.youtube.com/@AIMom_888' },
+]
+
 export default function JoyfulMedia() {
   return (
     <main className="jw">
@@ -63,6 +70,22 @@ export default function JoyfulMedia() {
         </div>
       </section>
 
+      <section className="pod">
+        <div className="wrap">
+          <p className="ptag">ONE PODCAST</p>
+          <h2>The AI Mom Podcast</h2>
+          <p className="psub">News and commentary on work, education, creativity, and spirituality after AI.</p>
+          <div className="plinks">
+            {PODCAST.map(p => (
+              <a key={p.name} href={p.href} target="_blank" rel="noreferrer">
+                <span style={{ WebkitMask: `url(/icons/${p.icon}.svg) center / contain no-repeat`, mask: `url(/icons/${p.icon}.svg) center / contain no-repeat` }} />
+                {p.name}
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="wrap mission">
         <p className="tag">OUR MISSION</p>
         <h2>From invisible to <em>impactful.</em></h2>
@@ -96,7 +119,19 @@ const css = `
 .jw .acard h2 { margin:0 0 8px; font-size:28px; }
 .jw .acard p { margin:0 0 10px; color:#4a4560; font-size:16.5px; }
 .jw .about + .brands { margin-top:0; }
-.jw .mission { text-align:center; max-width:760px; padding:30px 20px 30px; }
+.jw .pod { margin:34px 0 0; padding:52px 0; text-align:center; color:#fff;
+  background: radial-gradient(600px 300px at 50% -20%, rgba(242,166,90,0.35), transparent 65%),
+              linear-gradient(160deg,#0f0b26 0%,#1d1747 55%,#3b2f86 100%); }
+.jw .ptag { letter-spacing:4px; font-size:13px; font-weight:800; color:#F2A65A; margin:0 0 10px; }
+.jw .pod h2 { font-size:clamp(30px,5vw,44px); margin:0 0 10px; color:#fff; }
+.jw .psub { font-size:18px; color:#e7e2f2; max-width:620px; margin:0 auto 26px; }
+.jw .plinks { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.jw .plinks a { display:inline-flex; align-items:center; gap:10px; padding:13px 22px; border-radius:999px; text-decoration:none; font-weight:800; font-size:16px;
+  color:#fff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  box-shadow:0 12px 26px -16px rgba(0,0,0,0.6); transition:transform .15s ease, background .15s ease, border-color .15s ease; }
+.jw .plinks a:hover { transform:translateY(-3px); background:rgba(255,255,255,0.14); border-color:rgba(242,166,90,0.7); }
+.jw .plinks span { width:20px; height:20px; background:#fff; display:block; }
+.jw .mission { text-align:center; max-width:760px; padding:44px 20px 30px; }
 .jw .mission h2 { font-size:clamp(28px,4.4vw,38px); margin:0 0 12px; }
 .jw .mission h2 em { color:#5A4FCF; }
 .jw .mission p { color:#4a4560; font-size:18px; margin:0; }
