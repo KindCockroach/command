@@ -2,7 +2,8 @@
 import { useState } from 'react'
 
 // "Updates from Mandi and Joyful Media" signup on /welcome → /api/kitchen (list: joyful).
-// City/state is optional — Mandi's just curious where her people are.
+// City/state is optional — Mandi's just curious where her people are. Like every signup,
+// it ends on /welcome (the thank-you page with the All Mail note).
 export default function JoyfulSignup() {
   const [f, setF] = useState({ name: '', lastName: '', email: '', location: '' })
   const [busy, setBusy] = useState(false)
@@ -15,7 +16,7 @@ export default function JoyfulSignup() {
     const d = await fetch('/api/kitchen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...f, list: 'joyful', newsletter: true, cookbook: false }) })
       .then(r => r.json()).catch(() => ({ error: 'Connection hiccup — try again.' }))
     setBusy(false)
-    if (d.ok) setDone(true); else setErr(d.error || 'Something went wrong — try again.')
+    if (d.ok) { setDone(true); window.location.href = '/welcome?from=joyful' } else setErr(d.error || 'Something went wrong — try again.')
   }
 
   if (done) return <p className="jdone">You&rsquo;re on the list, {f.name || 'friend'}. 🎈</p>
