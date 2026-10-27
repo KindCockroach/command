@@ -10,7 +10,8 @@ import KitchenForm from './KitchenForm'
 export const metadata: Metadata = {
   title: 'Love Yourself In The Kitchen · Be There For Her',
   description: 'Seasonal cookbooks with notes in the margin that encourage play, joy, and relief in the kitchen.',
-  openGraph: { title: 'Love Yourself In The Kitchen', description: 'Seasonal cookbooks with notes in the margin that encourage play, joy, and relief in the kitchen.', images: [{ url: '/og-bethereforher.png', width: 1200, height: 630 }] },
+  openGraph: { title: 'Love Yourself In The Kitchen', description: 'Free seasonal cookbook: The Magic Is in the Making. Notes in the margin for play, joy, and relief in the kitchen.', images: [{ url: '/og-cookbook.png', width: 1200, height: 630 }], type: 'website' },
+  twitter: { card: 'summary_large_image', title: 'Love Yourself In The Kitchen', description: 'Free seasonal cookbook: The Magic Is in the Making.', images: ['/og-cookbook.png'] },
 }
 
 export default function InTheKitchen() {

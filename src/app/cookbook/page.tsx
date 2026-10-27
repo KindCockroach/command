@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   title: 'A free cookbook for AI Mom listeners · WFH — Works For Her',
   description: 'A thank-you for listening to the AI Mom Podcast: The Magic Is in the Making, a free seasonal cookbook, plus the AI Works For Her newsletter.',
   robots: { index: false, follow: false },
+  openGraph: {
+    title: 'Your free cookbook: The Magic Is in the Making',
+    description: 'A seasonal kitchen spellbook for AI Mom listeners. Soups, potions, and familiars.',
+    images: [{ url: '/og-cookbook.png', width: 1200, height: 630 }],
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image', title: 'Your free cookbook: The Magic Is in the Making', description: 'A seasonal kitchen spellbook for AI Mom listeners.', images: ['/og-cookbook.png'] },
 }
 
 export default function Cookbook() {
