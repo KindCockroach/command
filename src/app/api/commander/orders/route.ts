@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllBrandAccounts, getAllGoals, getAllNotes, getAllContent, getAllProjects, getDailyCommand, saveDailyCommand, getCommanderDone, addCommanderDone, removeCommanderDone } from '@/lib/db'
+import { getAllBrandAccounts, getAllNotes, getAllContent, getAllProjects, getDailyCommand, saveDailyCommand, getCommanderDone, addCommanderDone, removeCommanderDone } from '@/lib/db'
+import { goalContext } from '@/lib/goalProgress'
 import { commanderChat } from '@/lib/fable'
 import type { CommanderOrders } from '@/lib/db'
 
@@ -24,8 +25,7 @@ const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/
 async function generate(): Promise<CommanderOrders> {
   const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted' || a.status === 'planned')
   const roster = accounts.map(a => `- ${a.handle} (${a.status}, priority ${a.priority}): ${a.topic}`).join('\n')
-  const goals = getAllGoals().filter(g => g.active)
-  const goalLines = goals.map(g => `- ${g.title}: ${g.target_per_week}/wk`).join('\n') || '(none set)'
+  const goalLines = (await goalContext()) || '(none set)'
   const content = getAllContent()
   const counts = content.reduce((m, c) => { m[c.status] = (m[c.status] ?? 0) + 1; return m }, {} as Record<string, number>)
   const ready = content.filter(c => c.status === 'ready').length

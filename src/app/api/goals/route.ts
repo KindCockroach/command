@@ -1,33 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllGoals, createGoal, updateGoal, deleteGoal, getAllContent } from '@/lib/db'
+import { createGoal, updateGoal, deleteGoal } from '@/lib/db'
+import { getGoalProgress } from '@/lib/goalProgress'
 
 export const dynamic = 'force-dynamic'
 
-// GET returns goals with computed pace: posted this week vs where we should be by today
+// GET returns goals with both scoreboards — posts (published+scheduled vs pace) and
+// signups (GHL tag + manual count). Computed in lib/goalProgress so every brain agrees.
 export async function GET() {
-  const goals = getAllGoals()
-  const content = getAllContent()
-  const now = new Date()
-  // Week starts Monday
-  const day = (now.getDay() + 6) % 7 // 0 = Monday
-  const weekStart = new Date(now); weekStart.setHours(0, 0, 0, 0); weekStart.setDate(now.getDate() - day)
-
-  const enriched = goals.map(g => {
-    const pool = g.account_id ? content.filter(c => c.account_id === g.account_id) : content
-    const postedThisWeek = pool.filter(c =>
-      (c.status === 'published' || c.status === 'archived') &&
-      c.published_at && new Date(c.published_at) >= weekStart
-    ).length
-    const scheduled = pool.filter(c => c.status === 'scheduled' || c.status === 'approved').length
-    const queued = pool.filter(c => ['idea', 'in_progress', 'ready', 'held'].includes(c.status)).length
-    // Expected by end of today, pro-rated across the week
-    const expectedByToday = Math.floor((g.target_per_week * (day + 1)) / 7)
-    const behind = g.active && postedThisWeek + scheduled < expectedByToday
-    const deadlineSoon = g.deadline ? (new Date(g.deadline).getTime() - now.getTime()) < 7 * 86400000 : false
-    return { ...g, postedThisWeek, scheduled, queued, expectedByToday, behind, deadlineSoon }
-  })
-
-  return NextResponse.json(enriched)
+  return NextResponse.json(await getGoalProgress())
 }
 
 export async function POST(req: NextRequest) {

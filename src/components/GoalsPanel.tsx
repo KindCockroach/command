@@ -17,9 +17,17 @@ type GoalRow = {
   expectedByToday: number
   behind: boolean
   deadlineSoon: boolean
+  signup_tag?: string | null
+  signup_target?: number | null
+  signups_manual?: number | null
+  signups: number | null
+  signupsExpectedByToday: number | null
+  signupsBehind: boolean
+  signupsSince: string | null
+  signupError?: string
 }
 
-const BLANK = { title: '', account_id: '', target_per_week: 3, deadline: '', notes: '' }
+const BLANK = { title: '', account_id: '', target_per_week: 3, deadline: '', notes: '', signup_tag: '', signup_target: '', signups_manual: '' }
 
 const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
@@ -386,7 +394,7 @@ export default function GoalsPanel() {
   useEffect(() => {
     load()
     fetch('/api/accounts').then(r => r.json()).then(setAccounts).catch(() => {})
-    const onChange = (e: Event) => { const t = (e as CustomEvent).detail?.type; if (!t || t === 'create_goal') load() }
+    const onChange = (e: Event) => { const t = (e as CustomEvent).detail?.type; if (!t || t === 'create_goal' || t === 'update_goal') load() }
     window.addEventListener('rise-data-changed', onChange)
     return () => window.removeEventListener('rise-data-changed', onChange)
   }, [load])
@@ -394,7 +402,7 @@ export default function GoalsPanel() {
   const startEdit = (g?: GoalRow) => {
     if (g) {
       setEditing(g.id)
-      setForm({ title: g.title, account_id: g.account_id ?? '', target_per_week: g.target_per_week, deadline: g.deadline ?? '', notes: g.notes })
+      setForm({ title: g.title, account_id: g.account_id ?? '', target_per_week: g.target_per_week, deadline: g.deadline ?? '', notes: g.notes, signup_tag: g.signup_tag ?? '', signup_target: g.signup_target ? String(g.signup_target) : '', signups_manual: g.signups_manual ? String(g.signups_manual) : '' })
     } else {
       setEditing('new')
       setForm(BLANK)
@@ -410,6 +418,9 @@ export default function GoalsPanel() {
       target_per_week: Number(form.target_per_week) || 1,
       deadline: form.deadline || null,
       notes: form.notes,
+      signup_tag: form.signup_tag.trim() || null,
+      signup_target: Number(form.signup_target) || null,
+      signups_manual: Number(form.signups_manual) || null,
     }
     try {
       if (editing === 'new') {
@@ -475,6 +486,21 @@ export default function GoalsPanel() {
         {lbl('Notes')}
         <input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Why this goal matters / what winning looks like" style={fld} />
       </div>
+      {/* Signups = the score. Leave blank for a posts-only goal. */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '10px' }}>
+        <div>
+          {lbl('Signup tag in GHL (optional)')}
+          <input value={form.signup_tag} onChange={e => setForm(f => ({ ...f, signup_tag: e.target.value }))} placeholder="e.g. btfh-cookbook" style={fld} />
+        </div>
+        <div>
+          {lbl('Signup target')}
+          <input type="number" min={0} value={form.signup_target} onChange={e => setForm(f => ({ ...f, signup_target: e.target.value }))} placeholder="by deadline" style={fld} />
+        </div>
+        <div>
+          {lbl('Manual signups')}
+          <input type="number" min={0} value={form.signups_manual} onChange={e => setForm(f => ({ ...f, signups_manual: e.target.value }))} placeholder="e.g. Luma" style={fld} />
+        </div>
+      </div>
       <button onClick={saveGoal} disabled={saving || !form.title.trim()}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: 'none', background: '#3daa7c', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: saving || !form.title.trim() ? 0.6 : 1 }}>
         {saving ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={13} />}
@@ -524,6 +550,29 @@ export default function GoalsPanel() {
             <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${Math.min(100, (g.expectedByToday / g.target_per_week) * 100)}%`, width: '2px', background: 'var(--text)', opacity: 0.4 }} />
           )}
         </div>
+
+        {/* Signup scoreboard — the number that actually matters */}
+        {g.signups !== null && (() => {
+          const tgt = g.signup_target || 0
+          const sPct = tgt ? Math.min(100, Math.round((g.signups / tgt) * 100)) : 0
+          return (
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', gap: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: g.signupsBehind ? '#e05' : 'var(--text-muted)' }}>
+                  🙋 {g.signups}{tgt ? ` of ${tgt}` : ''} signups{g.active && g.signupsExpectedByToday !== null && tgt ? <> · should be at {g.signupsExpectedByToday} by today</> : null}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>
+                  {g.signupError ? `⚠ ${g.signupError}` : <>{g.signup_tag ? `tag ${g.signup_tag}` : 'manual'}{g.signup_tag && g.signups_manual ? ` + ${g.signups_manual} manual` : ''} · since {g.signupsSince}</>}
+                </span>
+              </div>
+              {tgt > 0 && (
+                <div style={{ height: '8px', borderRadius: '4px', background: 'var(--border)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${sPct}%`, borderRadius: '4px', background: !g.active ? 'var(--text-subtle)' : g.signupsBehind ? '#e05' : '#7c5cff', transition: 'width 0.3s' }} />
+                </div>
+              )}
+            </div>
+          )
+        })()}
       </div>
     )
   }

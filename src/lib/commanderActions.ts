@@ -30,6 +30,7 @@ export function commanderActionLabel(a: CommanderAction): string {
     case 'create_task': return 'Add task'
     case 'create_audience': return 'Add audience'
     case 'create_goal': return 'Add goal'
+    case 'update_goal': return 'Update goal'
     case 'create_project': return 'Start project'
     case 'create_event': return 'Add to calendar'
     case 'update_account': return 'Update account'
@@ -92,8 +93,16 @@ export async function executeCommanderAction(a: CommanderAction, media?: Command
       })
       status = r.ok ? `✓ ${name} added to Audiences` : 'failed'
     } else if (a.type === 'create_goal') {
-      const r = await post('/api/goals', { title: str(p.title), account_id: p.account_id ? str(p.account_id) : null, target_per_week: Number(p.target_per_week) || 3, deadline: p.deadline || null, notes: str(p.notes) })
+      const r = await post('/api/goals', { title: str(p.title), account_id: p.account_id ? str(p.account_id) : null, target_per_week: Number(p.target_per_week) || 3, deadline: p.deadline || null, notes: str(p.notes), signup_tag: p.signup_tag ? str(p.signup_tag) : null, signup_target: p.signup_target != null ? Number(p.signup_target) || null : null, signups_manual: p.signups_manual != null ? Number(p.signups_manual) || 0 : null })
       status = r.ok ? '✓ Goal added' : 'failed'
+    } else if (a.type === 'update_goal') {
+      // Only send the fields the model actually gave, so it can't blank out the rest.
+      const fields = ['title', 'account_id', 'target_per_week', 'deadline', 'notes', 'active', 'signup_tag', 'signup_target', 'signups_manual']
+      const numeric = new Set(['target_per_week', 'signup_target', 'signups_manual'])
+      const updates: Record<string, unknown> = { id: Number(p.id) }
+      for (const f of fields) if (p[f] !== undefined) updates[f] = numeric.has(f) && p[f] !== null ? Number(p[f]) : f === 'active' ? p[f] === true || p[f] === 'true' : p[f]
+      const r = await fetch('/api/goals', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) })
+      status = r.ok ? '✓ Goal updated' : 'failed'
     } else if (a.type === 'create_project') {
       const r = await post('/api/projects', { name: str(p.name), description: str(p.description), priority: str(p.priority, 'medium'), label: str(p.label, 'general'), next_action: str(p.next_action), notes: str(p.notes) })
       status = r.ok ? '✓ Project started' : 'failed'

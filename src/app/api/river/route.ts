@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllBrandAccounts, getAllGoals, getWatchContext, createContent, createNote, createTask, createEvent, audienceLine, getLoreContext } from '@/lib/db'
+import { getAllBrandAccounts, getWatchContext, createContent, createNote, createTask, createEvent, audienceLine, getLoreContext } from '@/lib/db'
+import { goalContext } from '@/lib/goalProgress'
 import type { ContentType, EventKind, BrandAccount } from '@/lib/db'
 import { CRAFT_RULES } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
@@ -61,16 +62,13 @@ export async function POST(req: NextRequest) {
   const isStillImage = mediaUrl && (mediaType?.startsWith('image') || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(mediaUrl))
 
   const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted')
-  const goals = getAllGoals().filter(g => g.active)
   const watchContext = getWatchContext()
 
   const accountList = accounts.map(a =>
     `- id:"${a.id}" ${a.handle} (${a.platform}) — ${a.topic}. Mission: ${a.mission}. Tone: ${a.tone}.${a.content_format ? ` Format: ${a.content_format}.` : ''} ${a.offer ? `Offer: ${a.offer} (${a.offer_price})` : ''}${a.notes ? ` ⚠ RULES: ${a.notes}` : ''}${audienceLine(a.audience_id) ? ` 👤 ${audienceLine(a.audience_id)}` : ''}`
   ).join('\n')
 
-  const goalList = goals.map(g =>
-    `- "${g.title}"${g.account_id ? ` [account: ${g.account_id}]` : ' [station-wide]'} — ${g.target_per_week}/week${g.deadline ? `, deadline ${g.deadline}` : ''}`
-  ).join('\n')
+  const goalList = await goalContext()
 
   // An account passed in directly (e.g. Notes "Send To") wins; otherwise detect one
   // she named in the text. Either way it overrides all sorting.

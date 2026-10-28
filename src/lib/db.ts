@@ -218,6 +218,12 @@ export type Goal = {
   deadline: string | null
   notes: string
   active: boolean
+  // Signups = the score; posts are the lever. Counted from the start of the week the
+  // goal was made through its deadline: GHL contacts carrying signup_tag + signups_manual
+  // (for seats that live outside GHL, e.g. the Reset on Luma).
+  signup_tag?: string | null
+  signup_target?: number | null
+  signups_manual?: number | null
   created_at: string
   updated_at: string
 }
@@ -1300,6 +1306,9 @@ export function createGoal(data: Partial<Goal>): Goal {
     deadline: data.deadline ?? null,
     notes: data.notes ?? '',
     active: data.active ?? true,
+    signup_tag: data.signup_tag ?? null,
+    signup_target: data.signup_target ?? null,
+    signups_manual: data.signups_manual ?? null,
     created_at: now,
     updated_at: now,
   }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { CRAFT_RULES } from '@/lib/craft'
 import { fableText, researchWithWeb } from '@/lib/fable'
 import { getAllNotes } from '@/lib/db'
+import { goalContext } from '@/lib/goalProgress'
 import { parseKit } from '@/lib/jsonkit'
 
 export const dynamic = 'force-dynamic'
@@ -57,6 +58,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { transcript, episodeNumber, guestName, showName = 'AI Mom Podcast', action, title, core_takeaway, timestamps, steer } = body
   if (!transcript) return NextResponse.json({ error: 'transcript required' }, { status: 400 })
+
+  // What the whole station is pushing this week — so clip + kit CTAs serve the same goals.
+  const goals = await goalContext().catch(() => '')
+  const goalBlock = goals ? `THIS WEEK'S STATION GOALS (choose each CTA to serve these; never invent offers or links not named here):\n${goals}\n\n` : ''
 
   // ── DEEP MEDIUM ARTICLE (on demand) — borderline journalism ─────────────────
   // Runs live web research for REAL numbers/studies on the episode's topic, then
@@ -169,7 +174,7 @@ ${CRAFT_RULES}`
   "edit_sheet": ["0:00 [HOOK TEXT: “…”] [WHOOSH]", "0:02 [PUNCH-IN 115%] “spoken words…”", "…"],
   "audio_note": "what kind of trending audio fits under it (low volume under voice)"
 } ] }`
-    const ctx = `EPISODE: ${episodeNumber ? `#${episodeNumber}` : 'TBD'}${title ? ` — ${title}` : ''}\n${timestamps && String(timestamps).trim() ? `TIMESTAMPS (real, from Riverside):\n${String(timestamps).trim()}\n` : ''}TRANSCRIPT:\n${clip}`
+    const ctx = `${goalBlock}EPISODE: ${episodeNumber ? `#${episodeNumber}` : 'TBD'}${title ? ` — ${title}` : ''}\n${timestamps && String(timestamps).trim() ? `TIMESTAMPS (real, from Riverside):\n${String(timestamps).trim()}\n` : ''}TRANSCRIPT:\n${clip}`
     try {
       const raw = await fableText({ instructions: cInstr, input: `${ctx}\n\n${cSchema}`, maxTokens: 20000, json: true, useClaude: true })
       const out = await parseKit(raw)
@@ -192,7 +197,7 @@ ${CRAFT_RULES}`
   // article anyway. If we want them back, run them as a separate, non-blocking call.
   const researched = ''
 
-  const context = `SHOW: ${showName}
+  const context = `${goalBlock}SHOW: ${showName}
 HOST: Mandi Beck — AI Mom. Warm, tangential, self-aware, philosophical, plain-spoken — a mom at the window, NOT a tech-bro explainer. This is HER show; write AS her.
 EPISODE: ${episodeNumber ? `#${episodeNumber}` : 'TBD'}
 GUEST: ${guestName ?? 'None — solo episode'}

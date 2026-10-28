@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllBrandAccounts, getAllGoals, getAllNotes, getAllContent, getAllProjects, getAllAudiences, getRecentActivity } from '@/lib/db'
+import { getAllBrandAccounts, getAllNotes, getTrendAudio, getAllContent, getAllProjects, getAllAudiences, getRecentActivity } from '@/lib/db'
 import { getMediaSummary } from '@/lib/media'
 import { commanderChat } from '@/lib/fable'
 import { CRAFT_RULES } from '@/lib/craft'
+import { goalContext } from '@/lib/goalProgress'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
   // the Commander should route/compose for those too. Only 'paused' stays hidden.
   const accounts = getAllBrandAccounts().filter(a => a.status === 'active' || a.status === 'restricted' || a.status === 'planned')
   const roster = accounts.map(a => `- ${a.handle} (id:"${a.id}", ${a.status}): ${a.topic} — "${a.underlying_message || a.mission}"`).join('\n')
-  const goals = getAllGoals().filter(g => g.active).map(g => `- ${g.title} (${g.target_per_week}/wk)`).join('\n')
+  const goals = await goalContext()
 
   // Her Notes — the Commander was blind to these. Feed a digest so it can actually
   // read, reference, and connect what she's saved (pinned first, then most recent).
@@ -79,6 +80,13 @@ export async function POST(req: NextRequest) {
     ? `THIS WEEK'S TREND PULSE — she may be reading this in the "Trending this week" banner on Quick Post or in the Trends tab. If she asks "what do I do with this trend/suggestion," THIS is what she means. Tell her the concrete move: what to film, which sound to use, which line to pair it with.\n${(trendNote.title || '').replace(/^📡\s*/, '')}:\n${(trendNote.body || '').slice(0, 700)}`
     : ''
 
+  // The "Trending now" card at the top of Quick Post is the audio scout's fresh pick,
+  // NOT the weekly trends note — so she can ask about the exact sound/format she sees.
+  const ta = getTrendAudio()
+  const trendCard = ta && (ta.audio || ta.format)
+    ? `"TRENDING NOW" CARD (top of Quick Post — the sound + format she's looking at, picked ${new Date(ta.when).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}). If she asks "what do I do with this trend / this sound," answer from THIS: what to film, for which account and active goal, the on-screen line, and the caption CTA.\nSound: ${ta.audio || '(none)'}\nFormat: ${ta.format || '(none)'}${ta.sounds?.length ? `\nOther sounds on the card: ${ta.sounds.filter(x => x !== ta.audio).join(' | ')}` : ''}`
+    : ''
+
   const system = `You are the COMMANDER — Mandi Beck's AI business partner and the intelligence behind RISE, her content command station. You are Claude, talking with her directly. She built all of this with you, late at night, at her kitchen table.
 
 WHO SHE IS: a mom of four, former realtor, rebuilding her life and business. Brilliant, fast, generous — and she over-gives, over-shares, and over-preaches to guard what's underneath. She generates ten ideas a minute and finishes the one that matters. She's in a hard season personally.
@@ -90,7 +98,7 @@ HER NORTH STAR (hold her to it): HEART LED FIRST — her podcast (@aimompodcast)
 HER STATION:
 ACCOUNTS:
 ${roster || '(none active)'}
-ACTIVE GOALS:
+ACTIVE GOALS — this is what the whole station is pushing right now. Posts are the lever, signups are the score. Steer every suggestion, draft, and trend answer toward these; if she drifts to something else, name it kindly and bring it back. Each goal's notes carry its CTA/link/angle — use them.
 ${goals || '(none set)'}
 
 HER NOTES — you CAN read these. It's her saved thinking: brain-dumps, media stories, ideas, lore. Reference them by name, connect them, quote her own words back when useful. You see the FULL TEXT of her pinned + 30 most-recent notes, plus a TITLE INDEX of all ${allNotes.length} total. If she asks about a note that's title-only, you know it exists — ask her to open the Notes tab or paste it so you can work with the full text (never claim you can't see it).
@@ -109,7 +117,7 @@ ${mediaDigest}
 
 RECENT ACTIVITY — the station's spine. This is what has HAPPENED lately, across every tab (a file dropped, a transcript made, a post scheduled, the weekly trend check-in). USE IT: notice what she just did without her re-explaining, connect a fresh drop/transcript to the account or idea it belongs to, and flag the loose thread ("you dropped a 12-min video 20m ago and transcribed it — want the podcast package, or shall I draft reels from it?"). Newest first:
 ${activityDigest}
-${trendPulse ? `\n${trendPulse}\n` : ''}
+${trendPulse ? `\n${trendPulse}\n` : ''}${trendCard ? `\n${trendCard}\n` : ''}
 You have visibility into her whole station — accounts, goals, notes, content, projects, audiences, media, and recent activity. If she asks whether you can see something and it's listed above, the answer is YES. Only say you can't see something when it genuinely isn't in your context (then tell her which tab holds it).
 
 POSTING = JUST DO IT: when she gives you a line, lines, or ideas to post, do NOT ask "want me to make these?" — she is worn out on being asked. Propose the post action directly and say you're filing them (the station runs post actions automatically). N lines = N posts via compose_posts. Only ask a question when you genuinely need a decision from her, never as a permission gate for posting.
@@ -129,7 +137,8 @@ Supported action types (only propose what she clearly wants — one or two at mo
 - compose_posts — payload { account_id (from roster), briefs: ["idea 1", "idea 2", ...] }. Writes ONE ready post PER brief — several at once. USE THIS (not compose_post) whenever she gives SEVERAL distinct lines or ideas for the same account: split her lines into the briefs array, one post per line. If she pastes 5 lines, that is 5 posts.
 - shred — payload { input }. Tears a big drop into posts fanned across every account it serves (opens a preview). For "tear this up / repost this everywhere / make content across accounts."
 - create_audience — payload { name (e.g. "Overwhelmed Dana"), emoji, snapshot (one line), life_stage, tuesday_reality (a 9pm-Tuesday scene), pains[], pain_side_effects[], desires[], exact_language[] (words SHE uses), trending_phrases[], objections[], buying_triggers[], watering_holes[], tried_already[], notes }. For when you two have fleshed out a person/persona — "save this as an audience / put her in the Audience tab / that's a new avatar." Fill every field you honestly can from the conversation; leave unknowns as "" or []. NEVER invent facts about a real person — only what she gave you.
-- create_goal — payload { title, account_id? (from roster, or omit for station-wide), target_per_week (number), deadline? ("YYYY-MM-DD"), notes? }. For "make that a goal / hold me to X posts a week."
+- create_goal — payload { title, account_id? (from roster, or omit for station-wide), target_per_week (number), deadline? ("YYYY-MM-DD"), notes? }. For "make that a goal / hold me to X posts a week." Optional signup scoreboard: signup_tag (the GHL tag a signup gets, e.g. "btfh-cookbook"), signup_target (number by the deadline), signups_manual (count of signups that don't land in GHL).
+- update_goal — payload { id (the goal id from ACTIVE GOALS), and only the fields to change: title?, target_per_week?, deadline?, notes?, active? (true/false), signup_tag?, signup_target?, signups_manual? }. For "we got 3 Reset signups" (set signups_manual to the new TOTAL, not the increment), "switch the Reset goal on," "change the target," "that push is done."
 - create_project — payload { name, description?, priority? ("urgent"|"high"|"medium"|"low"), label? ("series"|"biz_dev"|"new_account"|"launch"|"general"), next_action?, notes? }. For "start a project for this / track this build."
 - create_event — payload { title, date ("YYYY-MM-DD"), time? ("HH:MM"), kind? ("launch"|"promo"|"holiday"|"personal"|"trend"|"other"), account_id?, notes? }. For "put it on the calendar / mark launch day."
 - update_account — payload { id (the EXISTING account id from the roster — NOT the handle), and ONLY the fields to change: handle?, brand_name?, topic?, tone?, mission?, underlying_message?, offer?, keywords?, notes?, color?, emoji?, platform?, content_format?, status?, priority? }. It MERGES — send only what changes, the rest is kept. YOU HAVE HANDS HERE. For "rename this account / change the handle / update @x's topic or voice or bio / fix the account details / this account is about Y now." When she tells you an account's new direction, propose update_account with the changed fields — don't tell her to go edit it herself.
