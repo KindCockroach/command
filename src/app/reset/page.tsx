@@ -49,7 +49,7 @@ const CHOICES = [
 
 const LEAVE = [
   { t: 'The Audit', d: 'Back to your factory settings. No more obligations for the sake of \u201cshould.\u201d You\u2019ll leave with a clear picture of what you actually need today, this week, and this season of life.' },
-  { t: 'The Somatic Reset', d: 'A guided practice to move from your \u201cNot Another Choice\u201d eye-roll to your \u201cF*ck Yes\u201d frequency. A reset for your body, mind, and nervous system you can return to whenever life feels too loud.' },
+  { t: 'The Somatic Reset', d: 'A reset you can return to whenever life gets too loud.' },
   { t: 'The Missing Instructions', d: 'Two simple prompts to better understand your child\u2019s unique behaviors and support them with newfound Momfidence.' },
 ]
 
