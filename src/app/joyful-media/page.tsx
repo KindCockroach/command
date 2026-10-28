@@ -12,7 +12,8 @@ import { BRANDS, joyfulCss } from '@/components/joyful/shared'
 export const metadata: Metadata = {
   title: 'Joyful Media · Mandi “AI Mom” Beck',
   description: 'Meet Mandi Beck, founder of Joyful Media: Be There For Her and AI Works For Her, two worlds built to support one another.',
-  openGraph: { title: 'You’re invited · Joyful Media', description: 'Meet Mandi Beck and the two worlds she built: Be There For Her and AI Works For Her.', images: [{ url: '/og-wfh-v2.png', width: 1200, height: 630 }] },
+  openGraph: { title: 'Joyful Media | AI Mom', description: 'You’re invited to RISE with her.', images: [{ url: '/og-joyful.png', width: 1200, height: 630 }], type: 'website' },
+  twitter: { card: 'summary_large_image', title: 'Joyful Media | AI Mom', description: 'You’re invited to RISE with her.', images: ['/og-joyful.png'] },
 }
 
 // Same platform links as /listen.
