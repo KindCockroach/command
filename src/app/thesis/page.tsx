@@ -94,7 +94,9 @@ export default function Thesis() {
 
       {/* Why me */}
       <section className="why">
-        <div className="wrap">
+        <div className="wrap whyGrid">
+          <img src="/host-full.jpg" alt="Mandi Beck" className="whyphoto" />
+          <div>
           <p className="tag">WHY ME</p>
           <p>
             I&rsquo;m Mandi Beck &mdash; mom of five (one baby in heaven), former realtor and Evernote
@@ -106,6 +108,7 @@ export default function Thesis() {
             (my brain runs a little off-key), with a big optimism some might call delusional. Audiences
             leave feeling seen, steadied, and ready.
           </p>
+          </div>
         </div>
       </section>
 
@@ -163,6 +166,9 @@ const css = `
 
 .t .why { background:var(--cream); }
 .t .why p { font-size:18px; max-width:780px; color:#3f3a52; }
+.t .why .whyGrid { display:grid; grid-template-columns:300px 1fr; gap:34px; align-items:center; }
+.t .whyphoto { width:100%; border-radius:18px; box-shadow:0 18px 44px -20px rgba(42,28,63,0.55); }
+@media (max-width:720px){ .t .why .whyGrid { grid-template-columns:1fr; } .t .whyphoto { max-width:300px; margin:0 auto; } }
 
 .t .foot { background:linear-gradient(165deg,#2a1c3f,var(--nebula) 70%,var(--copper)); color:#fff; text-align:center; padding:72px 0; }
 .t .foot h2 { font-size:clamp(24px,4vw,34px); margin:0 0 24px; color:#fff; }
