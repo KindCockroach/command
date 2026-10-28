@@ -116,7 +116,7 @@ export async function getGoalProgress(opts?: { activeOnly?: boolean }): Promise<
     const deadlineSoon = g.deadline ? (new Date(g.deadline).getTime() - now.getTime()) < 7 * 86400000 : false
 
     // Signups: counted from the Monday of the week the goal was made, through its deadline.
-    const tracksSignups = !!(g.signup_tag || g.signup_target || g.signups_manual)
+    const tracksSignups = !!(g.signup_tag || g.signup_target) || g.signups_manual != null
     let signups: number | null = null
     let signupsExpectedByToday: number | null = null
     let signupError: string | undefined
