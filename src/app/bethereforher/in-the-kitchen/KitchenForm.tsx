@@ -3,11 +3,12 @@ import { useState } from 'react'
 
 // Email + two optional boxes → /api/kitchen → on to the next page. Reused by the
 // podcast-listener signup (aiworksforher.com/listeners) with its own list + labels.
-type Props = { list?: 'kitchen' | 'podcast'; redirect?: string; cookbookLabel?: string; newsletterLabel?: string; button?: string }
+type Props = { list?: 'kitchen' | 'podcast'; redirect?: string; cookbookRedirect?: string; cookbookLabel?: string; newsletterLabel?: string; button?: string }
 
 export default function KitchenForm({
   list = 'kitchen',
   redirect = '/welcome?from=btfh',
+  cookbookRedirect = '/cookbook/download',
   cookbookLabel = 'Send me the seasonal cookbooks, with notes in the margin that encourage play, joy, and relief in the kitchen.',
   newsletterLabel = 'Subscribe to Be There For Her. Receive updates when new series are released.',
   button = 'Count me in →',
@@ -23,7 +24,8 @@ export default function KitchenForm({
     const d = await fetch('/api/kitchen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...f, list }) })
       .then(r => r.json()).catch(() => ({ error: 'Connection hiccup — try again.' }))
     if (!d.ok) { setBusy(false); setErr(d.error || 'Something went wrong — try again.'); return }
-    window.location.href = redirect
+    // Cookbook signups go straight to the instant download; everyone else to the thank-you page.
+    window.location.href = f.cookbook ? cookbookRedirect : redirect
   }
 
   return (
