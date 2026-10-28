@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import CopyEditor from '@/components/CopyEditor'
 
 export const metadata: Metadata = {
@@ -8,10 +9,8 @@ export const metadata: Metadata = {
   description: 'Not a class. 60 minutes of guided time to yourself, live with Mandi on Sunday nights. Leave with a quieter mind, a little more patience, and one less to-do in your head. $33.',
 }
 
-// THE RESET — Mandi's live Sunday-night hour ($33, Google Meet). Copy reworked from her
-// Luma listing (2026-10-27). Register button → the Reset's Stripe payment link
-// (hardcoded so a stale NEXT_PUBLIC_RESET_CHECKOUT_URL on Railway can't override it).
-const CHECKOUT_URL = 'https://buy.stripe.com/9B628rfW5dKE7N6ba59IQ03'
+// THE RESET — Mandi's live Sunday-night hour ($33). Register button opens the Luma
+// checkout modal for the event (embed.lu.ma), so register + payment happen on Luma.
 const META_PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || ''
 
 function MetaPixel() {
@@ -31,7 +30,8 @@ document.addEventListener('click',function(e){var a=e.target.closest&&e.target.c
 function RegisterButton({ label = 'SAVE MY SEAT — $33' }: { label?: string }) {
   return (
     <div className="cta">
-      <a className="buy" href={CHECKOUT_URL}>{label}</a>
+      <a className="buy luma-checkout--button" href="https://luma.com/event/evt-nLWB8Sj5qEYLYmZ"
+        data-luma-action="checkout" data-luma-event-id="evt-nLWB8Sj5qEYLYmZ">{label}</a>
       <p className="tagline">Live · 60 minutes · a reset you&rsquo;ll want to come back to</p>
     </div>
   )
@@ -59,6 +59,7 @@ export default function ResetPage() {
       <MetaPixel />
       <style>{css}</style>
       <CopyEditor />
+      <Script id="luma-checkout" src="https://embed.lu.ma/checkout-button.js" strategy="afterInteractive" />
 
       <section className="hero">
         <div className="wrap">
