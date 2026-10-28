@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 type YourMove = { title: string; why?: string; where?: string }
 type InboxItem = { icon?: string; text: string; view_url?: string }
 type Inbox = { items: InboxItem[]; checked_at: string; count_total?: number }
+type Booking = { id: string; name: string; date: string; time: string; comm_method?: string; created_at: string }
 
 // A gentle default rhythm (she doesn't keep a calendar — RISE holds the shape so she
 // doesn't have to). Editable later; this is the starting rough routine.
@@ -33,6 +34,7 @@ export default function BriefPage() {
   const [line, setLine] = useState<string | null>(null)
   const [move, setMove] = useState<YourMove | null>(null)
   const [inbox, setInbox] = useState<Inbox | null>(null)
+  const [bookings, setBookings] = useState<Booking[]>([])
   const [loaded, setLoaded] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -43,10 +45,12 @@ export default function BriefPage() {
       fetch('/api/lines?account=mandijoybeck').then(r => r.json()),
       fetch('/api/commander/orders').then(r => r.json()),
       fetch('/api/inbox').then(r => r.json()),
-    ]).then(([l, m, i]) => {
+      fetch('/api/podcast/schedule?admin=1').then(r => r.json()),
+    ]).then(([l, m, i, b]) => {
       if (l.status === 'fulfilled' && Array.isArray(l.value?.lines) && l.value.lines[0]) setLine(l.value.lines[0].line)
       if (m.status === 'fulfilled' && m.value?.orders?.your_move?.[0]) setMove(m.value.orders.your_move[0])
       if (i.status === 'fulfilled' && i.value?.inbox) setInbox(i.value.inbox)
+      if (b.status === 'fulfilled' && Array.isArray(b.value?.bookings)) setBookings(b.value.bookings)
     }).finally(() => setLoaded(true))
   }, [])
 
@@ -130,6 +134,30 @@ export default function BriefPage() {
             <p style={{ fontSize: '13.5px', color: '#7A6A5B', lineHeight: 1.5 }}>I&apos;ll stand between you and your inbox — this line shows only what actually needs you. Not your job this morning.</p>
           )}
         </section>
+
+        {/* Signups — podcast guest bookings */}
+        {(() => {
+          const todayStr = new Date().toLocaleDateString('en-CA')
+          const upcoming = bookings.filter(b => b.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date))
+          const freshCount = bookings.filter(b => Date.now() - new Date(b.created_at).getTime() < 3 * 86400000).length
+          if (!upcoming.length && !freshCount) return null
+          const fmtd = (d: string) => new Date(d + 'T00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+          return (
+            <section style={{ borderRadius: '16px', padding: '16px 18px', background: 'rgba(107,74,48,0.06)', border: '1px solid rgba(184,166,126,0.3)' }}>
+              <p style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#A8937E', marginBottom: '10px' }}>🎙️ Podcast guests{freshCount ? ` · ${freshCount} new` : ''}</p>
+              {upcoming.length ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                  {upcoming.slice(0, 4).map(b => (
+                    <p key={b.id} style={{ fontSize: '14px', color: '#3A2E26', lineHeight: 1.4 }}><strong>{b.name}</strong> · {fmtd(b.date)}{b.comm_method ? ` · reach via ${b.comm_method}` : ''}</p>
+                  ))}
+                  <a href="/book/manage" target="_blank" rel="noreferrer" style={{ fontSize: '12.5px', color: '#6B4A30', textDecoration: 'underline', marginTop: '2px' }}>See all details →</a>
+                </div>
+              ) : (
+                <p style={{ fontSize: '14px', color: '#5E5044' }}>New booking(s) just came in — <a href="/book/manage" target="_blank" rel="noreferrer" style={{ color: '#6B4A30' }}>see details →</a></p>
+              )}
+            </section>
+          )
+        })()}
 
         {/* 5 — The close */}
         <footer style={{ textAlign: 'center', paddingTop: '6px' }}>

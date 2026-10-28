@@ -165,6 +165,10 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
           {/* Nav — scrollable on small windows */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: '2px', overflowX: 'auto', flex: 1, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             className="hide-scrollbar">
+            <Link href="/brief" title="Your calm morning Brief"
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 700, padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(107,45,110,0.6)', color: 'rgba(180,130,183,1)', textDecoration: 'none', flexShrink: 0 }}>
+              ☀️ Brief
+            </Link>
             {order.map(id => {
               const item = navById[id]
               if (!item) return null
