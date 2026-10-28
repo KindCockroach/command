@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { setTrendAudio, getTrendAudio, logActivity } from '@/lib/db'
 import { researchWithWeb } from '@/lib/fable'
+import { callGPT } from '@/lib/ai'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -24,8 +25,8 @@ export async function POST(req: NextRequest) {
     // allow either the cron key or an in-app call (no key) — keep it simple
     if (key && key !== secret) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: 'ANTHROPIC_API_KEY not set — add it in Railway so the scout can research.' }, { status: 400 })
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ error: 'No AI key set — add ANTHROPIC_API_KEY or OPENAI_API_KEY in Railway so the scout can research.' }, { status: 400 })
   }
 
   // What she's already seen — so the scout doesn't keep handing back the same lead
@@ -41,9 +42,7 @@ export async function POST(req: NextRequest) {
 {"sounds":["'Track Name' — Artist — one line on the vibe/why it's trending", "... 2-4 total"], "format":"one trending on-screen-text FORMAT to try this week (short, concrete)"}
 Name real current tracks a creator can find in the app today. No preamble.${avoidList.length ? `\nShe has ALREADY seen these recently — do NOT lead with them; surface something different and current instead: ${avoidList.join('; ')}.` : ''}`
 
-  const pull = async () => {
-    // Opus + web-search + JSON needs headroom or the JSON never lands (3000, not 1500).
-    const raw = await researchWithWeb({ instructions, input, maxTokens: 3000, maxSearches: 4 })
+  const parse = (raw: string) => {
     let p: { sounds?: string[]; format?: string } = {}
     try { p = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') } catch { /* fall through */ }
     return {
@@ -51,23 +50,36 @@ Name real current tracks a creator can find in the app today. No preamble.${avoi
       format: (p.format ?? '').trim(),
     }
   }
-  try {
-    let { sounds, format } = await pull()
-    if (!sounds.length && !format) ({ sounds, format } = await pull())
-    if (!sounds.length && !format) return NextResponse.json({ error: 'The scout came back empty — try again.' }, { status: 502 })
+  // Primary: Anthropic (Opus + real web search; needs headroom or the JSON never lands).
+  // Fallback: OpenAI web search — so ONE provider being out of credits can't freeze the
+  // pulse on a stale song. Whichever has credits keeps the sound fresh.
+  const pullAnthropic = async () => parse(await researchWithWeb({ instructions, input, maxTokens: 3000, maxSearches: 4 }))
+  const pullOpenAI = async () => parse(await callGPT('research', input, instructions))
 
-    let audio = sounds[0] || ''  // the headline sound for the one-glance banner
-    // If it circled back to the same lead sound she already has, rotate to the next
-    // distinct one so a refresh actually changes.
-    const prevLead = (prev?.audio ?? '').toLowerCase()
-    if (prevLead && audio.toLowerCase() === prevLead) {
-      const alt = sounds.find(s => s.toLowerCase() !== prevLead)
-      if (alt) audio = alt
-    }
-    setTrendAudio({ audio, format, sounds })
-    logActivity({ type: 'trend_checkin', title: 'Trending audio refreshed', detail: audio ? audio.slice(0, 120) : format.slice(0, 120), icon: '🎵', source: 'audio-scout' })
-    return NextResponse.json({ ok: true, trend_audio: getTrendAudio() })
-  } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'scout failed' }, { status: 502 })
+  let res: { sounds: string[]; format: string } = { sounds: [], format: '' }
+  let lastErr: unknown = null
+  if (process.env.ANTHROPIC_API_KEY) {
+    try { res = await pullAnthropic(); if (!res.sounds.length && !res.format) res = await pullAnthropic() } catch (e) { lastErr = e }
   }
+  if (!res.sounds.length && !res.format && process.env.OPENAI_API_KEY) {
+    try { res = await pullOpenAI() } catch (e) { lastErr = e }
+  }
+
+  const { sounds, format } = res
+  if (!sounds.length && !format) {
+    const msg = lastErr instanceof Error ? lastErr.message : 'the scout came back empty'
+    return NextResponse.json({ error: `Couldn't pull a fresh sound — ${msg}. If you're out of API credits, top up and tap refresh again.` }, { status: 502 })
+  }
+
+  let audio = sounds[0] || ''  // the headline sound for the one-glance banner
+  // If it circled back to the same lead sound she already has, rotate to the next
+  // distinct one so a refresh actually changes.
+  const prevLead = (prev?.audio ?? '').toLowerCase()
+  if (prevLead && audio.toLowerCase() === prevLead) {
+    const alt = sounds.find(s => s.toLowerCase() !== prevLead)
+    if (alt) audio = alt
+  }
+  setTrendAudio({ audio, format, sounds })
+  logActivity({ type: 'trend_checkin', title: 'Trending audio refreshed', detail: audio ? audio.slice(0, 120) : format.slice(0, 120), icon: '🎵', source: 'audio-scout' })
+  return NextResponse.json({ ok: true, trend_audio: getTrendAudio() })
 }

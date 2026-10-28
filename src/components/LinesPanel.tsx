@@ -34,22 +34,25 @@ export default function LinesPanel() {
   const [more, setMore] = useState(false)
   const [pulse, setPulse] = useState<Pulse | null>(null)
   const [pulseBusy, setPulseBusy] = useState(false)
+  const [pulseErr, setPulseErr] = useState('')
 
   const refreshPulse = async () => {
     if (pulseBusy) return
-    setPulseBusy(true)
+    setPulseBusy(true); setPulseErr('')
     try {
       // Use the scout's OWN response — don't fire-and-forget then re-GET /latest,
       // which could read the store before the scout finished writing and show the
-      // STALE pick (the "it reverted back to Iris" bug). If the scout fails, keep
-      // what's on screen rather than overwriting it with a stale read.
+      // STALE pick (the "it reverted back to Iris" bug).
       const r = await fetch('/api/trends/audio', { method: 'POST' })
       const d = await r.json().catch(() => null)
       const ta = d?.trend_audio
-      if (ta && (ta.audio || ta.format)) {
+      if (r.ok && ta && (ta.audio || ta.format)) {
         setPulse({ audio: ta.audio || '', audio_from: 'fresh today', format: ta.format || '', when: ta.when ?? null })
+      } else {
+        // Don't silently leave a stale song up — tell her it didn't refresh (e.g. out of credits).
+        setPulseErr(d?.error || 'Couldn’t pull a fresh sound — try again in a moment.')
       }
-    } catch { /* keep the current pulse */ }
+    } catch { setPulseErr('Couldn’t reach the sound scout — try again.') }
     setPulseBusy(false)
   }
 
@@ -117,6 +120,7 @@ export default function LinesPanel() {
               <RefreshCw size={11} style={pulseBusy ? { animation: 'spin 1s linear infinite' } : undefined} /> {pulseBusy ? 'pulling…' : 'fresh'}
             </button>
           </div>
+          {pulseErr && <p style={{ fontSize: '11px', color: '#C2477E', lineHeight: 1.4 }}>{pulseErr}</p>}
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>{pulse.audio ? 'The move: film your next clip to this sound, then pair it with any line below.' : 'The move: try this format with any line below.'}</p>
           {pulse.audio && <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><Music size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} /> <span>{pulse.audio}</span></p>}
           {pulse.format && <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><span style={{ flexShrink: 0 }}>🧬</span> <span>{pulse.format}</span></p>}
