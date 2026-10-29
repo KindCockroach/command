@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!isOwner(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   const seen = new Set<string>()
-  const recipients = [...getWaitlist('kitchen'), ...getWaitlist('podcast-listeners')]
+  const recipients = [...getWaitlist('kitchen'), ...getWaitlist('cookbook-funnel'), ...getWaitlist('podcast-listeners')]
     .filter(e => (e.note || '').includes('cookbook'))
     .filter(e => !seen.has(e.email) && !!seen.add(e.email))
     .map(e => ({ name: e.name || '', email: e.email }))

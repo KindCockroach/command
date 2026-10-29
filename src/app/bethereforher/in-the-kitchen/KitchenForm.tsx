@@ -2,18 +2,20 @@
 import { useState } from 'react'
 
 // Email + two optional boxes → /api/kitchen → on to the next page. Reused by the
-// podcast-listener signup (aiworksforher.com/listeners) with its own list + labels.
-type Props = { list?: 'kitchen' | 'podcast'; redirect?: string; cookbookRedirect?: string; cookbookLabel?: string; newsletterLabel?: string; button?: string }
+// podcast-listener signup (aiworksforher.com/cookbook) and the cookbook funnel
+// (bethereforher.com/cookbook, fixedCookbook: no cookbook box, it's what they came for).
+type Props = { list?: 'kitchen' | 'podcast' | 'funnel'; fixedCookbook?: boolean; redirect?: string; cookbookRedirect?: string; cookbookLabel?: string; newsletterLabel?: string; button?: string }
 
 export default function KitchenForm({
   list = 'kitchen',
+  fixedCookbook = false,
   redirect = '/welcome?from=btfh',
   cookbookRedirect = '/cookbook/download',
   cookbookLabel = 'Send me the seasonal cookbooks, with notes in the margin that encourage play, joy, and relief in the kitchen.',
   newsletterLabel = 'Subscribe to Be There For Her. Receive updates when new series are released.',
   button = 'Count me in →',
 }: Props) {
-  const [f, setF] = useState({ name: '', email: '', cookbook: false, newsletter: false })
+  const [f, setF] = useState({ name: '', email: '', cookbook: fixedCookbook, newsletter: false })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
@@ -32,10 +34,10 @@ export default function KitchenForm({
     <form className="kform" onSubmit={submit}>
       <label className="kf">First name (optional)<input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></label>
       <label className="kf">Email<input type="email" required value={f.email} onChange={e => setF({ ...f, email: e.target.value })} /></label>
-      <label className="kcheck">
+      {!fixedCookbook && <label className="kcheck">
         <input type="checkbox" checked={f.cookbook} onChange={e => setF({ ...f, cookbook: e.target.checked })} />
         <span>{cookbookLabel}</span>
-      </label>
+      </label>}
       <label className="kcheck">
         <input type="checkbox" checked={f.newsletter} onChange={e => setF({ ...f, newsletter: e.target.checked })} />
         <span>{newsletterLabel}</span>

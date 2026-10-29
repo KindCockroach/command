@@ -19,6 +19,8 @@ const ghlSend: Send = ((wfhServer as Record<string, unknown>).sendSiteEmail ?? (
 const LISTS = {
   kitchen: { key: 'kitchen', source: 'kitchen', label: 'In the Kitchen', icon: '🍳', newsletterTag: 'btfh-newsletter', audienceEnv: 'RESEND_AUDIENCE_ID', ghlSource: 'Be There For Her · In the Kitchen' },
   podcast: { key: 'podcast', source: 'podcast-listeners', label: 'Podcast listener', icon: '🎙', newsletterTag: 'wfh-newsletter', audienceEnv: 'RESEND_WFH_AUDIENCE_ID', ghlSource: 'AI Mom Podcast · listeners' },
+  // bethereforher.com/cookbook — the cookbook funnel that leads into The Reset invitation.
+  funnel: { key: 'kitchen', source: 'cookbook-funnel', label: 'Cookbook funnel', icon: '🍂', newsletterTag: 'btfh-newsletter', audienceEnv: 'RESEND_AUDIENCE_ID', ghlSource: 'Be There For Her · cookbook funnel' },
   // The /welcome page's "updates from Mandi and Joyful Media" signup (newsletter only).
   joyful: { key: 'joyful', source: 'joyful-media', label: 'Joyful Media updates', icon: '🎈', newsletterTag: 'joyful-newsletter', audienceEnv: 'RESEND_JOYFUL_AUDIENCE_ID', ghlSource: 'Joyful Media · welcome page' },
 } as const
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
   const cookbook = b.cookbook === true, newsletter = b.newsletter === true
   // Two front doors: Be There For Her's /in-the-kitchen, and the unlisted podcast-listener
   // page (aiworksforher.com/listeners), whose newsletter is the AI Works For Her one.
-  const L = b.list === 'podcast' ? LISTS.podcast : b.list === 'joyful' ? LISTS.joyful : LISTS.kitchen
+  const L = b.list === 'podcast' ? LISTS.podcast : b.list === 'joyful' ? LISTS.joyful : b.list === 'funnel' ? LISTS.funnel : LISTS.kitchen
 
   addWaitlistEntry({ email, name, source: L.source, note: [cookbook && 'cookbook', newsletter && 'newsletter', location && `from ${location}`].filter(Boolean).join(', ') || 'no boxes checked' })
   logActivity({ type: 'note', title: `${L.icon} ${L.label} signup — ${name || email}`, detail: `${cookbook ? 'cookbook ✓' : 'cookbook ✗'} · ${newsletter ? 'newsletter ✓' : 'newsletter ✗'}${location ? ` · ${location}` : ''}`, icon: L.icon, source: 'bethereforher' })
@@ -60,14 +62,14 @@ export async function POST(req: NextRequest) {
         fail(`${what} (GHL)`)
       }
     }
-    if (cookbook) await send('Your cookbook: The Magic Is in the Making 🍂', cookbookHtml(name, newsletter ? L.key : null), 'Cookbook email')
+    if (cookbook) await send('Your cookbook: The Magic Is in the Making 🍂', cookbookHtml(name, newsletter ? L.key : null, L.source === 'cookbook-funnel'), 'Cookbook email')
     else if (newsletter) await send(WELCOME[L.key].subject, welcomeHtml(name, L.key), 'Welcome email')
   })()
 
   return NextResponse.json({ ok: true })
 }
 
-function cookbookHtml(name: string, subscribedTo: ListKey | null = null): string {
+function cookbookHtml(name: string, subscribedTo: ListKey | null = null, resetInvite = false): string {
   const url = COOKBOOK_URL
   const hi = name ? `Hi ${esc(name.split(' ')[0])},` : 'Hi love,'
   const body = url
@@ -77,6 +79,7 @@ function cookbookHtml(name: string, subscribedTo: ListKey | null = null): string
   return `<div style="font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#3C2A37;max-width:560px">
 <p>${hi}</p>${body}
 <p>Start anywhere. Light a candle, play a song, and let the kids make the mess. The magic is in the making.</p>
+${resetInvite ? `<p>P.S. Every Sunday at 8 PM CT I host <a href="https://www.bethereforher.com/reset" style="color:#D98C5F;font-weight:bold">The Reset</a>: 60 minutes of guided time to yourself, live on Google Meet. You’re invited.</p>` : ''}
 ${subscribedTo ? `<p>You’re also subscribed to ${WELCOME[subscribedTo].listName}, so you’ll hear from us when there’s something new.</p>` : ''}
 <p>Be there for her,<br>Mandi<br><a href="https://www.bethereforher.com" style="color:#D98C5F">bethereforher.com</a></p></div>`
 }
