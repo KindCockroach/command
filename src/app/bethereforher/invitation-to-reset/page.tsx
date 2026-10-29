@@ -39,20 +39,71 @@ export default function InvitationToReset() {
       <section className="invite">
         <div className="wrap">
           <p className="tag">ONE MORE THING · YOU&rsquo;RE INVITED</p>
-          <h2>Have you tried unplugging and plugging yourself <em>back in?</em></h2>
+          <p className="hear">It&rsquo;s not obvious why a cookbook would send you to an invitation to a mindful exercise, but <em>hear me out.</em></p>
           <p>
-            You&rsquo;ve made a thousand choices before eating leftover dinner for lunch on Monday. What to buy, what to cook, what
-            to schedule, what to worry about. Every app, reel, and person asks you to make one. More. Choice.
+            The woman who&rsquo;s interested in inviting magic into her life, in making room for herself in the small ways, might
+            be interested in making space for herself in a big way.
+          </p>
+          <h2>The Reset</h2>
+          <p>
+            The Reset is a one-hour window blocked off just for you: a time when you can ask your co-parents and your children
+            for the space to just be. Instead of spiraling, making another to-do list, or planning next week&rsquo;s lunches,
+            you&rsquo;re invited to close your eyes and go inward.
+          </p>
+
+          <div className="story">
+            <p className="tag">THE WOMAN WHO&rsquo;LL GUIDE YOU</p>
+            <p>
+              Mandi is an NLP and Time Line Therapy (TLT) practitioner: timeline integration, parts integration, and inner-child
+              meditation extraordinaire. One evening, she took herself through a ten-minute timeline meditation, and the very
+              next day she experienced a radically different sense of self.
+            </p>
+            <p>
+              At the grocery store checkout, she had to put the hot food back because she didn&rsquo;t have enough to pay beyond
+              her WIC and SNAP benefits. Instead of feeling embarrassment or shame, she just dealt with it, with confidence.
+              Apologetic to the people behind her, she looked them in the eyes without hesitation.
+            </p>
+            <p>
+              Stepping out to her van, where her four kids were watching a movie while she ran in, she found a grandpa standing
+              behind it, waiting for her. He&rsquo;d noticed the van door hadn&rsquo;t closed when she ran out to check on the
+              kids and back in, so he decided to stand guard over the kids, and over any passerby who might not understand what
+              a mother is going through when she has to leave her kids in the car to get groceries.
+            </p>
+            <p>
+              It wasn&rsquo;t until she got in the car and took a deep breath that she realized she had looked that man in the eye
+              and asked his name. She didn&rsquo;t over-explain or apologize. She just thanked him. <strong>That&rsquo;s the level
+              of confidence that comes with integrating the parts of you, long past, that are still driving your decisions and
+              your feelings today.</strong>
+            </p>
+          </div>
+
+          <p>
+            The Reset is only an hour. It&rsquo;s not time enough to go deep, but it is time enough to take a broad sweep of your
+            heart and your mind, to signal to your nervous system that you matter enough to set time aside just to be with it,
+            just to be with yourself.
           </p>
           <p>
-            <strong>The Reset</strong> is 60 minutes of guided time to yourself, live with Mandi on Google Meet every Sunday at
-            8 PM CT. Leave with a quieter mind, a little more patience, and one less to-do in your head.
+            This practice of pausing, of letting someone else hold your mind while you&rsquo;re guided through your imagination
+            and into your heart, is more powerful than anyone is talking about.
           </p>
+
+          <div className="when">
+            <p>
+              <strong>This year, after Halloween, after elections and voting, before the holidays, set an hour aside just for
+              you.</strong> Come to The Reset: <strong>Sunday night, November 8 at 8 PM CT</strong>, and every Sunday after. A
+              time designed for moms: after bedtime, before you&rsquo;re asleep. Tell honey you have to skip the movie. The
+              characters in your book can wait till tomorrow.
+            </p>
+            <p className="guarantee">
+              <span>The 1% promise:</span> come try something different. If it doesn&rsquo;t relieve your anxiety, stress, or
+              worries by at least 1% the following week, Mandi will give you your money back.
+            </p>
+          </div>
+
           <div className="actions">
             <a className="buy" href={CHECKOUT}>Save my seat — $33</a>
             <LearnMore checkout={CHECKOUT} />
           </div>
-          <p className="come">Come as you are: exhausted, skeptical, or with your hands in the air.</p>
         </div>
       </section>
     </main>
@@ -87,7 +138,17 @@ const css = `
 .ir .buy { background:linear-gradient(135deg,#6b3f52,#a86a72); color:#fff; box-shadow:0 12px 28px rgba(107,63,82,0.35); border:0; }
 .ir .learn { background:#fff; color:var(--plum); border:1.5px solid rgba(107,63,82,0.35); box-shadow:0 10px 22px -14px rgba(60,42,55,0.5); }
 .ir .buy:hover, .ir .learn:hover { transform:translateY(-2px); }
-.ir .come { font-style:italic; font-family:Georgia,serif; }
+.ir .hear { font:600 clamp(22px,3.6vw,28px)/1.35 Georgia,serif; color:var(--plum) !important; margin:0 0 16px !important; }
+.ir .hear em { color:var(--ember); }
+.ir .invite h2 { margin-top:28px; }
+.ir .story { margin:26px 0; padding:24px 22px; border-radius:20px; background:#fff; border:1px solid #ecdccf; box-shadow:0 20px 44px -30px rgba(60,42,55,0.45); }
+.ir .story p { font-size:17px; }
+.ir .story p:last-child { margin-bottom:0; }
+.ir .when { margin:26px 0 6px; padding:22px; border-radius:20px; background:linear-gradient(160deg,#3B2A3A,#4d3a49 80%,#a86a72); color:#efe4ea; }
+.ir .when p { color:#efe4ea !important; font-size:17px; }
+.ir .when strong { color:#fff !important; }
+.ir .guarantee { margin:14px 0 0 !important; padding:14px 16px; border-radius:14px; background:rgba(255,255,255,0.1); border:1px dashed rgba(242,184,114,0.7); }
+.ir .guarantee span { display:block; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; font-size:12.5px; color:#f2b872; margin-bottom:4px; }
 /* Learn more pop-up */
 .lm-back { position:fixed; inset:0; z-index:1000; background:rgba(28,21,32,0.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   display:flex; align-items:center; justify-content:center; padding:16px; animation:lmFade .2s ease; }
