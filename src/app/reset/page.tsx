@@ -4,7 +4,10 @@ import type { Metadata } from 'next'
 import Script from 'next/script'
 import CopyEditor from '@/components/CopyEditor'
 
+// The Reset is a Be There For Her product: its own domain, emblem icon, and preview (no AI Mom).
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.bethereforher.com'),
+  icons: { icon: '/favicon-btfh.ico', apple: '/apple-icon-btfh.png' },
   title: 'The Reset — have you tried unplugging and plugging yourself back in?',
   description: 'Not a class. 60 minutes of guided time to yourself, live with Mandi on Sunday nights. Leave with a quieter mind, a little more patience, and one less to-do in your head. $33.',
   openGraph: {
