@@ -83,13 +83,13 @@ export default function ResetPage() {
           <p className="eyebrow">THE RESET · LIVE WITH MANDI</p>
           <h1>Have you tried unplugging and plugging yourself <em>back in?</em></h1>
           <p className="sub">You&rsquo;ve made a thousand choices before eating leftover dinner for lunch on Monday.</p>
-          <RegisterButton />
         </div>
       </section>
 
       <section className="choices">
         <div className="wrap">
           {CHOICES.map(([a, b]) => <p className="choice" key={a}><strong>{a}</strong> {b}</p>)}
+          <RegisterButton />
           <p className="ontop">
             On top of having kids, every app, reel, feature, podcast, &ldquo;life changing shot,&rdquo; and your husband asks you to make:
           </p>

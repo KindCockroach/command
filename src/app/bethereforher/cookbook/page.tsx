@@ -38,8 +38,8 @@ export default function CookbookFunnel() {
             <p>
               For the woman who&rsquo;s killing herself to hit metrics and milestones, who&rsquo;s mistaking hypervigilance for
               productivity, who has 47 silent tabs running in her brain at 3 AM when she&rsquo;s supposed to be sleeping: this
-              isn&rsquo;t just exhaustion. It&rsquo;s the slow, quiet surrender of who you are meant to be. Free, in flow, magical.
-            </p>
+              isn&rsquo;t just exhaustion. It&rsquo;s the slow, quiet surrender of who you are meant to be.</p>
+            <p className="flow">Free, in flow, magical.</p>
             <p>
               Sometimes it&rsquo;s enough to infuse the mundane moments with a candle or new music. Other times you need more than
               romance to feel seen, even if it&rsquo;s by yourself.
@@ -90,6 +90,7 @@ const css = `
 .cf .copy > p { font-size:18px; color:#dccfc2; margin:0 0 14px; }
 .cf .copy > p em { color:#f2b872; }
 .cf .truth { font:700 19px/1.45 Georgia,serif; color:#fff !important; padding-left:14px; border-left:3px solid #D68054; }
+.cf .flow { font:italic 600 21px/1.4 Georgia,serif; color:#F2C48D !important; letter-spacing:.3px; }
 .cf .spell { font:italic 600 20px/1.45 Georgia,serif; color:#fff !important; }
 .cf .card { margin-top:22px; }
 .cf .free { font:700 20px Georgia,serif; text-align:center; margin:0 0 14px; color:var(--plum); }
