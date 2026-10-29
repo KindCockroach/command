@@ -142,7 +142,7 @@ export default function PodcastStudio() {
       const note = Array.isArray(d.applied) && d.applied.length ? `\n\n✓ ${d.applied.join(' · ')}` : ''
       setChat([...history, { role: 'commander', text: d.error ? `⚠ ${d.error}` : `${d.reply}${note}` }])
     } catch {
-      setChat([...history, { role: 'commander', text: '⚠ Couldn\'t reach the Commander — try again.' }])
+      setChat([...history, { role: 'commander', text: '⚠ Couldn\'t reach Pod — try again.' }])
     }
     setAsking(false)
   }
@@ -247,11 +247,17 @@ export default function PodcastStudio() {
             </div>
           </div>
 
-          {/* Commander on the table */}
+          {/* Pod — the podcast co-writer (headlines now live on Daily Command) */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <span style={{ fontSize: '16px' }}>🎙</span>
+              <div>
+                <p style={{ fontSize: '13px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.01em' }}>Pod</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>Your podcast co-writer · Claude Opus</p>
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button onClick={() => askCommander('recommend', draft)} disabled={asking} style={btn('var(--purple)')}><Sparkles size={13} /> Recommend next episode</button>
-              <button onClick={() => askCommander('headlines', draft)} disabled={asking} style={btn('#C2477E')}><Newspaper size={13} /> Pull this week&rsquo;s headlines</button>
             </div>
             {chat.length > 0 && (
               <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -262,7 +268,7 @@ export default function PodcastStudio() {
               </div>
             )}
             <div style={{ display: 'flex', gap: '8px' }}>
-              <textarea value={draft} onChange={ev => setDraft(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); askCommander('chat', draft) } }} rows={2} placeholder="Talk to the Commander: &quot;move the water pushback to Ep 9,&quot; &quot;add a guest for Nov 25,&quot; &quot;what should Ep 8 open with?&quot;" style={{ flex: 1, resize: 'vertical', border: '1px solid var(--border)', borderRadius: '10px', padding: '9px 11px', fontSize: '13px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' }} />
+              <textarea value={draft} onChange={ev => setDraft(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); askCommander('chat', draft) } }} rows={2} placeholder="Talk to Pod: &quot;what should Ep 8 open with?&quot;, &quot;bank this transcript,&quot; &quot;move the water pushback to Ep 9&quot;" style={{ flex: 1, resize: 'vertical', border: '1px solid var(--border)', borderRadius: '10px', padding: '9px 11px', fontSize: '13px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' }} />
               <button onClick={() => askCommander('chat', draft)} disabled={asking || !draft.trim()} style={{ ...btn('var(--purple)'), alignSelf: 'stretch' }}><Send size={13} /></button>
             </div>
           </div>

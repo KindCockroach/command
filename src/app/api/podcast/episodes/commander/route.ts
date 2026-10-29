@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPodcastEpisodes, createPodcastEpisode, updatePodcastEpisode, deletePodcastEpisode, getAllNotes, createNote, type PodcastEpisode } from '@/lib/db'
-import { fableText, researchWithWeb } from '@/lib/fable'
+import { fableText, researchWithWeb, commanderChat } from '@/lib/fable'
 import { PODCAST_CONSTITUTION } from '@/lib/craft'
 import { parseKit } from '@/lib/jsonkit'
 
@@ -66,7 +66,7 @@ Find 6–8 REAL news stories from the past 7 days that matter to Mandi's listene
     : String(message || '').trim()
   if (!ask) return NextResponse.json({ error: 'message required' }, { status: 400 })
 
-  const instructions = `You are RISE's Commander, sitting on the Podcast Studio episode table with Mandi. You can see every planned episode and her banked scripts, and you can ADD and EDIT episodes by talking.
+  const instructions = `You are POD — Mandi's dedicated podcast co-writer, sitting on the Podcast Studio episode table with her. You are NOT the Commander (that's her home-screen agent who runs the whole station). Your ONE job is co-writing great episodes of the AI Mom Podcast: shaping the arc, prepping episodes, reacting to what she pastes, and keeping the slate in order. You can see every planned episode and her banked scripts, and you can ADD and EDIT episodes by talking. Podcasts are her top of funnel — treat every episode like it matters.
 
 ${PODCAST_CONSTITUTION}
 
@@ -86,8 +86,9 @@ Return ONLY valid JSON: {"reply": "...", "actions": [ ... ]}`
   const input = `EPISODES (what's on her screen):\n${JSON.stringify(brief, null, 1)}\n\nBANKED SCRIPTS & TRANSCRIPTS IN NOTES:\n${banked.join('\n') || '(none)'}\n\n${priorTurns ? `RECENT CONVERSATION:\n${priorTurns}\n\n` : ''}MANDI: ${ask}`
 
   try {
-    // Claude first; if the Anthropic account can't answer (e.g. out of credit), fall back to the 4o writer.
-    const raw = await fableText({ instructions, input, maxTokens: 4000, json: true, useClaude: true })
+    // Pod thinks on Claude Opus (COMMANDER_MODEL) for best voice + judgment; if the
+    // Anthropic account can't answer (e.g. out of credit), fall back to the 4o writer.
+    const raw = await commanderChat(instructions, [{ role: 'user', content: input }], 4000)
       .catch(() => fableText({ instructions, input, maxTokens: 4000, json: true }))
     const out = await parseKit(raw)
     if (!out) return NextResponse.json({ error: 'That came back garbled — say it again and I\'ll get it.' }, { status: 502 })
@@ -120,10 +121,9 @@ Return ONLY valid JSON: {"reply": "...", "actions": [ ... ]}`
     // her for real as a producer (plain text) — this is the fix for the canned
     // "I didn't catch a change there" that fired on real messages.
     if (!reply && !applied.length) {
-      reply = (await fableText({
-        instructions: `${PODCAST_CONSTITUTION}\n\nYou are Mandi's podcast producer, talking with her at the episode table. Answer her message directly and usefully — prep the episode she named, react to what she pasted, give her the next concrete move. Warm, sharp, concise, in her world. Plain text only, no JSON.`,
-        input, maxTokens: 1400, useClaude: true,
-      }).catch(() => fableText({ instructions: `You are Mandi's podcast producer. Answer her message directly and usefully, plain text only.`, input, maxTokens: 1400 })).catch(() => '')).trim()
+      const prod = `${PODCAST_CONSTITUTION}\n\nYou are Pod, Mandi's podcast co-writer, talking with her at the episode table. Answer her message directly and usefully — prep the episode she named, react to what she pasted, give her the next concrete move. Warm, sharp, concise, in her world. Plain text only, no JSON.`
+      reply = (await commanderChat(prod, [{ role: 'user', content: input }], 1400)
+        .catch(() => fableText({ instructions: prod, input, maxTokens: 1400 })).catch(() => '')).trim()
     }
     if (!reply) reply = applied.length ? `Done — ${applied.join(' · ')}.` : 'Say that one more time and I\'ll get it.'
     return NextResponse.json({ reply, applied, episodes: getPodcastEpisodes() })
