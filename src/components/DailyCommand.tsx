@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Zap, Battery, BatteryLow, BatteryMedium, BatteryFull, Flame, CheckCheck, Sparkles, Loader2, ImageIcon, Target, Copy, Plus, HelpCircle, Crown, Waves } from 'lucide-react'
 import ResearchBrief from './ResearchBrief'
+import HeadlinesPanel from './HeadlinesPanel'
 
 type DailyData = {
   date: string
@@ -444,6 +445,9 @@ export default function DailyCommand() {
 
       {/* 🔬 Today's must-reads — full width, above tasks and what's on fire */}
       <ResearchBrief />
+
+      {/* 📰 This week's headlines — pull news + flag any to read later */}
+      <HeadlinesPanel />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
 

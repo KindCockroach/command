@@ -458,6 +458,8 @@ type Db = {
   inbox?: InboxBrief
   media_meta?: Record<string, MediaMeta>
   trend_audio?: { audio: string; format: string; sounds?: string[]; when: string }
+  saved_headlines?: SavedHeadline[]
+  next_headline_id?: number
   podcast_schedule?: PodcastSchedule
   podcast_episodes?: PodcastEpisode[]
   podcast_guests?: PodcastGuest[]
@@ -1741,6 +1743,41 @@ export function setTrendAudio(data: { audio: string; format: string; sounds?: st
   const db = readDb()
   db.trend_audio = { ...data, when: new Date().toISOString() }
   writeDb(db)
+}
+
+// ── SAVED HEADLINES — her "read later" list (flagged from Daily Command) ──────
+export type SavedHeadline = { id: number; headline: string; outlet?: string; url: string; why?: string; read?: boolean; created_at: string }
+
+export function getSavedHeadlines(): SavedHeadline[] {
+  const db = readDb()
+  return [...(db.saved_headlines ?? [])].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+}
+export function addSavedHeadline(data: { headline: string; url: string; outlet?: string; why?: string }): SavedHeadline {
+  const db = readDb()
+  if (!db.saved_headlines) db.saved_headlines = []
+  // Don't double-save the same link.
+  const existing = db.saved_headlines.find(h => h.url === data.url)
+  if (existing) return existing
+  if (!db.next_headline_id) db.next_headline_id = 1
+  const h: SavedHeadline = { id: db.next_headline_id++, headline: data.headline, url: data.url, outlet: data.outlet, why: data.why, read: false, created_at: new Date().toISOString() }
+  db.saved_headlines.push(h)
+  writeDb(db)
+  return h
+}
+export function updateSavedHeadline(id: number, patch: Partial<SavedHeadline>): SavedHeadline | null {
+  const db = readDb()
+  const h = (db.saved_headlines ?? []).find(x => x.id === id)
+  if (!h) return null
+  Object.assign(h, patch, { id: h.id, created_at: h.created_at })
+  writeDb(db)
+  return h
+}
+export function deleteSavedHeadline(id: number): boolean {
+  const db = readDb()
+  const before = (db.saved_headlines ?? []).length
+  db.saved_headlines = (db.saved_headlines ?? []).filter(x => x.id !== id)
+  writeDb(db)
+  return db.saved_headlines.length < before
 }
 
 // ── ONE-TIME: remap brand-account ids so they match handles ───────────────────
