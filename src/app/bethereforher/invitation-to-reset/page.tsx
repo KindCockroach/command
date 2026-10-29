@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-const CHECKOUT = 'https://buy.stripe.com/9B628rfW5dKE7N6ba59IQ03' // The Reset, $33 (same as /reset)
+const CHECKOUT = 'https://luma.com/xl7rkpwd' // The Reset on Luma (Mandi, 2026-10-29); Stripe link was buy.stripe.com/9B628rfW5dKE7N6ba59IQ03
 const PDF = '/bethereforher/magic-is-in-the-making.pdf'
 
 export default function InvitationToReset() {
