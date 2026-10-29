@@ -12,7 +12,7 @@ type Line = { id: number; account_id: string; line: string; caption: string; aud
 type Acct = { id: string; handle: string; status: string; brand_name?: string }
 type Pulse = { audio: string; audio_from?: string; format: string; when: string | null }
 
-const DEFAULT_ACCOUNT = 'mandijoybeck'   // @theknowingis — her current focus
+const DEFAULT_ACCOUNT = 'theknowingis'   // @theknowingis — her current focus (id now matches handle)
 
 function CopyBtn({ text, label }: { text: string; label: string }) {
   const [done, setDone] = useState(false)

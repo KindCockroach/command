@@ -76,7 +76,7 @@ const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(Mat
 
 export default function WinnersPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
-  const [accountId, setAccountId] = useState('mandijoy')
+  const [accountId, setAccountId] = useState('mandijoybeck')
   const [results, setResults] = useState<Scored[]>([])
   const [paste, setPaste] = useState('')
   const [msg, setMsg] = useState('')

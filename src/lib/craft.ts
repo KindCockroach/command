@@ -121,7 +121,7 @@ const STORY_ACCOUNTS_NOTE = `
 // Her personal accounts — @mandij0y (IG) and Amanda Beck (FB) — are SEPARATE
 // (different platforms + audiences) but BOTH personal. Add the FB slug here once
 // it's in the roster.
-const PERSONAL_ACCOUNT_IDS = new Set(['mandijoy', 'amandabeck', 'mandijoybeck'])
+const PERSONAL_ACCOUNT_IDS = new Set(['mandijoybeck', 'amandabeck', 'theknowingis'])
 
 // HARD RULE — protect the real people in her life (her mom, Preston/partner, family,
 // friends). Applied to the accounts that draw on her real story.

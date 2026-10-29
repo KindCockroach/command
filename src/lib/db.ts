@@ -1743,6 +1743,39 @@ export function setTrendAudio(data: { audio: string; format: string; sounds?: st
   writeDb(db)
 }
 
+// ── ONE-TIME: remap brand-account ids so they match handles ───────────────────
+// Backs up the whole db first (reversible), renames each account's id via `map`,
+// then rewrites every `account_id` reference across ALL collections in a single
+// pass (map lookup → collision-safe even when an id is both a source and a target).
+export function remapAccountIds(map: Record<string, string>): { backup: string; counts: Record<string, number> } {
+  const db = readDb()
+  const ts = new Date().toISOString().replace(/[:.]/g, '-')
+  const backup = path.join(DB_DIR, `db.backup.${ts}.json`)
+  fs.writeFileSync(backup, JSON.stringify(db, null, 2))
+
+  const counts: Record<string, number> = {}
+  const bump = (k: string) => { counts[k] = (counts[k] ?? 0) + 1 }
+
+  // 1) the accounts' own ids
+  for (const a of (db.brand_accounts ?? [])) {
+    if (a.id in map) { a.id = map[a.id]; bump('accounts') }
+  }
+  // 2) every array item carrying a string account_id (posts, goals, events, lines,
+  //    activity, …). Keyed on the exact field name, so ghl_account_ids / audience_id
+  //    / avatar_id are left untouched.
+  for (const [key, val] of Object.entries(db as Record<string, unknown>)) {
+    if (!Array.isArray(val)) continue
+    for (const item of val) {
+      if (item && typeof item === 'object') {
+        const rec = item as Record<string, unknown>
+        if (typeof rec.account_id === 'string' && rec.account_id in map) { rec.account_id = map[rec.account_id]; bump(key) }
+      }
+    }
+  }
+  writeDb(db)
+  return { backup, counts }
+}
+
 // ── PODCAST SCHEDULER — availability + guest bookings ────────────────────────
 export function getPodcastSchedule(): PodcastSchedule {
   const db = readDb()
