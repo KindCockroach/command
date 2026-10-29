@@ -31,16 +31,25 @@ export default function CookbookFunnel() {
         <div className="wrap grid">
           <div className="copy">
             <a className="eyebrow" href="/bethereforher">BE THERE FOR HER · FREE COOKBOOK</a>
-            <h1>The magic is <em>in the making.</em></h1>
+            <h1>Get this cookbook. <em>Receive your invitation to a more magical you.</em></h1>
             <p>
-              A free seasonal kitchen spellbook for the woman who feeds everyone. Soups, potions, and little-witch treats,
-              with notes in the margin for more play, joy, and relief in your kitchen.
+              Sometimes it&rsquo;s enough just to infuse the mundane moments with a candle or new music. But sometimes you need
+              more than romance to feel seen, even if it&rsquo;s by yourself.
+            </p>
+            <p>
+              <em>The Magic Is in the Making</em> has amazing, delicious, family-forward recipes, including soups, smoothies, and
+              even treats for your pets, with notes in the margin that remind you that you are magical.
             </p>
             <div className="card">
+              <p className="free">Subscribe now, for free.</p>
               <KitchenForm list="funnel" fixedCookbook cookbookRedirect="/bethereforher/invitation-to-reset"
-                newsletterLabel="Also subscribe to Be There For Her. Get updates when new series are released."
+                newsletterLabel="Optional: also subscribe to Be There For Her updates."
                 button="Send me the cookbook →" />
-              <p className="fine">Free. Your information is secure with us.</p>
+              <p className="fine">
+                Signing up for any newsletter is optional, and none are planned as of now. This is just the creative expression
+                of one woman who&rsquo;s making the world a little brighter by reminding women of their intuitive magic. Your
+                information is secure with us.
+              </p>
             </div>
           </div>
           <img className="cover" src="/bethereforher/cookbook-cover.jpg" alt="The Magic Is in the Making — cookbook cover" />
@@ -67,9 +76,12 @@ const css = `
 .cf .hero { background:radial-gradient(700px 400px at 80% 10%, rgba(214,128,84,0.25), transparent 60%), linear-gradient(160deg,#1c1520,#2a1f2b 60%,#3b2a37); color:#f5ece0; padding:56px 0 64px; }
 .cf .grid { display:grid; grid-template-columns:1.15fr .85fr; gap:44px; align-items:center; }
 .cf .eyebrow { letter-spacing:3px; font-size:12px; font-weight:800; color:#E0A458; text-decoration:none; }
-.cf h1 { font-size:clamp(34px,6vw,54px); line-height:1.08; margin:14px 0 14px; color:#fff; }
+.cf h1 { font-size:clamp(30px,5vw,46px); line-height:1.12; margin:14px 0 16px; color:#fff; }
 .cf h1 em { color:#f2b872; }
-.cf .copy > p { font-size:18px; color:#dccfc2; margin:0 0 22px; }
+.cf .copy > p { font-size:18px; color:#dccfc2; margin:0 0 14px; }
+.cf .copy > p em { color:#f2b872; }
+.cf .card { margin-top:22px; }
+.cf .free { font:700 20px Georgia,serif; text-align:center; margin:0 0 14px; color:var(--plum); }
 .cf .cover { width:100%; max-width:360px; justify-self:center; border-radius:10px; border:1px solid rgba(214,128,84,0.6);
   box-shadow:0 30px 60px -20px rgba(0,0,0,0.7), 0 0 60px rgba(214,128,84,0.25); transform:rotate(2deg); }
 .cf .card { background:#fff; color:var(--plum); border-radius:22px; padding:22px 20px; box-shadow:0 24px 50px -28px rgba(0,0,0,0.6); }
@@ -83,7 +95,7 @@ const css = `
   background:linear-gradient(135deg,#F7C79A,#D68054); box-shadow:0 12px 26px rgba(214,128,84,0.4); transition:transform .15s ease; }
 .cf .kbtn:hover { transform:translateY(-2px); }
 .cf .kbtn:disabled { opacity:.6; }
-.cf .fine { text-align:center; font-size:13px; color:var(--soft); margin:10px 0 0; }
+.cf .fine { text-align:center; font-size:13px; line-height:1.5; color:var(--soft); margin:12px 0 0; }
 .cf .inside { padding:56px 0 70px; }
 .cf .inside h2 { font-size:clamp(26px,4vw,34px); margin:0 0 20px; text-align:center; }
 .cf .items { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
