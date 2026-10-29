@@ -27,7 +27,11 @@ export default function InvitationToReset() {
       <section className="got">
         <div className="wrap">
           <p className="eyebrow">BE THERE FOR HER</p>
-          <h1>Your cookbook <em>is ready.</em></h1>
+          <h1>Your spell-book is ready <em>and you&rsquo;re invited to The Reset.</em></h1>
+          <div className="top-actions">
+            <a className="buy" href={CHECKOUT}>Save my seat at The Reset — $33</a>
+            <a className="skip" href="#invite">What&rsquo;s The Reset? &darr;</a>
+          </div>
           <a className="dl" href={PDF} target="_blank" rel="noreferrer">
             <img src="/bethereforher/cookbook-cover.jpg" alt="" />
             <span><strong>The Magic Is in the Making</strong>Tap to open and save it now. A copy is on its way to your inbox too (check All Mail).</span>
@@ -36,14 +40,18 @@ export default function InvitationToReset() {
         </div>
       </section>
 
-      <section className="invite">
+      <section className="invite" id="invite">
         <div className="wrap">
           <p className="tag">ONE MORE THING · YOU&rsquo;RE INVITED</p>
-          <p className="hear">It&rsquo;s not obvious why a cookbook would send you to an invitation to a mindful exercise, but <em>hear me out.</em></p>
+          <div className="split">
+            <img src="/bethereforher/reset/hear-me-out.jpg" alt="Mandi raising one eyebrow" />
+            <p className="hear">It&rsquo;s not obvious why a cookbook would send you to an invitation to a mindful exercise, but <em>hear me out.</em></p>
+          </div>
           <p>
             The woman who&rsquo;s interested in inviting magic into her life, in making room for herself in the small ways, might
             be interested in making space for herself in a big way.
           </p>
+          <img className="logo" src="/bethereforher/reset/the-reset.png" alt="The Reset" />
           <h2>The Reset</h2>
           <p>
             The Reset is a one-hour window blocked off just for you: a time when you can ask your co-parents and your children
@@ -52,6 +60,7 @@ export default function InvitationToReset() {
           </p>
 
           <div className="story">
+            <img className="guide" src="/bethereforher/reset/mandi-guide.jpg" alt="Mandi, your guide for The Reset" />
             <p className="tag">THE WOMAN WHO&rsquo;LL GUIDE YOU</p>
             <p>
               Mandi is an NLP and Time Line Therapy (TLT) practitioner: timeline integration, parts integration, and inner-child
@@ -82,10 +91,13 @@ export default function InvitationToReset() {
             heart and your mind, to signal to your nervous system that you matter enough to set time aside just to be with it,
             just to be with yourself.
           </p>
-          <p>
+          <div className="split rev">
+            <img className="round" src="/bethereforher/reset/listen.png" alt="" />
+            <p>
             This practice of pausing, of letting someone else hold your mind while you&rsquo;re guided through your imagination
             and into your heart, is more powerful than anyone is talking about.
-          </p>
+            </p>
+          </div>
 
           <div className="when">
             <p>
@@ -127,6 +139,15 @@ const css = `
 .ir .dl span { flex:1; font-size:15px; line-height:1.45; }
 .ir .dl strong { display:block; font:700 19px Georgia,serif; color:#fff; }
 .ir .dl b { flex:none; background:linear-gradient(135deg,#F7C79A,#D68054); color:#221923; padding:11px 18px; border-radius:999px; font-size:15px; }
+.ir .top-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; align-items:center; margin:0 0 26px; }
+.ir .skip { color:#f2b872; font-weight:700; text-decoration:none; font-size:15px; padding:10px 6px; }
+.ir .split { display:flex; gap:22px; align-items:center; margin:0 0 18px; }
+.ir .split img { width:42%; max-width:260px; flex:none; border-radius:20px; box-shadow:0 20px 40px -24px rgba(60,42,55,0.55); }
+.ir .split.rev { flex-direction:row-reverse; margin:26px 0; }
+.ir .split.rev p { margin:0; }
+.ir .split img.round { width:36%; max-width:220px; border-radius:50%; }
+.ir .logo { display:block; width:220px; max-width:60%; margin:34px auto -8px; }
+.ir .guide { display:block; width:100%; max-height:420px; object-fit:cover; object-position:center 20%; border-radius:14px; margin:0 0 18px; }
 .ir .invite { padding:56px 0 72px; }
 .ir .tag { letter-spacing:2.5px; font-size:12px; font-weight:800; color:var(--ember); margin:0 0 10px; }
 .ir .invite h2 { font-size:clamp(28px,4.6vw,40px); line-height:1.15; margin:0 0 16px; }
@@ -175,5 +196,5 @@ const css = `
 .lm-actions { display:flex; gap:10px; flex-wrap:wrap; }
 .lm-buy { flex:1; text-align:center; background:linear-gradient(135deg,#6b3f52,#a86a72); color:#fff; font-weight:800; font-size:16px; text-decoration:none; padding:14px 20px; border-radius:999px; }
 .lm-later { background:transparent; border:0; color:#6a5a62; font-weight:700; font-size:15px; cursor:pointer; padding:14px 10px; font-family:inherit; }
-@media (max-width:520px){ .ir .dl { flex-wrap:wrap; } .ir .dl b { width:100%; text-align:center; } .lm dl div { grid-template-columns:1fr; gap:2px; } }
+@media (max-width:520px){ .ir .split { flex-direction:column; } .ir .split.rev { flex-direction:column; } .ir .split img { width:70%; } .ir .split img.round { width:55%; } .ir .top-actions .buy { width:100%; text-align:center; } .ir .dl { flex-wrap:wrap; } .ir .dl b { width:100%; text-align:center; } .lm dl div { grid-template-columns:1fr; gap:2px; } }
 `
