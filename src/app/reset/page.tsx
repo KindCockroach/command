@@ -7,6 +7,20 @@ import CopyEditor from '@/components/CopyEditor'
 export const metadata: Metadata = {
   title: 'The Reset — have you tried unplugging and plugging yourself back in?',
   description: 'Not a class. 60 minutes of guided time to yourself, live with Mandi on Sunday nights. Leave with a quieter mind, a little more patience, and one less to-do in your head. $33.',
+  openGraph: {
+    title: 'You’re invited to reset.',
+    description: 'Inaugural Reset, November 8th. Come set down your brain for an hour — live with Mandi, Sundays at 8 PM CT. $33.',
+    url: 'https://www.bethereforher.com/reset',
+    siteName: 'Be There For Her',
+    images: [{ url: '/og-reset.png', width: 1200, height: 630 }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'You’re invited to reset.',
+    description: 'Inaugural Reset, November 8th. Come set down your brain for an hour.',
+    images: ['/og-reset.png'],
+  },
 }
 
 // THE RESET — Mandi's live Sunday-night hour ($33). Register button opens the Luma
