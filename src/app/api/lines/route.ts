@@ -35,6 +35,7 @@ async function generateLines(accountId: string, count: number): Promise<number> 
   const trendNote = notes.find(n => /Weekly Trends|#/.test(n.title ?? '') && (n.tags ?? []).includes('trends'))
   const trend = trendNote?.body ? trendNote.body.slice(0, 260) : ''
   const avoid = getRecentLineTexts(accountId, 12)
+  const focus = (acct.weekly_focus ?? '').trim()   // "This week's focus" steer she typed in Accounts
 
   // The voice, pinned by CONTRAST. GOOD = strangely-specific with a wry, slightly
   // absurd turn that reveals the self-abandonment (silly-serious). BAD = plain, earnest
@@ -87,7 +88,7 @@ TWO HARD BANS:
 2. The caption must be COHERENT ON ITS OWN — never reference a prop/image the reader can't see ("still has the plastic peeled off" is meaningless without the picture). Plain and self-contained.
 ${PROTECT}
 ${special}
-${note197 ? `Her voice/story: ${(note197.body ?? '').slice(0, 300)}\n` : ''}${trend ? `Trending now (mirror the rhythm): ${trend}\n` : ''}${avoid.length ? `Don't repeat: ${avoid.join(' / ')}\n` : ''}
+${focus ? `⭐ THIS WEEK'S FOCUS (her current campaign — lean these lines toward it while keeping the structure and voice above; weave it in naturally, never salesy): ${focus}\n` : ''}${note197 ? `Her voice/story: ${(note197.body ?? '').slice(0, 300)}\n` : ''}${trend ? `Trending now (mirror the rhythm): ${trend}\n` : ''}${avoid.length ? `Don't repeat: ${avoid.join(' / ')}\n` : ''}
 Write ${count} LINES for ${acct.handle}. Each = 4 short parts:
 - "line": TWO short sentences — (1) scroll-stopping recognition, (2) a curiosity gap that doesn't resolve — in the GOOD register above
 - "caption": her same silly-serious, specific voice — 2-4 short lines that stay WITH the recognition, self-contained, no advice or fixing, no hashtags

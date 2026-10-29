@@ -180,6 +180,7 @@ export type BrandAccount = {
   offer?: string           // low-ticket offer tied to this account
   offer_price?: string
   pushing?: string         // which business → product this account is CURRENTLY pushing (at-a-glance focus line)
+  weekly_focus?: string    // "This week's focus" — a short steer Mandi types; woven into this account's generated Lines (and posts)
   url?: string
   notes?: string
   audience_id?: string | null   // THE one audience this account serves

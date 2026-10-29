@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPodcastEpisodes, createPodcastEpisode, updatePodcastEpisode, deletePodcastEpisode, getAllNotes, type PodcastEpisode } from '@/lib/db'
+import { getPodcastEpisodes, createPodcastEpisode, updatePodcastEpisode, deletePodcastEpisode, getAllNotes, createNote, type PodcastEpisode } from '@/lib/db'
 import { fableText, researchWithWeb } from '@/lib/fable'
 import { PODCAST_CONSTITUTION } from '@/lib/craft'
 import { parseKit } from '@/lib/jsonkit'
@@ -21,6 +21,7 @@ type Action =
   | { op: 'create'; fields: Partial<PodcastEpisode> }
   | { op: 'update'; id: string; fields: Partial<PodcastEpisode> }
   | { op: 'delete'; id: string }
+  | { op: 'note'; title?: string; body?: string; tags?: string[] }
 
 const EDITABLE: (keyof PodcastEpisode)[] = ['number', 'date', 'day', 'time', 'title', 'topic', 'guest', 'thread', 'pushback', 'note_id', 'status', 'references']
 
@@ -71,13 +72,14 @@ ${PODCAST_CONSTITUTION}
 
 ${ARC}
 
-HOW YOU TALK: a trusted producer — warm, sharp, plain, concise. Do the thing she asked; say what you changed in a sentence or two. If she asks a question, ANSWER it and return no actions. If you can't tell what she wants, say exactly what you need — never guess, never fake a "Done."
+HOW YOU TALK: a trusted producer — warm, sharp, plain, concise. ALWAYS write a real "reply": do the thing she asked, prep the episode she named, react to what she pasted, answer her question. NEVER return an empty reply. If you genuinely can't tell what she wants, ask one specific question — never a vague "what should I add or edit." Most of her messages are conversation, not edits; it's completely fine to return a great reply with NO actions.
 
-YOUR HANDS — "actions" is a list; each is one of:
+YOUR HANDS — "actions" is a list (often empty); each is one of:
 • {"op":"create","fields":{...}} — a new episode
 • {"op":"update","id":"<episode id>","fields":{...only the changed fields}}
 • {"op":"delete","id":"<episode id>"} — ONLY when she explicitly says delete or remove that episode
-Fields: number (int), date (YYYY-MM-DD), day ("sun" solo | "wed" guest), time ("10:00"), title, topic, guest, thread, pushback, note_id (the banked Note number, int), status ("planned"|"scripted"|"recorded"|"published"), references ([{label,url}]).
+• {"op":"note","title":"...","body":"...","tags":["ep-08"]} — BANK something to her Notes. Use this when she says "update your notes," "save this," "bank this transcript," or pastes a transcript/research she wants kept. Put the FULL text she pasted in "body" verbatim — do not summarize or truncate it.
+Episode fields: number (int), date (YYYY-MM-DD), day ("sun" solo | "wed" guest), time ("10:00"), title, topic, guest, thread, pushback, note_id (the banked Note number, int), status ("planned"|"scripted"|"recorded"|"published"), references ([{label,url}]).
 
 Return ONLY valid JSON: {"reply": "...", "actions": [ ... ]}`
 
@@ -101,9 +103,29 @@ Return ONLY valid JSON: {"reply": "...", "actions": [ ... ]}`
         if (ep) applied.push(`updated ${ep.number ? `Ep ${ep.number}` : ep.title}`)
       } else if (a?.op === 'delete' && a.id && wantsDelete) {
         if (deletePodcastEpisode(a.id)) applied.push('removed an episode')
+      } else if (a?.op === 'note') {
+        // Bank to Notes. If the model's body looks truncated vs. what she pasted,
+        // store her raw message instead so a long transcript is never lost.
+        let body = String(a.body ?? '')
+        if (String(ask).length > 400 && body.length < String(ask).length * 0.6) body = String(ask)
+        const title = String(a.title ?? '').trim() || 'Banked from Podcast Studio'
+        const tags = Array.from(new Set(['banked', 'transcript', ...((a.tags ?? []).map(t => String(t)))]))
+        const n = createNote({ title, body, category: 'idea', tags })
+        applied.push(`banked "${title}" to Notes (#${n.id})`)
       }
     }
-    const reply = typeof out.reply === 'string' && out.reply.trim() ? out.reply.trim() : applied.length ? 'Updated.' : 'I didn\'t catch a change there — what should I add or edit?'
+
+    let reply = typeof out.reply === 'string' && out.reply.trim() ? out.reply.trim() : ''
+    // Never dead-end. If the structured pass gave no reply AND changed nothing, answer
+    // her for real as a producer (plain text) — this is the fix for the canned
+    // "I didn't catch a change there" that fired on real messages.
+    if (!reply && !applied.length) {
+      reply = (await fableText({
+        instructions: `${PODCAST_CONSTITUTION}\n\nYou are Mandi's podcast producer, talking with her at the episode table. Answer her message directly and usefully — prep the episode she named, react to what she pasted, give her the next concrete move. Warm, sharp, concise, in her world. Plain text only, no JSON.`,
+        input, maxTokens: 1400, useClaude: true,
+      }).catch(() => fableText({ instructions: `You are Mandi's podcast producer. Answer her message directly and usefully, plain text only.`, input, maxTokens: 1400 })).catch(() => '')).trim()
+    }
+    if (!reply) reply = applied.length ? `Done — ${applied.join(' · ')}.` : 'Say that one more time and I\'ll get it.'
     return NextResponse.json({ reply, applied, episodes: getPodcastEpisodes() })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Commander failed' }, { status: 500 })

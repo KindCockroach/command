@@ -161,7 +161,7 @@ export function PlatformPreviewModal({ post, account, onClose }: { post: Content
 const BLANK_ACCOUNT: Partial<BrandAccount> = {
   id: '', handle: '', platform: 'Instagram', status: 'planned', priority: 'medium', color: '#E8448A', emoji: '✨',
   brand_name: '', topic: '', bio: '', mission: '', content_format: '', underlying_message: '', problem_message: '',
-  solution_message: '', transformation: '', the_how: '', tone: '', beliefs: [], hooks: [], offer: '', offer_price: '', url: '', notes: '',
+  solution_message: '', transformation: '', the_how: '', tone: '', beliefs: [], hooks: [], offer: '', offer_price: '', url: '', notes: '', weekly_focus: '',
 }
 
 // ── Full account editor: every field of the brand DNA is editable in-station ──
@@ -269,6 +269,11 @@ function AccountEditorModal({ account, onSave, onDelete, onClose }: { account: P
           </div>
 
           <div>{lbl('Purpose / Mission — what is this account FOR')}<textarea value={form.mission ?? ''} onChange={e => set('mission', e.target.value)} rows={2} style={area} /></div>
+          <div style={{ background: 'var(--purple-light)', borderRadius: '10px', padding: '10px 12px' }}>
+            {lbl('⭐ This week’s focus — what to push right now (steers this account’s Lines)')}
+            <textarea value={form.weekly_focus ?? ''} onChange={e => set('weekly_focus', e.target.value)} rows={2} style={area}
+              placeholder={'e.g. Promoting the free cookbook — send them to the site to sign up + listen to the new podcast. Lighter, "invite a little more magic into your day" energy.'} />
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>{lbl('Topic / Niche')}<input value={form.topic ?? ''} onChange={e => set('topic', e.target.value)} style={fld} /></div>
             <div>{lbl('Content format')}<input value={form.content_format ?? ''} onChange={e => set('content_format', e.target.value)} style={fld} /></div>
