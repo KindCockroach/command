@@ -31,15 +31,17 @@ export default function CookbookFunnel() {
         <div className="wrap grid">
           <div className="copy">
             <a className="eyebrow" href="/bethereforher">BE THERE FOR HER · FREE COOKBOOK</a>
-            <h1>Get this cookbook. <em>Receive your invitation to a more magical you.</em></h1>
+            <h1>You are not broken or behind. <em>You are simply operating inside a relentless machine built for men.</em></h1>
             <p>
-              Sometimes it&rsquo;s enough just to infuse the mundane moments with a candle or new music. But sometimes you need
-              more than romance to feel seen, even if it&rsquo;s by yourself.
+              With this magical cookbook, you tap back into your feminine, inviting flow and creativity into the kitchen. This
+              book is less about the recipes and more about what you do with what you make.
             </p>
             <p>
-              <em>The Magic Is in the Making</em> has amazing, delicious, family-forward recipes, including soups, smoothies, and
-              even treats for your pets, with notes in the margin that remind you that you are magical.
+              For the woman who&rsquo;s killing herself to hit metrics and milestones, who&rsquo;s mistaking hypervigilance for
+              productivity, who has 47 silent tabs running in her brain at 3 AM when she&rsquo;s supposed to be sleeping: this
+              isn&rsquo;t just exhaustion. It&rsquo;s the slow, quiet surrender of who you are meant to be. Free, in flow, magical.
             </p>
+            <p className="spell">This cookbook is more of a spellbook, and it was made just for you, because you are magical.</p>
             <div className="card">
               <p className="free">Subscribe now, for free.</p>
               <KitchenForm list="funnel" fixedCookbook cookbookRedirect="/bethereforher/invitation-to-reset"
@@ -80,6 +82,7 @@ const css = `
 .cf h1 em { color:#f2b872; }
 .cf .copy > p { font-size:18px; color:#dccfc2; margin:0 0 14px; }
 .cf .copy > p em { color:#f2b872; }
+.cf .spell { font:italic 600 20px/1.45 Georgia,serif; color:#fff !important; }
 .cf .card { margin-top:22px; }
 .cf .free { font:700 20px Georgia,serif; text-align:center; margin:0 0 14px; color:var(--plum); }
 .cf .cover { width:100%; max-width:360px; justify-self:center; border-radius:10px; border:1px solid rgba(214,128,84,0.6);
