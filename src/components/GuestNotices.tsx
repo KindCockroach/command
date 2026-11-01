@@ -30,7 +30,7 @@ export default function GuestNotices() {
   }
   const openAdmin = () => {
     try { sessionStorage.setItem('guests-mode', 'admin') } catch { /* ignore */ }
-    window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'guests' } }))
+    window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'people' } }))
   }
 
   return (

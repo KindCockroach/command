@@ -312,6 +312,57 @@ export type WaitlistEntry = {
   created_at: string
 }
 
+// ─── PEOPLE (the CRM) ───────────────────────────────────────────────────────
+// RISE's own system of record for relationships, replacing GoHighLevel. Everyone
+// lives in one list wearing LABELS; a person can wear several. Three sources feed
+// the People view: waitlist signups (labels derived from what they claimed),
+// podcast guests (the Guest label + their deep outreach record), and manually
+// added contacts (persons of interest, paid customers, anyone Mandi adds by hand).
+export const CONTACT_LABELS = ['free_customer', 'paid_customer', 'sub_podcast', 'sub_btfh', 'sub_joyful', 'guest', 'poi'] as const
+export type ContactLabel = typeof CONTACT_LABELS[number]
+export const CONTACT_LABEL_TEXT: Record<ContactLabel, string> = {
+  free_customer: 'Free Customer', paid_customer: 'Paid Customer',
+  sub_podcast: 'Subscriber: Podcast', sub_btfh: 'Subscriber: Be There For Her', sub_joyful: 'Subscriber: Joyful Media',
+  guest: 'Guest', poi: 'Person of Interest',
+}
+
+// A CRM-native record: people added by hand, plus a place to attach extra labels
+// and notes to anyone (keyed by lowercased email so signups/guests can be enriched).
+export type Contact = {
+  id: string
+  email?: string
+  name: string
+  labels: ContactLabel[]
+  instagram?: string
+  website?: string
+  phone?: string
+  why?: string          // why we follow them (POI) / why they matter
+  notes?: string
+  products?: string[]    // product keys they claimed or paid for
+  created_at: string
+  updated_at: string
+}
+
+// The merged, read-only shape the People tab renders — one person, all labels,
+// wherever they came from. guest_id opens the deep guest record; contact_id means
+// there's an editable CRM record behind them.
+export type PersonView = {
+  key: string
+  name: string
+  email?: string
+  labels: ContactLabel[]
+  sources: string[]
+  instagram?: string
+  website?: string
+  phone?: string
+  why?: string
+  notes?: string
+  guest_id?: string
+  contact_id?: string
+  signup_note?: string
+  created_at: string
+}
+
 // The station's SPINE — one running log of everything that happens (a file dropped,
 // a transcript made, a post drafted/approved, a weekly trend check-in). The
 // Commander reads the recent slice so it always knows what just happened, and the
@@ -469,6 +520,7 @@ type Db = {
   site_edit_key_hash?: string                         // sha256 of Mandi's copy-editor key
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
+  contacts?: Contact[]
   memories: Memory[]
   projects: Project[]
   tasks: Task[]
@@ -816,6 +868,111 @@ export function addWaitlistEntry(data: { email: string; name?: string; source?: 
   db.waitlist.push(entry)
   writeDb(db)
   return { entry, duplicate: false }
+}
+
+// --- People (the CRM) ---
+// Which newsletter a signup source subscribes to.
+const SOURCE_SUB: Record<string, ContactLabel> = {
+  kitchen: 'sub_btfh', 'cookbook-funnel': 'sub_btfh', 'podcast-listeners': 'sub_podcast', 'joyful-media': 'sub_joyful',
+}
+// Derive labels from a waitlist signup: a claimed cookbook = free customer; a checked
+// newsletter box = subscriber to that source's list.
+function signupLabels(w: WaitlistEntry): ContactLabel[] {
+  const out: ContactLabel[] = []
+  const note = (w.note || '').toLowerCase()
+  if (note.includes('cookbook')) out.push('free_customer')
+  if (note.includes('newsletter')) { const s = SOURCE_SUB[w.source]; if (s) out.push(s) }
+  return out
+}
+
+export function getContacts(): Contact[] { return readDb().contacts ?? [] }
+
+export function createContact(data: Partial<Contact>): Contact {
+  const db = readDb()
+  if (!db.contacts) db.contacts = []
+  const now = new Date().toISOString()
+  const c: Contact = {
+    id: `c_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    email: data.email ? data.email.trim().toLowerCase() : undefined,
+    name: (data.name || '').trim(),
+    labels: (data.labels || []).filter(l => CONTACT_LABELS.includes(l)),
+    instagram: data.instagram, website: data.website, phone: data.phone,
+    why: data.why, notes: data.notes, products: data.products,
+    created_at: now, updated_at: now,
+  }
+  db.contacts.push(c)
+  writeDb(db)
+  return c
+}
+
+export function updateContact(id: string, patch: Partial<Contact>): Contact | null {
+  const db = readDb()
+  const c = (db.contacts ?? []).find(x => x.id === id)
+  if (!c) return null
+  if (patch.labels) patch.labels = patch.labels.filter(l => CONTACT_LABELS.includes(l))
+  if (patch.email !== undefined) patch.email = patch.email ? patch.email.trim().toLowerCase() : undefined
+  Object.assign(c, patch, { updated_at: new Date().toISOString() })
+  writeDb(db)
+  return c
+}
+
+export function deleteContact(id: string): boolean {
+  const db = readDb()
+  const before = (db.contacts ?? []).length
+  db.contacts = (db.contacts ?? []).filter(x => x.id !== id)
+  writeDb(db)
+  return (db.contacts?.length ?? 0) < before
+}
+
+// Merge waitlist signups + podcast guests + CRM contacts into one list of people,
+// keyed by lowercased email (people without an email stay distinct). Labels union
+// across every source; a matching CRM contact adds its manual labels, why, and notes.
+export function getPeople(): PersonView[] {
+  const db = readDb()
+  const byKey = new Map<string, PersonView>()
+  const addLabels = (p: PersonView, ls: ContactLabel[]) => { for (const l of ls) if (!p.labels.includes(l)) p.labels.push(l) }
+  const keyFor = (email?: string, fallback?: string) => (email && email.trim()) ? `e:${email.trim().toLowerCase()}` : `x:${fallback}`
+
+  const touch = (key: string, base: Partial<PersonView> & { name: string; created_at: string }): PersonView => {
+    let p = byKey.get(key)
+    if (!p) { p = { key, name: base.name, email: base.email, labels: [], sources: [], created_at: base.created_at }; byKey.set(key, p) }
+    if (!p.name && base.name) p.name = base.name
+    if (!p.email && base.email) p.email = base.email
+    if (new Date(base.created_at) < new Date(p.created_at)) p.created_at = base.created_at
+    return p
+  }
+
+  // 1) Signups
+  for (const w of (db.waitlist ?? [])) {
+    const p = touch(keyFor(w.email, `w${w.id}`), { name: w.name, email: w.email, created_at: w.created_at })
+    addLabels(p, signupLabels(w))
+    if (!p.sources.includes(w.source)) p.sources.push(w.source)
+    if (w.note && !p.signup_note) p.signup_note = w.note
+  }
+  // 2) Podcast guests
+  for (const g of (db.podcast_guests ?? [])) {
+    const p = touch(keyFor(g.email, `g${g.id}`), { name: g.name, email: g.email ? g.email.toLowerCase() : undefined, created_at: g.created_at })
+    addLabels(p, ['guest'])
+    p.guest_id = g.id
+    if (!p.sources.includes('guest')) p.sources.push('guest')
+    if (g.instagram && !p.instagram) p.instagram = g.instagram
+    if (g.website && !p.website) p.website = g.website
+    if (g.why && !p.why) p.why = g.why
+  }
+  // 3) CRM contacts (manual adds + enrichment of the above)
+  for (const c of (db.contacts ?? [])) {
+    const p = touch(keyFor(c.email, c.id), { name: c.name, email: c.email, created_at: c.created_at })
+    addLabels(p, c.labels)
+    p.contact_id = c.id
+    if (c.instagram) p.instagram = c.instagram
+    if (c.website) p.website = c.website
+    if (c.phone) p.phone = c.phone
+    if (c.why) p.why = c.why
+    if (c.notes) p.notes = c.notes
+    if (!p.sources.includes('manual')) p.sources.push('manual')
+  }
+
+  return [...byKey.values()].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 }
 
 export function getAllContent(statusFilter?: string): ContentPiece[] {
