@@ -993,7 +993,7 @@ function seedProducts(now: string): Product[] {
       mission: 'The AI Mom Podcast — the mom you need when the earth shakes: peace, action, and intuition as humanity meets exponential technology.',
       fits: 'The audience engine for AI Works For Her and Joyful Media — where listeners discover Mandi and step toward Cheat Code and Local Support.',
       links: [{ label: 'Listen', url: 'https://www.aiworksforher.com/listen' }],
-      cadence_days: 0, send_match: ['podcast', 'podcast-welcome'], sort: 50 }),
+      cadence_days: 3, send_match: ['podcast', 'podcast-welcome'], sort: 50 }),
     p({ id: 'cheatcode', name: 'Cheat Code', brand: 'wfh', kind: 'service', status: 'soon', price: 'TBD',
       mission: 'A one-hour AI setup with Mandi — walk away with the tools and systems that give you your time back.',
       fits: 'The entry service of AI Works For Her: a fast, personal win that opens the door to deeper Local Support.',
