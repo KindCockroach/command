@@ -54,7 +54,7 @@ export default function BriefPage() {
       fetch('/api/commander/orders').then(r => r.json()),
       fetch('/api/inbox').then(r => r.json()),
       fetch('/api/podcast/schedule?admin=1').then(r => r.json()),
-      fetch('/api/ghl/signups').then(r => r.json()),
+      fetch('/api/people').then(r => r.json()),   // RISE-native CRM (not GHL) — the complete list
     ]).then(([l, m, i, b, s]) => {
       // Rotate the line each open (was always lines[0], so it looked frozen).
       if (l.status === 'fulfilled' && Array.isArray(l.value?.lines) && l.value.lines.length) {
@@ -64,7 +64,16 @@ export default function BriefPage() {
       if (m.status === 'fulfilled' && m.value?.orders?.your_move?.[0]) setMove(m.value.orders.your_move[0])
       if (i.status === 'fulfilled' && i.value?.inbox) setInbox(i.value.inbox)
       if (b.status === 'fulfilled' && Array.isArray(b.value?.bookings)) setBookings(b.value.bookings)
-      if (s.status === 'fulfilled' && Array.isArray(s.value?.signups)) setSignups(s.value.signups)
+      // Signups now come from RISE's own People CRM (not GHL) — the complete list,
+      // including people GHL dropped. Show the last few weeks; "new since last look" narrows it.
+      if (s.status === 'fulfilled' && Array.isArray(s.value?.people)) {
+        const cutoff = Date.now() - 21 * 86400000
+        const recent = (s.value.people as { name?: string; email?: string; labels?: string[]; sources?: string[]; created_at: string }[])
+          .filter(p => p.created_at && new Date(p.created_at).getTime() >= cutoff)
+          .map(p => ({ name: p.name || p.email || 'New contact', email: p.email ?? '', tags: p.labels ?? [], source: (p.sources ?? []).join(', '), dateAdded: p.created_at }))
+          .sort((a, b) => b.dateAdded.localeCompare(a.dateAdded))
+        setSignups(recent)
+      }
     }).finally(() => {
       setLoaded(true)
       // Stamp "seen now" AFTER we captured the previous value, so this visit's new
@@ -186,7 +195,7 @@ export default function BriefPage() {
           )
         })()}
 
-        {/* New signups — pulled live from GHL, only the ones since she last looked, with dates */}
+        {/* New signups — from RISE's own People CRM, only the ones since she last looked, with dates */}
         {newSignups.length > 0 && (
           <section style={{ borderRadius: '16px', padding: '16px 18px', background: 'rgba(61,170,124,0.07)', border: '1px solid rgba(61,170,124,0.25)' }}>
             <p style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#3d9a6e', marginBottom: '10px' }}>🌱 New signups since you last looked · {newSignups.length}</p>
@@ -199,7 +208,7 @@ export default function BriefPage() {
                 </p>
               ))}
             </div>
-            <p style={{ fontSize: '11.5px', color: '#9A8676', marginTop: '8px' }}>In your GHL list, tagged and ready. 🤍</p>
+            <p style={{ fontSize: '11.5px', color: '#9A8676', marginTop: '8px' }}>In your People list, tagged and ready. 🤍</p>
           </section>
         )}
 
