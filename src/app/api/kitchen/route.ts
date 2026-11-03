@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { addWaitlistEntry, logActivity } from '@/lib/db'
+import { addWaitlistEntry, logActivity, logSend } from '@/lib/db'
 import { resendSend, resendAddContact } from '@/lib/resend'
 import * as wfhServer from '@/lib/wfhServer'
 
@@ -54,16 +54,21 @@ export async function POST(req: NextRequest) {
     }
     // One email per signup: the cookbook (which also confirms the subscription when both
     // boxes are checked), or a subscription welcome when it's newsletter-only.
-    const send = async (subject: string, html: string, what: string) => {
+    const send = async (subject: string, html: string, what: string, product: string) => {
+      let ok = false
       if (useResend) {
         const r = await resendSend(email, subject, html)
+        ok = r.ok
         if (!r.ok) fail(`${what} (Resend)`, r.error)
-      } else if (!(await ghlSend({ name: name || email, email }, subject, html, L.ghlSource))) {
-        fail(`${what} (GHL)`)
+      } else {
+        ok = await ghlSend({ name: name || email, email }, subject, html, L.ghlSource)
+        if (!ok) fail(`${what} (GHL)`)
       }
+      // Per-person send-log → shows on the People timeline as "what we sent them".
+      logSend({ email, subject, product, status: ok ? 'sent' : 'failed', via: useResend ? 'resend' : 'ghl' })
     }
-    if (cookbook) await send('Your cookbook: The Magic Is in the Making 🍂', cookbookHtml(name, newsletter ? L.key : null, L.source === 'cookbook-funnel'), 'Cookbook email')
-    else if (newsletter) await send(WELCOME[L.key].subject, welcomeHtml(name, L.key), 'Welcome email')
+    if (cookbook) await send('Your cookbook: The Magic Is in the Making 🍂', cookbookHtml(name, newsletter ? L.key : null, L.source === 'cookbook-funnel'), 'Cookbook email', 'cookbook')
+    else if (newsletter) await send(WELCOME[L.key].subject, welcomeHtml(name, L.key), 'Welcome email', `${L.key}-welcome`)
   })()
 
   return NextResponse.json({ ok: true })

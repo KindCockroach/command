@@ -360,8 +360,17 @@ export type PersonView = {
   guest_id?: string
   contact_id?: string
   signup_note?: string
+  events?: PersonEvent[]   // their timeline: what they signed up for, downloaded, and what we sent
   created_at: string
 }
+
+// One line in a person's history — a signup, a free download/claim, or a message we
+// sent/received. Powers the "everything they've done" dropdown on the People tab.
+export type PersonEvent = { at: string; kind: 'signup' | 'download' | 'sent' | 'received' | 'note'; text: string; status?: string }
+
+// A message RISE sent to a person (the per-person send-log that replaces GHL's history).
+// Attached to the People timeline by email, and the source of truth for cadence.
+export type SendRecord = { id: string; email: string; at: string; subject: string; product?: string; status: 'sent' | 'failed'; via: string }
 
 // The station's SPINE — one running log of everything that happens (a file dropped,
 // a transcript made, a post drafted/approved, a weekly trend check-in). The
@@ -521,6 +530,7 @@ type Db = {
   intake_log: { id: number; raw_input: string; created_at: string }[]
   waitlist?: WaitlistEntry[]
   contacts?: Contact[]
+  sends?: SendRecord[]
   memories: Memory[]
   projects: Project[]
   tasks: Task[]
@@ -924,6 +934,27 @@ export function deleteContact(id: string): boolean {
   return (db.contacts?.length ?? 0) < before
 }
 
+// Friendly name for a signup source / newsletter list.
+const LIST_NAME: Record<string, string> = {
+  kitchen: 'Be There For Her', 'cookbook-funnel': 'Be There For Her', 'podcast-listeners': 'Podcast', 'joyful-media': 'Joyful Media',
+}
+const listName = (s: string) => LIST_NAME[s] || s
+
+// Record an email RISE sent to someone — the per-person send-log. Best-effort: a
+// logging failure never breaks the send. Attached to the People timeline by email.
+export function logSend(data: { email: string; subject: string; product?: string; status?: 'sent' | 'failed'; via?: string }): void {
+  try {
+    const db = readDb()
+    if (!db.sends) db.sends = []
+    db.sends.push({
+      id: `s_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      email: data.email.trim().toLowerCase(), at: new Date().toISOString(),
+      subject: data.subject, product: data.product, status: data.status || 'sent', via: data.via || 'resend',
+    })
+    writeDb(db)
+  } catch { /* logging never breaks a send */ }
+}
+
 // Merge waitlist signups + podcast guests + CRM contacts into one list of people,
 // keyed by lowercased email (people without an email stay distinct). Labels union
 // across every source; a matching CRM contact adds its manual labels, why, and notes.
@@ -935,21 +966,27 @@ export function getPeople(): PersonView[] {
 
   const touch = (key: string, base: Partial<PersonView> & { name: string; created_at: string }): PersonView => {
     let p = byKey.get(key)
-    if (!p) { p = { key, name: base.name, email: base.email, labels: [], sources: [], created_at: base.created_at }; byKey.set(key, p) }
+    if (!p) { p = { key, name: base.name, email: base.email, labels: [], sources: [], events: [], created_at: base.created_at }; byKey.set(key, p) }
     if (!p.name && base.name) p.name = base.name
     if (!p.email && base.email) p.email = base.email
     if (new Date(base.created_at) < new Date(p.created_at)) p.created_at = base.created_at
     return p
   }
+  const ev = (p: PersonView, e: PersonEvent) => { (p.events ??= []).push(e) }
 
-  // 1) Signups
+  // 1) Signups — each becomes a timeline entry: a download (free cookbook), a
+  // subscription, or a plain signup.
   for (const w of (db.waitlist ?? [])) {
     const p = touch(keyFor(w.email, `w${w.id}`), { name: w.name, email: w.email, created_at: w.created_at })
     addLabels(p, signupLabels(w))
     if (!p.sources.includes(w.source)) p.sources.push(w.source)
     if (w.note && !p.signup_note) p.signup_note = w.note
+    const note = (w.note || '').toLowerCase()
+    if (note.includes('cookbook')) ev(p, { at: w.created_at, kind: 'download', text: 'The Magic Is in the Making (free cookbook)' })
+    if (note.includes('newsletter')) ev(p, { at: w.created_at, kind: 'signup', text: `Subscribed · ${listName(w.source)} newsletter` })
+    if (!note.includes('cookbook') && !note.includes('newsletter')) ev(p, { at: w.created_at, kind: 'signup', text: `Signed up · ${listName(w.source)}` })
   }
-  // 2) Podcast guests
+  // 2) Podcast guests — their comms log is real send/receive history.
   for (const g of (db.podcast_guests ?? [])) {
     const p = touch(keyFor(g.email, `g${g.id}`), { name: g.name, email: g.email ? g.email.toLowerCase() : undefined, created_at: g.created_at })
     addLabels(p, ['guest'])
@@ -958,6 +995,12 @@ export function getPeople(): PersonView[] {
     if (g.instagram && !p.instagram) p.instagram = g.instagram
     if (g.website && !p.website) p.website = g.website
     if (g.why && !p.why) p.why = g.why
+    for (const c of (g.comms ?? [])) ev(p, { at: c.at, kind: c.direction === 'in' ? 'received' : 'sent', text: `${c.channel === 'email' ? 'Email' : c.channel[0].toUpperCase() + c.channel.slice(1)}: ${c.subject || c.body.slice(0, 60)}`, status: c.status })
+  }
+  // 2b) Send-log — emails RISE sent to anyone (by email).
+  for (const s of (db.sends ?? [])) {
+    const p = byKey.get(`e:${s.email}`)
+    if (p) ev(p, { at: s.at, kind: 'sent', text: `Email: ${s.subject}`, status: s.status })
   }
   // 3) CRM contacts (manual adds + enrichment of the above)
   for (const c of (db.contacts ?? [])) {
@@ -972,7 +1015,9 @@ export function getPeople(): PersonView[] {
     if (!p.sources.includes('manual')) p.sources.push('manual')
   }
 
-  return [...byKey.values()].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const people = [...byKey.values()]
+  for (const p of people) p.events?.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+  return people.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 }
 
 export function getAllContent(statusFilter?: string): ContentPiece[] {

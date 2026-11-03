@@ -1,16 +1,36 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, Plus, Search, X, Trash2, ExternalLink, Save } from 'lucide-react'
+import { Loader2, Plus, Search, X, ExternalLink, Save, ChevronDown } from 'lucide-react'
 import GuestsPanel from './GuestsPanel'
 
 // PEOPLE — RISE's CRM, replacing GoHighLevel. One list of everyone (signups,
 // guests, persons of interest, customers) wearing LABELS, with filters + search.
 // The deep podcast-guest workspace lives behind the "Guests" sub-view, unchanged.
 type Label = 'free_customer' | 'paid_customer' | 'sub_podcast' | 'sub_btfh' | 'sub_joyful' | 'guest' | 'poi'
+type PEvent = { at: string; kind: 'signup' | 'download' | 'sent' | 'received' | 'note'; text: string; status?: string }
 type Person = {
   key: string; name: string; email?: string; labels: Label[]; sources: string[]
   instagram?: string; website?: string; phone?: string; why?: string; notes?: string
-  guest_id?: string; contact_id?: string; signup_note?: string; created_at: string
+  guest_id?: string; contact_id?: string; signup_note?: string; events?: PEvent[]; created_at: string
+}
+
+const EVENT_ICON: Record<PEvent['kind'], string> = { signup: '✍️', download: '📥', sent: '📤', received: '📨', note: '📝' }
+const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) } catch { return '' } }
+
+// A person's history timeline — what they signed up for, downloaded, and what we sent.
+function Timeline({ events }: { events?: PEvent[] }) {
+  if (!events || events.length === 0) return <p style={{ fontSize: '12px', color: 'var(--text-subtle)', margin: '2px 0 0' }}>No history yet.</p>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {events.map((e, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontSize: '12.5px' }}>
+          <span style={{ flexShrink: 0 }}>{EVENT_ICON[e.kind]}</span>
+          <span style={{ flex: 1, color: 'var(--text)' }}>{e.text}{e.status === 'failed' && <span style={{ color: '#b23b3b', fontWeight: 700 }}> · failed</span>}{e.status === 'drafted' && <span style={{ color: 'var(--text-subtle)' }}> · draft</span>}</span>
+          <span style={{ flexShrink: 0, color: 'var(--text-subtle)', fontSize: '11px' }}>{fmtDate(e.at)}</span>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 const LABEL_TEXT: Record<Label, string> = {
@@ -48,7 +68,9 @@ export default function PeoplePanel() {
   const [q, setQ] = useState('')
   const [filters, setFilters] = useState<Label[]>([])
   const [openKey, setOpenKey] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [adding, setAdding] = useState(false)
+  const toggleExp = (k: string) => setExpanded(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -112,20 +134,36 @@ export default function PeoplePanel() {
             <p style={{ color: 'var(--text-subtle)', fontSize: '13px', textAlign: 'center', padding: '30px' }}>No one matches yet.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-              {shown.map(p => (
-                <button key={p.key} onClick={() => setOpenKey(p.key)} style={{
-                  display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', width: '100%', cursor: 'pointer', fontFamily: 'inherit',
-                  border: '1px solid var(--border)', borderRadius: '12px', padding: '11px 14px', background: 'var(--bg)', color: 'var(--text)',
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name || p.email || 'Unnamed'}</div>
-                    {p.email && <div style={{ fontSize: '11.5px', color: 'var(--text-subtle)' }}>{p.email}</div>}
+              {shown.map(p => {
+                const isOpen = expanded.has(p.key)
+                const n = p.events?.length || 0
+                return (
+                  <div key={p.key} style={{ border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--bg)', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => setOpenKey(p.key)} style={{
+                        display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', flex: 1, minWidth: 0, cursor: 'pointer', fontFamily: 'inherit',
+                        border: 0, padding: '11px 14px', background: 'transparent', color: 'var(--text)',
+                      }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name || p.email || 'Unnamed'}</div>
+                          {p.email && <div style={{ fontSize: '11.5px', color: 'var(--text-subtle)' }}>{p.email}</div>}
+                        </div>
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '55%' }}>
+                          {p.labels.map(l => <Chip key={l} l={l} />)}
+                        </div>
+                      </button>
+                      <button onClick={() => toggleExp(p.key)} title="History" style={{
+                        display: 'flex', alignItems: 'center', gap: '4px', border: 0, borderLeft: '1px solid var(--border)', background: 'transparent',
+                        padding: '0 12px', alignSelf: 'stretch', cursor: 'pointer', color: 'var(--text-subtle)', fontFamily: 'inherit', fontSize: '11px', fontWeight: 700,
+                      }}>
+                        {n > 0 && <span>{n}</span>}
+                        <ChevronDown size={15} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s ease' }} />
+                      </button>
+                    </div>
+                    {isOpen && <div style={{ padding: '4px 14px 13px', borderTop: '1px solid var(--border)' }}><Timeline events={p.events} /></div>}
                   </div>
-                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '55%' }}>
-                    {p.labels.map(l => <Chip key={l} l={l} />)}
-                  </div>
-                </button>
-              ))}
+                )
+              })}
             </div>
           )}
         </>
@@ -183,7 +221,8 @@ function PersonDrawer({ person, onClose, onSaved, onGuest }: { person: Person; o
       <p style={{ ...label, margin: '18px 0 8px' }}>Labels</p>
       <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap' }}>{ALL_LABELS.map(l => <Chip key={l} l={l} active={labels.includes(l)} onClick={() => toggle(l)} />)}</div>
 
-      {person.signup_note && <p style={{ fontSize: '11.5px', color: 'var(--text-subtle)', marginTop: '12px' }}>Signup: {person.signup_note}</p>}
+      <p style={{ ...label, margin: '18px 0 8px' }}>History — downloaded, signed up, sent</p>
+      <Timeline events={person.events} />
 
       <p style={{ ...label, margin: '16px 0 6px' }}>Why they matter</p>
       <textarea value={why} onChange={e => setWhy(e.target.value)} rows={2} style={{ ...input, resize: 'vertical' }} placeholder="Why we follow them / why they matter…" />
