@@ -372,6 +372,35 @@ export type PersonEvent = { at: string; kind: 'signup' | 'download' | 'sent' | '
 // Attached to the People timeline by email, and the source of truth for cadence.
 export type SendRecord = { id: string; email: string; at: string; subject: string; product?: string; status: 'sent' | 'failed'; via: string }
 
+// ─── PRODUCTS (the Campaigns tab) ───────────────────────────────────────────
+// Every product/offer under Joyful Media, in two brand houses. The Campaigns tab
+// renders them as an org chart; each carries its mission, how it fits the big
+// picture, funnel links, and a cadence rule (touch its people at least every N days).
+export type ProductBrand = 'btfh' | 'wfh' | 'joyful'
+export type ProductKind = 'free_download' | 'paid_download' | 'live' | 'membership' | 'podcast' | 'service' | 'guest_track'
+export type ProductStatus = 'live' | 'soon'
+export type ProductLink = { label: string; url: string }
+export type Product = {
+  id: string
+  name: string
+  brand: ProductBrand
+  kind: ProductKind
+  status: ProductStatus
+  price?: string
+  mission: string
+  fits: string            // how it fits the big picture
+  links: ProductLink[]
+  cadence_days: number     // 0 = no touch-clock (e.g. podcast, coming-soon)
+  send_match: string[]     // send-log product keys that count as "touching" this product
+  sort: number
+  created_at: string
+  updated_at: string
+}
+export const BRAND_TEXT: Record<ProductBrand, string> = { btfh: 'Be There For Her', wfh: 'AI Works For Her', joyful: 'Joyful Media' }
+
+// A product with its cadence computed from the send-log — what the Campaigns tab shows.
+export type ProductView = Product & { last_sent: string | null; days_since: number | null; overdue: boolean }
+
 // The station's SPINE — one running log of everything that happens (a file dropped,
 // a transcript made, a post drafted/approved, a weekly trend check-in). The
 // Commander reads the recent slice so it always knows what just happened, and the
@@ -531,6 +560,7 @@ type Db = {
   waitlist?: WaitlistEntry[]
   contacts?: Contact[]
   sends?: SendRecord[]
+  products?: Product[]
   memories: Memory[]
   projects: Project[]
   tasks: Task[]
@@ -932,6 +962,86 @@ export function deleteContact(id: string): boolean {
   db.contacts = (db.contacts ?? []).filter(x => x.id !== id)
   writeDb(db)
   return (db.contacts?.length ?? 0) < before
+}
+
+// --- Products (the Campaigns tab) ---
+// First-run roster, drafted in Mandi's voice and editable in-place. Two brand houses
+// under Joyful Media + the cross-cutting Guests comms track.
+function seedProducts(now: string): Product[] {
+  const p = (o: Omit<Product, 'created_at' | 'updated_at'>): Product => ({ ...o, created_at: now, updated_at: now })
+  return [
+    p({ id: 'cookbook', name: 'The Magic Is in the Making', brand: 'btfh', kind: 'free_download', status: 'live', price: 'Free',
+      mission: 'A seasonal cookbook that invites play, joy, and relief back into the kitchen — the free front door to Be There For Her.',
+      fits: 'Top of the Be There For Her funnel: a gentle, no-cost yes that introduces a woman to Mandi and warms her toward The Reset and The Wellspring.',
+      links: [{ label: 'In the Kitchen signup', url: 'https://www.bethereforher.com/in-the-kitchen' }, { label: 'Podcast-listener funnel', url: 'https://www.aiworksforher.com/cookbook' }, { label: 'Instant download', url: 'https://www.aiworksforher.com/cookbook/download' }],
+      cadence_days: 3, send_match: ['cookbook'], sort: 10 }),
+    p({ id: 'intuition', name: 'Listen To Your Intuition', brand: 'btfh', kind: 'paid_download', status: 'live', price: '$9',
+      mission: 'A one-time download of 7 beginner meditations that reconnect a woman to her own inner knowing.',
+      fits: 'The first paid step in Be There For Her — a low-risk yes that turns a free subscriber into a customer and primes her for The Reset.',
+      links: [{ label: 'Sales page', url: 'https://www.bethereforher.com/bethereforher/intuition' }],
+      cadence_days: 3, send_match: ['intuition'], sort: 20 }),
+    p({ id: 'reset', name: 'The Reset', brand: 'btfh', kind: 'live', status: 'live', price: '$33',
+      mission: 'One hour to yourself, Sundays at 8 PM — a live, guided reset to press pause before the week begins again.',
+      fits: 'The heartbeat of Be There For Her and the engine of the 90-day plan: the weekly ritual that leads into The Wellspring membership.',
+      links: [{ label: 'Register', url: 'https://www.bethereforher.com/reset' }, { label: 'Luma event', url: 'https://luma.com/event/evt-nLWB8Sj5qEYLYmZ' }],
+      cadence_days: 3, send_match: ['reset'], sort: 30 }),
+    p({ id: 'wellspring', name: 'The Wellspring', brand: 'btfh', kind: 'membership', status: 'soon', price: '$49/mo',
+      mission: 'The membership home: every Reset, plus a weekly meditation, a guided exercise, and an accountability community.',
+      fits: 'The recurring-revenue top of the Be There For Her ladder — where a woman who loves The Reset comes to stay.',
+      links: [], cadence_days: 0, send_match: ['wellspring'], sort: 40 }),
+    p({ id: 'podcast', name: 'AI Mom', brand: 'wfh', kind: 'podcast', status: 'live', price: 'Free',
+      mission: 'The AI Mom Podcast — the mom you need when the earth shakes: peace, action, and intuition as humanity meets exponential technology.',
+      fits: 'The audience engine for AI Works For Her and Joyful Media — where listeners discover Mandi and step toward Cheat Code and Local Support.',
+      links: [{ label: 'Listen', url: 'https://www.aiworksforher.com/listen' }],
+      cadence_days: 0, send_match: ['podcast', 'podcast-welcome'], sort: 50 }),
+    p({ id: 'cheatcode', name: 'Cheat Code', brand: 'wfh', kind: 'service', status: 'soon', price: 'TBD',
+      mission: 'A one-hour AI setup with Mandi — walk away with the tools and systems that give you your time back.',
+      fits: 'The entry service of AI Works For Her: a fast, personal win that opens the door to deeper Local Support.',
+      links: [], cadence_days: 0, send_match: ['cheatcode'], sort: 60 }),
+    p({ id: 'local', name: 'Local Support', brand: 'wfh', kind: 'service', status: 'soon', price: 'TBD',
+      mission: 'Hands-on AI integration for small businesses — done with you, in plain language.',
+      fits: 'The high-touch service tier of AI Works For Her, for business owners ready to put AI to work.',
+      links: [], cadence_days: 0, send_match: ['local'], sort: 70 }),
+    p({ id: 'guest_track', name: 'Guests', brand: 'joyful', kind: 'guest_track', status: 'live',
+      mission: 'Podcast guests who’ve said yes — kept warm with regular, personal communication from Mandi, from signup through cross-promotion.',
+      fits: 'Feeds the AI Mom Podcast and cross-pollinates every brand; relationships are the compounding asset of Joyful Media.',
+      links: [{ label: 'Guest booking', url: 'https://www.aiworksforher.com/book' }],
+      cadence_days: 3, send_match: [], sort: 80 }),
+  ]
+}
+
+export function getProducts(): Product[] {
+  const db = readDb()
+  if (!db.products) { db.products = seedProducts(new Date().toISOString()); writeDb(db) }
+  return [...db.products].sort((a, b) => a.sort - b.sort)
+}
+
+export function updateProduct(id: string, patch: Partial<Product>): Product | null {
+  const db = readDb()
+  if (!db.products) db.products = seedProducts(new Date().toISOString())
+  const prod = db.products.find(x => x.id === id)
+  if (!prod) return null
+  Object.assign(prod, patch, { id: prod.id, updated_at: new Date().toISOString() })
+  writeDb(db)
+  return prod
+}
+
+// Products with cadence computed from the send-log (and, for the guest track, from
+// guest comms). overdue = never touched, or last touch older than cadence_days.
+export function getProductsWithCadence(): ProductView[] {
+  const db = readDb()
+  const products = getProducts()
+  const sends = db.sends ?? []
+  const guestComms = (db.podcast_guests ?? []).flatMap(g => (g.comms ?? []).filter(c => c.direction === 'out').map(c => c.at))
+  return products.map(prod => {
+    let times: string[] = []
+    if (prod.kind === 'guest_track') times = guestComms
+    else if (prod.send_match.length) times = sends.filter(s => s.status === 'sent' && s.product && prod.send_match.includes(s.product)).map(s => s.at)
+    const last = times.length ? times.reduce((a, b) => (new Date(a) > new Date(b) ? a : b)) : null
+    const days_since = last ? Math.floor((Date.now() - new Date(last).getTime()) / 86400000) : null
+    const overdue = prod.cadence_days > 0 && (days_since === null || days_since >= prod.cadence_days)
+    return { ...prod, last_sent: last, days_since, overdue }
+  })
 }
 
 // Friendly name for a signup source / newsletter list.

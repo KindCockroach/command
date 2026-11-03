@@ -23,6 +23,7 @@ import StationChat from './StationChat'
 import PodcastEngine from './PodcastEngine'
 import PodcastStudio from './PodcastStudio'
 import PeoplePanel from './PeoplePanel'
+import CampaignsPanel from './CampaignsPanel'
 import PitchStudio from './PitchStudio'
 import StoryProcessor from './StoryProcessor'
 import StoryStudio from './StoryStudio'
@@ -30,12 +31,12 @@ import AuditPanel from './AuditPanel'
 import AudiencePanel from './AudiencePanel'
 import GoalsPanel from './GoalsPanel'
 import ContentScroller from './ContentScroller'
-import { Lightbulb, Loader2, CheckCircle2, Archive, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target } from 'lucide-react'
+import { Lightbulb, Loader2, CheckCircle2, Archive, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target, Megaphone } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'lines' | 'command' | 'activity' | 'contentday' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'people' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
+type View = 'lines' | 'command' | 'activity' | 'contentday' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'audience' | 'avatars' | 'media' | 'podcast' | 'people' | 'campaigns' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
 
 // Renders children on first activation and KEEPS them mounted after — hidden with
 // display:none when inactive — so long-running work (podcast generation) and state
@@ -106,6 +107,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
     { id: 'podcast',    label: 'Podcast',       icon: <Mic size={12} /> },
     { id: 'people',     label: 'People',        icon: <Users size={12} /> },
+    { id: 'campaigns',  label: 'Campaigns',     icon: <Megaphone size={12} /> },
     { id: 'story',      label: 'Story',         icon: <PenLine size={12} /> },
     { id: 'pitch',      label: 'Travel Pitch',  icon: <Globe size={12} /> },
   ]
@@ -268,6 +270,7 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
           </div>
         </KeepAlive>
         {view === 'people'     && <PeoplePanel />}
+        {view === 'campaigns'  && <CampaignsPanel />}
         {view === 'story'      && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <StoryStudio />
