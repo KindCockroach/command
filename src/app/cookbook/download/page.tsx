@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
 import CopyEditor from '@/components/CopyEditor'
+import AiMomIntro from '@/components/joyful/AiMomIntro'
 import { joyfulCss } from '@/components/joyful/shared'
 
 // /cookbook/download — the instant download for cookbook signups (doesn't depend on
@@ -45,6 +46,7 @@ export default function CookbookDownload() {
             safe sender, and your information is secure with us.
           </p>
         </div>
+        <AiMomIntro />
         <p className="back"><a href="/welcome">Continue to Joyful Media &rarr;</a></p>
       </section>
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { addWaitlistEntry, logActivity, logSend } from '@/lib/db'
 import { resendSend, resendAddContact } from '@/lib/resend'
 import * as wfhServer from '@/lib/wfhServer'
+import { aiMomIntroHtml, podcastLinksHtml } from '@/lib/aiMom'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,7 +87,9 @@ function cookbookHtml(name: string, subscribedTo: ListKey | null = null, resetIn
 <p>Start anywhere. Light a candle, play a song, and let the kids make the mess. The magic is in the making.</p>
 ${resetInvite ? `<p>P.S. Every Sunday at 8 PM CT I host <a href="https://www.bethereforher.com/reset" style="color:#D98C5F;font-weight:bold">The Reset</a>: 60 minutes of guided time to yourself, live on Google Meet. You’re invited.</p>` : ''}
 ${subscribedTo ? `<p>You’re also subscribed to ${WELCOME[subscribedTo].listName}, so you’ll hear from us when there’s something new.</p>` : ''}
-<p>Be there for her,<br>Mandi<br><a href="https://www.bethereforher.com" style="color:#D98C5F">bethereforher.com</a></p></div>`
+${aiMomIntroHtml()}
+<p>Be there for her,<br>Mandi<br><a href="https://www.bethereforher.com" style="color:#D98C5F">bethereforher.com</a></p>
+${podcastLinksHtml()}</div>`
 }
 
 // Newsletter-only welcome emails, one per list.
@@ -121,6 +124,8 @@ function welcomeHtml(name: string, key: ListKey): string {
   const hi = name ? `Hi ${esc(name.split(' ')[0])},` : 'Hi love,'
   return `<div style="font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#3C2A37;max-width:560px">
 <p>${hi}</p>${WELCOME[key].body}
+${aiMomIntroHtml()}
 <p>With you,<br>Mandi</p>
+${podcastLinksHtml()}
 <p style="font-size:13px;color:#8a7a84">Powered by Joyful Media</p></div>`
 }

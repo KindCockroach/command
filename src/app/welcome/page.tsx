@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
 import CopyEditor from '@/components/CopyEditor'
+import AiMomIntro from '@/components/joyful/AiMomIntro'
 import JoyfulSignup from '@/components/joyful/JoyfulSignup'
 import { BRANDS, joyfulCss as css } from '@/components/joyful/shared'
 
@@ -40,6 +41,7 @@ export default async function Welcome({ searchParams }: { searchParams: Promise<
             safe sender, and your information is secure with us.
           </p>
         </div>
+        <AiMomIntro />
         <p className="intro">You&rsquo;re invited:</p>
         <div className="grid">
           {order.map(b => (

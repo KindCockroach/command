@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
 import CopyEditor from '@/components/CopyEditor'
+import AiMomIntro from '@/components/joyful/AiMomIntro'
 import LearnMore from './LearnMore'
 
 // bethereforher.com/invitation-to-reset — this week's funnel, step 2. They just asked
@@ -118,6 +119,8 @@ export default function InvitationToReset() {
           </div>
         </div>
       </section>
+
+      <section className="aimom-wrap"><div className="wrap"><AiMomIntro /></div></section>
     </main>
   )
 }
@@ -127,6 +130,7 @@ const css = `
   background:var(--cream); color:var(--plum); min-height:100vh; margin:0; line-height:1.6; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
 .ir * { box-sizing:border-box; }
 .ir .wrap { max-width:720px; margin:0 auto; padding:0 20px; }
+.ir .aimom-wrap { padding:8px 0 48px; }
 .ir h1,.ir h2,.ir h3 { font-family:Georgia,"Times New Roman",serif; }
 .ir .got { background:linear-gradient(160deg,#1c1520,#2a1f2b 60%,#3b2a37); color:#f5ece0; padding:48px 0 56px; text-align:center; }
 .ir .eyebrow { letter-spacing:3px; font-size:12px; font-weight:800; color:#E0A458; margin:0; }
