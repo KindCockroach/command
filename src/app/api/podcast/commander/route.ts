@@ -71,7 +71,7 @@ MANDI JUST SAID:
 ${message}`
 
   try {
-    const raw = await fableText({ instructions, input, maxTokens: 8000, effort: 'high', json: true, useClaude: true })
+    const raw = await fableText({ instructions, input, maxTokens: 16000, effort: 'high', json: true, useClaude: true })
     const out = await parseKit(raw)
     if (!out) return NextResponse.json({ error: 'That came back garbled — say it again and I\'ll get it.' }, { status: 502 })
     const updates = out.updates && typeof out.updates === 'object' && Object.keys(out.updates).length ? out.updates : null
@@ -79,7 +79,7 @@ ${message}`
       ? out.reply.trim()
       : out.regenerate_all === true ? 'On it — rebuilding the whole kit around the new title now.'
       : updates ? 'Updated.'
-      : 'I didn\'t catch a change there — did you want me to edit something, or were you asking?'
+      : 'That reply came back cut off before I could make the change — say it once more and I\'ll do it.'
     return NextResponse.json({
       reply,
       updates,

@@ -41,7 +41,7 @@ Return ONLY the caption text — no quotes around it, no preamble.
 ${craftFor('aimompodcast')}`
 
   try {
-    const raw = await fableText({ instructions, input: source, maxTokens: 500, effort: 'medium', useClaude: true })
+    const raw = await fableText({ instructions, input: source, maxTokens: 4000, effort: 'medium', useClaude: true })
     const caption = raw.trim().replace(/^["'`]+|["'`]+$/g, '').trim()
     if (!caption) return NextResponse.json({ error: 'Empty caption' }, { status: 502 })
     return NextResponse.json({ caption })
