@@ -39,10 +39,16 @@ export default function BriefPage() {
   const [signups, setSignups] = useState<Signup[]>([])
   const [loaded, setLoaded] = useState(false)
   const [copied, setCopied] = useState(false)
+  // When she last opened the brief — so "new signups" means new SINCE THEN, and the
+  // brief always shows her what changed rather than repeating what she's already seen.
+  const [prevSeen, setPrevSeen] = useState<string | null>(null)
 
   useEffect(() => {
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
     document.title = `Brief · ${today}`
+    let seen: string | null = null
+    try { seen = localStorage.getItem('brief-last-viewed') } catch { /* private window */ }
+    setPrevSeen(seen)
     Promise.allSettled([
       fetch('/api/lines?account=mandijoybeck').then(r => r.json()),
       fetch('/api/commander/orders').then(r => r.json()),
@@ -50,13 +56,28 @@ export default function BriefPage() {
       fetch('/api/podcast/schedule?admin=1').then(r => r.json()),
       fetch('/api/ghl/signups').then(r => r.json()),
     ]).then(([l, m, i, b, s]) => {
-      if (l.status === 'fulfilled' && Array.isArray(l.value?.lines) && l.value.lines[0]) setLine(l.value.lines[0].line)
+      // Rotate the line each open (was always lines[0], so it looked frozen).
+      if (l.status === 'fulfilled' && Array.isArray(l.value?.lines) && l.value.lines.length) {
+        const lines = l.value.lines as { line: string }[]
+        setLine(lines[Math.floor(Math.random() * lines.length)].line)
+      }
       if (m.status === 'fulfilled' && m.value?.orders?.your_move?.[0]) setMove(m.value.orders.your_move[0])
       if (i.status === 'fulfilled' && i.value?.inbox) setInbox(i.value.inbox)
       if (b.status === 'fulfilled' && Array.isArray(b.value?.bookings)) setBookings(b.value.bookings)
       if (s.status === 'fulfilled' && Array.isArray(s.value?.signups)) setSignups(s.value.signups)
-    }).finally(() => setLoaded(true))
+    }).finally(() => {
+      setLoaded(true)
+      // Stamp "seen now" AFTER we captured the previous value, so this visit's new
+      // items drop off next time.
+      try { localStorage.setItem('brief-last-viewed', new Date().toISOString()) } catch { /* ignore */ }
+    })
   }, [])
+
+  // Signups that are new since she last opened the brief (first-ever open shows all).
+  const newSignups = signups.filter(s => !prevSeen || (s.dateAdded && new Date(s.dateAdded) > new Date(prevSeen)))
+  const fmtSignup = (iso: string) => { try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) } catch { return '' } }
+  // Inbox is pushed by a daily Gmail scan; if that's gone quiet, don't show stale items.
+  const inboxStale = !!inbox?.checked_at && (Date.now() - new Date(inbox.checked_at).getTime()) > 36 * 3600000
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 
@@ -88,7 +109,7 @@ export default function BriefPage() {
         <section style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {/* Content */}
           <div style={{ background: '#fff', borderRadius: '20px', padding: '20px', border: '1px solid rgba(168,147,126,0.22)', boxShadow: '0 6px 24px -14px rgba(90,60,30,0.25)' }}>
-            <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#B5784E', marginBottom: '9px' }}>🎬 Film this in your window</p>
+            <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#B5784E', marginBottom: '9px' }}>🎬 One line to film today</p>
             {!loaded ? <p style={{ color: '#B8A694', fontSize: '14px' }}>pulling your line…</p>
               : line ? (
                 <>
@@ -119,8 +140,10 @@ export default function BriefPage() {
 
         {/* 4 — Protect her from the noise (live inbox triage) */}
         <section style={{ borderRadius: '16px', padding: '16px 18px', background: 'rgba(168,147,126,0.12)', border: '1px solid rgba(168,147,126,0.3)' }}>
-          <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#A8937E', marginBottom: '10px' }}>📬 Your inbox {inbox?.items?.length ? `· ${inbox.items.length} need you` : ''}</p>
-          {inbox && inbox.items.length > 0 ? (
+          <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#A8937E', marginBottom: '10px' }}>📬 Your inbox {!inboxStale && inbox?.items?.length ? `· ${inbox.items.length} need you` : ''}</p>
+          {inboxStale ? (
+            <p style={{ fontSize: '13.5px', color: '#7A6A5B', lineHeight: 1.5 }}>Inbox sync has been quiet for a while, so I&apos;m not showing you an old pile. Reconnect the Gmail scan and fresh triage shows up here again. 🤍</p>
+          ) : inbox && inbox.items.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {inbox.items.map((it, i) => (
                 <p key={i} style={{ fontSize: '14.5px', color: '#3A2E26', lineHeight: 1.45 }}>
@@ -163,13 +186,17 @@ export default function BriefPage() {
           )
         })()}
 
-        {/* New signups — pulled from GHL (cookbook, opt-ins, email list) */}
-        {signups.length > 0 && (
+        {/* New signups — pulled live from GHL, only the ones since she last looked, with dates */}
+        {newSignups.length > 0 && (
           <section style={{ borderRadius: '16px', padding: '16px 18px', background: 'rgba(61,170,124,0.07)', border: '1px solid rgba(61,170,124,0.25)' }}>
-            <p style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#3d9a6e', marginBottom: '10px' }}>🌱 New signups · {signups.length}</p>
+            <p style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#3d9a6e', marginBottom: '10px' }}>🌱 New signups since you last looked · {newSignups.length}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {signups.slice(0, 5).map((s, i) => (
-                <p key={i} style={{ fontSize: '14px', color: '#3A2E26', lineHeight: 1.4 }}><strong>{s.name}</strong>{s.tags.length ? ` · ${s.tags.slice(0, 2).join(', ')}` : s.source ? ` · ${s.source}` : ''}</p>
+              {newSignups.slice(0, 8).map((s, i) => (
+                <p key={i} style={{ fontSize: '14px', color: '#3A2E26', lineHeight: 1.4 }}>
+                  <strong>{s.name}</strong>
+                  {s.dateAdded ? <span style={{ color: '#9A8676' }}> · {fmtSignup(s.dateAdded)}</span> : ''}
+                  {s.tags.length ? ` · ${s.tags.slice(0, 2).join(', ')}` : s.source ? ` · ${s.source}` : ''}
+                </p>
               ))}
             </div>
             <p style={{ fontSize: '11.5px', color: '#9A8676', marginTop: '8px' }}>In your GHL list, tagged and ready. 🤍</p>
