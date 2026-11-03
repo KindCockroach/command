@@ -1902,21 +1902,49 @@ export function setTrendAudio(data: { audio: string; format: string; sounds?: st
   writeDb(db)
 }
 
-// ── SAVED HEADLINES — her "read later" list (flagged from Daily Command) ──────
-export type SavedHeadline = { id: number; headline: string; outlet?: string; url: string; why?: string; read?: boolean; created_at: string }
+// ── HEADLINES — every pulled headline is auto-archived (searchable in Media › News
+//    by pull date), and any she flags becomes a "read later" item. One store. ──────
+export type SavedHeadline = { id: number; headline: string; outlet?: string; url: string; why?: string; read?: boolean; read_later?: boolean; pulled_at?: string; created_at: string }
 
-export function getSavedHeadlines(): SavedHeadline[] {
+type HeadlineQuery = { readLaterOnly?: boolean; from?: string; to?: string; q?: string }
+export function getSavedHeadlines(opts: HeadlineQuery = {}): SavedHeadline[] {
   const db = readDb()
-  return [...(db.saved_headlines ?? [])].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+  let items = [...(db.saved_headlines ?? [])]
+  if (opts.readLaterOnly) items = items.filter(h => h.read_later)
+  const when = (h: SavedHeadline) => h.pulled_at ?? h.created_at ?? ''
+  if (opts.from) items = items.filter(h => when(h) >= opts.from!)
+  if (opts.to) items = items.filter(h => when(h) <= opts.to! + 'T23:59:59.999Z')
+  if (opts.q) { const q = opts.q.toLowerCase(); items = items.filter(h => (h.headline + ' ' + (h.outlet ?? '') + ' ' + (h.why ?? '')).toLowerCase().includes(q)) }
+  return items.sort((a, b) => when(b).localeCompare(when(a)))
 }
+
+// Archive a whole pulled batch — so links are never lost (tokens were spent pulling
+// them). New urls get stored; a url we've seen just has its pulled_at refreshed.
+export function archiveHeadlines(items: { headline: string; url: string; outlet?: string; why?: string }[]): number {
+  const db = readDb()
+  if (!db.saved_headlines) db.saved_headlines = []
+  if (!db.next_headline_id) db.next_headline_id = 1
+  const now = new Date().toISOString()
+  let n = 0
+  for (const it of items) {
+    if (!it?.url || !it?.headline) continue
+    const existing = db.saved_headlines.find(h => h.url === it.url)
+    if (existing) { existing.pulled_at = now }
+    else { db.saved_headlines.push({ id: db.next_headline_id++, headline: it.headline, url: it.url, outlet: it.outlet, why: it.why, read: false, read_later: false, pulled_at: now, created_at: now }); n++ }
+  }
+  writeDb(db)
+  return n
+}
+
+// Flag one as "read later" — upsert by url (it's usually already archived from a pull).
 export function addSavedHeadline(data: { headline: string; url: string; outlet?: string; why?: string }): SavedHeadline {
   const db = readDb()
   if (!db.saved_headlines) db.saved_headlines = []
-  // Don't double-save the same link.
   const existing = db.saved_headlines.find(h => h.url === data.url)
-  if (existing) return existing
+  if (existing) { existing.read_later = true; writeDb(db); return existing }
   if (!db.next_headline_id) db.next_headline_id = 1
-  const h: SavedHeadline = { id: db.next_headline_id++, headline: data.headline, url: data.url, outlet: data.outlet, why: data.why, read: false, created_at: new Date().toISOString() }
+  const now = new Date().toISOString()
+  const h: SavedHeadline = { id: db.next_headline_id++, headline: data.headline, url: data.url, outlet: data.outlet, why: data.why, read: false, read_later: true, pulled_at: now, created_at: now }
   db.saved_headlines.push(h)
   writeDb(db)
   return h

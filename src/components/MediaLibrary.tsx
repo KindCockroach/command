@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Loader2, Video, Music, Image, FileText, Download, ExternalLink, RefreshCw, Search, Pencil, Sparkles, Copy, Check, Trash2 } from 'lucide-react'
 import VideoDraftPanel from './VideoDraftPanel'
 import FileUpload from './FileUpload'
+import NewsArchive from './NewsArchive'
 
 interface MediaFile {
   key: string
@@ -282,6 +283,9 @@ export default function MediaLibrary() {
           <RefreshCw size={13} /> Refresh
         </button>
       </div>
+
+      {/* 📰 News — every headline pulled on Daily Command, auto-saved + searchable by date */}
+      <NewsArchive />
 
       {/* Drop b-roll right here — the Media tab had no uploader before */}
       <FileUpload

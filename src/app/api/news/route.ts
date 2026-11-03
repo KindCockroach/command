@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSavedHeadlines, addSavedHeadline, updateSavedHeadline, deleteSavedHeadline } from '@/lib/db'
+import { getSavedHeadlines, addSavedHeadline, archiveHeadlines, updateSavedHeadline, deleteSavedHeadline } from '@/lib/db'
 import { researchWithWeb } from '@/lib/fable'
 import { callGPT } from '@/lib/ai'
 import { PODCAST_CONSTITUTION } from '@/lib/craft'
@@ -12,8 +12,14 @@ export const maxDuration = 300
 // flagged). POST {save:{...}} adds one to her "read later" list. GET returns the list.
 type Headline = { headline: string; outlet?: string; url: string; why?: string }
 
-export async function GET() {
-  return NextResponse.json({ saved: getSavedHeadlines() })
+export async function GET(req: NextRequest) {
+  const u = new URL(req.url)
+  if (u.searchParams.get('scope') === 'archive') {
+    // Media › News browser: the whole archive, filterable by pull date + text.
+    return NextResponse.json({ archive: getSavedHeadlines({ from: u.searchParams.get('from') || undefined, to: u.searchParams.get('to') || undefined, q: u.searchParams.get('q') || undefined }) })
+  }
+  // Daily Command read-later list: only the ones she flagged.
+  return NextResponse.json({ saved: getSavedHeadlines({ readLaterOnly: true }) })
 }
 
 export async function POST(req: NextRequest) {
@@ -56,7 +62,10 @@ Only REAL urls you actually opened. 6–8 items. No preamble.${steer ? `\nMANDI'
       const msg = lastErr instanceof Error ? lastErr.message : 'no headlines came back'
       return NextResponse.json({ error: `Couldn't pull headlines — ${msg}. If you're out of API credits, top up and try again.` }, { status: 502 })
     }
-    return NextResponse.json({ ok: true, headlines })
+    // Auto-archive the whole batch so the links are saved in Media › News even if she
+    // never taps "read later" — the tokens that pulled them aren't wasted.
+    const archived = archiveHeadlines(headlines)
+    return NextResponse.json({ ok: true, headlines, archived })
   }
 
   return NextResponse.json({ error: 'pass {pull:true} or {save:{...}}' }, { status: 400 })
