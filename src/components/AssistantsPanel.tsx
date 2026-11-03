@@ -15,19 +15,15 @@ function parseRoute(text: string): { role: GPTRole; why: string } | null {
   return role ? { role, why: m[2].trim() } : null
 }
 
-const AGENTS: { role: GPTRole; color: string }[] = [
-  { role: 'anchor',           color: '#E05252' },
-  { role: 'ceo',              color: '#C9956A' },
-  { role: 'future_her',       color: '#7c3aed' },
-  { role: 'strategist',       color: '#e8448a' },
-  { role: 'content_director', color: '#f2a65a' },
-  { role: 'operator',         color: '#3daa7c' },
-  { role: 'healing',          color: '#5a4fcf' },
-  { role: 'client_offer',     color: '#0ea5e9' },
-  { role: 'research',         color: '#64748b' },
-  { role: 'cfo',              color: '#d97706' },
-  { role: 'contrarian',       color: '#e05' },
-]
+const COLORS: Record<GPTRole, string> = {
+  anchor: '#E05252', ceo: '#C9956A', future_her: '#7c3aed', strategist: '#e8448a', content_director: '#f2a65a',
+  operator: '#3daa7c', healing: '#5a4fcf', client_offer: '#0ea5e9', research: '#64748b', cfo: '#d97706', contrarian: '#e0507a',
+  hat: '#2D6E3E', pod: '#C2693F', tan: '#0891b2', cap: '#E2508A', sis: '#6366f1',
+}
+// Chat personas first, then the system agents that do work inside RISE.
+const PERSONAS: GPTRole[] = ['anchor', 'strategist', 'cfo', 'operator', 'contrarian', 'content_director', 'future_her', 'healing', 'client_offer', 'research']
+const SYSTEM: GPTRole[] = ['ceo', 'hat', 'pod', 'tan', 'cap', 'sis']
+const AGENTS: { role: GPTRole; color: string }[] = [...PERSONAS, ...SYSTEM].map(role => ({ role, color: COLORS[role] }))
 
 export default function AssistantsPanel() {
   const [active, setActive] = useState<GPTRole | null>(() => {
@@ -120,25 +116,34 @@ export default function AssistantsPanel() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div>
         <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em' }}>Agentic Assistants</h2>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>Your executive table. Each one knows you, your mission, and your voice.</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>Your team. Each has a name, a job, and hands inside RISE.</p>
       </div>
 
-      {/* Agent grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-        {AGENTS.map(({ role, color }) => {
-          const meta = AGENT_META[role]
-          const isActive = active === role
-          return (
-            <button key={role} onClick={() => openAgent(role)}
-              style={{ background: isActive ? `${color}15` : 'var(--surface)', border: `1px solid ${isActive ? color : 'var(--border)'}`, borderRadius: '12px', padding: '16px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
-              <div style={{ fontSize: '22px', marginBottom: '6px' }}>{meta.emoji}</div>
-              <p style={{ fontSize: '13px', fontWeight: 800, color: isActive ? color : 'var(--text)', marginBottom: '3px' }}>{meta.label}</p>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{meta.desc}</p>
-              <p style={{ fontSize: '10px', color: color, marginTop: '6px', opacity: 0.8, fontStyle: 'italic' }}>"{meta.route_when}"</p>
-            </button>
-          )
-        })}
-      </div>
+      {/* Two groups: personas you talk to, system agents that do the work */}
+      {([['Your table', PERSONAS], ['System agents — they work inside RISE', SYSTEM]] as const).map(([heading, roles]) => (
+        <div key={heading}>
+          <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 0 8px' }}>{heading}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            {roles.map(role => {
+              const meta = AGENT_META[role]
+              const color = COLORS[role]
+              const isActive = active === role
+              return (
+                <button key={role} onClick={() => openAgent(role)}
+                  style={{ background: isActive ? `${color}15` : 'var(--surface)', border: `1px solid ${isActive ? color : 'var(--border)'}`, borderRadius: '12px', padding: '16px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '22px' }}>{meta.emoji}</span>
+                    <span style={{ fontSize: '10px', fontWeight: 900, letterSpacing: '0.08em', color, background: `${color}1a`, borderRadius: '6px', padding: '2px 7px' }}>{meta.name.toUpperCase()}</span>
+                  </div>
+                  <p style={{ fontSize: '13px', fontWeight: 800, color: isActive ? color : 'var(--text)', marginBottom: '3px' }}>{meta.label}</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{meta.desc}</p>
+                  <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.4 }}><b style={{ color }}>Hands:</b> {meta.hands}</p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ))}
 
       {/* Chat area */}
       {active && (
