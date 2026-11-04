@@ -71,7 +71,7 @@ export default function ResetSurvey() {
               )}
               {q.type === 'choice' && (
                 <div className="choices">
-                  {q.options!.map(o => (
+                  {(q.options ?? []).map(o => (
                     <button type="button" key={o} className={answers[q.id] === o ? 'on' : ''} onClick={() => set(q.id, o)}>{o}</button>
                   ))}
                 </div>
