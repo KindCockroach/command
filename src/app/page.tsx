@@ -158,10 +158,10 @@ export default function Home() {
                   <li><a href="https://www.bethereforher.com/reset"><span>🌙</span>Attend The Reset on Sundays</a></li>
                   <li><a href="https://www.bethereforher.com/intuition"><span>🎧</span>Reconnect To Your Intuition with a one-time download</a></li>
                   <li><a href="https://www.bethereforher.com/wellspring"><span>🌿</span>Join The Wellspring (Monthly Membership)</a></li>
+                  <li><a href="/meet?service=mindfulness-1on1"><span>🤍</span>Schedule a one-on-one mindfulness call ($75)</a></li>
                 </ul>
               </div>
             </div>
-            <ul className="fits one"><li><a href="/aimom"><span>💛</span>Meet AI Mom</a></li></ul>
           </div>
           <p className="sub pick">Pick where you fit. Start there.</p>
           <div className="ctaRow">
@@ -280,7 +280,6 @@ const css = `
 .h .hero .cols { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
 .h .hero .colhead { margin:0 0 10px; font:italic 600 18px/1.3 Georgia,serif; color:#F2C48D; text-align:left; }
 .h .hero .fits { list-style:none; padding:0; margin:0; display:grid; gap:10px; }
-.h .hero .fits.one { margin-top:14px; }
 .h .hero .fits a { display:flex; align-items:center; gap:10px; height:100%; padding:12px 14px; border-radius:14px; font-size:16px; font-weight:600;
   color:#fff; text-decoration:none; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.10);
   transition:transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease; }
