@@ -107,6 +107,17 @@ const SERVICES: Service[] = [
     body: 'Work with Mandi “AI Mom” to turn what’s in your head into guides, playbooks, and an assistant the next owner can ask, while you sip piña coladas and watch your grandbabies play on the beach.',
     cta: { label: 'Start the RETIRE questionnaire', href: '/retire' },
   },
+  {
+    emoji: '🌊',
+    name: 'Get Your Feet Wet with AI',
+    who: 'For anyone who’s been meaning to try AI but didn’t know where to start.',
+    what: [
+      'A relaxed, one-hour private session on Google Meet',
+      'Bring something you love making. We’ll take it from there.',
+      'No business plan required. Just curiosity.',
+    ],
+    cta: { label: 'Reserve my session', href: '/intro-to-ai' },
+  },
 ]
 
 function Card({ s }: { s: Service }) {
@@ -151,6 +162,7 @@ export default function Home() {
                   <li><a href="/assessment"><span>⚙️</span>Assess your business for AI integration</a></li>
                   <li><a href="/speak"><span>🎤</span>Hire her to speak on your stage</a></li>
                   <li><a href="/retire"><span>🔑</span>RETIRE: step back from your business with the help of AI</a></li>
+                  <li><a href="/intro-to-ai"><span>🌊</span>Get your feet wet with AI in a private hour</a></li>
                 </ul>
               </div>
               <div>
@@ -160,6 +172,7 @@ export default function Home() {
                   <li><a href="https://www.bethereforher.com/intuition"><span>🎧</span>Reconnect To Your Intuition with a one-time download</a></li>
                   <li><a href="https://www.bethereforher.com/wellspring"><span>🌿</span>Join The Wellspring (Monthly Membership)</a></li>
                   <li><a href="/meet?service=mindfulness-1on1"><span>🤍</span>One-on-one mindfulness</a></li>
+                  <li><a href="https://www.bethereforher.com"><span>🕯</span>Start with a free meditation</a></li>
                 </ul>
               </div>
             </div>
@@ -175,7 +188,7 @@ export default function Home() {
       <section className="tier" id="services">
         <div className="wrap">
           <p className="tag">HIRE MANDI</p>
-          <h2>Seven ways to work together.</h2>
+          <h2>Eight ways to work together.</h2>
           <div className="grid">{SERVICES.map((s) => <Card s={s} key={s.name} />)}</div>
         </div>
       </section>
