@@ -12,6 +12,7 @@ type InboxItem = { icon?: string; text: string; view_url?: string }
 type Inbox = { items: InboxItem[]; checked_at: string; count_total?: number }
 type Booking = { id: string; name: string; date: string; time: string; comm_method?: string; created_at: string }
 type Signup = { name: string; email: string; tags: string[]; source: string; dateAdded: string }
+type Build = { id: string; date: string; title: string; status: 'done' | 'doing' | 'todo'; detail?: string; source: 'claude' | 'rise' }
 
 // A gentle default rhythm (she doesn't keep a calendar — RISE holds the shape so she
 // doesn't have to). Editable later; this is the starting rough routine.
@@ -37,6 +38,7 @@ export default function BriefPage() {
   const [inbox, setInbox] = useState<Inbox | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [signups, setSignups] = useState<Signup[]>([])
+  const [build, setBuild] = useState<Build[]>([])
   const [loaded, setLoaded] = useState(false)
   const [copied, setCopied] = useState(false)
   // When she last opened the brief — so "new signups" means new SINCE THEN, and the
@@ -55,7 +57,8 @@ export default function BriefPage() {
       fetch('/api/inbox').then(r => r.json()),
       fetch('/api/podcast/schedule?admin=1').then(r => r.json()),
       fetch('/api/people').then(r => r.json()),   // RISE-native CRM (not GHL) — the complete list
-    ]).then(([l, m, i, b, s]) => {
+      fetch('/api/buildlog').then(r => r.json()),  // the build journal: Claude + RISE work, merged
+    ]).then(([l, m, i, b, s, bl]) => {
       // Rotate the line each open (was always lines[0], so it looked frozen).
       if (l.status === 'fulfilled' && Array.isArray(l.value?.lines) && l.value.lines.length) {
         const lines = l.value.lines as { line: string }[]
@@ -74,6 +77,7 @@ export default function BriefPage() {
           .sort((a, b) => b.dateAdded.localeCompare(a.dateAdded))
         setSignups(recent)
       }
+      if (bl.status === 'fulfilled' && Array.isArray(bl.value?.entries)) setBuild(bl.value.entries as Build[])
     }).finally(() => {
       setLoaded(true)
       // Stamp "seen now" AFTER we captured the previous value, so this visit's new
@@ -211,6 +215,54 @@ export default function BriefPage() {
             <p style={{ fontSize: '11.5px', color: '#9A8676', marginTop: '8px' }}>In your People list, tagged and ready. 🤍</p>
           </section>
         )}
+
+        {/* Build journal — where we've been, what's in motion, what's next (Claude + RISE) */}
+        {build.length > 0 && (() => {
+          const todayStr = new Date().toLocaleDateString('en-CA')
+          const yStr = new Date(Date.now() - 86400000).toLocaleDateString('en-CA')
+          const weekAgo = new Date(Date.now() - 8 * 86400000).toLocaleDateString('en-CA')
+          const doing = build.filter(b => b.status === 'doing')
+          const todo = build.filter(b => b.status === 'todo')
+          const done = build.filter(b => b.status === 'done')
+          const doneToday = done.filter(b => b.date === todayStr)
+          const doneYesterday = done.filter(b => b.date === yStr)
+          const doneWeek = done.filter(b => b.date < yStr && b.date >= weekAgo)
+          const tag = (s: string) => (s === 'rise' ? '▲' : '🤖')
+          const Row = ({ b }: { b: Build }) => (
+            <p style={{ fontSize: '14px', color: '#3A2E26', lineHeight: 1.45 }}>
+              <span style={{ color: '#B8A694', marginRight: 6 }} title={b.source === 'rise' ? 'In RISE' : 'With Claude'}>{tag(b.source)}</span>
+              {b.title}{b.detail ? <span style={{ color: '#9A8676', fontWeight: 400 }}> — {b.detail}</span> : ''}
+            </p>
+          )
+          const Group = ({ label, items, color }: { label: string; items: Build[]; color: string }) => items.length ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color, marginTop: '4px' }}>{label}</p>
+              {items.map(b => <Row key={b.id} b={b} />)}
+            </div>
+          ) : null
+          return (
+            <section style={{ borderRadius: '18px', padding: '18px 20px', background: 'rgba(139,107,168,0.08)', border: '1px solid rgba(139,107,168,0.28)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#8A6BA8' }}>🛠 What we&apos;re building</p>
+              <Group label="In progress" items={doing} color="#8A6BA8" />
+              {(todo.length > 0) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#B5784E', marginTop: '4px' }}>To finish / address next</p>
+                  {todo.map(b => (
+                    <p key={b.id} style={{ fontSize: '14px', color: '#3A2E26', lineHeight: 1.45 }}>
+                      <span style={{ color: '#B8A694', marginRight: 6 }}>{tag(b.source)}</span>
+                      {b.title}{b.date === todayStr ? <span style={{ color: '#B5784E', fontWeight: 800 }}> · today</span> : ''}
+                      {b.detail ? <span style={{ color: '#9A8676', fontWeight: 400 }}> — {b.detail}</span> : ''}
+                    </p>
+                  ))}
+                </div>
+              )}
+              <Group label="Finished today" items={doneToday} color="#3d9a6e" />
+              <Group label="Yesterday" items={doneYesterday} color="#5E8A6B" />
+              <Group label="Earlier this week" items={doneWeek} color="#A8937E" />
+              <p style={{ fontSize: '11.5px', color: '#9A8676' }}>🤖 with Claude · ▲ in RISE</p>
+            </section>
+          )
+        })()}
 
         {/* 5 — The close */}
         <footer style={{ textAlign: 'center', paddingTop: '6px' }}>

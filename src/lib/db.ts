@@ -401,6 +401,12 @@ export const BRAND_TEXT: Record<ProductBrand, string> = { btfh: 'Be There For He
 // A product with its cadence computed from the send-log — what the Campaigns tab shows.
 export type ProductView = Product & { last_sent: string | null; days_since: number | null; overdue: boolean }
 
+// ─── BUILD LOG (the morning Brief's "what we're building" journal) ──────────
+// A running record of what Mandi + Claude are building in RISE: shipped, in
+// progress, and still to do. Separate from the station Activity feed (events);
+// this is the project journal, grouped by date in the Brief.
+export type BuildLogEntry = { id: string; date: string; title: string; status: 'done' | 'doing' | 'todo'; detail?: string; source: 'claude' | 'rise'; created_at: string }
+
 // The station's SPINE — one running log of everything that happens (a file dropped,
 // a transcript made, a post drafted/approved, a weekly trend check-in). The
 // Commander reads the recent slice so it always knows what just happened, and the
@@ -564,6 +570,7 @@ type Db = {
   sends?: SendRecord[]
   surveys?: SurveyResponse[]
   products?: Product[]
+  build_log?: BuildLogEntry[]
   memories: Memory[]
   projects: Project[]
   tasks: Task[]
@@ -1045,6 +1052,80 @@ export function getProductsWithCadence(): ProductView[] {
     const overdue = prod.cadence_days > 0 && (days_since === null || days_since >= prod.cadence_days)
     return { ...prod, last_sent: last, days_since, overdue }
   })
+}
+
+// --- Build log (the Brief's "what we're building" journal) ---
+// Seeded with the real history of the Claude + Mandi build so the Brief has a spine
+// from day one. New entries come from both sides: Claude logs its work, and RISE can
+// POST entries (source 'rise') as Mandi builds in the station — so the journal keeps
+// going when she works exclusively in RISE.
+function seedBuildLog(): BuildLogEntry[] {
+  const e = (date: string, title: string, status: BuildLogEntry['status'], detail: string, source: BuildLogEntry['source'] = 'claude'): BuildLogEntry =>
+    ({ id: `b_${date}_${Math.random().toString(36).slice(2, 7)}`, date, title, status, detail, source, created_at: `${date}T12:00:00.000Z` })
+  return [
+    e('2026-11-03', 'Communications system — People + Campaigns + Cap', 'doing', 'The big build: your contacts (CRM), your products (org chart + cadence), and Cap writing/sending campaigns. Replacing GoHighLevel.'),
+    e('2026-10-27', 'Moved the cookbook download to its own page', 'done', 'Off the shared /welcome page onto /cookbook/download, so only cookbook signups see it.'),
+    e('2026-11-03', 'People tab — your RISE-native CRM', 'done', 'One list of everyone with multi-labels (Free/Paid Customer, Subscribers, Guest, Person of Interest), filters + search. GHL retired.'),
+    e('2026-11-03', 'Per-person history + send-log', 'done', 'Each person has a dropdown of what they signed up for, downloaded, and what we sent them.'),
+    e('2026-11-03', 'Campaigns tab — product org chart + cadence clock', 'done', 'Every product under Joyful Media with its mission, links, and a touch-every-N-days clock.'),
+    e('2026-11-03', 'Named the agents + Assistants roster', 'done', '3-letter names (Com, Hat, Pod, Tan, Cap, Sis + your table), each with declared "hands".'),
+    e('2026-11-04', 'Cap the Campaign Manager — his composer', 'done', 'Draft a single email or a series, preview/edit/comment, revise, and send via Resend (logs cadence + timeline).'),
+    e('2026-11-04', 'Turn on sending — add RESEND_API_KEY in Railway', 'todo', 'Cap drafts now, but Send needs the Resend key set in Railway → Variables before emails actually go out.'),
+    e('2026-11-04', 'Give Tan (transcriber) his hands', 'todo', 'Wire the transcription pipeline to the Tan agent so recordings become text on command.'),
+    e('2026-11-04', 'Auto-label paid customers', 'todo', 'When checkout webhooks land, buyers get the Paid Customer label automatically (manual for now).'),
+    e('2026-11-04', 'Podcast release email sequence', 'todo', 'A Cap template per episode: coming soon → released → follow-up for feedback → repeat.'),
+  ]
+}
+
+export function getBuildLog(): BuildLogEntry[] {
+  const db = readDb()
+  if (!db.build_log) { db.build_log = seedBuildLog(); writeDb(db) }
+  return db.build_log
+}
+
+export function addBuildLogEntry(data: { date?: string; title: string; status?: BuildLogEntry['status']; detail?: string; source?: BuildLogEntry['source'] }): BuildLogEntry {
+  const db = readDb()
+  if (!db.build_log) db.build_log = seedBuildLog()
+  const entry: BuildLogEntry = {
+    id: `b_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    date: data.date || new Date().toISOString().slice(0, 10),
+    title: data.title.slice(0, 160), status: data.status || 'todo', detail: data.detail?.slice(0, 600),
+    source: data.source === 'rise' ? 'rise' : 'claude', created_at: new Date().toISOString(),
+  }
+  db.build_log.push(entry)
+  writeDb(db)
+  return entry
+}
+
+export function updateBuildLogEntry(id: string, patch: Partial<BuildLogEntry>): BuildLogEntry | null {
+  const db = readDb()
+  const b = (db.build_log ?? []).find(x => x.id === id)
+  if (!b) return null
+  Object.assign(b, patch, { id: b.id })
+  writeDb(db)
+  return b
+}
+
+export function deleteBuildLogEntry(id: string): boolean {
+  const db = readDb()
+  const before = (db.build_log ?? []).length
+  db.build_log = (db.build_log ?? []).filter(x => x.id !== id)
+  writeDb(db)
+  return (db.build_log?.length ?? 0) < before
+}
+
+// The merged journal for the Brief: the build-log entries + recent station Activity
+// (what Mandi did IN RISE), folded in as done items tagged source 'rise'. One picture
+// of where we've been, what's in progress, and what's next — across Claude and RISE.
+export function getBuildLogMerged(): BuildLogEntry[] {
+  const log = [...getBuildLog()]
+  const since = Date.now() - 10 * 86400000
+  for (const ev of getRecentActivity(40)) {
+    const t = new Date(ev.ts).getTime()
+    if (t < since) continue
+    log.push({ id: `a_${ev.id}`, date: ev.ts.slice(0, 10), title: `${ev.icon ? ev.icon + ' ' : ''}${ev.title}`, status: 'done', detail: ev.detail, source: 'rise', created_at: ev.ts })
+  }
+  return log.sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at))
 }
 
 // Friendly name for a signup source / newsletter list.
