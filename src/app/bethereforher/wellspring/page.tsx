@@ -1,147 +1,97 @@
 export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
-import { MetaPixel, BuyButton, salesCss } from '@/components/funnel/shared'
+import { MetaPixel } from '@/components/funnel/shared'
+import CopyEditor from '@/components/CopyEditor'
 
-const TITLE = 'The Wellspring — A Mindful Listening Membership by Mandi'
-const DESC =
-  'You found your way back to yourself. The Wellspring is where you stay — a new mindful-listening session every month, in Mandi’s real voice.'
+// THE WELLSPRING — Be There For Her monthly membership, COMING SOON (2026-11-04).
+// Served at bethereforher.com/wellspring (host rewrite in middleware.ts); linked from the
+// aiworksforher.com homepage. Lists what members will get; no checkout until it opens.
+const TITLE = 'The Wellspring — coming soon'
+const DESC = 'A monthly membership for mothers raising their families with awareness and mindfulness. The Reset every week, a new meditation every week, and each other.'
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESC,
-  openGraph: { title: TITLE, description: DESC, type: 'website', siteName: 'The Wellspring' },
-  twitter: { card: 'summary_large_image', title: TITLE, description: DESC },
+  openGraph: { title: TITLE, description: DESC, url: 'https://www.bethereforher.com/wellspring', siteName: 'Be There For Her',
+    images: [{ url: '/og-bethereforher-v2.png', width: 1200, height: 630 }], type: 'website' },
+  twitter: { card: 'summary_large_image', title: TITLE, description: DESC, images: ['/og-bethereforher-v2.png'] },
 }
 
-const CHECKOUT = process.env.NEXT_PUBLIC_WELLSPRING_CHECKOUT || '#'
+const EXPECT = [
+  { icon: '🌙', t: 'The Reset, live every week', d: 'Sunday nights at 8 PM CT. An hour of guided time to yourself, after bedtime and before you’re asleep.' },
+  { icon: '🎧', t: 'A new meditation every week', d: 'A downloadable meditation in Mandi’s real voice, yours to keep and come back to.' },
+  { icon: '🤍', t: 'Each other', d: 'Connection to other mothers raising their families with awareness and mindfulness.' },
+]
 
 export default function Wellspring() {
   return (
-    <main className="sales bthf wellspring">
+    <main className="ws">
       <MetaPixel />
-      <style>{salesCss}</style>
-      <style>{extraCss}</style>
+      <style>{css}</style>
+      <CopyEditor />
 
       <section className="hero">
         <div className="wrap">
-          <p className="eyebrow">THE WELLSPRING · A MINDFUL LISTENING MEMBERSHIP</p>
-          <h1>You found your way back. <em>Congratulations.</em></h1>
-          <p className="sub">
-            Now keep it. The Wellspring is the monthly reset that updates your personal operating system &mdash;
-            so you stay in your own life, on your own frequency.
-          </p>
-          <BuyButton href={CHECKOUT} label="Join The Wellspring →" />
-          <p className="preview-label">Founding rate inside &mdash; $9/mo while the doors are open.</p>
+          <p className="eyebrow">BE THERE FOR HER · MONTHLY MEMBERSHIP</p>
+          <h1>The Wellspring <em>is coming soon.</em></h1>
+          <p className="sub">A place to keep coming back to yourself, every single week.</p>
         </div>
       </section>
 
-      <section className="band">
+      <section className="expect">
         <div className="wrap">
-          <h2>This updates your personal operating system.</h2>
-          <p>Once a month, you give yourself the damn time to sit with yourself and remember who you are.
-            Toggle your brain off. Turn your heart on. Tune back into your body.</p>
-          <p className="reframe">Because by Thursday the noise always creeps back in and the volume on your
-            intuition slips down. Not because you failed &mdash; that&rsquo;s just what life does when you stop
-            tending the quiet.</p>
-          <p className="callout">Then you reply to the group text effortlessly &mdash; and authentically.</p>
+          <h2>What to expect</h2>
+          <div className="list">
+            {EXPECT.map(e => (
+              <div className="item" key={e.t}>
+                <span className="ic">{e.icon}</span>
+                <div><h3>{e.t}</h3><p>{e.d}</p></div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="what">
+      <section className="now">
         <div className="wrap">
-          <h2>What&rsquo;s inside</h2>
-          <p className="lead"><strong>The Wellspring</strong>{' '}is your monthly return to yourself. Every month, a
-            brand-new mindful-listening session &mdash; in my real voice &mdash; lands in your library. Something for
-            the season you&rsquo;re in.</p>
-          <p className="walkhead">Every month you get:</p>
-          <ul className="walkaway">
-            <li>A new mindful-listening session &mdash; fresh, seasonal, in your ears</li>
-            <li>The full back-catalog &mdash; every session, yours to stream or keep</li>
-            <li>A monthly voice note from me &mdash; a real check-in, like a friend a step ahead</li>
-            <li>The founding rate &mdash; the lowest price this will ever be offered</li>
-          </ul>
-          <p className="bonus">No streaks to keep. No pressure. No &ldquo;you&rsquo;re behind.&rdquo; Just a soft,
-            steady rhythm of coming home &mdash; ten minutes at a time, for as long as you want to keep flowing.</p>
-        </div>
-      </section>
-
-      <section className="product">
-        <div className="wrap">
-          <p className="ptag">From Mandi</p>
-          <p>Hey. It&rsquo;s Mandi. I built The Wellspring because <em>I</em> need it too.</p>
-          <p>Listening isn&rsquo;t a graduation &mdash; there&rsquo;s no day you&rsquo;re &ldquo;done&rdquo; being
-            a human with a tender inner world. So every month I sit down, in the quiet, and make the thing I wish
-            someone would make for me. Then I hand it to you.</p>
-          <p>You don&rsquo;t have to do this alone anymore. Come flow with me.</p>
-        </div>
-      </section>
-
-      <section className="proof">
-        <div className="wrap">
-          <h2>Who it&rsquo;s for</h2>
-          <p>For the woman who felt something shift when she first listened &mdash; and doesn&rsquo;t want to
-            lose it. Who&rsquo;s done abandoning herself and wants a rhythm that keeps her close to her own knowing.
-            Who&rsquo;d rather tend the wellspring a little each month than run dry and have to find her way back
-            from scratch, again.</p>
-        </div>
-      </section>
-
-      <section className="final">
-        <div className="wrap">
-          <h2>Come home to yourself &mdash; and stay.</h2>
-          <p className="offerline">A new mindful-listening session every month · the full library · a monthly voice
-            note from me.</p>
-          <p className="pricebig"><strong>Founding rate: $9/month</strong> &mdash; the lowest it&rsquo;ll ever be. Join before the doors close and it goes up.</p>
-          <BuyButton href={CHECKOUT} label="Join The Wellspring →" tagline="Cancel anytime · no guilt · no hoops" />
-          <p className="terms">Recurring monthly membership; cancel anytime. Digital product &mdash; not therapy or
-            medical advice. Mandi is not a licensed therapist; please use alongside professional care, not in place
-            of it.</p>
+          <h2>Don&rsquo;t wait for the doors to open.</h2>
+          <p>Start now with what&rsquo;s already here.</p>
+          <div className="btns">
+            <a className="btn" href="https://www.bethereforher.com/reset">Attend The Reset — $33</a>
+            <a className="btn ghost" href="https://www.bethereforher.com/intuition">Reconnect To Your Intuition</a>
+          </div>
         </div>
       </section>
     </main>
   )
 }
 
-const extraCss = `
-.sales.bthf{ --light:#F4E9DB; --midnight:#3c2a37; --nebula:#9b6a86; --pink:#cf8aa0; --ember:#d98c5f;
-  color:#463640; background:#F4E9DB; }
-.bthf .hero{ background:linear-gradient(165deg,#382634 0%,#6b3f52 58%,#a86a72 100%); }
-.bthf .hero h1{ color:#fdf3ea; }
-.bthf .hero h1 em{ color:#f2b872; font-style:italic; text-shadow:0 2px 20px rgba(242,166,90,.45); }
-.bthf .hero .eyebrow{ color:#f2d3a8; text-shadow:0 0 26px rgba(242,184,114,.8), 0 0 8px rgba(242,184,114,.55); }
-.bthf .hero .sub{ color:#f2e2d7; }
-.bthf h1,.bthf h2{ color:#3c2a37; }
-.bthf .band{ background:#FBF3EA; }
-.bthf .what,.bthf .proof{ background:#F4E9DB; }
-.bthf .reframe{ font-size:14px; color:#7a6a72; }
-.bthf .callout{ font-family:Georgia,serif; font-size:26px; line-height:1.42; color:var(--midnight); margin-top:8px; }
-.bthf .lead{ color:#5a4a52; }
-.bthf .walkhead{ font-weight:700; color:var(--midnight); margin:18px 0 8px; }
-.bthf .walkaway{ list-style:none; padding:0; margin:0 0 8px; }
-.bthf .walkaway li{ position:relative; padding:10px 0 10px 30px; border-top:1px solid #e7e0d3; font-size:16px; color:#4a3a42; }
-.bthf .walkaway li:first-child{ border-top:none; }
-.bthf .walkaway li::before{ content:"\\1F4A7"; position:absolute; left:2px; top:9px; }
-.bthf .bonus{ font-size:16px; background:#F3E4D3; border:1px solid #e6cdb6; border-radius:12px; padding:14px 16px; margin-top:18px; color:#4a3a42; }
-.bthf .product{ background:linear-gradient(160deg,#382634,#5f3a4f 68%,#a86a72); }
-.bthf .product .ptag{ color:#f0c9a3; font-weight:800; letter-spacing:2px; text-transform:uppercase; font-size:12px; }
-.bthf .final{ background:linear-gradient(160deg,#a86a72,#d5a279); }
-.bthf .final h2{ color:#402a34; }
-.bthf .final .offerline{ color:#402a34; font-size:16px; opacity:.9; }
-.bthf .final .pricebig{ font-family:Georgia,serif; font-size:24px; color:#3c2a37; margin:10px 0 4px; }
-.bthf .buy{ background:linear-gradient(135deg,#c96f7e,#d98c5f); color:#fff; box-shadow:0 10px 26px rgba(110,55,64,.32); }
-.bthf .tagline{ color:#402a34; opacity:.85; }
-.bthf .preview-label{ font-size:14px; color:#f2e2d7; margin:20px 0 0; letter-spacing:.3px; }
-.bthf .final .terms{ font-size:12px; color:#5a4a52; opacity:.85; max-width:60ch; margin:16px auto 0; line-height:1.5; }
-@media (max-width:560px){ .bthf .callout{ font-size:22px; } }
-
-/* float + glimmer */
-@keyframes wsFloat { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-6px);} }
-@keyframes wsSheen { 0%{ transform:translateX(-140%) rotate(10deg);} 55%,100%{ transform:translateX(260%) rotate(10deg);} }
-.bthf .buy{ position:relative; overflow:hidden; animation:wsFloat 3.6s ease-in-out infinite; transition:transform .25s, box-shadow .25s; }
-.bthf .buy:hover{ transform:translateY(-8px) scale(1.015); box-shadow:0 22px 46px rgba(110,55,64,.45); }
-.bthf .buy::after{ content:""; position:absolute; top:-40%; left:0; width:38%; height:180%;
-  background:linear-gradient(115deg, transparent, rgba(255,255,255,.55), transparent);
-  transform:translateX(-140%) rotate(10deg); animation:wsSheen 4.8s ease-in-out infinite; pointer-events:none; }
-@media (prefers-reduced-motion: reduce){ .bthf .buy, .bthf .buy::after{ animation:none; } }
+const css = `
+.ws { --cream:#F4E9DB; --plum:#3c2a37; --ember:#d98c5f; --soft:#6a5a62;
+  background:var(--cream); color:var(--plum); min-height:100vh; margin:0; line-height:1.6;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+.ws * { box-sizing:border-box; }
+.ws .wrap { max-width:720px; margin:0 auto; padding:0 20px; }
+.ws h1,.ws h2,.ws h3 { font-family:Georgia,"Times New Roman",serif; }
+.ws .hero { background:linear-gradient(160deg,#1c1520,#2a1f2b 60%,#3b2a37); color:#f5ece0; padding:64px 0 60px; text-align:center; }
+.ws .eyebrow { letter-spacing:3px; font-size:12px; font-weight:800; color:#E0A458; margin:0; }
+.ws h1 { font-size:clamp(34px,6.5vw,52px); line-height:1.1; margin:12px 0 16px; color:#fff; }
+.ws h1 em { color:#f2b872; display:block; }
+.ws .sub { font-size:19px; color:#e6d8ca; margin:0; }
+.ws .expect { padding:52px 0; }
+.ws h2 { font-size:clamp(24px,4vw,32px); margin:0 0 22px; text-align:center; }
+.ws .list { display:grid; gap:14px; }
+.ws .item { display:flex; gap:16px; align-items:flex-start; background:#fff; border:1px solid #ecdccb; border-radius:20px; padding:20px 22px;
+  box-shadow:0 18px 40px -30px rgba(60,42,55,0.5); }
+.ws .ic { font-size:28px; line-height:1; flex:none; margin-top:2px; }
+.ws .item h3 { margin:0 0 4px; font-size:20px; }
+.ws .item p { margin:0; color:var(--soft); font-size:16px; }
+.ws .now { background:#FBF3EA; padding:48px 0 64px; text-align:center; }
+.ws .now h2 { margin-bottom:6px; }
+.ws .now p { color:var(--soft); margin:0 0 22px; }
+.ws .btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.ws .btn { display:inline-block; background:linear-gradient(135deg,#F7C79A,#D68054); color:#221923; font-weight:800; text-decoration:none;
+  padding:15px 26px; border-radius:999px; box-shadow:0 10px 26px rgba(214,128,84,0.35); }
+.ws .btn.ghost { background:transparent; border:2px solid var(--ember); color:var(--plum); box-shadow:none; }
 `

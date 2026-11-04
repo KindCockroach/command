@@ -13,7 +13,7 @@ import SocialIcons from '@/components/wfh/SocialIcons'
 export const metadata: Metadata = {
   title: 'WFH — Works For Her · AI services by Mandi Beck',
   description:
-    "WFH — Works For Her, the parent company of the AI Mom Podcast, founded by Amanda \"Mandi\" Beck. Speaking, small business AI integration, UGC, the podcast, mindfulness for women, and RETIRE: passing down your business with AI.",
+    "WFH — Works For Her, the parent company of the AI Mom Podcast and AI Mom Education, founded by Amanda \"Mandi\" Beck. Speaking, small business AI integration, UGC, the podcast, mindfulness for women, and RETIRE: passing down your business with AI.",
   openGraph: {
     title: 'WFH — Works For Her',
     description: 'By AI Mom. Podcast · Small business AI integration · UGC · Speaking.',
@@ -32,38 +32,37 @@ type Service = {
 
 const SERVICES: Service[] = [
   {
-    emoji: '🎙',
-    name: 'AI Mom Podcast',
-    who: 'Not what to think about AI. How to think about it.',
+    emoji: '🌙',
+    name: 'The Reset',
+    who: 'Have you tried unplugging and plugging yourself back in?',
     what: [
-      'Honest conversations for women staying human while everything changes',
-      'Jobs, education, creativity — and the pushback nobody else airs',
-      'Have a story women need to hear? Come on the show',
+      'Live every Sunday at 8 PM CT, starting November 8',
+      '60 minutes of guided time to yourself, camera optional',
+      '$33, with the 1% promise: feel better or your money back',
     ],
-    cta: { label: 'Listen', href: '/aimom' },
-    more: { label: 'Be a guest', href: '/book' },
+    cta: { label: 'Save my seat', href: 'https://www.bethereforher.com/reset' },
   },
   {
-    emoji: '⚙️',
-    name: 'Small Business AI Integration',
-    who: 'You keep hearing AI will save you time. It hasn’t saved you a minute yet.',
+    emoji: '🎧',
+    name: 'Reconnect To Your Intuition',
+    who: 'The quiet knowing you were taught to silence, turned back up.',
     what: [
-      'AI set up inside the tools you already use',
-      'Assistants, automations, follow-ups, and content workflows',
-      'Built for your business, then handed over so you can run it',
+      'Guided meditations recorded by Mandi in her studio',
+      '15 minutes before you sleep at night',
+      'One-time download, $9. Yours to keep.',
     ],
-    cta: { label: 'Take the AI integration questionnaire', href: '/assessment' },
+    cta: { label: 'Get the download', href: 'https://www.bethereforher.com/intuition' },
   },
   {
     emoji: '🌿',
-    name: 'Mindfulness for Women',
-    who: 'Prevent burnout before it costs you your business, your family, or yourself.',
+    name: 'The Wellspring',
+    who: 'A monthly membership for mothers raising their families with awareness and mindfulness. Coming soon.',
     what: [
-      'Guided meditations recorded by Mandi in her studio',
-      'For the mother, the CEO, and the woman in you',
-      'Show up for your life’s work. Show up for yourself.',
+      'The Reset, live every week',
+      'A new downloadable meditation every week',
+      'Connection to other mothers doing the same work',
     ],
-    cta: { label: 'Be There For Her', href: 'https://www.bethereforher.com' },
+    cta: { label: 'See what’s coming', href: 'https://www.bethereforher.com/wellspring' },
   },
   {
     emoji: '🎤',
@@ -78,6 +77,17 @@ const SERVICES: Service[] = [
     more: { label: 'See the keynote', href: '/thesis' },
   },
   {
+    emoji: '⚙️',
+    name: 'Small Business AI Integration',
+    who: 'You keep hearing AI will save you time. It hasn’t saved you a minute yet.',
+    what: [
+      'AI set up inside the tools you already use',
+      'Assistants, automations, follow-ups, and content workflows',
+      'Built for your business, then handed over so you can run it',
+    ],
+    cta: { label: 'Take the AI integration questionnaire', href: '/assessment' },
+  },
+  {
     emoji: '🎬',
     name: 'UGC for Brands',
     who: 'Trending content that gets traffic and new customers.',
@@ -87,6 +97,18 @@ const SERVICES: Service[] = [
       'Video creation and marketing assessments, priced up front',
     ],
     cta: { label: 'See the menu & pricing', href: '/ugc' },
+  },
+  {
+    emoji: '🎙',
+    name: 'AI Mom Podcast',
+    who: 'Not what to think about AI. How to think about it.',
+    what: [
+      'Honest conversations for women staying human while everything changes',
+      'Jobs, education, creativity — and the pushback nobody else airs',
+      'Have a story women need to hear? Come on the show',
+    ],
+    cta: { label: 'Listen', href: '/aimom' },
+    more: { label: 'Be a guest', href: '/book' },
   },
   {
     emoji: '🔑',
@@ -126,19 +148,21 @@ export default function Home() {
         <div className="wrap heroIn">
           <img className="logo" src="/wfh-logo-white.png" alt="AI WFH — Works For Her" />
           <p className="sub">
-            WFH is the parent company of the AI Mom Podcast, founded and operated by Amanda &ldquo;Mandi&rdquo; Beck.
+            WFH is the parent company of the AI Mom Podcast and AI Mom Education, founded and operated by Amanda &ldquo;Mandi&rdquo; Beck.
             She has a theory that <strong>women are the answer, and their intuition the antidote, to mankind&rsquo;s
             potential for coexistence with exponential technology.</strong>
           </p>
           <div className="glass">
             <p className="whether">You can work with her in several ways:</p>
             <ul className="fits">
+              <li><a href="https://www.bethereforher.com/reset"><span>🌙</span>Attend The Reset on Sundays</a></li>
+              <li><a href="https://www.bethereforher.com/intuition"><span>🎧</span>Reconnect To Your Intuition with a one-time download</a></li>
+              <li><a href="https://www.bethereforher.com/wellspring"><span>🌿</span>Join The Wellspring (Monthly Membership)</a></li>
               <li><a href="/speak"><span>🎤</span>Hire her to speak on your stage</a></li>
               <li><a href="/assessment"><span>⚙️</span>Assess your business for AI integration</a></li>
               <li><a href="/assessment"><span>📱</span>Assess your social media for AI integration</a></li>
               <li><a href="/ugc"><span>🎬</span>Hire her for UGC</a></li>
               <li><a href="/aimom"><span>🎙</span>Tune into the podcast</a></li>
-              <li><a href="https://www.bethereforher.com"><span>🌿</span>Prevent burnout with meditation</a></li>
               <li className="wide"><a href="/retire"><span>🔑</span>RETIRE: step back from your business with the help of AI</a></li>
             </ul>
           </div>
@@ -153,7 +177,7 @@ export default function Home() {
       <section className="tier" id="services">
         <div className="wrap">
           <p className="tag">HIRE MANDI</p>
-          <h2>Six ways to work together.</h2>
+          <h2>Eight ways to work together.</h2>
           <div className="grid">{SERVICES.map((s) => <Card s={s} key={s.name} />)}</div>
         </div>
       </section>
