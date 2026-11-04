@@ -3,10 +3,12 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { MetaPixel } from '@/components/funnel/shared'
 import CopyEditor from '@/components/CopyEditor'
+import WaitlistForm from '@/components/funnel/WaitlistForm'
 
 // THE WELLSPRING — Be There For Her monthly membership, COMING SOON (2026-11-04).
 // Served at bethereforher.com/wellspring (host rewrite in middleware.ts); linked from the
-// aiworksforher.com homepage. Lists what members will get; no checkout until it opens.
+// aiworksforher.com homepage. Lists what members will get + a waitlist (RISE waitlist,
+// source "wellspring" → People); no checkout until it opens.
 const TITLE = 'The Wellspring — coming soon'
 const DESC = 'A monthly membership for mothers raising their families with awareness and mindfulness. The Reset every week, a new meditation every week, and each other.'
 
@@ -53,6 +55,14 @@ export default function Wellspring() {
         </div>
       </section>
 
+      <section className="join">
+        <div className="wrap">
+          <h2>Be first through the doors.</h2>
+          <p>Join the waitlist and you&rsquo;ll hear the moment The Wellspring opens.</p>
+          <WaitlistForm cta="Join the waitlist" source="wellspring" showNote={false} />
+        </div>
+      </section>
+
       <section className="now">
         <div className="wrap">
           <h2>Don&rsquo;t wait for the doors to open.</h2>
@@ -87,6 +97,20 @@ const css = `
 .ws .ic { font-size:28px; line-height:1; flex:none; margin-top:2px; }
 .ws .item h3 { margin:0 0 4px; font-size:20px; }
 .ws .item p { margin:0; color:var(--soft); font-size:16px; }
+.ws .join { padding:8px 0 56px; text-align:center; }
+.ws .join p { color:var(--soft); margin:0 0 20px; }
+.ws .wl-form { display:flex; flex-direction:column; gap:12px; max-width:520px; margin:0 auto; }
+.ws .wl-row { display:grid; grid-template-columns:1fr 1.3fr; gap:12px; }
+.ws .wl-form input { width:100%; padding:15px 16px; border-radius:12px; border:1px solid #e2cfbd; background:#fff; color:var(--plum); font-size:16px; font-family:inherit; }
+.ws .wl-form input:focus { outline:none; border-color:var(--ember); box-shadow:0 0 0 3px rgba(217,140,95,0.3); }
+.ws .wl-form button { background:linear-gradient(135deg,#F7C79A,#D68054); color:#221923; font-weight:800; font-size:17px; border:none; cursor:pointer;
+  padding:15px 26px; border-radius:999px; box-shadow:0 10px 26px rgba(214,128,84,0.35); font-family:inherit; }
+.ws .wl-form button:disabled { opacity:.7; }
+.ws .wl-fine { font-size:13px; color:var(--soft); margin:2px 0 0; }
+.ws .wl-error { color:#a3402a; font-size:14px; margin:0; }
+.ws .wl-done { max-width:520px; margin:0 auto; background:#fff; border:1px solid #ecdccb; border-radius:16px; padding:18px 22px; font-size:18px; }
+.ws .wl-done p { margin:0; color:var(--plum); }
+@media (max-width:560px){ .ws .wl-row { grid-template-columns:1fr; } }
 .ws .now { background:#FBF3EA; padding:48px 0 64px; text-align:center; }
 .ws .now h2 { margin-bottom:6px; }
 .ws .now p { color:var(--soft); margin:0 0 22px; }
