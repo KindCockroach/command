@@ -6,15 +6,14 @@ import CopyEditor from '@/components/CopyEditor'
 // RESET WELCOME — bethereforher.com/resetwelcome (host rewrite in middleware.ts).
 // For people who just bought The Reset: a free 5-minute gift, ways to prepare, and an
 // invitation to log on at 7:30 for hand-held prep. NO selling here (Mandi, 2026-11-04).
-// GIFT_AUDIO is empty until Mandi records the gift; drop the file in
-// public/bethereforher/reset/ and set the path below.
+// GIFT_AUDIO = the 5-min gift Mandi recorded 2026-11-04 (RØDECaster POD00019).
 export const metadata: Metadata = {
   title: 'Welcome to The Reset',
   description: 'You’re in. Here’s your free 5-minute gift and how to get ready for Sunday.',
   robots: { index: false, follow: false },
 }
 
-const GIFT_AUDIO = ''
+const GIFT_AUDIO = '/bethereforher/reset/reset-gift.m4a'
 const MEET = 'https://meet.google.com/kgf-oxqn-aof'
 
 const SPACE = [

@@ -33,7 +33,6 @@ function isPublic(path: string): boolean {
   if (path === '/book' || path === '/api/podcast/schedule') return true // guest scheduler (/book/manage stays private; admin actions check the cookie in the route)
   if (path === '/wellspring' || path === '/bethereforher/wellspring') return true // The Wellspring membership
   if (path === '/resetwelcome' || path === '/bethereforher/resetwelcome') return true // Reset registrants' welcome + gift
-  if (path === '/ghl-funnel' || path === '/bethereforher/ghl-funnel') return true // "Stop Fighting Yourself" funnel (ported off GHL)
   if (path === '/lite' || path === '/lite/welcome') return true
   if (/^\/(seen|queen|captionwriter)\/welcome$/.test(path)) return true
   if (path === '/api/journal-waitlist') return true // public waitlist form
@@ -77,9 +76,6 @@ export function middleware(req: NextRequest) {
     }
     if (p === '/resetwelcome' || p === '/bethereforher/resetwelcome') {
       const u = req.nextUrl.clone(); u.pathname = '/bethereforher/resetwelcome'; return NextResponse.rewrite(u)
-    }
-    if (p === '/ghl-funnel' || p === '/bethereforher/ghl-funnel') {
-      const u = req.nextUrl.clone(); u.pathname = '/bethereforher/ghl-funnel'; return NextResponse.rewrite(u)
     }
   }
 
