@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getWaitlist, logActivity } from '@/lib/db'
+import { createHash } from 'crypto'
+import { getWaitlist, logActivity, getSiteEditKeyHash } from '@/lib/db'
 import { isOwner } from '@/lib/ownerAuth'
 import * as wfhServer from '@/lib/wfhServer'
 
@@ -87,8 +88,13 @@ function recipeHtml(name: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isOwner(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const body = await req.json().catch(() => ({} as Record<string, unknown>))
+  // Owner via cookie, OR the edit key typed on the page (sha256 must match the claimed hash).
+  const hash = getSiteEditKeyHash()
+  const keyOk = typeof body.key === 'string' && !!hash && createHash('sha256').update(body.key).digest('hex') === hash
+  if (!isOwner(req) && !keyOk) {
+    return NextResponse.json({ error: hash ? 'unauthorized' : 'no edit key set on this site' }, { status: 401 })
+  }
   const mode = body.mode === 'test' ? 'test' : body.mode === 'send' ? 'send' : 'dry'
 
   // Full list = cookbook subscribers + Emily, deduped.

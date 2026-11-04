@@ -12,6 +12,7 @@ export default function KitchenSend() {
   const [busy, setBusy] = useState<string>('')
   const [out, setOut] = useState<Result | null>(null)
   const [err, setErr] = useState<string>('')
+  const [key, setKey] = useState<string>('')
 
   async function fire(mode: 'dry' | 'test' | 'send') {
     if (mode === 'send' && !confirm('Send the short-ribs email to EVERYONE on the cookbook list + Emily?')) return
@@ -21,7 +22,7 @@ export default function KitchenSend() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ mode }),
+        body: JSON.stringify({ mode, key: key.trim() || undefined }),
       })
       const j = await res.json()
       if (!res.ok) setErr(j.error || `Error ${res.status}`)
@@ -47,7 +48,13 @@ export default function KitchenSend() {
           <li><b>Send to everyone</b> — the real blast.</li>
         </ol>
 
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '20px 0 8px' }}>
+        <div style={{ margin: '18px 0 6px' }}>
+          <label style={{ display: 'block', fontSize: 13, color: '#6a5a62', marginBottom: 6 }}>Your edit key</label>
+          <input type="password" value={key} onChange={e => setKey(e.target.value)} placeholder="paste your edit key"
+            style={{ width: '100%', maxWidth: 320, padding: '12px 14px', borderRadius: 12, border: '1px solid #e2cfbd', background: '#fff', color: '#3C2A37', fontSize: 16, fontFamily: 'Georgia, serif' }} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '14px 0 8px' }}>
           <button onClick={() => fire('dry')} disabled={!!busy} style={btn('#6B3F52')}>{busy === 'dry' ? '…' : '1 · Dry run'}</button>
           <button onClick={() => fire('test')} disabled={!!busy} style={btn('#D98C5F')}>{busy === 'test' ? 'Sending…' : '2 · Test to me'}</button>
           <button onClick={() => fire('send')} disabled={!!busy} style={btn('#8a3b2e')}>{busy === 'send' ? 'Sending…' : '3 · Send to everyone'}</button>
