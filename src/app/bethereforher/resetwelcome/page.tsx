@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 }
 
 const GIFT_AUDIO = ''
+const MEET = 'https://meet.google.com/kgf-oxqn-aof'
 
 const SPACE = [
   { icon: '🕯', t: 'Light a candle', d: 'One flame tells your whole body the day is over.' },
@@ -28,7 +29,7 @@ const PREP = [
   ['Tell the house.', 'Mom is off duty from 8 to 9. Tell honey before Sunday, not at 7:59.'],
   ['Gather your things.', 'A notebook and pen, tea or water, a blanket, and headphones if the house is loud.'],
   ['Wear something soft.', 'If it has a waistband you notice, change.'],
-  ['Silence everything else.', 'Phone on Do Not Disturb. Laptop charged. Your Google Meet link ready.'],
+  ['Silence everything else.', 'Phone on Do Not Disturb. Laptop charged. This page open, so the Google Meet button is one tap away.'],
   ['Come as you are.', 'Cranky, tired, camera off. All of it is welcome.'],
 ]
 
@@ -43,6 +44,8 @@ export default function ResetWelcome() {
           <p className="eyebrow">THE RESET · BE THERE FOR HER</p>
           <h1>You&rsquo;re in. <em>Welcome to The Reset.</em></h1>
           <p className="sub">Sunday at 8 PM CT, live on Google Meet. Before anything else, here&rsquo;s something just for you.</p>
+          <a className="meet" href={MEET} target="_blank" rel="noreferrer">Join on Google Meet &rarr;</a>
+          <p className="save">Bookmark this page. This button is your door on Sunday.</p>
         </div>
       </section>
 
@@ -96,8 +99,9 @@ export default function ResetWelcome() {
           <dl className="details">
             <div><dt>Prep (optional)</dt><dd>Sunday, 7:30 PM CT</dd></div>
             <div><dt>The Reset</dt><dd>Sunday, 8:00 PM CT</dd></div>
-            <div><dt>Where</dt><dd>Google Meet, using the link Mandi sends you</dd></div>
+            <div><dt>Where</dt><dd><a href={MEET} target="_blank" rel="noreferrer">meet.google.com/kgf-oxqn-aof</a></dd></div>
           </dl>
+          <a className="meet" href={MEET} target="_blank" rel="noreferrer">Join on Google Meet &rarr;</a>
         </div>
       </section>
 
@@ -118,6 +122,10 @@ const css = `
 .rw h1 { font-size:clamp(34px,6.5vw,50px); line-height:1.1; margin:12px 0 16px; color:#fff; }
 .rw h1 em { color:#f2b872; display:block; }
 .rw .sub { font-size:19px; color:#e6d8ca; margin:0 auto; max-width:540px; }
+.rw .meet { display:inline-block; margin-top:24px; background:linear-gradient(135deg,#F7C79A,#D68054); color:#221923; font-weight:800; font-size:18px;
+  text-decoration:none; padding:15px 28px; border-radius:999px; box-shadow:0 12px 28px rgba(214,128,84,0.4); }
+.rw .save { font-size:14px; color:#cdbcae; margin:10px 0 0; }
+.rw .details dd a { color:#fff; }
 .rw h2 { font-size:clamp(24px,4vw,32px); margin:0 0 14px; }
 .rw .gift { margin-top:-56px; }
 .rw .giftcard { background:#fff; border:1px solid #ecdccb; border-radius:24px; padding:28px 28px 26px; text-align:center;
