@@ -540,6 +540,8 @@ export type Line = {
   dismissed?: boolean
 }
 
+export type SurveyResponse = { id: string; at: string; survey: string; email: string; name: string; answers: Record<string, string> }
+
 type Db = {
   content: ContentPiece[]
   lines?: Line[]
@@ -560,6 +562,7 @@ type Db = {
   waitlist?: WaitlistEntry[]
   contacts?: Contact[]
   sends?: SendRecord[]
+  surveys?: SurveyResponse[]
   products?: Product[]
   memories: Memory[]
   projects: Project[]
@@ -1063,6 +1066,32 @@ export function logSend(data: { email: string; subject: string; product?: string
     })
     writeDb(db)
   } catch { /* logging never breaks a send */ }
+}
+
+// Native survey responses (e.g. post-Reset feedback). Saved to db.surveys, keyed by
+// lowercased email so they can attach to the People timeline. Best-effort.
+export function saveSurveyResponse(data: { survey: string; email?: string; name?: string; answers: Record<string, string> }): SurveyResponse | null {
+  try {
+    const db = readDb()
+    if (!db.surveys) db.surveys = []
+    const r: SurveyResponse = {
+      id: `sv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      at: new Date().toISOString(),
+      survey: data.survey,
+      email: (data.email || '').trim().toLowerCase(),
+      name: data.name || '',
+      answers: data.answers || {},
+    }
+    db.surveys.push(r)
+    writeDb(db)
+    return r
+  } catch { return null }
+}
+
+export function getSurveyResponses(survey?: string): SurveyResponse[] {
+  const db = readDb()
+  const all = db.surveys ?? []
+  return survey ? all.filter(s => s.survey === survey) : all
 }
 
 // Merge waitlist signups + podcast guests + CRM contacts into one list of people,

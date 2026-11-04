@@ -15,6 +15,7 @@ function isPublic(path: string): boolean {
   if (path === '/seen' || path === '/queen' || path === '/captionwriter') return true
   if (path === '/journal') return true
   if (path === '/reset' || path === '/cheatcode' || path === '/workshop') return true // public session pages (+ /workshop redirect)
+  if (path === '/reset/survey' || path === '/api/survey') return true // post-Reset feedback survey (native)
   if (path === '/insait') return true // private $10 Reset (unlisted, no-index)
   if (path === '/bethereforher' || path === '/bethereforher/library' || path === '/bethereforher/intuition') return true // Be There For Her product
   if (path === '/bethereforher/in-the-kitchen' || path === '/api/kitchen' || path === '/api/kitchen/update') return true
@@ -28,7 +29,10 @@ function isPublic(path: string): boolean {
   if (path === '/cookbook') return true // unlisted podcast-listener cookbook signup
   if (path === '/aimom') return true // podcast · be a guest · speaking (former homepage)
   if (path === '/aimomeducation') return true // AI Mom Podcast landing (aimomeducation.com)
+  if (path === '/listen' || path === '/thesis') return true // podcast platforms · speaker page
+  if (path === '/book' || path === '/api/podcast/schedule') return true // guest scheduler (/book/manage stays private; admin actions check the cookie in the route)
   if (path === '/wellspring' || path === '/bethereforher/wellspring') return true // The Wellspring membership
+  if (path === '/ghl-funnel' || path === '/bethereforher/ghl-funnel') return true // "Stop Fighting Yourself" funnel (ported off GHL)
   if (path === '/lite' || path === '/lite/welcome') return true
   if (/^\/(seen|queen|captionwriter)\/welcome$/.test(path)) return true
   if (path === '/api/journal-waitlist') return true // public waitlist form
@@ -69,6 +73,9 @@ export function middleware(req: NextRequest) {
     }
     if (p === '/wellspring' || p === '/bethereforher/wellspring') {
       const u = req.nextUrl.clone(); u.pathname = '/bethereforher/wellspring'; return NextResponse.rewrite(u)
+    }
+    if (p === '/ghl-funnel' || p === '/bethereforher/ghl-funnel') {
+      const u = req.nextUrl.clone(); u.pathname = '/bethereforher/ghl-funnel'; return NextResponse.rewrite(u)
     }
   }
 
