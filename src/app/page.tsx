@@ -139,9 +139,7 @@ export default function Home() {
           <p className="sub">
             WFH is the parent company of the AI Mom Podcast and AI Mom Education, founded and operated by Amanda &ldquo;Mandi&rdquo; Beck.
             She has a theory that <strong>women are the answer, and their intuition the antidote, to mankind&rsquo;s
-            potential for coexistence with exponential technology.</strong> Its sister brand,{' '}
-            <a className="sister" href="https://www.bethereforher.com">Be There For Her</a>, is where she teaches mindfulness.
-            Both are part of <a className="sister" href="/joyful-media">Joyful Media</a>.
+            potential for coexistence with exponential technology.</strong>
           </p>
           <div className="glass">
             <p className="whether">You can work with her in several ways:</p>
@@ -152,6 +150,7 @@ export default function Home() {
                   <li><a href="/aimom"><span>🎙</span>Tune into the AI Mom Podcast</a></li>
                   <li><a href="/assessment"><span>⚙️</span>Assess your business for AI integration</a></li>
                   <li><a href="/speak"><span>🎤</span>Hire her to speak on your stage</a></li>
+                  <li><a href="/retire"><span>🔑</span>RETIRE: step back from your business with the help of AI</a></li>
                 </ul>
               </div>
               <div>
@@ -160,7 +159,7 @@ export default function Home() {
                   <li><a href="https://www.bethereforher.com/reset"><span>🌙</span>Attend The Reset on Sundays</a></li>
                   <li><a href="https://www.bethereforher.com/intuition"><span>🎧</span>Reconnect To Your Intuition with a one-time download</a></li>
                   <li><a href="https://www.bethereforher.com/wellspring"><span>🌿</span>Join The Wellspring (Monthly Membership)</a></li>
-                  <li><a href="/meet?service=mindfulness-1on1"><span>🤍</span>Schedule a one-on-one mindfulness call ($75)</a></li>
+                  <li><a href="/meet?service=mindfulness-1on1"><span>🤍</span>One-on-one mindfulness</a></li>
                 </ul>
               </div>
             </div>
@@ -279,7 +278,6 @@ const css = `
   background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.12), 0 24px 50px -30px rgba(0,0,0,0.6); }
 .h .hero .whether { margin:0 0 12px; font-size:13px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--ember); text-align:center; }
-.h .hero .sub a.sister { color:#F2C48D; font-weight:700; text-decoration:none; border-bottom:1px solid rgba(242,196,141,0.5); }
 .h .hero .cols { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
 .h .hero .colhead { margin:0 0 10px; font:italic 600 18px/1.3 Georgia,serif; color:#F2C48D; text-align:left; }
 .h .hero .fits { list-style:none; padding:0; margin:0; display:grid; gap:10px; }
