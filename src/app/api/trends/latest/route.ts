@@ -19,6 +19,7 @@ export function GET() {
         audio_from: ageDays < 1.2 ? 'fresh today' : `${Math.round(ageDays)}d ago`,
         format: fresh.format || '',
         sounds: fresh.sounds ?? [],
+        suggestions: fresh.suggestions ?? [],
         when: fresh.when,
       },
     })

@@ -10,7 +10,8 @@ import { Loader2, Copy, Check, ThumbsDown, Sparkles, Music, Clapperboard, Radio,
 
 type Line = { id: number; account_id: string; line: string; caption: string; audio_tone: string; broll_scene: string; created_at: string }
 type Acct = { id: string; handle: string; status: string; brand_name?: string }
-type Pulse = { audio: string; audio_from?: string; format: string; when: string | null }
+type TrendSug = { sound: string; trending_for: string; use_it: string }
+type Pulse = { audio: string; audio_from?: string; format: string; suggestions?: TrendSug[]; when: string | null }
 
 const DEFAULT_ACCOUNT = 'theknowingis'   // @theknowingis — her current focus (id now matches handle)
 
@@ -47,7 +48,7 @@ export default function LinesPanel() {
       const d = await r.json().catch(() => null)
       const ta = d?.trend_audio
       if (r.ok && ta && (ta.audio || ta.format)) {
-        setPulse({ audio: ta.audio || '', audio_from: 'fresh today', format: ta.format || '', when: ta.when ?? null })
+        setPulse({ audio: ta.audio || '', audio_from: 'fresh today', format: ta.format || '', suggestions: ta.suggestions ?? [], when: ta.when ?? null })
       } else {
         // Don't silently leave a stale song up — tell her it didn't refresh (e.g. out of credits).
         setPulseErr(d?.error || 'Couldn’t pull a fresh sound — try again in a moment.')
@@ -121,8 +122,25 @@ export default function LinesPanel() {
             </button>
           </div>
           {pulseErr && <p style={{ fontSize: '11px', color: '#C2477E', lineHeight: 1.4 }}>{pulseErr}</p>}
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>{pulse.audio ? 'The move: film your next clip to this sound, then pair it with any line below.' : 'The move: try this format with any line below.'}</p>
-          {pulse.audio && <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><Music size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} /> <span>{pulse.audio}</span></p>}
+          {pulse.suggestions && pulse.suggestions.length > 0 ? (
+            <>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>The move: grab a sound, film the exact shot, type the words. Ready to shoot.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '2px' }}>
+                {pulse.suggestions.map((s, i) => (
+                  <div key={i} style={{ borderRadius: '10px', padding: '10px 12px', background: 'var(--surface-raised, rgba(0,0,0,0.03))', border: '1px solid rgba(194,71,126,0.14)' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 700, lineHeight: 1.35, display: 'flex', gap: '6px' }}><Music size={13} style={{ flexShrink: 0, marginTop: '2px', color: '#C2477E' }} /> <span>{s.sound}</span></p>
+                    {s.trending_for && <p style={{ fontSize: '11.5px', color: 'var(--text-subtle)', margin: '2px 0 0 19px' }}>trending for {s.trending_for}</p>}
+                    {s.use_it && <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.5, margin: '6px 0 0 19px' }}>{s.use_it}</p>}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>{pulse.audio ? 'The move: film your next clip to this sound, then pair it with any line below.' : 'The move: try this format with any line below.'}</p>
+              {pulse.audio && <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><Music size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} /> <span>{pulse.audio}</span></p>}
+            </>
+          )}
           {pulse.format && <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><span style={{ flexShrink: 0 }}>🧬</span> <span>{pulse.format}</span></p>}
         </div>
       )}

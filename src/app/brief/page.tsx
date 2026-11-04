@@ -52,18 +52,15 @@ export default function BriefPage() {
     try { seen = localStorage.getItem('brief-last-viewed') } catch { /* private window */ }
     setPrevSeen(seen)
     Promise.allSettled([
-      fetch('/api/lines?account=mandijoybeck').then(r => r.json()),
+      fetch('/api/brief/line').then(r => r.json()),  // Mandi Joy's line, tied to the current priority (the Reset)
       fetch('/api/commander/orders').then(r => r.json()),
       fetch('/api/inbox').then(r => r.json()),
       fetch('/api/podcast/schedule?admin=1').then(r => r.json()),
       fetch('/api/people').then(r => r.json()),   // RISE-native CRM (not GHL) — the complete list
       fetch('/api/buildlog').then(r => r.json()),  // the build journal: Claude + RISE work, merged
     ]).then(([l, m, i, b, s, bl]) => {
-      // Rotate the line each open (was always lines[0], so it looked frozen).
-      if (l.status === 'fulfilled' && Array.isArray(l.value?.lines) && l.value.lines.length) {
-        const lines = l.value.lines as { line: string }[]
-        setLine(lines[Math.floor(Math.random() * lines.length)].line)
-      }
+      // Mandi Joy's line for today, generated around the current priority (the Reset).
+      if (l.status === 'fulfilled' && typeof l.value?.line === 'string' && l.value.line) setLine(l.value.line)
       if (m.status === 'fulfilled' && m.value?.orders?.your_move?.[0]) setMove(m.value.orders.your_move[0])
       if (i.status === 'fulfilled' && i.value?.inbox) setInbox(i.value.inbox)
       if (b.status === 'fulfilled' && Array.isArray(b.value?.bookings)) setBookings(b.value.bookings)

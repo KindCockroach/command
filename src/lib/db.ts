@@ -532,6 +532,11 @@ export type MediaMeta = {
   described_at: string
 }
 
+// A trending-audio SUGGESTION — not just a sound, but what it's trending FOR and
+// exactly what Mandi could film/say, grounded in her real recent life. The point:
+// she reads it and knows precisely what to do, not just something to think about.
+export type TrendSuggestion = { sound: string; trending_for: string; use_it: string }
+
 // A LINE — one copy-ready reel idea for the calm "Lines" feed. Not a content card:
 // it renders as four short strings and nothing else.
 export type Line = {
@@ -554,7 +559,9 @@ type Db = {
   next_line_id?: number
   inbox?: InboxBrief
   media_meta?: Record<string, MediaMeta>
-  trend_audio?: { audio: string; format: string; sounds?: string[]; when: string }
+  trend_audio?: { audio: string; format: string; sounds?: string[]; suggestions?: TrendSuggestion[]; when: string }
+  focus_product_id?: string   // RISE's current "primary order" — what the Brief line orbits (default 'reset')
+  brief_line?: { date: string; product_id: string; line: string }
   saved_headlines?: SavedHeadline[]
   next_headline_id?: number
   podcast_schedule?: PodcastSchedule
@@ -2177,11 +2184,22 @@ export function setMediaMeta(key: string, data: Omit<MediaMeta, 'key' | 'describ
 }
 
 // ── TREND AUDIO — today's fresh trending-sound pick for the Quick Post pulse ──
-export function getTrendAudio(): { audio: string; format: string; sounds?: string[]; when: string } | null {
+// RISE's current primary order (what the Brief line orbits). Defaults to the Reset —
+// the engine of the 90-day plan. Settable so the focus can move.
+export function getFocusProductId(): string { return readDb().focus_product_id || 'reset' }
+export function setFocusProductId(id: string): void { const db = readDb(); db.focus_product_id = id; writeDb(db) }
+export function getBriefLine(): { date: string; product_id: string; line: string } | null { return readDb().brief_line ?? null }
+export function setBriefLine(data: { product_id: string; line: string }): void {
+  const db = readDb()
+  db.brief_line = { date: new Date().toISOString().slice(0, 10), product_id: data.product_id, line: data.line }
+  writeDb(db)
+}
+
+export function getTrendAudio(): { audio: string; format: string; sounds?: string[]; suggestions?: TrendSuggestion[]; when: string } | null {
   const db = readDb()
   return db.trend_audio ?? null
 }
-export function setTrendAudio(data: { audio: string; format: string; sounds?: string[] }): void {
+export function setTrendAudio(data: { audio: string; format: string; sounds?: string[]; suggestions?: TrendSuggestion[] }): void {
   const db = readDb()
   db.trend_audio = { ...data, when: new Date().toISOString() }
   writeDb(db)
