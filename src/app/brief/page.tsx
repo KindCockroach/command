@@ -216,50 +216,35 @@ export default function BriefPage() {
           </section>
         )}
 
-        {/* Build journal — where we've been, what's in motion, what's next (Claude + RISE) */}
+        {/* Build journal — just what's in motion and what's next (not a full activity log) */}
         {build.length > 0 && (() => {
           const todayStr = new Date().toLocaleDateString('en-CA')
-          const yStr = new Date(Date.now() - 86400000).toLocaleDateString('en-CA')
-          const weekAgo = new Date(Date.now() - 8 * 86400000).toLocaleDateString('en-CA')
           const doing = build.filter(b => b.status === 'doing')
           const todo = build.filter(b => b.status === 'todo')
-          const done = build.filter(b => b.status === 'done')
-          const doneToday = done.filter(b => b.date === todayStr)
-          const doneYesterday = done.filter(b => b.date === yStr)
-          const doneWeek = done.filter(b => b.date < yStr && b.date >= weekAgo)
+          if (!doing.length && !todo.length) return null
           const tag = (s: string) => (s === 'rise' ? '▲' : '🤖')
-          const Row = ({ b }: { b: Build }) => (
+          const Line = ({ b, today }: { b: Build; today?: boolean }) => (
             <p style={{ fontSize: '14px', color: '#3A2E26', lineHeight: 1.45 }}>
               <span style={{ color: '#B8A694', marginRight: 6 }} title={b.source === 'rise' ? 'In RISE' : 'With Claude'}>{tag(b.source)}</span>
-              {b.title}{b.detail ? <span style={{ color: '#9A8676', fontWeight: 400 }}> — {b.detail}</span> : ''}
+              {b.title}{today && b.date === todayStr ? <span style={{ color: '#B5784E', fontWeight: 800 }}> · today</span> : ''}
+              {b.detail ? <span style={{ color: '#9A8676', fontWeight: 400 }}> — {b.detail}</span> : ''}
             </p>
           )
-          const Group = ({ label, items, color }: { label: string; items: Build[]; color: string }) => items.length ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color, marginTop: '4px' }}>{label}</p>
-              {items.map(b => <Row key={b.id} b={b} />)}
-            </div>
-          ) : null
           return (
             <section style={{ borderRadius: '18px', padding: '18px 20px', background: 'rgba(139,107,168,0.08)', border: '1px solid rgba(139,107,168,0.28)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#8A6BA8' }}>🛠 What we&apos;re building</p>
-              <Group label="In progress" items={doing} color="#8A6BA8" />
-              {(todo.length > 0) && (
+              {doing.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#B5784E', marginTop: '4px' }}>To finish / address next</p>
-                  {todo.map(b => (
-                    <p key={b.id} style={{ fontSize: '14px', color: '#3A2E26', lineHeight: 1.45 }}>
-                      <span style={{ color: '#B8A694', marginRight: 6 }}>{tag(b.source)}</span>
-                      {b.title}{b.date === todayStr ? <span style={{ color: '#B5784E', fontWeight: 800 }}> · today</span> : ''}
-                      {b.detail ? <span style={{ color: '#9A8676', fontWeight: 400 }}> — {b.detail}</span> : ''}
-                    </p>
-                  ))}
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#8A6BA8', marginTop: '4px' }}>In progress</p>
+                  {doing.map(b => <Line key={b.id} b={b} />)}
                 </div>
               )}
-              <Group label="Finished today" items={doneToday} color="#3d9a6e" />
-              <Group label="Yesterday" items={doneYesterday} color="#5E8A6B" />
-              <Group label="Earlier this week" items={doneWeek} color="#A8937E" />
-              <p style={{ fontSize: '11.5px', color: '#9A8676' }}>🤖 with Claude · ▲ in RISE</p>
+              {todo.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#B5784E', marginTop: '4px' }}>To finish / address</p>
+                  {todo.map(b => <Line key={b.id} b={b} today />)}
+                </div>
+              )}
             </section>
           )
         })()}

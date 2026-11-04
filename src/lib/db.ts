@@ -974,6 +974,26 @@ export function deleteContact(id: string): boolean {
   return (db.contacts?.length ?? 0) < before
 }
 
+// Add a label to whoever has this email — creating a CRM contact if none exists yet.
+// Used by the purchase webhook to auto-label paid customers. Idempotent.
+export function addContactLabelByEmail(email: string, lbl: ContactLabel, opts: { name?: string; product?: string } = {}): Contact {
+  const db = readDb()
+  if (!db.contacts) db.contacts = []
+  const e = email.trim().toLowerCase()
+  let c = db.contacts.find(x => x.email === e)
+  const now = new Date().toISOString()
+  if (!c) {
+    c = { id: `c_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, email: e, name: (opts.name || '').trim(), labels: [], products: [], created_at: now, updated_at: now }
+    db.contacts.push(c)
+  }
+  if (!c.labels.includes(lbl)) c.labels.push(lbl)
+  if (opts.name && !c.name) c.name = opts.name.trim()
+  if (opts.product) { c.products = c.products || []; if (!c.products.includes(opts.product)) c.products.push(opts.product) }
+  c.updated_at = now
+  writeDb(db)
+  return c
+}
+
 // --- Products (the Campaigns tab) ---
 // First-run roster, drafted in Mandi's voice and editable in-place. Two brand houses
 // under Joyful Media + the cross-cutting Guests comms track.

@@ -2,8 +2,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI, { toFile } from 'openai'
 import { putObject, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
 import { logActivity } from '@/lib/db'
+import { fableText } from '@/lib/fable'
+import { SYSTEM_PROMPTS } from '@/lib/ai'
 
 const wordCount = (t: string) => t.split(/\s+/).filter(Boolean).length
+
+// Tan's hands: a light cleanup pass on the raw transcript — fix obvious mis-hears,
+// add paragraph breaks — WITHOUT changing her words or meaning. Skips very long
+// transcripts (reformatting risks truncation) and falls back to raw if the model
+// returns noticeably less than it was given.
+async function tanClean(raw: string): Promise<{ text: string; cleaned: boolean }> {
+  const words = wordCount(raw)
+  if (!raw.trim() || words > 4000 || !process.env.OPENAI_API_KEY) return { text: raw, cleaned: false }
+  try {
+    const out = await fableText({
+      instructions: `${SYSTEM_PROMPTS.tan}\n\nClean the transcript below: fix obvious mis-hears and add light paragraph breaks. KEEP EVERY WORD and her exact meaning — never summarize, shorten, or omit. Return ONLY the cleaned transcript, nothing else.`,
+      input: raw,
+      maxTokens: Math.min(8000, Math.ceil(words * 2) + 500),
+    })
+    if (out && wordCount(out) >= words * 0.8) return { text: out.trim(), cleaned: true }
+  } catch { /* fall back to raw */ }
+  return { text: raw, cleaned: false }
+}
 import { spawn } from 'child_process'
 import { mkdtemp, writeFile, rm, stat, readdir, readFile } from 'fs/promises'
 import { createReadStream } from 'fs'
@@ -109,9 +129,10 @@ export async function POST(req: NextRequest) {
     try {
       // ffmpeg streams the source straight from R2 — extracts audio, compresses,
       // chunks — so ANY size and VIDEO too, without buffering the file in Node.
-      const { transcript, compressedUrl } = await compressAndTranscribeInput(url, name)
-      logActivity({ type: 'transcribed', title: `Transcribed ${name}`, detail: `${wordCount(transcript).toLocaleString()} words`, icon: '📝', source: 'transcribe', media_url: compressedUrl || null })
-      return NextResponse.json({ transcript, compressedUrl, compressed: true })
+      const { transcript: raw, compressedUrl } = await compressAndTranscribeInput(url, name)
+      const tan = await tanClean(raw)
+      logActivity({ type: 'transcribed', title: `Tan transcribed ${name}`, detail: `${wordCount(tan.text).toLocaleString()} words${tan.cleaned ? ' · cleaned' : ''}`, icon: '📝', source: 'tan', media_url: compressedUrl || null })
+      return NextResponse.json({ transcript: tan.text, raw, cleaned: tan.cleaned, compressedUrl, compressed: true })
     } catch (e) {
       // Only if ffmpeg is missing: fetch + Whisper for a small file (best-effort).
       if (e instanceof Error && e.message === 'ffmpeg-unavailable') {
@@ -158,8 +179,9 @@ export async function POST(req: NextRequest) {
     await saveOriginal()
     try {
       const transcription = await client.audio.transcriptions.create({ model: 'whisper-1', file })
-      logActivity({ type: 'transcribed', title: `Transcribed ${file.name}`, detail: `${wordCount(transcription.text).toLocaleString()} words`, icon: '📝', source: 'transcribe', media_url: publicUrl || null })
-      return NextResponse.json({ publicUrl, transcript: transcription.text })
+      const tan = await tanClean(transcription.text)
+      logActivity({ type: 'transcribed', title: `Tan transcribed ${file.name}`, detail: `${wordCount(tan.text).toLocaleString()} words${tan.cleaned ? ' · cleaned' : ''}`, icon: '📝', source: 'tan', media_url: publicUrl || null })
+      return NextResponse.json({ publicUrl, transcript: tan.text, raw: transcription.text, cleaned: tan.cleaned })
     } catch (e) {
       return NextResponse.json({ publicUrl, transcript: null, error: `Transcription failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
     }
@@ -168,7 +190,7 @@ export async function POST(req: NextRequest) {
   // Oversized → keep ONLY the compressed MP3 in Media (not the giant original)
   try {
     const { transcript, compressedUrl } = await compressAndTranscribe(bytes, file.name)
-    logActivity({ type: 'transcribed', title: `Transcribed ${file.name}`, detail: `${wordCount(transcript).toLocaleString()} words`, icon: '📝', source: 'transcribe', media_url: compressedUrl || null })
+    logActivity({ type: 'transcribed', title: `Tan transcribed ${file.name}`, detail: `${wordCount(transcript).toLocaleString()} words`, icon: '📝', source: 'tan', media_url: compressedUrl || null })
     return NextResponse.json({ compressedUrl, transcript, compressed: true })
   } catch (e) {
     // Compression failed → fall back to keeping the raw original so nothing is lost
