@@ -32,6 +32,18 @@ type Service = {
 
 const SERVICES: Service[] = [
   {
+    emoji: '🎙',
+    name: 'AI Mom Podcast',
+    who: 'Not what to think about AI. How to think about it.',
+    what: [
+      'Honest conversations for women staying human while everything changes',
+      'Jobs, education, creativity — and the pushback nobody else airs',
+      'Have a story women need to hear? Come on the show',
+    ],
+    cta: { label: 'Listen', href: '/aimom' },
+    more: { label: 'Be a guest', href: '/book' },
+  },
+  {
     emoji: '🌙',
     name: 'The Reset',
     who: 'Have you tried unplugging and plugging yourself back in?',
@@ -43,6 +55,17 @@ const SERVICES: Service[] = [
     cta: { label: 'Save my seat', href: 'https://www.bethereforher.com/reset' },
   },
   {
+    emoji: '⚙️',
+    name: 'Small Business AI Integration',
+    who: 'You keep hearing AI will save you time. It hasn’t saved you a minute yet.',
+    what: [
+      'AI set up inside the tools you already use',
+      'Assistants, automations, follow-ups, and content workflows',
+      'Built for your business, then handed over so you can run it',
+    ],
+    cta: { label: 'Take the AI integration questionnaire', href: '/assessment' },
+  },
+  {
     emoji: '🎧',
     name: 'Reconnect To Your Intuition',
     who: 'The quiet knowing you were taught to silence, turned back up.',
@@ -52,17 +75,6 @@ const SERVICES: Service[] = [
       'One-time download, $9. Yours to keep.',
     ],
     cta: { label: 'Get the download', href: 'https://www.bethereforher.com/intuition' },
-  },
-  {
-    emoji: '🌿',
-    name: 'The Wellspring',
-    who: 'A monthly membership for mothers raising their families with awareness and mindfulness. Coming soon.',
-    what: [
-      'The Reset, live every week',
-      'A new downloadable meditation every week',
-      'Connection to other mothers doing the same work',
-    ],
-    cta: { label: 'See what’s coming', href: 'https://www.bethereforher.com/wellspring' },
   },
   {
     emoji: '🎤',
@@ -77,38 +89,15 @@ const SERVICES: Service[] = [
     more: { label: 'See the keynote', href: '/thesis' },
   },
   {
-    emoji: '⚙️',
-    name: 'Small Business AI Integration',
-    who: 'You keep hearing AI will save you time. It hasn’t saved you a minute yet.',
+    emoji: '🌿',
+    name: 'The Wellspring',
+    who: 'A monthly membership for mothers raising their families with awareness and mindfulness. Coming soon.',
     what: [
-      'AI set up inside the tools you already use',
-      'Assistants, automations, follow-ups, and content workflows',
-      'Built for your business, then handed over so you can run it',
+      'The Reset, live every week',
+      'A new downloadable meditation every week',
+      'Connection to other mothers doing the same work',
     ],
-    cta: { label: 'Take the AI integration questionnaire', href: '/assessment' },
-  },
-  {
-    emoji: '🎬',
-    name: 'UGC for Brands',
-    who: 'Trending content that gets traffic and new customers.',
-    what: [
-      'Hooks, scripts, and edits built for how the algorithm rewards interesting brands',
-      'For brands serving women, moms, families, and wellness — and unique experiences and travel',
-      'Video creation and marketing assessments, priced up front',
-    ],
-    cta: { label: 'See the menu & pricing', href: '/ugc' },
-  },
-  {
-    emoji: '🎙',
-    name: 'AI Mom Podcast',
-    who: 'Not what to think about AI. How to think about it.',
-    what: [
-      'Honest conversations for women staying human while everything changes',
-      'Jobs, education, creativity — and the pushback nobody else airs',
-      'Have a story women need to hear? Come on the show',
-    ],
-    cta: { label: 'Listen', href: '/aimom' },
-    more: { label: 'Be a guest', href: '/book' },
+    cta: { label: 'See what’s coming', href: 'https://www.bethereforher.com/wellspring' },
   },
   {
     emoji: '🔑',
@@ -154,17 +143,25 @@ export default function Home() {
           </p>
           <div className="glass">
             <p className="whether">You can work with her in several ways:</p>
-            <ul className="fits">
-              <li><a href="https://www.bethereforher.com/reset"><span>🌙</span>Attend The Reset on Sundays</a></li>
-              <li><a href="https://www.bethereforher.com/intuition"><span>🎧</span>Reconnect To Your Intuition with a one-time download</a></li>
-              <li><a href="https://www.bethereforher.com/wellspring"><span>🌿</span>Join The Wellspring (Monthly Membership)</a></li>
-              <li><a href="/speak"><span>🎤</span>Hire her to speak on your stage</a></li>
-              <li><a href="/assessment"><span>⚙️</span>Assess your business for AI integration</a></li>
-              <li><a href="/assessment"><span>📱</span>Assess your social media for AI integration</a></li>
-              <li><a href="/ugc"><span>🎬</span>Hire her for UGC</a></li>
-              <li><a href="/aimom"><span>🎙</span>Tune into the podcast</a></li>
-              <li className="wide"><a href="/retire"><span>🔑</span>RETIRE: step back from your business with the help of AI</a></li>
-            </ul>
+            <div className="cols">
+              <div>
+                <p className="colhead">Make AI work for you</p>
+                <ul className="fits">
+                  <li><a href="/aimom"><span>🎙</span>Tune into the AI Mom Podcast</a></li>
+                  <li><a href="/assessment"><span>⚙️</span>Assess your business for AI integration</a></li>
+                  <li><a href="/speak"><span>🎤</span>Hire her to speak on your stage</a></li>
+                </ul>
+              </div>
+              <div>
+                <p className="colhead">Meet the AI era with mindfulness</p>
+                <ul className="fits">
+                  <li><a href="https://www.bethereforher.com/reset"><span>🌙</span>Attend The Reset on Sundays</a></li>
+                  <li><a href="https://www.bethereforher.com/intuition"><span>🎧</span>Reconnect To Your Intuition with a one-time download</a></li>
+                  <li><a href="https://www.bethereforher.com/wellspring"><span>🌿</span>Join The Wellspring (Monthly Membership)</a></li>
+                </ul>
+              </div>
+            </div>
+            <ul className="fits one"><li><a href="/aimom"><span>💛</span>Meet AI Mom</a></li></ul>
           </div>
           <p className="sub pick">Pick where you fit. Start there.</p>
           <div className="ctaRow">
@@ -177,7 +174,7 @@ export default function Home() {
       <section className="tier" id="services">
         <div className="wrap">
           <p className="tag">HIRE MANDI</p>
-          <h2>Eight ways to work together.</h2>
+          <h2>Seven ways to work together.</h2>
           <div className="grid">{SERVICES.map((s) => <Card s={s} key={s.name} />)}</div>
         </div>
       </section>
@@ -280,8 +277,10 @@ const css = `
   background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.12), 0 24px 50px -30px rgba(0,0,0,0.6); }
 .h .hero .whether { margin:0 0 12px; font-size:13px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--ember); text-align:center; }
-.h .hero .fits { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-.h .hero .fits li.wide { grid-column:1 / -1; }
+.h .hero .cols { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+.h .hero .colhead { margin:0 0 10px; font:italic 600 18px/1.3 Georgia,serif; color:#F2C48D; text-align:left; }
+.h .hero .fits { list-style:none; padding:0; margin:0; display:grid; gap:10px; }
+.h .hero .fits.one { margin-top:14px; }
 .h .hero .fits a { display:flex; align-items:center; gap:10px; height:100%; padding:12px 14px; border-radius:14px; font-size:16px; font-weight:600;
   color:#fff; text-decoration:none; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.10);
   transition:transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease; }
@@ -335,7 +334,7 @@ const css = `
   .h .hero .heroIn { text-align:left; }
   .h .hero .logo { margin:0 0 22px; width:min(280px,74vw); }
   .h .hero .sub { margin-left:0; font-size:17.5px; }
-  .h .hero .fits { grid-template-columns:1fr; }
+  .h .hero .cols { grid-template-columns:1fr; }
   .h .hero .whether { text-align:left; }
   .h .hero .ctaRow { justify-content:flex-start; }
   .h .hero .drift { width:76px; top:20px; right:14px; opacity:.75; }
