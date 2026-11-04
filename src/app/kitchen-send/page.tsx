@@ -4,6 +4,7 @@
 // public list, so only Mandi's station cookie gets past the gate; the API is isOwner-
 // gated too. Three steps: Dry run (see who) → Test to me → Send to everyone.
 import { useState } from 'react'
+import CopyEditor from '@/components/CopyEditor'
 
 type Result = { mode?: string; count?: number; recipients?: string[]; emilyIncluded?: boolean; sent?: number; failed?: number; results?: { who: string; ok: boolean }[]; error?: string }
 
@@ -34,6 +35,7 @@ export default function KitchenSend() {
 
   return (
     <main style={{ fontFamily: 'Georgia, serif', color: '#3C2A37', background: '#F4E9DB', minHeight: '100vh', margin: 0, padding: '48px 20px' }}>
+      <CopyEditor />
       <div style={{ maxWidth: 620, margin: '0 auto' }}>
         <p style={{ letterSpacing: 2, fontSize: 12, fontWeight: 800, color: '#D98C5F', margin: 0 }}>BE THERE FOR HER · ADMIN</p>
         <h1 style={{ fontSize: 34, margin: '8px 0 4px' }}>Send the November recipe 🍂</h1>
