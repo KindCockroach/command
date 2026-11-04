@@ -15,6 +15,8 @@ export const metadata: Metadata = {
 }
 
 const GIFT_AUDIO = ''
+// The Reset's Google Meet room. The Join button appears once this is set.
+const MEET_URL = ''
 
 const SPACE = [
   { icon: '🕯', t: 'Light a candle', d: 'One flame tells your whole body the day is over.' },
@@ -42,7 +44,7 @@ export default function ResetWelcome() {
         <div className="wrap">
           <p className="eyebrow">THE RESET · BE THERE FOR HER</p>
           <h1>You&rsquo;re in. <em>Welcome to The Reset.</em></h1>
-          <p className="sub">Sunday at 8 PM CT, live on Google Meet. Before anything else, here&rsquo;s something just for you.</p>
+          <p className="sub">Sunday at 8 PM CT, live on Google Meet.</p>
         </div>
       </section>
 
@@ -59,12 +61,21 @@ export default function ResetWelcome() {
         </div>
       </section>
 
-      <section className="prep">
+      <section className="early">
         <div className="wrap">
-          <h2>How to get ready</h2>
-          <ol>
-            {PREP.map(([t, d]) => <li key={t}><strong>{t}</strong> {d}</li>)}
-          </ol>
+          <p className="tag">A SPECIAL INVITATION</p>
+          <h2>Log on early at 7:30.</h2>
+          <p>
+            You can do all of this on your own. But if you&rsquo;d like someone to hold your hand from start to finish,
+            from prep to Reset, I&rsquo;ll be there for you. Log on 30 minutes early, at 7:30 PM CT, and we&rsquo;ll light
+            the candle, set the lights, and settle in together.
+          </p>
+          <dl className="details">
+            <div><dt>Prep (optional)</dt><dd>Sunday, 7:30 PM CT</dd></div>
+            <div><dt>The Reset</dt><dd>Sunday, 8:00 PM CT</dd></div>
+            <div><dt>Where</dt><dd>{MEET_URL ? 'Google Meet, the same link for both' : 'Google Meet, using the link Mandi sends you'}</dd></div>
+          </dl>
+          {MEET_URL && <a className="meet" href={MEET_URL} target="_blank" rel="noopener noreferrer">Join on Google Meet</a>}
         </div>
       </section>
 
@@ -84,20 +95,12 @@ export default function ResetWelcome() {
         </div>
       </section>
 
-      <section className="early">
+      <section className="prep">
         <div className="wrap">
-          <p className="tag">WANT A HAND?</p>
-          <h2>Log on early at 7:30.</h2>
-          <p>
-            You can do all of this on your own. But if you&rsquo;d like someone to hold your hand from start to finish,
-            from prep to Reset, I&rsquo;ll be there for you. Log on 30 minutes early, at 7:30 PM CT, and we&rsquo;ll light
-            the candle, set the lights, and settle in together.
-          </p>
-          <dl className="details">
-            <div><dt>Prep (optional)</dt><dd>Sunday, 7:30 PM CT</dd></div>
-            <div><dt>The Reset</dt><dd>Sunday, 8:00 PM CT</dd></div>
-            <div><dt>Where</dt><dd>Google Meet, using the link Mandi sends you</dd></div>
-          </dl>
+          <h2>How to get ready</h2>
+          <ol>
+            {PREP.map(([t, d]) => <li key={t}><strong>{t}</strong> {d}</li>)}
+          </ol>
         </div>
       </section>
 
@@ -119,18 +122,18 @@ const css = `
 .rw h1 em { color:#f2b872; display:block; }
 .rw .sub { font-size:19px; color:#e6d8ca; margin:0 auto; max-width:540px; }
 .rw h2 { font-size:clamp(24px,4vw,32px); margin:0 0 14px; }
-.rw .gift { margin-top:-56px; }
+.rw .gift { margin-top:-56px; padding-bottom:52px; }
 .rw .giftcard { background:#fff; border:1px solid #ecdccb; border-radius:24px; padding:28px 28px 26px; text-align:center;
   box-shadow:0 24px 50px -30px rgba(60,42,55,0.55); }
 .rw .giftcard h2 { margin:8px 0 10px; }
 .rw .giftcard p { color:var(--soft); margin:0 0 16px; }
 .rw .giftcard audio { width:100%; }
 .rw .soon { background:#FBF3EA; border:1px dashed #e0b48f; border-radius:14px; padding:14px 16px; color:var(--plum) !important; margin:0 !important; }
-.rw .prep { padding:52px 0 20px; }
+.rw .prep { padding:20px 0 52px; }
 .rw ol { margin:0; padding-left:22px; display:grid; gap:12px; font-size:17px; }
 .rw ol li::marker { color:var(--ember); font-weight:800; }
 .rw ol strong { color:var(--plum); }
-.rw .space { padding:36px 0 52px; }
+.rw .space { padding:52px 0 36px; }
 .rw .lede { color:var(--soft); margin:-6px 0 20px; }
 .rw .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
 .rw .card { background:#fff; border:1px solid #ecdccb; border-radius:20px; padding:20px 22px; }
@@ -145,6 +148,9 @@ const css = `
   border-radius:14px; padding:12px 16px; }
 .rw .details dt { font-weight:800; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; color:#f2b872; }
 .rw .details dd { margin:0; color:#fff; }
+.rw .meet { display:inline-block; margin-top:22px; background:var(--ember); color:#fff; font-weight:800; font-size:17px;
+  padding:14px 28px; border-radius:999px; text-decoration:none; box-shadow:0 12px 28px -14px rgba(217,140,95,0.9); }
+.rw .meet:hover { background:#c97a4d; }
 .rw .foot { text-align:center; padding:28px 20px 40px; font:italic 18px Georgia,serif; color:var(--soft); }
 @media (max-width:600px){ .rw .grid { grid-template-columns:1fr; } .rw .details div { grid-template-columns:1fr; gap:2px; } }
 `
