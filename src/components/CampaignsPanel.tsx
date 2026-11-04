@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, X, Save, Pencil, Plus, Trash2, ExternalLink } from 'lucide-react'
+import { Loader2, X, Save, Pencil, Plus, Trash2, ExternalLink, Sparkles, Send, Eye } from 'lucide-react'
 
 // CAMPAIGNS — every product/offer under Joyful Media as an org chart, each with its
 // mission, how it fits the big picture, funnel links, and a cadence clock (touch its
@@ -19,6 +19,13 @@ const BRAND_COLOR: Record<Brand, string> = { btfh: '#C2693F', wfh: '#5A4FCF', jo
 const BRAND_EMOJI: Record<Brand, string> = { btfh: '🌙', wfh: '🎈', joyful: '🎙' }
 const KIND_TEXT: Record<string, string> = { free_download: 'Free download', paid_download: 'Paid download', live: 'Live session', membership: 'Membership', podcast: 'Podcast', service: 'Service', guest_track: 'Comms track' }
 const ORDER: Brand[] = ['btfh', 'wfh', 'joyful']
+// Audience labels Cap can target (mirrors the People CRM).
+const AUDIENCE: { id: string; text: string }[] = [
+  { id: 'free_customer', text: 'Free Customers' }, { id: 'paid_customer', text: 'Paid Customers' },
+  { id: 'sub_podcast', text: 'Podcast subs' }, { id: 'sub_btfh', text: 'BTFH subs' }, { id: 'sub_joyful', text: 'Joyful subs' },
+  { id: 'guest', text: 'Guests' }, { id: 'poi', text: 'Persons of Interest' },
+]
+type Draft = { subject: string; preview?: string; body: string; cta_label?: string; cta_url?: string; send_offset_days?: number }
 
 const label = { fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.05em', color: 'var(--text-subtle)' }
 const input = { width: '100%', border: '1px solid var(--border)', borderRadius: '9px', padding: '8px 11px', fontSize: '13px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' as const }
@@ -35,6 +42,7 @@ export default function CampaignsPanel() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [composeFor, setComposeFor] = useState<Product | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -90,13 +98,14 @@ export default function CampaignsPanel() {
         </div>
       )}
 
-      {open && <ProductDrawer product={open} onClose={() => setOpenId(null)} onSaved={() => { setOpenId(null); load() }} />}
+      {open && <ProductDrawer product={open} onClose={() => setOpenId(null)} onSaved={() => { setOpenId(null); load() }} onCompose={p => { setOpenId(null); setComposeFor(p) }} />}
+      {composeFor && <Composer product={composeFor} onClose={() => setComposeFor(null)} onSent={() => { setComposeFor(null); load() }} />}
       <style>{`.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 }
 
-function ProductDrawer({ product, onClose, onSaved }: { product: Product; onClose: () => void; onSaved: () => void }) {
+function ProductDrawer({ product, onClose, onSaved, onCompose }: { product: Product; onClose: () => void; onSaved: () => void; onCompose: (p: Product) => void }) {
   const [editing, setEditing] = useState(false)
   const [f, setF] = useState({ mission: product.mission, fits: product.fits, price: product.price || '', cadence_days: product.cadence_days, status: product.status })
   const [links, setLinks] = useState<Link[]>(product.links)
@@ -127,6 +136,12 @@ function ProductDrawer({ product, onClose, onSaved }: { product: Product; onClos
           <Cadence p={product} big />
           {product.cadence_days > 0 && <div style={{ fontSize: '11.5px', color: 'var(--text-subtle)', marginTop: '3px' }}>Goal: touch its people every {product.cadence_days} days.</div>}
         </div>
+
+        {!editing && (
+          <button onClick={() => onCompose(product)} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: 'center', border: 0, borderRadius: '11px', padding: '12px', marginBottom: '16px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', background: BRAND_COLOR[product.brand], color: '#fff' }}>
+            <Sparkles size={15} /> Compose with Cap
+          </button>
+        )}
 
         {!editing ? (
           <>
@@ -173,6 +188,114 @@ function ProductDrawer({ product, onClose, onSaved }: { product: Product; onClos
               <button onClick={() => setEditing(false)} style={{ border: '1px solid var(--border)', borderRadius: '9px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: 'transparent', color: 'var(--text-subtle)' }}>Cancel</button>
             </div>
           </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Cap's composer — pick an audience + goal, Cap drafts email(s), Mandi previews,
+// edits, comments for a revision, then sends via Resend (which logs the cadence).
+function Composer({ product, onClose, onSent }: { product: Product; onClose: () => void; onSent: () => void }) {
+  const color = BRAND_COLOR[product.brand]
+  const [labels, setLabels] = useState<string[]>([])
+  const [goal, setGoal] = useState('')
+  const [count, setCount] = useState(1)
+  const [feedback, setFeedback] = useState('')
+  const [drafts, setDrafts] = useState<Draft[]>([])
+  const [audienceCount, setAudienceCount] = useState<number | null>(null)
+  const [busy, setBusy] = useState<false | 'draft' | 'send'>(false)
+  const [preview, setPreview] = useState<Set<number>>(new Set())
+  const [err, setErr] = useState('')
+  const [result, setResult] = useState<string>('')
+  const toggle = (id: string) => setLabels(l => l.includes(id) ? l.filter(x => x !== id) : [...l, id])
+
+  const draft = async (revise = false) => {
+    setBusy('draft'); setErr(''); setResult('')
+    const d = await fetch('/api/campaigns/compose', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: product.id, goal, audience_labels: labels, count, feedback: revise ? feedback : '', previous: revise ? JSON.stringify(drafts) : '' }),
+    }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup.' }))
+    setBusy(false)
+    if (d.error) { setErr(d.error); return }
+    setDrafts(d.emails || []); setAudienceCount(d.audience_count ?? null); setFeedback('')
+  }
+
+  const send = async (dft: Draft) => {
+    if (!confirm(`Send "${dft.subject}" to ${audienceCount ?? 'the'} people now?`)) return
+    setBusy('send'); setErr('')
+    const d = await fetch('/api/campaigns/send', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: product.id, subject: dft.subject, body: dft.body, cta_label: dft.cta_label, cta_url: dft.cta_url, audience_labels: labels }),
+    }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup.' }))
+    setBusy(false)
+    if (d.error) { setErr(d.error); return }
+    setResult(`Sent to ${d.sent}${d.failed ? `, ${d.failed} failed` : ''}.`)
+  }
+
+  const setDraft = (i: number, patch: Partial<Draft>) => setDrafts(ds => ds.map((x, j) => j === i ? { ...x, ...patch } : x))
+  const fieldLbl = { fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.05em', color: 'var(--text-subtle)' }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(10,8,20,0.5)', zIndex: 70, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '24px 16px', overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 'min(640px, 100%)', background: 'var(--bg, #fff)', border: '1px solid var(--border)', borderRadius: '18px', padding: '22px', boxShadow: '0 40px 90px -40px rgba(0,0,0,0.6)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>📣 Cap · {product.name}</h3>
+          <button onClick={onClose} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={18} /></button>
+        </div>
+        <p style={{ fontSize: '12.5px', color: 'var(--text-subtle)', margin: '0 0 16px' }}>Tell Cap the audience and the goal. Cap drafts; you edit, comment, and send.</p>
+
+        <p style={{ ...fieldLbl, margin: '0 0 7px' }}>Audience {audienceCount !== null && <span style={{ color, marginLeft: 6 }}>{audienceCount} people</span>}</p>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+          {AUDIENCE.map(a => (
+            <button key={a.id} onClick={() => toggle(a.id)} style={{ border: `1px solid ${labels.includes(a.id) ? color : 'var(--border)'}`, background: labels.includes(a.id) ? color : 'transparent', color: labels.includes(a.id) ? '#fff' : 'var(--text-subtle)', borderRadius: '999px', padding: '5px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{a.text}</button>
+          ))}
+        </div>
+        <p style={{ fontSize: '11px', color: 'var(--text-subtle)', margin: '-6px 0 14px' }}>No audience selected = everyone with an email.</p>
+
+        <p style={{ ...fieldLbl, margin: '0 0 6px' }}>Goal / rough message</p>
+        <textarea value={goal} onChange={e => setGoal(e.target.value)} rows={2} placeholder="e.g. invite them to Sunday's Reset — gentle, one yes" style={{ width: '100%', border: '1px solid var(--border)', borderRadius: '9px', padding: '9px 11px', fontSize: '13px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit', resize: 'vertical', marginBottom: '12px' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+          <span style={fieldLbl}>Emails</span>
+          {[1, 3, 5].map(n => <button key={n} onClick={() => setCount(n)} style={{ border: `1px solid ${count === n ? color : 'var(--border)'}`, background: count === n ? color : 'transparent', color: count === n ? '#fff' : 'var(--text-subtle)', borderRadius: '8px', padding: '5px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{n === 1 ? 'Single' : `${n}-part`}</button>)}
+          <button onClick={() => draft(false)} disabled={busy !== false} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', border: 0, borderRadius: '9px', padding: '9px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', background: color, color: '#fff', opacity: busy ? 0.6 : 1 }}>
+            {busy === 'draft' ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />} {drafts.length ? 'Redraft' : 'Draft with Cap'}
+          </button>
+        </div>
+
+        {err && <p style={{ color: '#b23b3b', fontSize: '13px', margin: '0 0 12px' }}>{err}</p>}
+        {result && <p style={{ color: '#15803D', fontSize: '13px', fontWeight: 700, margin: '0 0 12px' }}>✅ {result}</p>}
+
+        {drafts.map((d, i) => (
+          <div key={i} style={{ border: '1px solid var(--border)', borderRadius: '13px', padding: '14px', marginBottom: '12px', background: 'var(--bg-subtle, rgba(0,0,0,0.02))' }}>
+            {drafts.length > 1 && <div style={{ fontSize: '11px', fontWeight: 800, color, marginBottom: '8px' }}>EMAIL {i + 1}{typeof d.send_offset_days === 'number' ? ` · day ${d.send_offset_days}` : ''}</div>}
+            <input value={d.subject} onChange={e => setDraft(i, { subject: e.target.value })} placeholder="Subject" style={{ width: '100%', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 10px', fontSize: '14px', fontWeight: 700, background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit', marginBottom: '8px' }} />
+            {preview.has(i) ? (
+              <div style={{ fontFamily: 'Georgia, serif', fontSize: '14px', lineHeight: 1.6, color: 'var(--text)', whiteSpace: 'pre-wrap', padding: '6px 2px' }}>{d.body}</div>
+            ) : (
+              <textarea value={d.body} onChange={e => setDraft(i, { body: e.target.value })} rows={7} style={{ width: '100%', border: '1px solid var(--border)', borderRadius: '8px', padding: '9px 11px', fontSize: '13px', lineHeight: 1.55, background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit', resize: 'vertical' }} />
+            )}
+            <div style={{ display: 'flex', gap: '6px', margin: '8px 0' }}>
+              <input value={d.cta_label || ''} onChange={e => setDraft(i, { cta_label: e.target.value })} placeholder="Button label" style={{ flex: '0 0 40%', border: '1px solid var(--border)', borderRadius: '8px', padding: '7px 10px', fontSize: '12.5px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' }} />
+              <input value={d.cta_url || ''} onChange={e => setDraft(i, { cta_url: e.target.value })} placeholder="https://…" style={{ flex: 1, border: '1px solid var(--border)', borderRadius: '8px', padding: '7px 10px', fontSize: '12.5px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button onClick={() => setPreview(s => { const n = new Set(s); n.has(i) ? n.delete(i) : n.add(i); return n })} style={{ display: 'flex', alignItems: 'center', gap: '5px', border: '1px solid var(--border)', borderRadius: '8px', padding: '7px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: 'transparent', color: 'var(--text-subtle)' }}><Eye size={13} /> {preview.has(i) ? 'Edit' : 'Preview'}</button>
+              <button onClick={() => send(d)} disabled={busy !== false} style={{ display: 'flex', alignItems: 'center', gap: '6px', border: 0, borderRadius: '8px', padding: '7px 14px', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', background: color, color: '#fff', opacity: busy ? 0.6 : 1 }}>
+                {busy === 'send' ? <Loader2 size={13} className="spin" /> : <Send size={13} />} Send{audienceCount !== null ? ` to ${audienceCount}` : ''}
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {drafts.length > 0 && (
+          <div style={{ marginTop: '6px' }}>
+            <p style={{ ...fieldLbl, margin: '0 0 6px' }}>Comment for Cap (then redraft)</p>
+            <textarea value={feedback} onChange={e => setFeedback(e.target.value)} rows={2} placeholder="e.g. warmer open, shorter, lead with the invitation" style={{ width: '100%', border: '1px solid var(--border)', borderRadius: '9px', padding: '9px 11px', fontSize: '13px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit', resize: 'vertical', marginBottom: '8px' }} />
+            <button onClick={() => draft(true)} disabled={busy !== false || !feedback.trim()} style={{ display: 'flex', alignItems: 'center', gap: '6px', border: `1px solid ${color}`, borderRadius: '9px', padding: '8px 14px', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', background: 'transparent', color, opacity: (busy || !feedback.trim()) ? 0.5 : 1 }}>
+              {busy === 'draft' ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} Revise with Cap
+            </button>
+          </div>
         )}
       </div>
     </div>
