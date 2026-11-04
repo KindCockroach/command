@@ -43,7 +43,7 @@ export default function ResetWelcome() {
         <div className="wrap">
           <p className="eyebrow">THE RESET · BE THERE FOR HER</p>
           <h1>You&rsquo;re in. <em>Welcome to The Reset.</em></h1>
-          <p className="sub">Sunday at 8 PM CT, live on Google Meet. Before anything else, here&rsquo;s something just for you.</p>
+          <p className="sub">Sunday at 8 PM CT, live on Google Meet.</p>
           <a className="meet" href={MEET} target="_blank" rel="noreferrer">Join on Google Meet &rarr;</a>
           <p className="save">Bookmark this page. This button is your door on Sunday.</p>
         </div>
@@ -62,12 +62,21 @@ export default function ResetWelcome() {
         </div>
       </section>
 
-      <section className="prep">
+      <section className="early">
         <div className="wrap">
-          <h2>How to get ready</h2>
-          <ol>
-            {PREP.map(([t, d]) => <li key={t}><strong>{t}</strong> {d}</li>)}
-          </ol>
+          <p className="tag">A SPECIAL INVITATION</p>
+          <h2>Log on early at 7:30.</h2>
+          <p>
+            You can do all of this on your own. But if you&rsquo;d like someone to hold your hand from start to finish,
+            from prep to Reset, I&rsquo;ll be there for you. Log on 30 minutes early, at 7:30 PM CT, and we&rsquo;ll light
+            the candle, set the lights, and settle in together.
+          </p>
+          <dl className="details">
+            <div><dt>Prep (optional)</dt><dd>Sunday, 7:30 PM CT</dd></div>
+            <div><dt>The Reset</dt><dd>Sunday, 8:00 PM CT</dd></div>
+            <div><dt>Where</dt><dd><a href={MEET} target="_blank" rel="noreferrer">meet.google.com/kgf-oxqn-aof</a></dd></div>
+          </dl>
+          <a className="meet" href={MEET} target="_blank" rel="noreferrer">Join on Google Meet &rarr;</a>
         </div>
       </section>
 
@@ -87,21 +96,12 @@ export default function ResetWelcome() {
         </div>
       </section>
 
-      <section className="early">
+      <section className="prep">
         <div className="wrap">
-          <p className="tag">WANT A HAND?</p>
-          <h2>Log on early at 7:30.</h2>
-          <p>
-            You can do all of this on your own. But if you&rsquo;d like someone to hold your hand from start to finish,
-            from prep to Reset, I&rsquo;ll be there for you. Log on 30 minutes early, at 7:30 PM CT, and we&rsquo;ll light
-            the candle, set the lights, and settle in together.
-          </p>
-          <dl className="details">
-            <div><dt>Prep (optional)</dt><dd>Sunday, 7:30 PM CT</dd></div>
-            <div><dt>The Reset</dt><dd>Sunday, 8:00 PM CT</dd></div>
-            <div><dt>Where</dt><dd><a href={MEET} target="_blank" rel="noreferrer">meet.google.com/kgf-oxqn-aof</a></dd></div>
-          </dl>
-          <a className="meet" href={MEET} target="_blank" rel="noreferrer">Join on Google Meet &rarr;</a>
+          <h2>How to get ready</h2>
+          <ol>
+            {PREP.map(([t, d]) => <li key={t}><strong>{t}</strong> {d}</li>)}
+          </ol>
         </div>
       </section>
 
@@ -134,18 +134,18 @@ const css = `
 .rw .giftcard p { color:var(--soft); margin:0 0 16px; }
 .rw .giftcard audio { width:100%; }
 .rw .soon { background:#FBF3EA; border:1px dashed #e0b48f; border-radius:14px; padding:14px 16px; color:var(--plum) !important; margin:0 !important; }
-.rw .prep { padding:52px 0 20px; }
+.rw .prep { padding:8px 0 52px; }
 .rw ol { margin:0; padding-left:22px; display:grid; gap:12px; font-size:17px; }
 .rw ol li::marker { color:var(--ember); font-weight:800; }
 .rw ol strong { color:var(--plum); }
-.rw .space { padding:36px 0 52px; }
+.rw .space { padding:52px 0 36px; }
 .rw .lede { color:var(--soft); margin:-6px 0 20px; }
 .rw .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
 .rw .card { background:#fff; border:1px solid #ecdccb; border-radius:20px; padding:20px 22px; }
 .rw .ic { font-size:28px; }
 .rw .card h3 { margin:6px 0 4px; font-size:19px; }
 .rw .card p { margin:0; color:var(--soft); font-size:15.5px; }
-.rw .early { background:linear-gradient(160deg,#2a1f2b,#3b2a37); color:#f5ece0; padding:52px 0 56px; }
+.rw .early { background:linear-gradient(160deg,#2a1f2b,#3b2a37); color:#f5ece0; padding:52px 0 56px; margin-top:44px; }
 .rw .early h2 { color:#fff; margin-top:8px; }
 .rw .early p { color:#e6d8ca; font-size:17px; margin:0 0 22px; }
 .rw .details { display:grid; gap:10px; margin:0; }
