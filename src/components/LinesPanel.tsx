@@ -124,21 +124,20 @@ export default function LinesPanel() {
           {pulseErr && <p style={{ fontSize: '11px', color: '#C2477E', lineHeight: 1.4 }}>{pulseErr}</p>}
           {pulse.suggestions && pulse.suggestions.length > 0 ? (
             <>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>The move: grab a sound, film the exact shot, type the words. Ready to shoot.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '2px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>Trending sounds this week — go have a look and make one yours.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginTop: '2px' }}>
                 {pulse.suggestions.map((s, i) => (
-                  <div key={i} style={{ borderRadius: '10px', padding: '10px 12px', background: 'var(--surface-raised, rgba(0,0,0,0.03))', border: '1px solid rgba(194,71,126,0.14)' }}>
-                    <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 700, lineHeight: 1.35, display: 'flex', gap: '6px' }}><Music size={13} style={{ flexShrink: 0, marginTop: '2px', color: '#C2477E' }} /> <span>{s.sound}</span></p>
-                    {s.trending_for && <p style={{ fontSize: '11.5px', color: 'var(--text-subtle)', margin: '2px 0 0 19px' }}>trending for {s.trending_for}</p>}
-                    {s.use_it && <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.5, margin: '6px 0 0 19px' }}>{s.use_it}</p>}
-                  </div>
+                  <p key={i} style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.4, display: 'flex', gap: '7px' }}>
+                    <Music size={13} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} />
+                    <span>{s.sound}{s.trending_for ? <span style={{ color: 'var(--text-subtle)' }}> — trending for {s.trending_for}</span> : ''}</span>
+                  </p>
                 ))}
               </div>
             </>
           ) : (
             <>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>{pulse.audio ? 'The move: film your next clip to this sound, then pair it with any line below.' : 'The move: try this format with any line below.'}</p>
-              {pulse.audio && <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><Music size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} /> <span>{pulse.audio}</span></p>}
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>{pulse.audio ? 'Trending sound this week — go have a look and make it yours.' : 'The move: try this format with any line below.'}</p>
+              {pulse.audio && <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><Music size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} /> <span>{pulse.audio}</span></p>}
             </>
           )}
           {pulse.format && <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><span style={{ flexShrink: 0 }}>🧬</span> <span>{pulse.format}</span></p>}
