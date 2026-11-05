@@ -47,10 +47,30 @@ export default function PodcastStudio() {
   const [collabDraft, setCollabDraft] = useState('')
   const [collaborating, setCollaborating] = useState(false)
   const [headlines, setHeadlines] = useState<Headline[]>([])
+  // Editing the episode's DETAILS (title, topic, etc.) — the quick click-to-edit.
+  const [detailEdit, setDetailEdit] = useState(false)
+  const [dd, setDd] = useState<Partial<Episode>>({})
+  const [savingDetail, setSavingDetail] = useState(false)
   // Fresh room whenever a different episode opens.
-  useEffect(() => { setBrainDump(''); setCollab([]); setCollabDraft(''); setHeadlines([]); setEditing(false); setFeedback('') }, [open?.id])
+  useEffect(() => { setBrainDump(''); setCollab([]); setCollabDraft(''); setHeadlines([]); setEditing(false); setFeedback(''); setDetailEdit(false) }, [open?.id])
 
-  const closeDetail = () => { setOpen(null); setEditing(false); setFeedback('') }
+  const startDetailEdit = () => {
+    if (!open) return
+    setDd({ title: open.title, topic: open.topic, number: open.number, day: open.day, time: open.time, guest: open.guest, thread: open.thread, pushback: open.pushback, news: open.news, news_url: open.news_url, status: open.status })
+    setDetailEdit(true)
+  }
+  const saveDetails = async () => {
+    if (!open || savingDetail) return
+    setSavingDetail(true)
+    try {
+      const d = await fetch('/api/podcast/episodes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: open.id, ...dd }) }).then(r => r.json())
+      if (d.episode) { setOpen(d.episode); load() }
+      setDetailEdit(false)
+    } catch { /* keep editing */ }
+    setSavingDetail(false)
+  }
+
+  const closeDetail = () => { setOpen(null); setEditing(false); setFeedback(''); setDetailEdit(false) }
   const closeBanked = () => { setBanked(null); setBankedEditing(false) }
 
   // Save a hand-edited teleprompter script straight to the episode.
@@ -280,15 +300,53 @@ export default function PodcastStudio() {
         <div onClick={closeDetail} style={{ position: 'fixed', inset: 0, background: 'rgba(20,16,40,0.6)', zIndex: 100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '28px 18px', overflowY: 'auto' }}>
           <div onClick={ev => ev.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: '18px', padding: '24px', maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, color: tint(open) }}>{fmtDate(open.date)}{open.time ? ` · ${fmtTime(open.time)} CT` : ''} · {open.day === 'wed' ? 'Guest' : 'Solo'}</span>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', marginTop: '3px', lineHeight: 1.2 }}>{open.number ? `Ep ${open.number}: ` : ''}{open.title}</h2>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{open.topic}{open.day === 'wed' && open.guest ? ` · with ${open.guest}` : ''}</p>
-                {open.thread ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '4px' }}><strong>Human thread:</strong> {open.thread}</p> : null}
-                {open.pushback ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '2px' }}><strong>Pushback:</strong> {open.pushback}</p> : null}
-                {open.news ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '2px' }}><Star size={11} style={{ display: 'inline', verticalAlign: '-1px', color: 'var(--purple)' }} /> <strong>Highlighted:</strong> {open.news_url ? <a href={open.news_url} target="_blank" rel="noreferrer" style={{ color: 'var(--purple)', textDecoration: 'none' }}>{open.news}</a> : open.news}</p> : null}
-                {open.note_id ? <button onClick={() => openBanked(open.note_id!)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0, marginTop: '6px' }}><BookOpen size={12} /> Banked script (Note #{open.note_id})</button> : null}
-              </div>
+              {!detailEdit ? (
+                <div>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: tint(open) }}>{fmtDate(open.date)}{open.time ? ` · ${fmtTime(open.time)} CT` : ''} · {open.day === 'wed' ? 'Guest' : 'Solo'}</span>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', marginTop: '3px', lineHeight: 1.2 }}>{open.number ? `Ep ${open.number}: ` : ''}{open.title}</h2>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{open.topic}{open.day === 'wed' && open.guest ? ` · with ${open.guest}` : ''}</p>
+                  {open.thread ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '4px' }}><strong>Human thread:</strong> {open.thread}</p> : null}
+                  {open.pushback ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '2px' }}><strong>Pushback:</strong> {open.pushback}</p> : null}
+                  {open.news ? <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '2px' }}><Star size={11} style={{ display: 'inline', verticalAlign: '-1px', color: 'var(--purple)' }} /> <strong>Highlighted:</strong> {open.news_url ? <a href={open.news_url} target="_blank" rel="noreferrer" style={{ color: 'var(--purple)', textDecoration: 'none' }}>{open.news}</a> : open.news}</p> : null}
+                  {open.note_id ? <button onClick={() => openBanked(open.note_id!)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0, marginTop: '6px' }}><BookOpen size={12} /> Banked script (Note #{open.note_id})</button> : null}
+                  <button onClick={startDetailEdit} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11.5px', borderRadius: '8px', padding: '5px 10px', marginTop: '10px' }}><Pencil size={11} /> Edit details</button>
+                </div>
+              ) : (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {(() => {
+                    const lbl = { fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.05em', color: 'var(--text-subtle)', marginBottom: '3px', display: 'block' }
+                    const inp = { width: '100%', border: '1px solid var(--border)', borderRadius: '8px', padding: '7px 9px', fontSize: '13px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' as const }
+                    const set = (k: keyof Episode, v: unknown) => setDd(d => ({ ...d, [k]: v }))
+                    return (
+                      <>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <label style={{ width: '70px' }}><span style={lbl}>Ep #</span><input type="number" value={dd.number ?? ''} onChange={e => set('number', e.target.value ? Number(e.target.value) : undefined)} style={inp} /></label>
+                          <label style={{ flex: 1 }}><span style={lbl}>Title</span><input value={dd.title ?? ''} onChange={e => set('title', e.target.value)} style={inp} /></label>
+                        </div>
+                        <label><span style={lbl}>Topic</span><input value={dd.topic ?? ''} onChange={e => set('topic', e.target.value)} style={inp} /></label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <label style={{ flex: 1 }}><span style={lbl}>Day</span>
+                            <select value={dd.day ?? 'sun'} onChange={e => set('day', e.target.value)} style={inp}><option value="sun">Sunday (solo)</option><option value="wed">Wednesday (guest)</option></select>
+                          </label>
+                          <label style={{ flex: 1 }}><span style={lbl}>Time (CT)</span><input value={dd.time ?? ''} onChange={e => set('time', e.target.value)} placeholder="e.g. 10:00" style={inp} /></label>
+                          <label style={{ flex: 1 }}><span style={lbl}>Status</span>
+                            <select value={dd.status ?? 'planned'} onChange={e => set('status', e.target.value)} style={inp}><option value="planned">planned</option><option value="scripted">scripted</option><option value="recorded">recorded</option><option value="published">published</option></select>
+                          </label>
+                        </div>
+                        {dd.day === 'wed' && <label><span style={lbl}>Guest</span><input value={dd.guest ?? ''} onChange={e => set('guest', e.target.value)} style={inp} /></label>}
+                        <label><span style={lbl}>Human thread</span><input value={dd.thread ?? ''} onChange={e => set('thread', e.target.value)} style={inp} /></label>
+                        <label><span style={lbl}>Pushback</span><input value={dd.pushback ?? ''} onChange={e => set('pushback', e.target.value)} style={inp} /></label>
+                        <label><span style={lbl}>Highlighted headline</span><input value={dd.news ?? ''} onChange={e => set('news', e.target.value)} style={inp} /></label>
+                        <label><span style={lbl}>Headline link</span><input value={dd.news_url ?? ''} onChange={e => set('news_url', e.target.value)} style={inp} /></label>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                          <button onClick={saveDetails} disabled={savingDetail} style={{ display: 'flex', alignItems: 'center', gap: '6px', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', background: 'var(--purple)', color: '#fff', opacity: savingDetail ? 0.6 : 1 }}>{savingDetail ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={13} />} Save</button>
+                          <button onClick={() => setDetailEdit(false)} style={{ border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: 'transparent', color: 'var(--text-subtle)' }}>Cancel</button>
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
               <button onClick={closeDetail} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={18} /></button>
             </div>
 
