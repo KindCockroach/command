@@ -20,8 +20,8 @@ async function call(path: string, body: unknown): Promise<{ ok: boolean; error?:
   }
 }
 
-export function resendSend(to: string, subject: string, html: string, replyTo = 'hi@aimomeducation.com') {
-  return call('/emails', { from: FROM(), to: [to], subject, html, reply_to: replyTo })
+export function resendSend(to: string, subject: string, html: string, replyTo = 'hi@aimomeducation.com', from?: string) {
+  return call('/emails', { from: from || FROM(), to: [to], subject, html, reply_to: replyTo })
 }
 
 export function resendAddContact(email: string, firstName?: string, audienceId?: string) {

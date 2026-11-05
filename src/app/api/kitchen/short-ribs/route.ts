@@ -23,9 +23,10 @@ const SOURCE = 'Be There For Her · November recipe'
 
 // Upsert the contact into GHL (so everyone in RISE lands in GHL), then send the
 // email via Resend — the same path that sent the cookbook emails.
+const FROM = `"Mandi 'AI Mom' Beck & Joyful Media" <hi@aimomeducation.com>`
 async function sendOne(to: { name: string; email: string }, subject: string, html: string): Promise<boolean> {
   try { await ghlContact({ name: to.name || to.email, email: to.email, source: SOURCE }) } catch { /* best effort */ }
-  const r = await resendSend(to.email, subject, html)
+  const r = await resendSend(to.email, subject, html, 'hi@aimomeducation.com', FROM)
   return r.ok
 }
 
@@ -111,6 +112,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       mode,
       count: full.length,
+      from: FROM,
       recipients: full.map(r => r.name ? `${r.name} <${r.email}>` : r.email),
       emilyIncluded: full.some(r => r.email === EMILY.email),
     })
