@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'crypto'
 import { getWaitlist, logActivity, getSiteEditKeyHash } from '@/lib/db'
 import { isOwner } from '@/lib/ownerAuth'
-import * as wfhServer from '@/lib/wfhServer'
+import { resendSend } from '@/lib/resend'
+import { ghlContact } from '@/lib/wfhServer'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -20,9 +21,13 @@ const TEST_TO = { name: 'Mandi', email: 'mandijoy.beck@gmail.com' }
 const EMILY = { name: 'Emily', email: 'eabeckteam@gmail.com' }
 const SOURCE = 'Be There For Her · November recipe'
 
-type Send = (to: { name: string; email: string }, subject: string, html: string, source: string) => Promise<boolean>
-// sendSiteEmail upserts the contact into GHL, then sends (Resend when configured).
-const siteSend: Send = (wfhServer as Record<string, unknown>).sendSiteEmail as Send
+// Upsert the contact into GHL (so everyone in RISE lands in GHL), then send the
+// email via Resend — the same path that sent the cookbook emails.
+async function sendOne(to: { name: string; email: string }, subject: string, html: string): Promise<boolean> {
+  try { await ghlContact({ name: to.name || to.email, email: to.email, source: SOURCE }) } catch { /* best effort */ }
+  const r = await resendSend(to.email, subject, html)
+  return r.ok
+}
 
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -111,14 +116,14 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  if (typeof siteSend !== 'function') {
-    return NextResponse.json({ error: 'sendSiteEmail unavailable' }, { status: 500 })
+  if (!process.env.RESEND_API_KEY) {
+    return NextResponse.json({ error: 'RESEND_API_KEY not set — cannot send' }, { status: 500 })
   }
 
   const recipients = mode === 'test' ? [TEST_TO] : full
   const results: { who: string; ok: boolean }[] = []
   for (const r of recipients) {
-    const ok = await siteSend({ name: r.name || r.email, email: r.email }, SUBJECT, recipeHtml(r.name), SOURCE)
+    const ok = await sendOne({ name: r.name || r.email, email: r.email }, SUBJECT, recipeHtml(r.name))
     results.push({ who: r.name || r.email, ok })
   }
 
