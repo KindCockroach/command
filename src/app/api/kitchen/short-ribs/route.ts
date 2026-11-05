@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'crypto'
-import { getWaitlist, logActivity, getSiteEditKeyHash } from '@/lib/db'
+import { getWaitlist, logActivity, logSend, getSiteEditKeyHash } from '@/lib/db'
 import { isOwner } from '@/lib/ownerAuth'
 import { resendSend } from '@/lib/resend'
 import { ghlContact } from '@/lib/wfhServer'
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
   if (!isOwner(req) && !keyOk) {
     return NextResponse.json({ error: hash ? 'unauthorized' : 'no edit key set on this site' }, { status: 401 })
   }
-  const mode = body.mode === 'test' ? 'test' : body.mode === 'send' ? 'send' : 'dry'
+  const mode = body.mode === 'test' ? 'test' : body.mode === 'send' ? 'send' : body.mode === 'log' ? 'log' : 'dry'
 
   // Full list = cookbook subscribers + Emily, deduped.
   const seen = new Set<string>()
@@ -118,6 +118,14 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Backfill-only: write the send-log for the full list WITHOUT emailing (used once
+  // because the live send raced ahead of the logging fix). Populates People timelines.
+  if (mode === 'log') {
+    for (const r of full) logSend({ email: r.email, subject: SUBJECT, product: 'november-recipe', status: 'sent', via: 'resend' })
+    logActivity({ type: 'note', title: `🍂 Recipe send-log backfilled (${full.length})`, detail: full.map(r => r.name || r.email).join(' · '), icon: '🍂', source: 'bethereforher' })
+    return NextResponse.json({ mode, logged: full.length, recipients: full.map(r => r.email) })
+  }
+
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ error: 'RESEND_API_KEY not set — cannot send' }, { status: 500 })
   }
@@ -127,6 +135,7 @@ export async function POST(req: NextRequest) {
   for (const r of recipients) {
     const ok = await sendOne({ name: r.name || r.email, email: r.email }, SUBJECT, recipeHtml(r.name))
     results.push({ who: r.name || r.email, ok })
+    logSend({ email: r.email, subject: SUBJECT, product: 'november-recipe', status: ok ? 'sent' : 'failed', via: 'resend' })
   }
 
   logActivity({
