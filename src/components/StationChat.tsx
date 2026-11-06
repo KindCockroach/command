@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { MessageCircle, X, Send, Loader2, Sparkles, Paperclip, Image as ImageIcon } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Sparkles, Paperclip, Image as ImageIcon, ChevronDown } from 'lucide-react'
+import { AGENT_META, type GPTRole } from '@/lib/agents'
 
 interface Message {
   role: 'user' | 'ai'
@@ -65,10 +66,20 @@ RULES:
 - Always offer a next step
 - If she drops a link or idea, immediately tell her what to do with it`
 
+// The corner chat can talk to the generalist Station brain OR any named agent.
+type ChatAgent = GPTRole | 'station'
+const AGENT_ORDER = Object.keys(AGENT_META) as GPTRole[]
+function greetingFor(a: ChatAgent): string {
+  if (a === 'station') return "Hey Mandi 👋 I'm your RISE Station AI. Drop an idea, image, or ask me anything."
+  const m = AGENT_META[a]
+  return `${m.emoji} ${m.name} here — ${m.desc}. What do you need?`
+}
+
 export default function StationChat() {
   const [open, setOpen] = useState(false)
+  const [agent, setAgent] = useState<ChatAgent>('station')
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'ai', text: "Hey Mandi 👋 I'm your RISE Station AI. Drop an idea, image, or ask me anything.", ts: Date.now() }
+    { role: 'ai', text: greetingFor('station'), ts: Date.now() }
   ])
   const [input, setInput] = useState('')
   const [pendingImage, setPendingImage] = useState<string | null>(null)
@@ -145,6 +156,14 @@ export default function StationChat() {
       }
     } catch { /* logging is best-effort */ }
   }
+  // Switch who you're talking to — fresh thread + greeting for that agent.
+  const switchAgent = (a: ChatAgent) => {
+    if (a === agent) return
+    setAgent(a)
+    setMessages([{ role: 'ai', text: greetingFor(a), ts: Date.now() }])
+    convNoteId.current = null
+  }
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -184,9 +203,9 @@ export default function StationChat() {
     setLoading(true)
 
     try {
-      // Clear post command ("Carousel for mandijoybeck ...") → create a real draft,
-      // not a chat reply + note. Images still go through the vision chat below.
-      if (text && !image && detectPostCommand(text)) {
+      // Generalist Station only: a clear post command ("Carousel for mandijoybeck ...")
+      // → create a real draft. When a specific agent is selected, just talk to them.
+      if (agent === 'station' && text && !image && detectPostCommand(text)) {
         const accountId = resolveAccount(text, await getAccounts())
         const aiMsg = await runPostCommand(text, accountId)
         setMessages(m => [...m, aiMsg])
@@ -197,10 +216,10 @@ export default function StationChat() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          role: 'strategist',
+          role: agent === 'station' ? 'strategist' : agent,
           message: text || 'Please analyze this image and tell me what you see and how it relates to my business.',
           image,
-          systemOverride: STATION_PROMPT,
+          ...(agent === 'station' ? { systemOverride: STATION_PROMPT } : {}),
           history: messages.slice(-12).map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text })),
         }),
       })
@@ -232,16 +251,25 @@ export default function StationChat() {
           onDrop={handleDrop}
           style={{ position: 'fixed', bottom: '88px', right: '24px', zIndex: 199, width: '360px', maxHeight: '540px', background: 'var(--surface)', border: `2px solid ${dragging ? 'var(--purple)' : 'var(--border)'}`, borderRadius: '18px', boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column', overflow: 'hidden', transition: 'border-color 0.15s' }}>
 
-          {/* Header */}
+          {/* Header — pick who you're talking to */}
           <div style={{ padding: '14px 16px', background: 'var(--purple)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Sparkles size={16} style={{ color: '#fff' }} />
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
+              {agent === 'station' ? <Sparkles size={16} style={{ color: '#fff' }} /> : <span>{AGENT_META[agent].emoji}</span>}
             </div>
-            <div>
-              <p style={{ fontSize: '13px', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>RISE Station</p>
-              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>Drop images · Paste screenshots · Ask anything</p>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                <select value={agent} onChange={e => switchAgent(e.target.value as ChatAgent)} aria-label="Choose who to talk to"
+                  style={{ appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', background: 'transparent', border: 'none', color: '#fff', fontSize: '13px', fontWeight: 800, letterSpacing: '-0.01em', cursor: 'pointer', fontFamily: 'inherit', outline: 'none', padding: 0, maxWidth: '240px' }}>
+                  <option value="station" style={{ color: '#000' }}>RISE Station · everything</option>
+                  {AGENT_ORDER.map(r => <option key={r} value={r} style={{ color: '#000' }}>{AGENT_META[r].emoji} {AGENT_META[r].name} · {AGENT_META[r].label}</option>)}
+                </select>
+                <ChevronDown size={13} style={{ color: 'rgba(255,255,255,0.85)', flexShrink: 0, pointerEvents: 'none' }} />
+              </div>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {agent === 'station' ? 'Drop images · Paste screenshots · Ask anything' : AGENT_META[agent].desc}
+              </p>
             </div>
-            <button onClick={() => setOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', padding: '4px' }}>
+            <button onClick={() => setOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', padding: '4px', flexShrink: 0 }}>
               <X size={16} />
             </button>
           </div>
