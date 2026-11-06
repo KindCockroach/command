@@ -31,18 +31,42 @@ export async function POST(req: NextRequest) {
   // Her Notes — the Commander was blind to these. Feed a digest so it can actually
   // read, reference, and connect what she's saved (pinned first, then most recent).
   const allNotes = getAllNotes()
-  const detailed = allNotes.slice(0, 30).map(n => {
-    const body = n.body.replace(/\s+/g, ' ').trim()
-    const clip = body.length > 320 ? body.slice(0, 320) + '…' : body
+  // TOKEN DISCIPLINE: the Commander must NOT read the whole Notes pile on every
+  // turn. By default it carries only PINNED notes (the ones Mandi flagged as
+  // always-relevant). It loads the fuller digest only when her message is
+  // actually about her notes/stories/ideas — otherwise a one-line pointer.
+  const lastUserText = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i]
+      if (m.role && m.role !== 'user') continue
+      if (typeof m.content === 'string') return m.content
+      if (Array.isArray(m.content)) return m.content.map(c => (typeof c === 'string' ? c : (c as { text?: string })?.text ?? '')).join(' ')
+    }
+    return ''
+  })()
+  const wantsNotes = /\bnotes?\b|\bstory\b|\bstories\b|\bidea|\bwrote\b|\bremember|\bmanifesto\b|\banchor\b|\blore\b|\bcaption|\bjournal|\bbrain ?dump|\bsaved\b|\bdig up|\bpull (up|from)|\blook (up|for)|\bfind (my|the|a) /i.test(lastUserText)
+  const fmt = (n: typeof allNotes[number]) => {
+    const b = n.body.replace(/\s+/g, ' ').trim()
+    const clip = b.length > 320 ? b.slice(0, 320) + '…' : b
     return `- [${n.category}${n.pinned ? ' · 📌pinned' : ''}] ${n.title}${n.tags.length ? ` (tags: ${n.tags.join(', ')})` : ''}\n  ${clip}`
-  }).join('\n')
-  // Titles-only index of the rest, so the Commander knows EVERY note exists and can
-  // ask her to open a specific older one instead of claiming it can't see it.
-  const rest = allNotes.slice(30)
-  const restIndex = rest.length
-    ? `\n\nOLDER NOTES — title index only (ask her to open one for its full text):\n${rest.map(n => `- [${n.category}] ${n.title}`).join('\n')}`
-    : ''
-  const noteDigest = detailed + restIndex
+  }
+  const pinned = allNotes.filter(n => n.pinned)
+  let noteDigest: string
+  if (wantsNotes) {
+    // She's asking about her notes — load pinned + most-recent, plus a title index.
+    const recent = allNotes.filter(n => !n.pinned).slice(0, 24)
+    const shown = [...pinned, ...recent]
+    const shownIds = new Set(shown.map(n => n.id))
+    const rest = allNotes.filter(n => !shownIds.has(n.id))
+    const restIndex = rest.length
+      ? `\n\nOLDER NOTES — title index only (ask her to open one for its full text):\n${rest.map(n => `- [${n.category}] ${n.title}`).join('\n')}`
+      : ''
+    noteDigest = shown.map(fmt).join('\n') + restIndex
+  } else {
+    // Default turn — carry only pinned notes + a pointer. Don't burn tokens on the pile.
+    noteDigest = (pinned.length ? pinned.map(fmt).join('\n') + '\n\n' : '')
+      + `(${allNotes.length} notes saved in the Notes tab. Not loaded this turn to stay fast — if you need a story/idea/past note, say so and I'll pull the relevant ones.)`
+  }
 
   // Everything else she'll ever want the Commander to see: her content queue,
   // projects, audiences, and media library. Compact digests, not full dumps.
@@ -101,7 +125,7 @@ ${roster || '(none active)'}
 ACTIVE GOALS — this is what the whole station is pushing right now. Posts are the lever, signups are the score. Steer every suggestion, draft, and trend answer toward these; if she drifts to something else, name it kindly and bring it back. Each goal's notes carry its CTA/link/angle — use them.
 ${goals || '(none set)'}
 
-HER NOTES — you CAN read these. It's her saved thinking: brain-dumps, media stories, ideas, lore. Reference them by name, connect them, quote her own words back when useful. You see the FULL TEXT of her pinned + 30 most-recent notes, plus a TITLE INDEX of all ${allNotes.length} total. If she asks about a note that's title-only, you know it exists — ask her to open the Notes tab or paste it so you can work with the full text (never claim you can't see it).
+HER NOTES — her saved thinking: brain-dumps, media stories, ideas, lore (${allNotes.length} total in the Notes tab). To stay fast and cheap, you DON'T carry the whole pile every turn — by default you see her 📌pinned notes plus a count. The moment she asks about a story/idea/past note, the fuller set loads for you. So if you only see pinned notes + a pointer below, that's normal: the notes still exist — tell her you'll pull the relevant ones (ask what she's after), never claim you can't see them.
 ${noteDigest || '(no notes yet)'}
 
 HER CONTENT QUEUE — you CAN see every post across all accounts (drafts, ready, scheduled, posted). Use this to know what already exists before proposing new work, and to spot gaps:
