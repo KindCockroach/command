@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
 import { hasMedia, postPurpose, PURPOSE_META, type Purpose } from '@/lib/contentStatus'
-import { RefreshCw, Camera, Clapperboard, Loader2 } from 'lucide-react'
+import { RefreshCw, Camera, Clapperboard, Loader2, Sparkles, MessageCircle, RotateCcw } from 'lucide-react'
 
 // CONTENT DAY — the shoot list, designed like the Format Finder concept cards, and
 // with a SHOOT PLAN: turn a script into something she can actually film without
@@ -103,6 +103,54 @@ export default function ContentDay() {
   const acctOptions = Array.from(new Map(allLines.filter(l => l.accountId).map(l => [l.accountId as string, l.account || l.accountId as string])).entries())
   const lines = allLines.filter(l => (purposeFilter === 'all' || l.purpose === purposeFilter) && (acctFilter === 'all' || l.accountId === acctFilter))
 
+  // Hand off to Dir (the Content Director) — seed a chat and jump to Assistants.
+  const openDir = (seed: string) => {
+    try {
+      localStorage.setItem('station-open-agent', 'content_director')
+      localStorage.setItem('station-agent-prefill', seed)
+    } catch { /* ok */ }
+    window.dispatchEvent(new CustomEvent('station:open-agent', { detail: {} }))
+    window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'assistants' } }))
+  }
+
+  // After filming: Rex writes the caption + hook/CTA variations for 4–8 trial reels.
+  const handoffToDir = (l: Line) => {
+    const post = posts.find(p => p.id === l.postId)
+    const a = acct(l.accountId)
+    const seed = [
+      `🎬 I just filmed this — help me turn it into trial reels.`,
+      post?.title ? `CONCEPT: ${post.title}` : '',
+      post?.onscreen_text ? `ON-SCREEN HOOK: ${post.onscreen_text}` : '',
+      `WHAT I FILMED: ${l.script}`,
+      a ? `ACCOUNT: ${a.handle}${a.brand_name ? ` — ${a.brand_name}` : ''}` : '',
+      ``,
+      `I'm running the SAME footage as 4–8 trial reels to see what lands. In my voice, give me:`,
+      `1) One ready-to-post CAPTION.`,
+      `2) SIX on-screen HOOK variations (same clip, different angle).`,
+      `3) SIX CTA variations.`,
+      `Number everything so I can mix and match across the trial reels.`,
+    ].filter(Boolean).join('\n')
+    openDir(seed)
+  }
+
+  // "Talk through Content Day" — a general planning chat about the whole shoot list.
+  const talkThrough = () => {
+    const list = lines.map(l => {
+      const post = posts.find(p => p.id === l.postId)
+      const head = (post?.onscreen_text || l.script.split('\n')[0] || '').slice(0, 80)
+      return `• ${head}${l.account ? ` (${l.account})` : ''}`
+    }).join('\n')
+    openDir(`Let's talk through my Content Day. Here's what's on my shoot list:\n${list || '(nothing yet)'}\n\nHelp me decide what to film, what to cut, and how to make each one travel.`)
+  }
+
+  // "Undo the directing" — clear a generated shoot plan off a post.
+  const clearPlan = async (postId: number) => {
+    setPlans(p => { const n = { ...p }; delete n[postId]; return n })
+    setPosts(ps => ps.map(p => p.id === postId ? { ...p, shoot_plan: '' } : p))
+    try { localStorage.removeItem(`rise-shootplan-${postId}`) } catch { /* ok */ }
+    fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, shoot_plan: '' }) }).catch(() => {})
+  }
+
   // Rehydrate plans — the post's saved shoot_plan is the durable source (survives
   // refresh + shows on the post card); localStorage is a fast fallback.
   useEffect(() => {
@@ -194,6 +242,9 @@ export default function ContentDay() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontFamily: MONO, fontSize: '11.5px', color: 'var(--text-subtle)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{remaining}/{lines.length} left</span>
+          <button onClick={talkThrough} title="Talk through Content Day with Rex" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 11px', borderRadius: '9px', border: '1px solid var(--purple)', background: 'var(--purple-light)', color: 'var(--purple)', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+            <MessageCircle size={13} /> Talk it through
+          </button>
           <button onClick={load} disabled={loading} title="Refresh" style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 9px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : undefined} />
           </button>
@@ -237,8 +288,31 @@ export default function ContentDay() {
             const bs = l.broll || plan ? [] : beats(l.script)
             const hook = l.broll ? l.script : (plan?.title || bs[0] || l.script)
             const rest = l.broll || plan ? [] : bs.slice(1)
+            // FILMED — celebrate, and hand off to Rex for the caption + trial-reel variants.
+            if (isDone) {
+              return (
+                <div key={l.key} style={{ border: '1px solid #BFE3CE', borderRadius: '12px', background: 'linear-gradient(120deg, rgba(46,139,96,0.12), transparent)', padding: '14px 15px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '11px' }}>
+                    <button onClick={() => toggle(l.key)} aria-label="Mark not filmed" title="Undo — not filmed yet"
+                      style={{ flexShrink: 0, marginTop: '1px', width: '22px', height: '22px', borderRadius: '7px', border: '2px solid #2E8B60', background: '#2E8B60', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '13px', fontWeight: 900, cursor: 'pointer' }}>✓</button>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '5px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 900, color: '#2E8B60' }}>🎉 Filmed!</span>
+                        {l.account && <span style={{ fontSize: '11px', fontWeight: 700, color: l.color || 'var(--text-subtle)' }}>{l.account}</span>}
+                      </div>
+                      <p style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.4, letterSpacing: '-0.01em', marginBottom: '10px' }}>{hook}</p>
+                      <button onClick={() => handoffToDir(l)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 14px', borderRadius: '10px', border: 0, background: 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '12.5px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        <Sparkles size={13} /> Caption + trial reels with Rex
+                      </button>
+                      <p style={{ fontSize: '10.5px', color: 'var(--text-subtle)', marginTop: '7px', lineHeight: 1.5 }}>Rex writes 1 caption + 6 hook variations + 6 CTAs to run this clip as 4&ndash;8 trial reels.</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
             return (
-              <div key={l.key} style={{ border: '1px solid var(--border)', borderRadius: '12px', background: isDone ? 'var(--bg)' : 'var(--surface)', padding: '14px 15px', opacity: isDone ? 0.55 : 1, transition: 'opacity .15s' }}>
+              <div key={l.key} style={{ border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--surface)', padding: '14px 15px', transition: 'opacity .15s' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '11px' }}>
                   <button onClick={() => toggle(l.key)} aria-label={isDone ? 'Mark not filmed' : 'Mark filmed'}
                     style={{ flexShrink: 0, marginTop: '1px', width: '22px', height: '22px', borderRadius: '7px', border: `2px solid ${isDone ? '#2E8B60' : 'var(--border)'}`, background: isDone ? '#2E8B60' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '13px', fontWeight: 900, cursor: 'pointer' }}>{isDone ? '✓' : ''}</button>
@@ -281,10 +355,16 @@ export default function ContentDay() {
                 {/* The generated shoot plan (by role, or retention beats) */}
                 {plan && <PlanBlock plan={plan} />}
                 {plan && (
-                  <button onClick={() => buildPlan(l.postId, l.script, l.accountId)} disabled={!!planning[l.postId]}
-                    style={{ marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
-                    {planning[l.postId] ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={11} />} Re-plan
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                    <button onClick={() => buildPlan(l.postId, l.script, l.accountId)} disabled={!!planning[l.postId]}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                      {planning[l.postId] ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={11} />} Re-plan
+                    </button>
+                    <button onClick={() => clearPlan(l.postId)} title="Undo the directing — clear this shoot plan"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
+                      <RotateCcw size={11} /> Undo direction
+                    </button>
+                  </div>
                 )}
               </div>
             )

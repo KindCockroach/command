@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Loader2, Send, Waves, CheckCheck, ImageIcon, X } from 'lucide-react'
 import { AGENT_META } from '@/lib/agents'
 import type { GPTRole } from '@/lib/agents'
@@ -48,6 +48,25 @@ export default function AssistantsPanel() {
   const [dragging, setDragging] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const convNoteId = useRef<number | null>(null)
+
+  // Handoff from another tab (e.g. Content Day → Rex) when this panel is ALREADY
+  // mounted — the useState initializers above only run on first mount, so we also
+  // listen for the event and re-read the same localStorage keys.
+  useEffect(() => {
+    const onOpen = () => {
+      try {
+        const role = localStorage.getItem('station-open-agent')
+        const pre = localStorage.getItem('station-agent-prefill')
+        if (role) {
+          localStorage.removeItem('station-open-agent')
+          setActive(prev => { if (prev !== role) { setHistory([]); convNoteId.current = null } return role as GPTRole })
+        }
+        if (pre != null) { localStorage.removeItem('station-agent-prefill'); setMsg(pre) }
+      } catch { /* ignore */ }
+    }
+    window.addEventListener('station:open-agent', onOpen)
+    return () => window.removeEventListener('station:open-agent', onOpen)
+  }, [])
 
   const loadImage = (file: File) => {
     const reader = new FileReader()

@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   if (!process.env.RESEND_API_KEY) return NextResponse.json({ error: 'Resend isn’t configured yet (RESEND_API_KEY). Add it in Railway → Variables to send.' }, { status: 400 })
 
   const labels: ContactLabel[] = Array.isArray(b.audience_labels) ? b.audience_labels.filter((l: string) => CONTACT_LABELS.includes(l as ContactLabel)) : []
-  const recipients = getPeople().filter(p => p.email && (labels.length ? labels.every(l => p.labels.includes(l)) : true))
+  const recipients = getPeople().filter(p => p.email && (labels.length ? labels.some(l => p.labels.includes(l)) : true))
   if (!recipients.length) return NextResponse.json({ error: 'No one matches that audience.' }, { status: 400 })
 
   const html = campaignEmailHtml(product.brand, body, b.cta_label, b.cta_url)
