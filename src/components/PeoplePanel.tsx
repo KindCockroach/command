@@ -6,7 +6,7 @@ import GuestsPanel from './GuestsPanel'
 // PEOPLE — RISE's CRM, replacing GoHighLevel. One list of everyone (signups,
 // guests, persons of interest, customers) wearing LABELS, with filters + search.
 // The deep podcast-guest workspace lives behind the "Guests" sub-view, unchanged.
-type Label = 'free_customer' | 'paid_customer' | 'sub_podcast' | 'sub_btfh' | 'sub_joyful' | 'guest' | 'poi'
+type Label = 'free_customer' | 'paid_customer' | 'sub_podcast' | 'sub_btfh' | 'sub_joyful' | 'guest' | 'poi' | 'invited'
 type PEvent = { at: string; kind: 'signup' | 'download' | 'sent' | 'received' | 'note'; text: string; status?: string }
 type Person = {
   key: string; name: string; email?: string; labels: Label[]; sources: string[]
@@ -36,10 +36,10 @@ function Timeline({ events }: { events?: PEvent[] }) {
 const LABEL_TEXT: Record<Label, string> = {
   free_customer: 'Free Customer', paid_customer: 'Paid Customer',
   sub_podcast: 'Subscriber · Podcast', sub_btfh: 'Subscriber · Be There For Her', sub_joyful: 'Subscriber · Joyful Media',
-  guest: 'Guest', poi: 'Person of Interest',
+  guest: 'Guest', poi: 'Person of Interest', invited: 'Invited',
 }
 const LABEL_COLOR: Record<Label, string> = {
-  free_customer: '#3DAA7C', paid_customer: '#D97706', sub_podcast: '#5A4FCF', sub_btfh: '#C2693F', sub_joyful: '#E2508A', guest: '#2D6E3E', poi: '#6B7280',
+  free_customer: '#3DAA7C', paid_customer: '#D97706', sub_podcast: '#5A4FCF', sub_btfh: '#C2693F', sub_joyful: '#E2508A', guest: '#2D6E3E', poi: '#6B7280', invited: '#2563EB',
 }
 const ALL_LABELS = Object.keys(LABEL_TEXT) as Label[]
 

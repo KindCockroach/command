@@ -318,12 +318,12 @@ export type WaitlistEntry = {
 // the People view: waitlist signups (labels derived from what they claimed),
 // podcast guests (the Guest label + their deep outreach record), and manually
 // added contacts (persons of interest, paid customers, anyone Mandi adds by hand).
-export const CONTACT_LABELS = ['free_customer', 'paid_customer', 'sub_podcast', 'sub_btfh', 'sub_joyful', 'guest', 'poi'] as const
+export const CONTACT_LABELS = ['free_customer', 'paid_customer', 'sub_podcast', 'sub_btfh', 'sub_joyful', 'guest', 'poi', 'invited'] as const
 export type ContactLabel = typeof CONTACT_LABELS[number]
 export const CONTACT_LABEL_TEXT: Record<ContactLabel, string> = {
   free_customer: 'Free Customer', paid_customer: 'Paid Customer',
   sub_podcast: 'Subscriber: Podcast', sub_btfh: 'Subscriber: Be There For Her', sub_joyful: 'Subscriber: Joyful Media',
-  guest: 'Guest', poi: 'Person of Interest',
+  guest: 'Guest', poi: 'Person of Interest', invited: 'Invited',
 }
 
 // A CRM-native record: people added by hand, plus a place to attach extra labels

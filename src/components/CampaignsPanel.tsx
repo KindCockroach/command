@@ -23,7 +23,7 @@ const ORDER: Brand[] = ['btfh', 'wfh', 'joyful']
 const AUDIENCE: { id: string; text: string }[] = [
   { id: 'free_customer', text: 'Free Customers' }, { id: 'paid_customer', text: 'Paid Customers' },
   { id: 'sub_podcast', text: 'Podcast subs' }, { id: 'sub_btfh', text: 'BTFH subs' }, { id: 'sub_joyful', text: 'Joyful subs' },
-  { id: 'guest', text: 'Guests' }, { id: 'poi', text: 'Persons of Interest' },
+  { id: 'guest', text: 'Guests' }, { id: 'poi', text: 'Persons of Interest' }, { id: 'invited', text: 'Invited' },
 ]
 
 const stepLbl = { fontSize: '11px', fontWeight: 800 as const, textTransform: 'uppercase' as const, letterSpacing: '0.06em', color: 'var(--text-subtle)' }
