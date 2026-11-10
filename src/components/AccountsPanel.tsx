@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus, CheckSquare, Eye, Heart, MessageCircle, Send, Bookmark, ChevronLeft, ChevronRight, Rows3, LayoutGrid, GalleryHorizontal } from 'lucide-react'
+import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus, CheckSquare, Eye, Heart, MessageCircle, Send, Bookmark, ChevronLeft, ChevronRight, Rows3, LayoutGrid, GalleryHorizontal, Search } from 'lucide-react'
 import { postPurpose, PURPOSE_META, type Purpose } from '@/lib/contentStatus'
 import type { BrandAccount, ContentPiece } from '@/lib/db'
 import InstantCompose from './InstantCompose'
@@ -1729,6 +1729,7 @@ export default function AccountsPanel() {
   const [ghlConfigured, setGhlConfigured] = useState<boolean | null>(null)
   const [showArchive, setShowArchive] = useState(false)
   const [queueFilter, setQueueFilter] = useState('all')
+  const [postSearch, setPostSearch] = useState('')   // keyword search within the open account
   // How the account's posts are shown: swipe = one at a time (finger/trackpad),
   // list = stacked, grid = tiles. Plus a PURPOSE sorter (follower/conversion/trust).
   const [postView, setPostView] = useState<'swipe' | 'list' | 'grid'>('swipe')
@@ -1909,8 +1910,18 @@ export default function AccountsPanel() {
         const shownAll = showArchive ? posted : active.posts
         // Purpose counts across the current bucket, then filter to the chosen purpose.
         const purposeCounts = shownAll.reduce((m, p) => { const k = postPurpose(p); m[k] = (m[k] ?? 0) + 1; return m }, {} as Record<Purpose, number>)
-        const shown = purposeFilter === 'all' ? shownAll : shownAll.filter(p => postPurpose(p) === purposeFilter)
-        const close = () => { setFlipped(null); setShowArchive(false); setQueueFilter('all'); setPurposeFilter('all') }
+        // Keyword search spans EVERY post in this account (all buckets + archive), so she
+        // can find any piece — it overrides the bucket/purpose filters while typing.
+        const q = postSearch.trim().toLowerCase()
+        const terms = q.split(/\s+/).filter(Boolean)
+        const matchSearch = (p: ContentPiece) => {
+          const blob = `${p.title} ${p.description} ${p.script ?? ''} ${p.onscreen_text ?? ''} ${p.hashtags ?? ''} ${p.notes ?? ''} ${(p.tags ?? []).join(' ')}`.toLowerCase()
+          return terms.every(t => blob.includes(t))
+        }
+        const shown = terms.length
+          ? posts.filter(matchSearch)
+          : (purposeFilter === 'all' ? shownAll : shownAll.filter(p => postPurpose(p) === purposeFilter))
+        const close = () => { setFlipped(null); setShowArchive(false); setQueueFilter('all'); setPurposeFilter('all'); setPostSearch('') }
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,31,59,0.55)', backdropFilter: 'blur(5px)' }} onClick={close} />
@@ -1953,6 +1964,17 @@ export default function AccountsPanel() {
                 )}
               </div>
 
+              {/* Keyword search — spans every post in this account (all buckets + archive) */}
+              <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: `1px solid ${postSearch.trim() ? theme.color : 'var(--border)'}`, borderRadius: '10px', padding: '7px 11px', background: 'var(--surface-raised, var(--bg))' }}>
+                  <Search size={14} style={{ color: 'var(--text-subtle)', flexShrink: 0 }} />
+                  <input value={postSearch} onChange={e => setPostSearch(e.target.value)} placeholder={`Search ${acct.handle} content by keyword…`}
+                    style={{ flex: 1, border: 'none', background: 'transparent', color: 'var(--text)', fontSize: '13px', outline: 'none', fontFamily: 'inherit', minWidth: 0 }} />
+                  {postSearch.trim() && <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', whiteSpace: 'nowrap' }}>{shown.length} found</span>}
+                  {postSearch && <button onClick={() => setPostSearch('')} title="Clear" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', display: 'flex', flexShrink: 0, padding: 0 }}><X size={14} /></button>}
+                </div>
+              </div>
+
               {/* View toggle (swipe / list / grid) + PURPOSE sorter */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 16px', flexWrap: 'wrap', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
                 <div style={{ display: 'flex', gap: '2px', padding: '2px', borderRadius: '10px', background: 'var(--surface-raised, var(--bg))', border: '1px solid var(--border)' }}>
@@ -1991,7 +2013,8 @@ export default function AccountsPanel() {
               {shown.length === 0 && (
                 <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
                   <p style={{ fontSize: '12px', textAlign: 'center', padding: '40px 0', color: 'var(--text-subtle)' }}>
-                    {purposeFilter !== 'all' ? <>No {PURPOSE_META[purposeFilter as Purpose].label.toLowerCase()}-purpose posts here — tap <strong>All</strong> to see the rest.</>
+                    {terms.length ? <>No posts in <strong>{acct.handle}</strong> match &ldquo;{postSearch.trim()}&rdquo;.</>
+                      : purposeFilter !== 'all' ? <>No {PURPOSE_META[purposeFilter as Purpose].label.toLowerCase()}-purpose posts here — tap <strong>All</strong> to see the rest.</>
                       : showArchive ? 'Nothing posted yet.' : <>Nothing here yet. Generate content and pick <strong>{acct.handle}</strong> as the account — or drop an idea in Quick Capture.</>}
                   </p>
                 </div>
