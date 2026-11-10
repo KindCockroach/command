@@ -47,8 +47,8 @@ document.addEventListener('click',function(e){var a=e.target.closest&&e.target.c
 function RegisterButton({ label = 'SAVE MY SEAT — $33' }: { label?: string }) {
   return (
     <div className="cta">
-      <a className="buy luma-checkout--button" href="https://luma.com/event/evt-nLWB8Sj5qEYLYmZ"
-        data-luma-action="checkout" data-luma-event-id="evt-nLWB8Sj5qEYLYmZ">{label}</a>
+      <a className="buy luma-checkout--button" href="https://luma.com/event/evt-tmZhDPFH5PGlo2S"
+        data-luma-action="checkout" data-luma-event-id="evt-tmZhDPFH5PGlo2S">{label}</a>
       <p className="tagline">Live · 60 minutes · a reset you&rsquo;ll want to come back to</p>
     </div>
   )
