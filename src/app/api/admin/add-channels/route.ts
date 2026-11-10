@@ -61,6 +61,30 @@ const CHANNELS: BrandAccount[] = [
     url: '',
     notes: 'LONG-FORM / newsletter home — not the reel pipeline. (RISE sends transactional + campaign email via Resend/Cap; Substack is a separate publishing home you write in.) Drop your real Substack URL + handle into this card.',
   },
+  {
+    id: 'pinterest',
+    handle: 'Pinterest',
+    platform: 'Pinterest',
+    status: 'active',
+    priority: 'medium',
+    color: '#E60023',
+    emoji: '📌',
+    brand_name: 'Pinterest — Joyful Media',
+    topic: 'Pins that drive evergreen search traffic to the podcast, essays, and offers',
+    bio: 'Calm, searchable inspiration for tired moms — intuition, reparenting, and AI that actually helps.',
+    mission: 'Use Pinterest as evergreen search: pin quotes, carousels, and covers that link back to the podcast, Substack, and bethereforher.com.',
+    content_format: 'Vertical pins + idea pins (image/video + title + description + destination LINK + board)',
+    underlying_message: 'The quiet, searchable door into your world.',
+    problem_message: 'Reels vanish in a day.',
+    solution_message: 'A pin keeps working for months and keeps sending people to your site.',
+    transformation: 'From content that disappears to evergreen traffic',
+    the_how: 'One pin at a time',
+    tone: 'Calm, clear, inspiring — plain English',
+    beliefs: [],
+    hooks: [],
+    url: '',
+    notes: 'SEARCH / traffic channel — every pin needs a destination LINK (podcast, Substack, bethereforher.com) and a board. Posting is manual for now; Pinterest API auto-publish is a separate build. Drop your real Pinterest profile URL + handle into this card.',
+  },
 ]
 
 // The matching Campaigns-tab entries (products) for the two new channels.
@@ -86,7 +110,7 @@ function run(req: NextRequest) {
   if (new URL(req.url).searchParams.get('confirm') !== 'add-channels') {
     return NextResponse.json({
       ready: true,
-      note: 'This will add/refresh the Medium + Substack account cards and the Substack + Newsletter campaigns. To run it, add ?confirm=add-channels to the URL.',
+      note: 'This will add/refresh the Medium + Substack + Pinterest account cards and the Substack + Newsletter campaigns. To run it, add ?confirm=add-channels to the URL.',
       will_add: [...CHANNELS.map(c => `${c.emoji} ${c.brand_name}`), ...CAMPAIGNS.map(c => `📣 ${c.name} campaign`)],
     })
   }
