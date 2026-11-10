@@ -554,6 +554,13 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
     onChanged?.()
   }
 
+  // Jump to the linked draft/banked note in the Notes tab (uses post.note_id).
+  const openLinkedNote = (noteId: number) => {
+    try { localStorage.setItem('rise-open-note', String(noteId)) } catch { /* ok */ }
+    window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'notes' } }))
+    window.dispatchEvent(new CustomEvent('rise-open-note'))
+  }
+
   // Inline editing of the card's fields
   const [editing, setEditing] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
@@ -1025,6 +1032,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
             <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 8px', borderRadius: '10px', background: statusChip.bg, color: statusChip.color }}>{statusChip.label}</span>
             {gallery.length > 0 ? <span style={{ fontSize: '9px', color: '#3DAA7C', fontWeight: 700 }}>📎 {gallery.length > 1 ? `${gallery.length} slides` : 'media'}</span>
               : post.image_prompt ? <span style={{ fontSize: '9px', color: 'var(--text-subtle)' }}>🎨 prompt ready</span> : null}
+            {post.note_id ? <button onClick={e => { e.stopPropagation(); openLinkedNote(post.note_id!) }} title="Open the linked draft in Notes" style={{ fontSize: '9px', fontWeight: 800, padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: accentColor, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>📄 Draft note →</button> : null}
           </div>
         </div>
 

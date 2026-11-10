@@ -8,6 +8,8 @@ const DB_DIR = path.dirname(DB_PATH)
 
 export type ContentStatus = 'idea' | 'in_progress' | 'ready' | 'approved' | 'scheduled' | 'published' | 'archived' | 'held'
 export type ContentType = 'video' | 'podcast' | 'post' | 'image' | 'carousel' | 'workshop' | 'other'
+// The 3 formats that require Mandi to film herself (Content Day filter).
+export type ShootFormat = 'talking_head' | 'role_play' | 'multi_scene'
 
 export type ContentPiece = {
   id: number
@@ -40,6 +42,8 @@ export type ContentPiece = {
   scheduled_at?: string | null     // when GHL is set to publish it
   frame_plan?: string              // frame-by-frame trend-aware production plan
   shoot_plan?: string              // JSON string of the filmable shoot plan (roles/beats + emotion + camera)
+  shoot_format?: ShootFormat       // which film-yourself format (talking head / role play / multi-scene) — Content Day filter
+  note_id?: number                 // linked long-form draft / banked script in Notes
   post_job?: string                // THE ONE JOB of this post — picked before writing (reach new / shift-from-peer / convert-to-DMs)
   // River (sorting hat) fields
   open_questions?: string[]        // questions only Mandi can answer before this post is complete
@@ -1352,6 +1356,9 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     open_questions: data.open_questions ?? [],
     river_source: data.river_source ?? '',
     source_context: data.source_context ?? '',
+    note_id: data.note_id,
+    shoot_format: data.shoot_format,
+    shoot_plan: data.shoot_plan,
   }
   // Never-use hashtags are stripped on every save, whatever wrote the post.
   piece.description = stripBannedHashtags(piece.description, piece.account_id)

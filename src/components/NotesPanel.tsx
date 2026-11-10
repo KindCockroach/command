@@ -336,6 +336,21 @@ export default function NotesPanel() {
       .catch(() => {})
   }, [])
 
+  // Deep-open a note when another tab links to it (e.g. a content card's "Open draft note").
+  useEffect(() => {
+    const openPending = () => {
+      try {
+        const raw = localStorage.getItem('rise-open-note')
+        if (!raw) return
+        const n = notes.find(x => x.id === Number(raw))
+        if (n) { localStorage.removeItem('rise-open-note'); setSelected(n) }
+      } catch { /* ignore */ }
+    }
+    openPending()
+    window.addEventListener('rise-open-note', openPending)
+    return () => window.removeEventListener('rise-open-note', openPending)
+  }, [notes])
+
   // Send a note to the River to compose a post for a specific account (account is LAW there).
   const sendToAccount = async (note: Note, accountId: string): Promise<SendResult> => {
     try {

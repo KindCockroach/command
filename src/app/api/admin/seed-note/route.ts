@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isOwner } from '@/lib/ownerAuth'
-import { createNote, getAllNotes } from '@/lib/db'
+import { createNote, getAllNotes, createContent, getAllContent } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,17 +47,28 @@ function run(req: NextRequest) {
     return NextResponse.json({ ready: true, note: 'Adds a Medium article draft note. To run it, add ?confirm=medium-draft to the URL.' })
   }
   const existing = getAllNotes().find(n => (n.tags ?? []).includes(DRAFT_TAG))
-  if (existing) {
-    return NextResponse.json({ ok: true, already_existed: true, note_id: existing.id, title: existing.title })
-  }
-  const note = createNote({
+  const note = existing ?? createNote({
     title: '📝 Medium draft — (working title)',
     body: SCAFFOLD,
     category: 'idea',
     source: 'mine',
     tags: ['medium', 'draft', 'longform', DRAFT_TAG],
   })
-  return NextResponse.json({ ok: true, note_id: note.id, title: note.title })
+  // Also create a Medium content card linked to the note, so the Medium channel has
+  // a card whose "Open draft note" link jumps straight to the full draft.
+  const haveCard = getAllContent().some(c => c.note_id === note.id)
+  if (!haveCard) {
+    createContent({
+      title: 'Medium article — (working title)',
+      description: 'Long-form Medium piece. Full draft lives in the linked note.',
+      status: 'in_progress',
+      type: 'post',
+      account_id: 'medium',
+      note_id: note.id,
+      tags: ['medium', 'article', 'longform'],
+    })
+  }
+  return NextResponse.json({ ok: true, note_id: note.id, title: note.title, card_linked: !haveCard })
 }
 
 export async function GET(req: NextRequest) { return run(req) }
