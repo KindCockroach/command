@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: 'Not a class. 60 minutes of guided time to yourself, live with Mandi on Sunday nights. Leave with a quieter mind, a little more patience, and one less to-do in your head. $33.',
   openGraph: {
     title: 'You’re invited to reset.',
-    description: 'Inaugural Reset, November 8th. Come set down your brain for an hour — live with Mandi, Sundays at 8 PM CT. $33.',
+    description: 'The Reset — come set down your brain for an hour, live with Mandi, every Sunday at 8 PM CT. $33.',
     url: 'https://www.bethereforher.com/reset',
     siteName: 'Be There For Her',
     images: [{ url: '/og-reset.png', width: 1200, height: 630 }],
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'You’re invited to reset.',
-    description: 'Inaugural Reset, November 8th. Come set down your brain for an hour.',
+    description: 'The Reset. Come set down your brain for an hour, every Sunday at 8 PM CT.',
     images: ['/og-reset.png'],
   },
 }
@@ -123,9 +123,9 @@ export default function ResetPage() {
         <div className="wrap">
           <h2>The details</h2>
           <dl className="details">
-            <div><dt>When</dt><dd>Every Sunday at 8 PM CT, starting November 8</dd></div>
+            <div><dt>When</dt><dd>Every Sunday at 8 PM CT</dd></div>
             <div><dt>Where</dt><dd>Virtual (Google Meet link provided upon registration)</dd></div>
-            <div><dt>Investment</dt><dd>$33 (beta price for this inaugural vibe check)</dd></div>
+            <div><dt>Investment</dt><dd>$33 (beta price while we find our rhythm)</dd></div>
           </dl>
           <p className="asyouare">Come as you are: exhausted, skeptical, or with your hands in the air. I&rsquo;ll meet you there.</p>
           <RegisterButton label="Save my seat — $33" />
