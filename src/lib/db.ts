@@ -539,7 +539,7 @@ export type MediaMeta = {
 // A trending-audio SUGGESTION — not just a sound, but what it's trending FOR and
 // exactly what Mandi could film/say, grounded in her real recent life. The point:
 // she reads it and knows precisely what to do, not just something to think about.
-export type TrendSuggestion = { sound: string; trending_for: string; use_it: string }
+export type TrendSuggestion = { sound: string; trending_for: string; use_it: string; search?: string }
 
 // A LINE — one copy-ready reel idea for the calm "Lines" feed. Not a content card:
 // it renders as four short strings and nothing else.

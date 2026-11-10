@@ -10,7 +10,7 @@ import { Loader2, Copy, Check, ThumbsDown, Sparkles, Music, Clapperboard, Radio,
 
 type Line = { id: number; account_id: string; line: string; caption: string; audio_tone: string; broll_scene: string; created_at: string }
 type Acct = { id: string; handle: string; status: string; brand_name?: string }
-type TrendSug = { sound: string; trending_for: string; use_it: string }
+type TrendSug = { sound: string; trending_for: string; use_it: string; search?: string }
 type Pulse = { audio: string; audio_from?: string; format: string; suggestions?: TrendSug[]; when: string | null }
 
 // Turn a sound name into real search/listen links so Mandi can hear it and find the
@@ -144,8 +144,9 @@ export default function LinesPanel() {
                     <Music size={13} style={{ flexShrink: 0, marginTop: '3px', color: 'var(--text-subtle)' }} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
                       <span style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{s.sound}{s.trending_for ? <span style={{ color: 'var(--text-subtle)' }}> — trending for {s.trending_for}</span> : ''}</span>
+                      {s.search ? <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>search: <strong style={{ color: 'var(--text-muted)' }}>{s.search}</strong></span> : null}
                       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        {soundSearchLinks(s.sound).map(l => (
+                        {soundSearchLinks(s.search || s.sound).map(l => (
                           <a key={l.label} href={l.url} target="_blank" rel="noreferrer" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--purple)', textDecoration: 'none', whiteSpace: 'nowrap' }}>{l.label}</a>
                         ))}
                       </div>
