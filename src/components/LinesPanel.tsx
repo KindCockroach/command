@@ -13,6 +13,19 @@ type Acct = { id: string; handle: string; status: string; brand_name?: string }
 type TrendSug = { sound: string; trending_for: string; use_it: string }
 type Pulse = { audio: string; audio_from?: string; format: string; suggestions?: TrendSug[]; when: string | null }
 
+// Turn a sound name into real search/listen links so Mandi can hear it and find the
+// exact audio to use. Deterministic URLs (we build them) — no guessed/hallucinated links.
+function soundSearchLinks(sound: string): { label: string; url: string }[] {
+  const q = sound.split(/\btrending for\b/i)[0].replace(/[“”"'‘’]/g, '').replace(/\s*[—·]\s*/g, ' ').replace(/\s+/g, ' ').trim()
+  const e = encodeURIComponent(q)
+  return [
+    { label: '▶️ Listen', url: `https://www.youtube.com/results?search_query=${e}` },
+    { label: '🎧 Spotify', url: `https://open.spotify.com/search/${e}` },
+    { label: '📸 Instagram', url: `https://www.instagram.com/explore/search/keyword/?q=${e}` },
+    { label: '🎵 TikTok', url: `https://www.tiktok.com/search?q=${e}` },
+  ]
+}
+
 const DEFAULT_ACCOUNT = 'theknowingis'   // @theknowingis — her current focus (id now matches handle)
 
 function CopyBtn({ text, label }: { text: string; label: string }) {
@@ -124,20 +137,39 @@ export default function LinesPanel() {
           {pulseErr && <p style={{ fontSize: '11px', color: '#C2477E', lineHeight: 1.4 }}>{pulseErr}</p>}
           {pulse.suggestions && pulse.suggestions.length > 0 ? (
             <>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>Trending sounds this week — go have a look and make one yours.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginTop: '2px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>Trending sounds this week — tap a link to hear it or find the exact audio.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '11px', marginTop: '2px' }}>
                 {pulse.suggestions.map((s, i) => (
-                  <p key={i} style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.4, display: 'flex', gap: '7px' }}>
-                    <Music size={13} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} />
-                    <span>{s.sound}{s.trending_for ? <span style={{ color: 'var(--text-subtle)' }}> — trending for {s.trending_for}</span> : ''}</span>
-                  </p>
+                  <div key={i} style={{ display: 'flex', gap: '7px' }}>
+                    <Music size={13} style={{ flexShrink: 0, marginTop: '3px', color: 'var(--text-subtle)' }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                      <span style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{s.sound}{s.trending_for ? <span style={{ color: 'var(--text-subtle)' }}> — trending for {s.trending_for}</span> : ''}</span>
+                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                        {soundSearchLinks(s.sound).map(l => (
+                          <a key={l.label} href={l.url} target="_blank" rel="noreferrer" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--purple)', textDecoration: 'none', whiteSpace: 'nowrap' }}>{l.label}</a>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </>
           ) : (
             <>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>{pulse.audio ? 'Trending sound this week — go have a look and make it yours.' : 'The move: try this format with any line below.'}</p>
-              {pulse.audio && <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><Music size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--text-subtle)' }} /> <span>{pulse.audio}</span></p>}
+              {pulse.audio && (
+                <div style={{ display: 'flex', gap: '7px' }}>
+                  <Music size={14} style={{ flexShrink: 0, marginTop: '3px', color: 'var(--text-subtle)' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.45 }}>{pulse.audio}</span>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      {soundSearchLinks(pulse.audio).map(l => (
+                        <a key={l.label} href={l.url} target="_blank" rel="noreferrer" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--purple)', textDecoration: 'none', whiteSpace: 'nowrap' }}>{l.label}</a>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
           {pulse.format && <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.45, display: 'flex', gap: '7px' }}><span style={{ flexShrink: 0 }}>🧬</span> <span>{pulse.format}</span></p>}
