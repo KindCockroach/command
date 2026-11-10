@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import type { ContentPiece, BrandAccount } from '@/lib/db'
+import type { ContentPiece, BrandAccount, ShootFormat } from '@/lib/db'
 import { hasMedia, postPurpose, PURPOSE_META, type Purpose } from '@/lib/contentStatus'
-import { RefreshCw, Camera, Clapperboard, Loader2, Sparkles, MessageCircle, RotateCcw } from 'lucide-react'
+import { RefreshCw, Camera, Clapperboard, Loader2, Sparkles, MessageCircle, RotateCcw, Trash2 } from 'lucide-react'
 
 // CONTENT DAY — the shoot list, designed like the Format Finder concept cards, and
 // with a SHOOT PLAN: turn a script into something she can actually film without
@@ -19,7 +19,29 @@ type ShootPlan = {
   sections?: { role: string; setup: string; lines: PlanLine[] }[]
   beats?: { label: string; cue: string; text: string; emotion: string; camera: string }[]
 }
-type Line = { key: string; kind: string; length: string; script: string; account?: string; color?: string; postId: number; accountId?: string | null; broll?: boolean; purpose: Purpose }
+type Line = { key: string; kind: string; length: string; script: string; account?: string; color?: string; postId: number; accountId?: string | null; broll?: boolean; purpose: Purpose; format: ShootFormat }
+
+// The 3 formats that require Mandi to film herself.
+const FORMAT_META: Record<ShootFormat, { label: string; emoji: string; color: string }> = {
+  talking_head: { label: 'Talking head', emoji: '🎤', color: '#3DAA7C' },
+  role_play: { label: 'Role play', emoji: '🎭', color: '#7C3AED' },
+  multi_scene: { label: 'Multi-scene', emoji: '🎬', color: '#E8448A' },
+}
+const FORMATS = Object.keys(FORMAT_META) as ShootFormat[]
+
+// Which film-yourself format is this post? Honor a saved choice; otherwise infer from
+// the script + any saved shoot plan (dialogue → role play; multiple scenes → multi-scene).
+function classifyFormat(p: ContentPiece): ShootFormat {
+  if (p.shoot_format) return p.shoot_format
+  const script = p.script ?? ''
+  let planMode = ''
+  if (p.shoot_plan) { try { planMode = (JSON.parse(p.shoot_plan)?.mode as string) || '' } catch { /* ignore */ } }
+  const speakerLines = (script.match(/^[A-Za-z][A-Za-z '’\-]{1,20}:\s/gm) ?? []).length
+  if (planMode === 'dialogue' || speakerLines >= 2) return 'role_play'
+  const blob = `${script}\n${p.frame_plan ?? ''}\n${p.notes ?? ''}`.toLowerCase()
+  if (/scene\s*\d|\bcut to\b|multi-?scene|\bb-?roll\b/.test(blob) || (blob.match(/\bscene\b/g) ?? []).length >= 2) return 'multi_scene'
+  return 'talking_head'
+}
 
 function estLength(script: string): string {
   const words = script.trim().split(/\s+/).filter(Boolean).length
@@ -57,6 +79,7 @@ export default function ContentDay() {
   const [planErr, setPlanErr] = useState<Record<number, string>>({})
   const [purposeFilter, setPurposeFilter] = useState<'all' | Purpose>('all')
   const [acctFilter, setAcctFilter] = useState<string>('all')
+  const [formatFilter, setFormatFilter] = useState<'all' | ShootFormat>('all')
 
   const load = useCallback(() => {
     setLoading(true)
@@ -96,12 +119,14 @@ export default function ContentDay() {
     const a = acct(p.account_id)
     const acctLabel = a ? `${a.emoji} ${a.handle}` : undefined
     const purpose = postPurpose(p)
-    allLines.push({ key: `${p.id}-th`, kind: 'Talking head', length: estLength(p.script as string), script: p.script as string, account: acctLabel, color: a?.color, postId: p.id, accountId: p.account_id, purpose })
+    const format = classifyFormat(p)
+    allLines.push({ key: `${p.id}-th`, kind: FORMAT_META[format].label, length: estLength(p.script as string), script: p.script as string, account: acctLabel, color: a?.color, postId: p.id, accountId: p.account_id, purpose, format })
   }
   const purposeCounts = allLines.reduce((m, l) => { m[l.purpose] = (m[l.purpose] ?? 0) + 1; return m }, {} as Record<Purpose, number>)
+  const formatCounts = allLines.reduce((m, l) => { m[l.format] = (m[l.format] ?? 0) + 1; return m }, {} as Record<ShootFormat, number>)
   // Accounts that actually have something to film (for the account filter).
   const acctOptions = Array.from(new Map(allLines.filter(l => l.accountId).map(l => [l.accountId as string, l.account || l.accountId as string])).entries())
-  const lines = allLines.filter(l => (purposeFilter === 'all' || l.purpose === purposeFilter) && (acctFilter === 'all' || l.accountId === acctFilter))
+  const lines = allLines.filter(l => (purposeFilter === 'all' || l.purpose === purposeFilter) && (acctFilter === 'all' || l.accountId === acctFilter) && (formatFilter === 'all' || l.format === formatFilter))
 
   // Hand off to Dir (the Content Director) — seed a chat and jump to Assistants.
   const openDir = (seed: string) => {
@@ -149,6 +174,19 @@ export default function ContentDay() {
     setPosts(ps => ps.map(p => p.id === postId ? { ...p, shoot_plan: '' } : p))
     try { localStorage.removeItem(`rise-shootplan-${postId}`) } catch { /* ok */ }
     fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, shoot_plan: '' }) }).catch(() => {})
+  }
+
+  // Set this shoot's format (talking head / role play / multi-scene) — saved on the post.
+  const setFormat = (postId: number, fmt: ShootFormat) => {
+    setPosts(ps => ps.map(p => p.id === postId ? { ...p, shoot_format: fmt } : p))
+    fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, shoot_format: fmt }) }).catch(() => {})
+  }
+
+  // Thumbs-down / delete — removes the underlying content card from RISE entirely.
+  const deletePost = (postId: number, label: string) => {
+    if (!confirm(`Delete this content card for good?\n\n“${label.slice(0, 80)}”\n\nThis removes it from RISE everywhere — not just Content Day. It can't be undone.`)) return
+    setPosts(ps => ps.filter(p => p.id !== postId))
+    fetch(`/api/content?id=${postId}`, { method: 'DELETE' }).catch(() => {})
   }
 
   // Rehydrate plans — the post's saved shoot_plan is the durable source (survives
@@ -276,6 +314,25 @@ export default function ContentDay() {
         </div>
       )}
 
+      {/* Filter — the 3 film-yourself formats (only when there's a mix) */}
+      {allLines.length > 0 && FORMATS.filter(f => formatCounts[f]).length > 1 && (
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', padding: '8px 14px 0' }}>
+          <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginRight: '2px' }}>Format</span>
+          {(['all', 'talking_head', 'role_play', 'multi_scene'] as const).map(fk => {
+            const count = fk === 'all' ? allLines.length : (formatCounts[fk] ?? 0)
+            if (fk !== 'all' && count === 0) return null
+            const on = formatFilter === fk
+            const m = fk === 'all' ? { label: 'All', emoji: '', color: 'var(--purple)' } : FORMAT_META[fk]
+            return (
+              <button key={`f-${fk}`} onClick={() => setFormatFilter(fk)}
+                style={{ padding: '5px 11px', borderRadius: '20px', border: `2px solid ${on ? m.color : 'var(--border)'}`, background: on ? `${m.color}1a` : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: on ? m.color : 'var(--text-muted)', fontFamily: 'inherit' }}>
+                {m.emoji ? `${m.emoji} ` : ''}{m.label} · {count}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       <div style={{ padding: '12px' }}>
         {loading && <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '14px', textAlign: 'center' }}>Compiling your shoot list…</p>}
         {!loading && lines.length === 0 && (
@@ -318,10 +375,25 @@ export default function ContentDay() {
                     style={{ flexShrink: 0, marginTop: '1px', width: '22px', height: '22px', borderRadius: '7px', border: `2px solid ${isDone ? '#2E8B60' : 'var(--border)'}`, background: isDone ? '#2E8B60' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '13px', fontWeight: 900, cursor: 'pointer' }}>{isDone ? '✓' : ''}</button>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                      <span style={pill(l.broll)}>{l.kind}</span>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {FORMATS.map(f => {
+                          const on = l.format === f
+                          const m = FORMAT_META[f]
+                          return (
+                            <button key={f} onClick={() => setFormat(l.postId, f)} title={`Mark as ${m.label}`}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '3px 8px', borderRadius: '99px', border: `1px solid ${on ? m.color : 'var(--border)'}`, background: on ? `${m.color}1a` : 'transparent', color: on ? m.color : 'var(--text-subtle)', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              {m.emoji}{on ? ` ${m.label}` : ''}
+                            </button>
+                          )
+                        })}
+                      </div>
                       {l.account && <span style={{ fontSize: '11px', fontWeight: 700, color: l.color || 'var(--text-subtle)' }}>{l.account}</span>}
+                      <button onClick={() => deletePost(l.postId, hook)} title="Delete this content card (removes it from RISE)"
+                        style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', padding: '2px', display: 'flex' }}>
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                    <p style={{ ...metaStyle, marginBottom: '7px' }}>{l.broll ? 'B-roll' : (plan ? (plan.mode === 'dialogue' ? `Dialogue · ${plan.sections?.length ?? 0} roles to film` : `Talking head · retention plan`) : `Talking head · ${l.length}${rest.length ? ` · ${bs.length} beats` : ''}`)}</p>
+                    <p style={{ ...metaStyle, marginBottom: '7px' }}>{plan ? (plan.mode === 'dialogue' ? `${l.kind} · ${plan.sections?.length ?? 0} roles to film` : `${l.kind} · retention plan`) : `${l.kind} · ${l.length}${rest.length ? ` · ${bs.length} beats` : ''}`}</p>
                     <p style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.4, letterSpacing: '-0.01em', textDecoration: isDone ? 'line-through' : 'none' }}>{hook}</p>
 
                     {/* Plan this shoot — dialogue → by role, solo → retention beats */}
