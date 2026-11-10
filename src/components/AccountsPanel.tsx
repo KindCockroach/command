@@ -536,6 +536,22 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
     if (Array.isArray(d.shots)) { setFootConcept(d.concept || ''); setShots(d.shots); setFootState('done') }
     else { setFootErr(d.error || 'Could not suggest footage'); setFootState('error') }
   }
+
+  // 📌 Make Pinterest pins — turn this post into ready-to-post pins (title/desc/board/link).
+  type Pin = { title: string; description: string; board?: string; link?: string }
+  const [pinState, setPinState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [pins, setPins] = useState<Pin[]>([])
+  const [pinErr, setPinErr] = useState('')
+  const [pinCopied, setPinCopied] = useState<number | null>(null)
+  const makePins = async () => {
+    setPinState('loading'); setPinErr('')
+    const d = await fetch('/api/pins', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contentId: post.id }),
+    }).then(r => r.json()).catch(() => ({ error: 'connection failed' }))
+    if (Array.isArray(d.pins) && d.pins.length) { setPins(d.pins); setPinState('done') }
+    else { setPinErr(d.error || 'Could not make pins'); setPinState('error') }
+  }
   const SHOT_META: Record<string, { icon: string; label: string; color: string }> = {
     capture: { icon: '🎥', label: 'Capture now', color: '#5A4FCF' },
     camera_roll: { icon: '📸', label: 'In your camera roll', color: '#E8448A' },
@@ -1523,6 +1539,41 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
                     )
                   })}
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* 📌 Pinterest pins — ready-to-post title · description · board · link */}
+          <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 14px', background: 'var(--surface)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              <div>
+                <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>📌 Pinterest pins</p>
+                <p style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>Ready to post: title · description · board · link.</p>
+              </div>
+              <button onClick={makePins} disabled={pinState === 'loading'}
+                style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: '#E60023', fontWeight: 700, fontSize: '11px', cursor: pinState === 'loading' ? 'default' : 'pointer' }}>
+                {pinState === 'loading' ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Making…</> : pinState === 'done' ? '↻ Again' : '📌 Make pins'}
+              </button>
+            </div>
+            {pinErr && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '6px' }}>⚠ {pinErr}</p>}
+            {pinState === 'done' && (
+              <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {pins.map((p, i) => (
+                  <div key={i} style={{ padding: '10px', borderRadius: '9px', background: 'var(--bg)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'flex-start' }}>
+                      <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.35 }}>{p.title}</p>
+                      <button onClick={() => { navigator.clipboard.writeText([p.title, '', p.description, '', p.link].filter(Boolean).join('\n')); setPinCopied(i); setTimeout(() => setPinCopied(null), 1600) }}
+                        title="Copy title + description + link" style={{ flexShrink: 0, border: 'none', background: 'transparent', cursor: 'pointer', color: pinCopied === i ? '#3DAA7C' : 'var(--text-subtle)', padding: '2px', display: 'flex' }}>
+                        {pinCopied === i ? <CheckCircle2 size={13} /> : <Copy size={13} />}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{p.description}</p>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px', alignItems: 'center' }}>
+                      {p.board && <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: '#E6002318', color: '#E60023', whiteSpace: 'nowrap' }}>📌 {p.board}</span>}
+                      {p.link && <a href={p.link} target="_blank" rel="noreferrer" style={{ fontSize: '11px', color: 'var(--purple)', textDecoration: 'none', fontWeight: 700, wordBreak: 'break-all' }}>{p.link.replace(/^https?:\/\//, '')} ↗</a>}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
