@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isOwner } from '@/lib/ownerAuth'
-import { upsertBrandAccount, getAllBrandAccounts, type BrandAccount } from '@/lib/db'
+import { upsertBrandAccount, getAllBrandAccounts, createProduct, getProducts, type BrandAccount, type Product } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,6 +63,22 @@ const CHANNELS: BrandAccount[] = [
   },
 ]
 
+// The matching Campaigns-tab entries (products) for the two new channels.
+const CAMPAIGNS: (Partial<Product> & { name: string; id: string })[] = [
+  {
+    id: 'substack', name: 'Substack', brand: 'joyful', kind: 'newsletter', status: 'live', cadence_days: 7,
+    mission: 'The weekly letter — essays and the thinking behind the podcast, straight to subscribers.',
+    fits: 'Owns the reader relationship directly (not the algorithm); deepens trust and feeds every channel.',
+    send_match: ['substack'],
+  },
+  {
+    id: 'newsletter', name: 'Newsletter', brand: 'joyful', kind: 'newsletter', status: 'live', cadence_days: 7,
+    mission: 'The general Joyful Media newsletter — sent natively to your list via Resend (Cap).',
+    fits: 'Your owned list: the direct line to everyone, independent of any platform.',
+    send_match: ['newsletter'],
+  },
+]
+
 function run(req: NextRequest) {
   if (!isOwner(req)) {
     return NextResponse.json({ error: 'Owner only — open this while signed in to RISE.' }, { status: 401 })
@@ -70,13 +86,25 @@ function run(req: NextRequest) {
   if (new URL(req.url).searchParams.get('confirm') !== 'add-channels') {
     return NextResponse.json({
       ready: true,
-      note: 'This will add/refresh the Medium + Substack account cards. To run it, add ?confirm=add-channels to the URL.',
-      will_add: CHANNELS.map(c => `${c.emoji} ${c.brand_name}`),
+      note: 'This will add/refresh the Medium + Substack account cards and the Substack + Newsletter campaigns. To run it, add ?confirm=add-channels to the URL.',
+      will_add: [...CHANNELS.map(c => `${c.emoji} ${c.brand_name}`), ...CAMPAIGNS.map(c => `📣 ${c.name} campaign`)],
     })
   }
   const before = new Set(getAllBrandAccounts().map(a => a.id))
   const results = CHANNELS.map(c => ({ id: c.id, action: before.has(c.id) ? 'updated' : 'added', account: upsertBrandAccount(c) }))
-  return NextResponse.json({ ok: true, results: results.map(r => ({ id: r.id, action: r.action })), total_accounts: getAllBrandAccounts().length })
+  // Campaigns: create each only if it isn't already there (idempotent).
+  const haveProducts = new Set(getProducts().map(p => p.id))
+  const campaignResults = CAMPAIGNS.map(c => {
+    if (haveProducts.has(c.id)) return { id: c.id, action: 'exists' }
+    createProduct(c)
+    return { id: c.id, action: 'added' }
+  })
+  return NextResponse.json({
+    ok: true,
+    accounts: results.map(r => ({ id: r.id, action: r.action })),
+    campaigns: campaignResults,
+    total_accounts: getAllBrandAccounts().length,
+  })
 }
 
 export async function GET(req: NextRequest) { return run(req) }

@@ -381,7 +381,7 @@ export type SendRecord = { id: string; email: string; at: string; subject: strin
 // renders them as an org chart; each carries its mission, how it fits the big
 // picture, funnel links, and a cadence rule (touch its people at least every N days).
 export type ProductBrand = 'btfh' | 'wfh' | 'joyful'
-export type ProductKind = 'free_download' | 'paid_download' | 'live' | 'membership' | 'podcast' | 'service' | 'guest_track'
+export type ProductKind = 'free_download' | 'paid_download' | 'live' | 'membership' | 'podcast' | 'service' | 'guest_track' | 'newsletter'
 export type ProductStatus = 'live' | 'soon'
 export type ProductLink = { label: string; url: string }
 export type Product = {
@@ -1065,6 +1065,44 @@ export function updateProduct(id: string, patch: Partial<Product>): Product | nu
   Object.assign(prod, patch, { id: prod.id, updated_at: new Date().toISOString() })
   writeDb(db)
   return prod
+}
+
+// Add a campaign/product to the Campaigns tab (from the UI's "+ Add campaign", or a seed).
+export function createProduct(data: Partial<Product> & { name: string }): Product {
+  const db = readDb()
+  if (!db.products) db.products = seedProducts(new Date().toISOString())
+  const now = new Date().toISOString()
+  const id = (data.id && data.id.trim()) || `p_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`
+  const maxSort = db.products.reduce((m, p) => Math.max(m, p.sort ?? 0), 0)
+  const prod: Product = {
+    id,
+    name: data.name.trim(),
+    brand: data.brand ?? 'joyful',
+    kind: data.kind ?? 'newsletter',
+    status: data.status ?? 'live',
+    price: data.price,
+    mission: data.mission ?? '',
+    fits: data.fits ?? '',
+    links: data.links ?? [],
+    cadence_days: typeof data.cadence_days === 'number' ? data.cadence_days : 0,
+    send_match: data.send_match ?? [id],
+    sort: data.sort ?? maxSort + 1,
+    created_at: now,
+    updated_at: now,
+  }
+  db.products.push(prod)
+  writeDb(db)
+  return prod
+}
+
+export function deleteProduct(id: string): boolean {
+  const db = readDb()
+  if (!db.products) return false
+  const before = db.products.length
+  db.products = db.products.filter(p => p.id !== id)
+  if (db.products.length === before) return false
+  writeDb(db)
+  return true
 }
 
 // Products with cadence computed from the send-log (and, for the guest track, from

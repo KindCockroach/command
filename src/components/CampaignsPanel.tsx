@@ -18,7 +18,7 @@ type Draft = { subject: string; preview?: string; body: string; cta_label?: stri
 const BRAND_TEXT: Record<Brand, string> = { btfh: 'Be There For Her', wfh: 'AI Works For Her', joyful: 'Joyful Media' }
 const BRAND_COLOR: Record<Brand, string> = { btfh: '#C2693F', wfh: '#5A4FCF', joyful: '#E2508A' }
 const BRAND_EMOJI: Record<Brand, string> = { btfh: '🌙', wfh: '🎈', joyful: '🎙' }
-const KIND_TEXT: Record<string, string> = { free_download: 'Free download', paid_download: 'Paid download', live: 'Live session', membership: 'Membership', podcast: 'Podcast', service: 'Service', guest_track: 'Comms track' }
+const KIND_TEXT: Record<string, string> = { free_download: 'Free download', paid_download: 'Paid download', live: 'Live session', membership: 'Membership', podcast: 'Podcast', service: 'Service', guest_track: 'Comms track', newsletter: 'Newsletter' }
 const ORDER: Brand[] = ['btfh', 'wfh', 'joyful']
 const AUDIENCE: { id: string; text: string }[] = [
   { id: 'free_customer', text: 'Free Customers' }, { id: 'paid_customer', text: 'Paid Customers' },
@@ -43,6 +43,7 @@ export default function CampaignsPanel() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showDetails, setShowDetails] = useState(false)
   const [showOverdue, setShowOverdue] = useState(false)
+  const [adding, setAdding] = useState(false)
 
   // composer state
   const [goal, setGoal] = useState('')
@@ -110,6 +111,9 @@ export default function CampaignsPanel() {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', marginBottom: '4px', flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text)' }}>Campaigns</h2>
         <span style={miniLbl}>write it · send it</span>
+        <button onClick={() => setAdding(true)} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '5px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', borderRadius: '9px', padding: '6px 12px', fontSize: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <Plus size={13} /> Add campaign
+        </button>
       </div>
       <p style={{ fontSize: '12.5px', color: 'var(--text-subtle)', margin: '0 0 16px' }}>Pick what you&rsquo;re sending, Cap drafts it, you choose who gets it, send.</p>
 
@@ -273,7 +277,70 @@ export default function CampaignsPanel() {
           )}
         </>
       )}
+      {adding && <AddCampaignModal onClose={() => setAdding(false)} onCreated={id => { setAdding(false); load(); pick(id) }} />}
       <style>{`.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
+}
+
+// "+ Add campaign" — create a new product/campaign on the tab.
+function AddCampaignModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
+  const [name, setName] = useState('')
+  const [brand, setBrand] = useState<Brand>('joyful')
+  const [kind, setKind] = useState('newsletter')
+  const [price, setPrice] = useState('')
+  const [mission, setMission] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const color = BRAND_COLOR[brand]
+  const create = async () => {
+    if (!name.trim()) { setErr('Give it a name.'); return }
+    setBusy(true); setErr('')
+    const d = await fetch('/api/campaigns', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, brand, kind, price, mission }),
+    }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup.' }))
+    setBusy(false)
+    if (d.error || !d.product) { setErr(d.error || 'Could not create it.'); return }
+    onCreated(d.product.id)
+  }
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(10,8,20,0.5)', zIndex: 70, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '24px 16px', overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 'min(460px, 100%)', background: 'var(--bg, #fff)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px', boxShadow: '0 40px 90px -40px rgba(0,0,0,0.6)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--text)' }}>New campaign</h3>
+          <button onClick={onClose} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={18} /></button>
+        </div>
+        <p style={{ ...miniLbl, margin: '0 0 5px' }}>Name</p>
+        <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Substack, Newsletter, Black Friday" style={{ ...input, marginBottom: '12px' }} autoFocus />
+        <p style={{ ...miniLbl, margin: '0 0 5px' }}>Brand</p>
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+          {ORDER.map(b => (
+            <button key={b} onClick={() => setBrand(b)} style={{ border: `1px solid ${brand === b ? BRAND_COLOR[b] : 'var(--border)'}`, background: brand === b ? BRAND_COLOR[b] : 'transparent', color: brand === b ? '#fff' : 'var(--text-subtle)', borderRadius: '999px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{BRAND_EMOJI[b]} {BRAND_TEXT[b]}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ ...miniLbl, margin: '0 0 5px' }}>Type</p>
+            <select value={kind} onChange={e => setKind(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
+              {Object.keys(KIND_TEXT).map(k => <option key={k} value={k}>{KIND_TEXT[k]}</option>)}
+            </select>
+          </div>
+          <div style={{ width: '120px' }}>
+            <p style={{ ...miniLbl, margin: '0 0 5px' }}>Price</p>
+            <input value={price} onChange={e => setPrice(e.target.value)} placeholder="free / $33" style={input} />
+          </div>
+        </div>
+        <p style={{ ...miniLbl, margin: '0 0 5px' }}>Mission <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></p>
+        <textarea value={mission} onChange={e => setMission(e.target.value)} rows={2} placeholder="What this campaign is for" style={{ ...input, resize: 'vertical', marginBottom: '14px' }} />
+        {err && <p style={{ color: '#b23b3b', fontSize: '12.5px', margin: '0 0 10px' }}>{err}</p>}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={create} disabled={busy} style={{ display: 'flex', alignItems: 'center', gap: '7px', border: 0, borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', background: color, color: '#fff', opacity: busy ? 0.6 : 1 }}>
+            {busy ? <Loader2 size={14} className="spin" /> : <Plus size={14} />} Create campaign
+          </button>
+          <button onClick={onClose} style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: 'transparent', color: 'var(--text-subtle)' }}>Cancel</button>
+        </div>
+      </div>
     </div>
   )
 }
