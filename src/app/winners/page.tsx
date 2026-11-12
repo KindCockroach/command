@@ -81,6 +81,24 @@ export default function WinnersPage() {
   const [paste, setPaste] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
+  const [makingId, setMakingId] = useState<number | null>(null)
+  const [madeIds, setMadeIds] = useState<Set<number>>(new Set())
+
+  async function doMakeMore(r: Scored) {
+    setMakingId(r.id); setMsg('')
+    try {
+      const res = await fetch('/api/results/makemore', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_id: r.account_id, onscreen_text: r.onscreen_text, visual: r.visual, verdict: r.verdict, count: 3 }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setMsg(d.error || 'Couldn’t draft re-angles.'); return }
+      setMadeIds(prev => new Set(prev).add(r.id))
+      setMsg(`Drafted ${d.created} re-angle${d.created === 1 ? '' : 's'} into Content Day (status: idea).`)
+    } finally {
+      setMakingId(null)
+    }
+  }
 
   const load = useCallback(async (id: string) => {
     const r = await fetch(`/api/results?account_id=${encodeURIComponent(id)}`)
@@ -152,6 +170,11 @@ export default function WinnersPage() {
                     {r.fb_views !== null && <div><dt>Facebook</dt><dd>{fmt(r.fb_views)}</dd></div>}
                   </dl>
                   {r.reasons.length > 0 && <ul className="why">{r.reasons.map((x, i) => <li key={i}>{x}</li>)}</ul>}
+                  {(r.verdict === 'make_more' || r.verdict === 'rehook') && (
+                    <button className="makemore" onClick={() => doMakeMore(r)} disabled={makingId === r.id}>
+                      {makingId === r.id ? 'Drafting…' : madeIds.has(r.id) ? '✓ Drafted — make 3 more' : r.verdict === 'rehook' ? 'Keep the line, draft 3 new hooks →' : 'Make 3 more of this →'}
+                    </button>
+                  )}
                   <p className="meta">Reel {r.media_id}{r.content_id ? ` · matches RISE card #${r.content_id}` : ''}</p>
                 </article>
               ))}
@@ -195,4 +218,9 @@ const css = `
 .wl dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
 .wl .why{margin:0 0 6px;padding-left:18px;font-size:13px}
 .wl .meta{font-size:12px;color:#8A8CA3;margin:0}
+.wl .makemore{margin:4px 0 8px;padding:7px 12px;font-size:13px;font-weight:600;border:0;border-radius:8px;background:#2F7D5B;color:#fff;cursor:pointer}
+.wl .makemore:hover{background:#276a4d}
+.wl .makemore:disabled{opacity:.6;cursor:default}
+.wl .rehook .makemore{background:#8A6D1F}
+.wl .rehook .makemore:hover{background:#755c19}
 `

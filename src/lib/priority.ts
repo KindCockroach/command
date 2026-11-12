@@ -61,7 +61,16 @@ export function priorityScore(
   const cash = purpose === 'conversion' ? 10 : purpose === 'follower' ? 4 : purpose === 'engage' ? 3 : 2
   if (purpose === 'conversion') reasons.push('conversion — tied to cash')
 
-  const score = Math.max(0, Math.min(100, goal + impact + ease + ready + cash))
+  // ── Winner bonus: a card re-angled from a proven reel is the surest bet RISE has.
+  // The Winner Loop earned this — it outranks an untested idea. (This is the
+  // "winner-loop data becomes the heaviest factor" the engine always promised.)
+  let winnerBonus = 0
+  if ((p.tags ?? []).includes('from-winner')) {
+    winnerBonus = (p.tags ?? []).includes('make_more') ? 20 : 14
+    reasons.unshift('from a winning reel — proven angle')
+  }
+
+  const score = Math.max(0, Math.min(100, goal + impact + ease + ready + cash + winnerBonus))
   // Keep the 2-3 most useful reasons, dedup, ease label always included.
   const top = Array.from(new Set(reasons)).slice(0, 3)
   return { score, reasons: top, ease: easeLabel }

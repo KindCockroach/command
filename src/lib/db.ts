@@ -322,10 +322,11 @@ export type WaitlistEntry = {
 // the People view: waitlist signups (labels derived from what they claimed),
 // podcast guests (the Guest label + their deep outreach record), and manually
 // added contacts (persons of interest, paid customers, anyone Mandi adds by hand).
-export const CONTACT_LABELS = ['free_customer', 'paid_customer', 'sub_podcast', 'sub_btfh', 'sub_joyful', 'guest', 'poi', 'invited'] as const
+export const CONTACT_LABELS = ['free_customer', 'paid_customer', 'member_wellspring', 'sub_podcast', 'sub_btfh', 'sub_joyful', 'guest', 'poi', 'invited'] as const
 export type ContactLabel = typeof CONTACT_LABELS[number]
 export const CONTACT_LABEL_TEXT: Record<ContactLabel, string> = {
   free_customer: 'Free Customer', paid_customer: 'Paid Customer',
+  member_wellspring: 'Member: The Wellspring',
   sub_podcast: 'Subscriber: Podcast', sub_btfh: 'Subscriber: Be There For Her', sub_joyful: 'Subscriber: Joyful Media',
   guest: 'Guest', poi: 'Person of Interest', invited: 'Invited',
 }
@@ -557,6 +558,21 @@ export type Line = {
 
 export type SurveyResponse = { id: string; at: string; survey: string; email: string; name: string; answers: Record<string, string> }
 
+// ─── THE WELLSPRING (the membership member-area) ─────────────────────────────
+// RISE-native membership home for The Reset + community. Members are People with
+// the `member_wellspring` label (flipped on by Stripe later; addable by hand now).
+// config = what Mandi sets each week (the live room link, the time, the replay
+// archive). posts = the async community wall members write to and read.
+export type WellspringReplay = { id: string; title: string; url: string; date?: string }
+export type WellspringConfig = {
+  live_url: string        // this week's Zoom/Meet room
+  live_when: string       // human time, e.g. "Sunday · 8:00 PM CT"
+  welcome: string         // a short note from Mandi at the top of the member area
+  replays: WellspringReplay[]
+}
+export type WellspringPost = { id: string; at: string; email: string; name: string; body: string; pinned?: boolean }
+export type WellspringStore = { config: WellspringConfig; posts: WellspringPost[] }
+
 type Db = {
   content: ContentPiece[]
   lines?: Line[]
@@ -581,6 +597,7 @@ type Db = {
   sends?: SendRecord[]
   surveys?: SurveyResponse[]
   products?: Product[]
+  wellspring?: WellspringStore
   build_log?: BuildLogEntry[]
   memories: Memory[]
   projects: Project[]
@@ -773,6 +790,36 @@ export function readDb(): Db {
     db.goals = defaultDb().goals
     db.next_goal_id = defaultDb().next_goal_id
     fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2))
+  }
+  // 2026-11-11: Mandi's tangible DAILY posting cadence, as standing goals. She
+  // copy/pastes every naptime until there's capital/traction for automation, so
+  // these are volume targets (target_per_week = daily × 7), not signup goals.
+  // Idempotent: added once by title, never duplicated. Marked [cadence] so the
+  // Goals tab can group them. Plus the Wellspring membership as a 2027 goal (paused
+  // now — explicitly a next-year build, not this quarter).
+  {
+    const cadenceNow = new Date().toISOString()
+    const CADENCE: Array<{ title: string; per_week: number; notes: string }> = [
+      { title: 'Daily Medium article', per_week: 7, notes: '[cadence] 1/day — long-form home (📝 Medium).' },
+      { title: 'Daily YouTube video', per_week: 7, notes: '[cadence] 1/day — long-form (YouTube).' },
+      { title: 'YouTube Shorts', per_week: 21, notes: '[cadence] 3/day — can reuse the IG-wall / TikTok video.' },
+      { title: 'IG Trial Reels', per_week: 70, notes: '[cadence] 10/day — the volume engine; feeds the Winner Loop.' },
+      { title: 'IG wall posts', per_week: 28, notes: '[cadence] 4/day — the keepers that stay on the grid.' },
+      { title: 'TikToks', per_week: 21, notes: '[cadence] 3/day — can be the same video as IG wall / YT Shorts.' },
+    ]
+    const existing = new Set((db.goals ?? []).map(g => g.title))
+    let maxId = (db.goals ?? []).reduce((m, g) => Math.max(m, g.id), 0)
+    let goalsChanged = false
+    for (const c of CADENCE) {
+      if (existing.has(c.title)) continue
+      db.goals.push({ id: ++maxId, title: c.title, account_id: null, target_per_week: c.per_week, deadline: null, notes: c.notes, active: true, signup_tag: null, signup_target: null, signups_manual: null, created_at: cadenceNow, updated_at: cadenceNow })
+      goalsChanged = true
+    }
+    if (!existing.has('The Wellspring membership (2027)')) {
+      db.goals.push({ id: ++maxId, title: 'The Wellspring membership (2027)', account_id: null, target_per_week: 0, deadline: '2027-12-31', notes: 'PAUSED — 2027 build. RISE-native membership (Reset + community wall), Stripe→webhook→member label. Not this quarter; the weekly Reset engine earns the right to it first.', active: true, signup_tag: null, signup_target: null, signups_manual: null, created_at: cadenceNow, updated_at: cadenceNow })
+      goalsChanged = true
+    }
+    if (goalsChanged) { db.next_goal_id = maxId + 1; fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2)) }
   }
   if (!db.watch_accounts) {
     db.watch_accounts = []
@@ -1003,6 +1050,64 @@ export function addContactLabelByEmail(email: string, lbl: ContactLabel, opts: {
   c.updated_at = now
   writeDb(db)
   return c
+}
+
+// ─── THE WELLSPRING (membership) ─────────────────────────────────────────────
+const WELLSPRING_SEED: WellspringConfig = {
+  live_url: '',
+  live_when: 'Sundays · 8:00 PM CT',
+  welcome: 'You made it. This is your place to land — every Reset, and the women walking it with you. Take a breath. You belong here.',
+  replays: [],
+}
+
+export function getWellspring(): WellspringStore {
+  const db = readDb()
+  if (!db.wellspring) { db.wellspring = { config: { ...WELLSPRING_SEED }, posts: [] }; writeDb(db) }
+  return db.wellspring
+}
+
+// Is this email an active Wellspring member? True when a People record for the
+// email carries the member_wellspring label (Stripe flips it on; Mandi can too).
+export function isWellspringMember(email: string): boolean {
+  const e = (email || '').trim().toLowerCase()
+  if (!e) return false
+  return getPeople().some(p => p.email === e && p.labels.includes('member_wellspring'))
+}
+
+export function updateWellspringConfig(patch: Partial<WellspringConfig>): WellspringConfig {
+  const db = readDb()
+  if (!db.wellspring) db.wellspring = { config: { ...WELLSPRING_SEED }, posts: [] }
+  db.wellspring.config = { ...db.wellspring.config, ...patch }
+  if (Array.isArray(patch.replays)) db.wellspring.config.replays = patch.replays
+  writeDb(db)
+  return db.wellspring.config
+}
+
+export function addWellspringPost(data: { email: string; name?: string; body: string }): WellspringPost | null {
+  const body = (data.body || '').trim()
+  if (!body) return null
+  const db = readDb()
+  if (!db.wellspring) db.wellspring = { config: { ...WELLSPRING_SEED }, posts: [] }
+  const post: WellspringPost = {
+    id: `wp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    at: new Date().toISOString(),
+    email: (data.email || '').trim().toLowerCase(),
+    name: (data.name || '').trim(),
+    body: body.slice(0, 2000),
+  }
+  db.wellspring.posts.unshift(post)
+  writeDb(db)
+  return post
+}
+
+export function deleteWellspringPost(id: string): boolean {
+  const db = readDb()
+  if (!db.wellspring) return false
+  const before = db.wellspring.posts.length
+  db.wellspring.posts = db.wellspring.posts.filter(p => p.id !== id)
+  const changed = db.wellspring.posts.length !== before
+  if (changed) writeDb(db)
+  return changed
 }
 
 // --- Products (the Campaigns tab) ---
