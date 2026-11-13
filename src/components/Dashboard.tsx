@@ -7,7 +7,6 @@ import TasksPanel from './TasksPanel'
 import NotesPanel from './NotesPanel'
 import WorkflowsPanel from './WorkflowsPanel'
 import AssistantsPanel from './AssistantsPanel'
-import AvatarsPanel from './AvatarsPanel'
 import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
 import ResearchPanel from './ResearchPanel'
@@ -34,7 +33,7 @@ import Link from 'next/link'
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 // Props are still passed by the page; the old Kanban pipeline view that used them is gone.
 interface Props { initialContent: unknown[]; stats: Stats }
-type View = 'lines' | 'command' | 'activity' | 'contentday' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'sites' | 'audience' | 'avatars' | 'media' | 'podcast' | 'people' | 'campaigns' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
+type View = 'lines' | 'command' | 'activity' | 'contentday' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'sites' | 'audience' | 'media' | 'podcast' | 'people' | 'campaigns' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
 
 // Renders children on first activation and KEEPS them mounted after — hidden with
 // display:none when inactive — so long-running work (podcast generation) and state
@@ -89,7 +88,6 @@ export default function Dashboard(_props: Props) {
     { id: 'audience',   label: 'Audience',      icon: <span style={{fontSize:'12px'}}>👤</span> },
     { id: 'audit',      label: 'Trends',        icon: <Radar size={12} /> },
     { id: 'research',   label: 'Research',      icon: <span style={{fontSize:'12px'}}>🔬</span> },
-    { id: 'avatars',    label: 'Avatars',       icon: <span style={{fontSize:'12px'}}>🎭</span> },
     { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
     { id: 'podcast',    label: 'Podcast',       icon: <Mic size={12} /> },
     { id: 'people',     label: 'People',        icon: <Users size={12} /> },
@@ -214,7 +212,6 @@ export default function Dashboard(_props: Props) {
         {view === 'audit'      && <AuditPanel />}
         <KeepAlive active={view === 'research'}><ResearchPanel /></KeepAlive>
         {view === 'goals'      && <GoalsPanel />}
-        {view === 'avatars'    && <AvatarsPanel />}
         {/* Podcast stays mounted once opened, so a running generation survives
             clicking to another tab and finishes into the still-live component. */}
         <KeepAlive active={view === 'podcast'}>

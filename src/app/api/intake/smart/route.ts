@@ -47,7 +47,7 @@ function executeActions(actions: PlannedAction[], origin: string, media?: { url?
           continue
         }
         const av = upsertAvatar(a.payload)
-        results.push(`🎭 Avatar created: ${av.name} — ${av.tagline || av.niche} (link a HeyGen photo + voice in the Avatars tab before video)`)
+        results.push(`🎭 Avatar created: ${av.name} — ${av.tagline || av.niche} (saved — the Avatars tab was retired, so it has no HeyGen photo or voice linked)`)
       } else if (a.action === 'create_account') {
         if (getAllBrandAccounts().some(x => x.id === a.payload.id)) {
           results.push(`⚠ Skipped account "${a.payload.id}" — one with that id already exists (nothing overwritten)`)
