@@ -1,9 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { ContentPiece } from '@/lib/db'
-import { effectiveStatus } from '@/lib/contentStatus'
 import AccountsPanel from './AccountsPanel'
-import DailyBriefingPanel from './DailyBriefing'
 import ProjectsPanel from './ProjectsPanel'
 import VisionPanel from './VisionPanel'
 import TasksPanel from './TasksPanel'
@@ -30,14 +27,14 @@ import StoryStudio from './StoryStudio'
 import AuditPanel from './AuditPanel'
 import AudiencePanel from './AudiencePanel'
 import GoalsPanel from './GoalsPanel'
-import ContentScroller from './ContentScroller'
 import SitesPanel from './SitesPanel'
-import { Lightbulb, Loader2, CheckCircle2, Archive, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target, Megaphone } from 'lucide-react'
+import { Archive, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target, Megaphone } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
-interface Props { initialContent: ContentPiece[]; stats: Stats }
-type View = 'lines' | 'command' | 'activity' | 'contentday' | 'pipeline' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'sites' | 'audience' | 'avatars' | 'media' | 'podcast' | 'people' | 'campaigns' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
+// Props are still passed by the page; the old Kanban pipeline view that used them is gone.
+interface Props { initialContent: unknown[]; stats: Stats }
+type View = 'lines' | 'command' | 'activity' | 'contentday' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'sites' | 'audience' | 'avatars' | 'media' | 'podcast' | 'people' | 'campaigns' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
 
 // Renders children on first activation and KEEPS them mounted after — hidden with
 // display:none when inactive — so long-running work (podcast generation) and state
@@ -49,12 +46,9 @@ function KeepAlive({ active, children }: { active: boolean; children: React.Reac
   return <div style={{ display: active ? 'block' : 'none' }}>{children}</div>
 }
 
-export default function Dashboard({ initialContent, stats: initialStats }: Props) {
-  const [content, setContent] = useState(initialContent)
-  const [stats, setStats] = useState(initialStats)
+export default function Dashboard(_props: Props) {
   const [view, setView] = useState<View>('lines')
   const [dark, setDark] = useState(false)
-  const [scroller, setScroller] = useState<{ status: string; label: string } | null>(null)
   const [navOrder, setNavOrder] = useState<View[]>([])
   const [dragId, setDragId] = useState<View | null>(null)
 
@@ -64,7 +58,8 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     // Cross-tab navigation (e.g. briefing "Publish now" → Accounts approval queue)
     const nav = (e: Event) => {
       const view = (e as CustomEvent).detail?.view
-      if (view) setView(view as View)
+      // 'pipeline' was the old Kanban view — it now lives in Daily Command
+      if (view) setView((view === 'pipeline' ? 'command' : view) as View)
     }
     window.addEventListener('station:navigate', nav)
     return () => window.removeEventListener('station:navigate', nav)
@@ -77,23 +72,12 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
     else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('cc-theme', 'light') }
   }
 
-  // Counts follow effectiveStatus so a "ready" post with no media is counted
-  // under Being Built, not Ready to Publish (see lib/contentStatus).
-  const recalc = (c: ContentPiece[]) => ({
-    ideas: c.filter(x => effectiveStatus(x) === 'idea').length,
-    inProgress: c.filter(x => effectiveStatus(x) === 'in_progress').length,
-    ready: c.filter(x => effectiveStatus(x) === 'ready').length,
-    totalActive: c.length,
-  })
-
   const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode; accent?: boolean }[] = [
     { id: 'lines',      label: 'Quick Post',    icon: <PenLine size={12} />, accent: true },
     { id: 'command',    label: 'Daily Command', icon: <Zap size={12} />, accent: true },
     { id: 'activity',   label: 'Activity',      icon: <Radar size={12} /> },
     { id: 'contentday', label: 'Content Day',   icon: <Mic size={12} /> },
     { id: 'goals',      label: 'Goals',         icon: <Target size={12} /> },
-    // Content tab merged into Daily Command (the Work Queue). Old 'pipeline' Kanban
-    // view still renders if navigated to, but it's no longer in the nav.
     { id: 'projects',   label: 'Projects',      icon: <FolderKanban size={12} /> },
     { id: 'tasks',      label: 'Tasks',         icon: <CheckSquare size={12} /> },
     { id: 'assistants', label: 'Assistants',    icon: <Bot size={12} /> },
@@ -217,39 +201,6 @@ export default function Dashboard({ initialContent, stats: initialStats }: Props
         <KeepAlive active={view === 'command'}><HomeScreen /></KeepAlive>
         <KeepAlive active={view === 'activity'}><ActivityStation /></KeepAlive>
         <KeepAlive active={view === 'contentday'}><ContentDay /></KeepAlive>
-
-        {view === 'pipeline' && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em' }}>Content Pipeline</h2>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px', background: 'var(--hot-pink-light)', color: 'var(--hot-pink)' }}>🎙 3 podcasts queued</span>
-                <span style={{ fontSize: '11px', fontWeight: 700, padding: '5px 12px', borderRadius: '20px', background: 'var(--ready-bg)', color: 'var(--ready-color)' }}>✨ {stats.ready} ready to publish</span>
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-              {[
-                { key: 'ideas' as const,      label: 'Ideas',            sub: 'Seeds',          color: 'var(--idea-color)',     bg: 'var(--idea-bg)',     icon: <Lightbulb size={16} /> },
-                { key: 'inProgress' as const, label: 'In Progress',      sub: 'Being built',    color: 'var(--progress-color)', bg: 'var(--progress-bg)', icon: <Loader2 size={16} /> },
-                { key: 'ready' as const,       label: 'Ready to Publish', sub: 'Needs your ✓',  color: 'var(--ready-color)',    bg: 'var(--ready-bg)',    icon: <CheckCircle2 size={16} /> },
-              ].map(s => (
-                <button key={s.key}
-                  onClick={() => setScroller({ status: s.key === 'ideas' ? 'idea' : s.key === 'inProgress' ? 'in_progress' : 'ready', label: s.label })}
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', borderTop: `4px solid ${s.color}`, cursor: 'pointer', textAlign: 'left', transition: 'transform 0.12s, box-shadow 0.12s', fontFamily: 'inherit' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)' }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}>
-                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: s.bg, color: s.color, flexShrink: 0 }}>{s.icon}</div>
-                  <div>
-                    <p style={{ fontSize: '26px', fontWeight: 800, color: 'var(--navy)', lineHeight: 1 }}>{stats[s.key]}</p>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.sub} · click to review →</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-            {scroller && <ContentScroller status={scroller.status} label={scroller.label} onClose={() => setScroller(null)} />}
-            <DailyBriefingPanel content={content} onReview={() => setScroller({ status: 'ready', label: 'Ready to Publish' })} />
-          </>
-        )}
 
         {view === 'projects'   && <ProjectsPanel />}
         {view === 'tasks'      && <TasksPanel />}
