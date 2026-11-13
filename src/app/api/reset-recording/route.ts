@@ -13,7 +13,7 @@ export const maxDuration = 120
 // Owner only (station cookie). mode 'test' sends one copy to TEST_TO; 'send' = the group.
 // Native via Resend; each send upserts the contact into GHL and logs to People.
 const TEST_TO = { name: 'Mandi', email: 'mandijoy.beck@gmail.com' }
-const FROM = `"Mandi — Be There For Her" <hi@aimomeducation.com>`
+const FROM = `"Mandi — Joyful Media Productions" <hi@aimomeducation.com>`
 const SOURCE = 'Be There For Her · Reset recording'
 const RECORDING = 'https://drive.google.com/file/d/1ZfvbnEsVvbdB3cU86m8HzIja0dUr6KDf/view?usp=sharing'
 const SURVEY = 'https://www.bethereforher.com/reset/survey'
