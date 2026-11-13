@@ -45,7 +45,8 @@ function attendeeHtml(name: string): string {
   return wrap(`<p>${hi}</p>
 <p>You did something most women never do: you gave yourself an hour. Thank you for spending it with me.</p>
 <p>Here&rsquo;s the recording, so you can drop back into that quiet whenever the week gets loud again:</p>
-<p style="margin:22px 0">${btn(RECORDING, '▶ Watch the Reset')}</p>
+<p style="margin:22px 0 8px">${btn(RECORDING, '▶ Watch the Reset')}</p>
+<p style="margin:0 0 22px;font-size:14px;color:#6a5a62"><b>Skip ahead to 30:01</b> &mdash; the first stretch is just us getting the tech sorted. The good stuff starts there.</p>
 <p>And I&rsquo;d love to know how it landed for you. If you like a prompt to guide you, your reflections are welcome right here:</p>
 <p style="margin:22px 0">${btn(SURVEY, 'Share your reflections →', false)}</p>
 <p>Or simply <b>reply to this email</b> — your words come straight to me, and I read every one.</p>
@@ -57,7 +58,8 @@ function noshowHtml(name: string): string {
   return wrap(`<p>${hi}</p>
 <p>Life happened Sunday &mdash; I get it. That&rsquo;s the whole reason The Reset exists.</p>
 <p>So here&rsquo;s the recording. One hour, just for you. Claim it when you can:</p>
-<p style="margin:22px 0">${btn(RECORDING, '▶ Watch the Reset')}</p>
+<p style="margin:22px 0 8px">${btn(RECORDING, '▶ Watch the Reset')}</p>
+<p style="margin:0 0 22px;font-size:14px;color:#6a5a62"><b>Skip ahead to 30:01</b> &mdash; the first stretch is just us getting the tech sorted. The good stuff starts there.</p>
 <p style="border-left:3px solid #E0A458;padding-left:14px;color:#6a5a62;font-style:italic">
 &ldquo;It was a delightful experience to wrap up the end of the week while starting the next.&rdquo;<br>&mdash; Elizabeth, after last Sunday</p>
 <p>Your seat&rsquo;s still warm. Come live this Sunday at 8 PM CT &mdash; it hits different in real time, together.</p>
