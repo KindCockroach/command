@@ -113,12 +113,12 @@ export default function CommandQueue() {
   const approve = async (p: ContentPiece) => {
     setBusy(p.id)
     try {
-      await fetch('/api/ghl', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contentId: p.id, autoSchedule: true }) })
+      await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id, status: 'approved' }) })
       setPosts(prev => prev.filter(x => x.id !== p.id))
     } finally { setBusy(null) }
   }
   // "Posted" — she already posted it natively (or it went out). Mark published and
-  // clear it from view. No GHL. This is the fix for "already-posted still showing".
+  // clear it from view. This is the fix for "already-posted still showing".
   const markPosted = async (p: ContentPiece) => {
     setBusy(p.id)
     try {

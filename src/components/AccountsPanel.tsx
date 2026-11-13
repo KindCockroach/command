@@ -170,13 +170,10 @@ function AccountEditorModal({ account, onSave, onDelete, onClose }: { account: P
   const [saving, setSaving] = useState(false)
   const [audienceOpts, setAudienceOpts] = useState<{ id: string; name: string; emoji: string }[]>([])
   const [avatarOpts, setAvatarOpts] = useState<{ id: string; name: string; emoji: string }[]>([])
-  const [ghlOpts, setGhlOpts] = useState<{ id: string; label: string; platform: string }[]>([])
   useEffect(() => {
     fetch('/api/audiences').then(r => r.json()).then(setAudienceOpts).catch(() => {})
     fetch('/api/avatars').then(r => r.json()).then(setAvatarOpts).catch(() => {})
-    fetch('/api/ghl?accounts=1').then(r => r.json()).then(d => setGhlOpts((d.accounts ?? []).map((a: Record<string, string>) => ({ id: a.id || a._id || a.oauthId, label: a.name || a.username || 'account', platform: a.platform || a.type || '' })).filter((a: { id: string }) => a.id))).catch(() => {})
   }, [])
-  const toggleGhl = (id: string) => set('ghl_account_ids', ((form.ghl_account_ids ?? []).includes(id) ? (form.ghl_account_ids ?? []).filter(x => x !== id) : [...(form.ghl_account_ids ?? []), id]))
   const isNew = !account.id
   const set = (k: keyof BrandAccount, v: unknown) => setForm(f => ({ ...f, [k]: v }))
 
@@ -306,22 +303,6 @@ function AccountEditorModal({ account, onSave, onDelete, onClose }: { account: P
           </div>
           <div>{lbl('💰 Currently pushing — which business → product this account markets right now')}
             <input value={form.pushing ?? ''} onChange={e => set('pushing', e.target.value)} placeholder='e.g. "Room30 → Reset Button Workshop" or "RISE → Caption Writer $27" or "Pure give — no offer yet"' style={fld} />
-          </div>
-          <div>
-            {lbl('🔗 Connect to GHL — where approved posts publish (pick the exact account, so it never mis-routes)')}
-            {ghlOpts.length === 0
-              ? <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>No connected GHL accounts found (or GHL not configured).</p>
-              : <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {ghlOpts.map(g => {
-                    const on = (form.ghl_account_ids ?? []).includes(g.id)
-                    return (
-                      <button key={g.id} type="button" onClick={() => toggleGhl(g.id)}
-                        style={{ fontSize: '11px', padding: '5px 11px', borderRadius: '20px', border: `1px solid ${on ? '#3DAA7C' : 'var(--border)'}`, background: on ? 'rgba(61,170,124,0.12)' : 'var(--surface)', color: on ? '#2E8B60' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 700 }}>
-                        {on ? '✓ ' : ''}{g.label} · {g.platform}
-                      </button>
-                    )
-                  })}
-                </div>}
           </div>
           <div>{lbl('Profile URL')}<input value={form.url ?? ''} onChange={e => set('url', e.target.value)} placeholder="https://instagram.com/..." style={fld} /></div>
           <div>{lbl('Non-negotiable rules / notes (the generator obeys these)')}<textarea value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} rows={3} style={area} /></div>
@@ -1016,7 +997,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
 
   const statusChip = hasQuestions
     ? { label: '❓ Needs your answers', bg: 'rgba(224,82,82,0.1)', color: '#E05252' }
-    : isApproved ? { label: 'Approved · awaiting GHL', bg: 'rgba(242,166,90,0.14)', color: '#C47A1A' }
+    : isApproved ? { label: 'Approved · post it, then tap Posted', bg: 'rgba(242,166,90,0.14)', color: '#C47A1A' }
     : isScheduled ? { label: `Scheduled${post.scheduled_at ? ` · ${new Date(post.scheduled_at).toLocaleDateString()}` : ''}`, bg: 'rgba(76,201,240,0.14)', color: '#2B9CC4' }
     : (post.status === 'published' || post.status === 'archived') ? { label: '✓ Posted', bg: 'rgba(61,170,124,0.14)', color: '#3DAA7C' }
     : { label: 'Ready for review', bg: 'var(--surface-raised, rgba(0,0,0,0.04))', color: 'var(--text-muted)' }
@@ -1028,7 +1009,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
         {/* Approval checkbox */}
         <button
           onClick={e => { e.stopPropagation(); if (isPending && !approving && !hasQuestions) onApprove(post) }}
-          title={hasQuestions ? 'Answer its questions first' : isPending ? 'Approve → send to scheduler' : isApproved ? 'Approved — waiting for GHL connection' : isScheduled ? 'Scheduled in GHL' : 'Posted'}
+          title={hasQuestions ? 'Answer its questions first' : isPending ? 'Approve' : isApproved ? 'Approved — post it, then mark it Posted' : isScheduled ? 'Scheduled' : 'Posted'}
           style={{
             width: '20px', height: '20px', borderRadius: '6px', flexShrink: 0, marginTop: '1px',
             border: isPending ? `2px solid ${hasQuestions ? '#E05252' : 'var(--border)'}` : 'none',
@@ -1644,7 +1625,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
             </div>
           )}
 
-          {/* Action bar — approve (auto-publish via GHL) / posted (I did it natively) / decline */}
+          {/* Action bar — approve / posted (I did it natively) / decline */}
           {isPending && !hasQuestions && (
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => onApprove(post)} disabled={approving || marking}
@@ -1652,7 +1633,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
                 {approving ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Approving…</> : <><CheckCircle2 size={14} /> Approve</>}
               </button>
               <button onClick={markPosted} disabled={marking || approving}
-                title="I already posted this natively — mark it posted and clear it from the queue (no GHL)"
+                title="I already posted this natively — mark it posted and clear it from the queue"
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid #3DAA7C', background: 'transparent', color: '#3DAA7C', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: marking ? 0.7 : 1 }}>
                 {marking ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : '📤'} Posted
               </button>
@@ -1664,15 +1645,6 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
           )}
           {approveNote && (
             <p style={{ fontSize: '11px', fontWeight: 600, lineHeight: 1.45, padding: '9px 11px', borderRadius: '9px', background: approveNote.startsWith('✓') ? 'rgba(61,170,124,0.1)' : 'rgba(242,166,90,0.12)', color: approveNote.startsWith('✓') ? '#2E8B60' : '#C47A1A' }}>{approveNote}</p>
-          )}
-          {/* Retry GHL push — shows when a post is approved but hasn't confirmed to
-              GHL (no schedule/post id), or when the last push returned a warning.
-              Re-runs the exact same push so she never has to decline + re-approve. */}
-          {((isApproved && !isScheduled && !post.ghl_post_id) || (!!approveNote && !approveNote.startsWith('✓'))) && (
-            <button onClick={() => onApprove(post)} disabled={approving}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: `1px solid ${accentColor}`, background: 'transparent', color: accentColor, fontWeight: 800, fontSize: '12px', cursor: approving ? 'default' : 'pointer', opacity: approving ? 0.7 : 1 }}>
-              {approving ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Pushing to GHL…</> : <><RefreshCw size={13} /> Try GHL push again</>}
-            </button>
           )}
           {showDecline && (
             <div style={{ padding: '12px', background: 'rgba(224,82,82,0.05)', border: '1px solid rgba(224,82,82,0.25)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1698,7 +1670,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {isApproved && (
                 <p style={{ fontSize: '11px', color: '#C47A1A', background: 'rgba(242,166,90,0.1)', padding: '8px 10px', borderRadius: '8px', lineHeight: 1.5 }}>
-                  Approved, but not auto-scheduled (see the note above for why — usually GHL auto-publish is paused). <strong>Manual mode:</strong> copy the post above, publish it on the platform yourself, then mark it posted below.
+                  Approved. Copy the post above, publish it on the platform yourself, then mark it posted below.
                 </p>
               )}
               <button onClick={markPosted} disabled={marking}
@@ -1726,7 +1698,6 @@ export default function AccountsPanel() {
   const [reordering, setReordering] = useState(false)   // grid + up/down arrows to set custom scroll order
   const [approvingId, setApprovingId] = useState<number | null>(null)
   const [approveNotes, setApproveNotes] = useState<Record<number, string>>({})
-  const [ghlConfigured, setGhlConfigured] = useState<boolean | null>(null)
   const [showArchive, setShowArchive] = useState(false)
   const [queueFilter, setQueueFilter] = useState('all')
   const [postSearch, setPostSearch] = useState('')   // keyword search within the open account
@@ -1811,30 +1782,21 @@ export default function AccountsPanel() {
       setAudienceNames(map)
     }).catch(() => {})
     loadContent()
-    // GHL sync: check connection + auto-archive anything GHL has posted
-    fetch('/api/ghl').then(r => r.json()).then(d => {
-      setGhlConfigured(!!d.configured)
-      if (d.archived?.length) loadContent()
-    }).catch(() => setGhlConfigured(false))
   }, [loadContent])
 
+  // Approve = mark it approved. Nothing is pushed anywhere; she posts it herself
+  // and taps Posted (GoHighLevel publishing was removed).
   const approve = async (post: ContentPiece) => {
     setApprovingId(post.id)
     try {
-      const res = await fetch('/api/ghl', {
-        method: 'POST',
+      const res = await fetch('/api/content', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contentId: post.id, autoSchedule: true }),
+        body: JSON.stringify({ id: post.id, status: 'approved' }),
       }).catch(() => null)
-      const d = res ? await res.json().catch(() => ({})) : {}
-      // Surface WHY it didn't schedule instead of failing silently.
-      let msg = ''
-      if (d.scheduled && d.note) msg = `⚠ ${d.note}`
-      else if (d.scheduled) msg = `✓ Scheduled in GHL${typeof d.mediaCount === 'number' && d.mediaCount > 0 ? ` · ${d.mediaCount} image${d.mediaCount > 1 ? 's' : ''} sent` : ''}${d.scheduledAt ? ` · ${new Date(d.scheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}`
-      else if (d.paused) msg = '⏸ Approved & queued — GHL auto-publish is PAUSED (set GHL_AUTOPUBLISH_PAUSED=false in Railway to resume).'
-      else if (d.configured === false) msg = '⏸ Approved & queued — GHL isn\'t connected yet (add GHL_API_KEY + GHL_LOCATION_ID).'
-      else if (d.queued) msg = `⚠ Approved but NOT scheduled — ${d.note || 'GHL didn\'t accept it. Re-approve after fixing.'}`
-      else msg = '⚠ Approved — no confirmation from GHL. Try again.'
+      const msg = res?.ok
+        ? '✓ Approved — post it, then tap Posted.'
+        : `⚠ Couldn't save the approval${res ? ` (error ${res.status})` : ' (network error)'}. Try again.`
       setApproveNotes(n => ({ ...n, [post.id]: msg }))
       loadContent()
     } finally {
@@ -2096,11 +2058,6 @@ export default function AccountsPanel() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {ghlConfigured === false && (
-            <span className="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg" style={{ background: '#FEF5EA', color: '#F2A65A' }}>
-              GHL not connected — approvals queue until the key is added
-            </span>
-          )}
           <button onClick={() => { setSelectMode(m => !m); setSelected(new Set()) }}
             className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-lg"
             style={{ background: selectMode ? 'var(--purple)' : 'var(--surface)', color: selectMode ? '#fff' : 'var(--text-muted)', border: '1px solid var(--border)', cursor: 'pointer' }}>
@@ -2318,7 +2275,7 @@ export default function AccountsPanel() {
 
       {/* Security — a quiet footnote, not a billboard */}
       <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontSize: '10.5px', color: 'var(--text-subtle)', opacity: 0.75, marginTop: '4px' }}>
-        <Lock size={10} /> Passwords never live here — approving only sends to your scheduler.
+        <Lock size={10} /> Passwords never live here — approving never posts for you.
       </p>
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </div>

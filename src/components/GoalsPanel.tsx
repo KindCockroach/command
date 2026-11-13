@@ -241,7 +241,7 @@ function ScheduleCalendar({ goals, accounts }: { goals: GoalRow[]; accounts: Bra
       <div style={{ display: 'flex', gap: '14px', marginTop: '10px', flexWrap: 'wrap' }}>
         {[
           { c: '#3daa7c', l: 'Posted' },
-          { c: '#4CC9F0', l: 'Scheduled (GHL)' },
+          { c: '#4CC9F0', l: 'Approved / scheduled' },
         ].map(x => (
           <span key={x.l} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
             <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: x.c }} /> {x.l}
@@ -489,7 +489,7 @@ export default function GoalsPanel() {
       {/* Signups = the score. Leave blank for a posts-only goal. */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '10px' }}>
         <div>
-          {lbl('Signup tag in GHL (optional)')}
+          {lbl('Signup tag (label only — no longer auto-counted)')}
           <input value={form.signup_tag} onChange={e => setForm(f => ({ ...f, signup_tag: e.target.value }))} placeholder="e.g. btfh-cookbook" style={fld} />
         </div>
         <div>
@@ -562,7 +562,7 @@ export default function GoalsPanel() {
                   🙋 {g.signups}{tgt ? ` of ${tgt}` : ''} signups{g.active && g.signupsExpectedByToday !== null && tgt ? <> · should be at {g.signupsExpectedByToday} by today</> : null}
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>
-                  {g.signupError ? `⚠ ${g.signupError}` : <>{g.signup_tag ? `tag ${g.signup_tag}` : 'manual'}{g.signup_tag && g.signups_manual ? ` + ${g.signups_manual} manual` : ''} · since {g.signupsSince}</>}
+                  {g.signupError ? `⚠ ${g.signupError}` : <>manual count · since {g.signupsSince}</>}
                 </span>
               </div>
               {tgt > 0 && (
