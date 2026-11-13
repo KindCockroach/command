@@ -10,6 +10,18 @@ const nextConfig: NextConfig = {
     // episodes (>100MB) still want the direct-to-R2 path (bucket CORS).
     proxyClientMaxBodySize: '100mb',
   },
+  // Retired product pages (Caption Writer, Seen, Queen, Lite, Journal) → homepage.
+  // Temporary (307) so a path can be brought back later without browsers having
+  // cached the redirect forever.
+  async redirects() {
+    return [
+      '/captionwriter', '/captionwriter/welcome',
+      '/seen', '/seen/welcome',
+      '/queen', '/queen/welcome',
+      '/lite', '/lite/welcome',
+      '/journal',
+    ].map(source => ({ source, destination: '/', permanent: false }))
+  },
 };
 
 export default nextConfig;

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Gate for the private Command Center. Everything is private EXCEPT the public
-// funnel (homepage, sales pages, welcome pages, the Caption Keeper waitlist) and
-// the one API the waitlist form posts to.
+// funnel (homepage, sales pages, welcome pages) and the signup API the public
+// forms post to. (Retired /captionwriter /seen /queen /lite /journal now redirect
+// to / in next.config.ts.)
 //
 // Fail-open by design: if STATION_KEY is unset, nothing is locked — so you can
 // never lock yourself out, and local dev stays open. Set STATION_KEY in Railway
@@ -12,8 +13,6 @@ const COOKIE = 'station_auth'
 
 function isPublic(path: string): boolean {
   if (path === '/') return true
-  if (path === '/seen' || path === '/queen' || path === '/captionwriter') return true
-  if (path === '/journal') return true
   if (path === '/reset' || path === '/cheatcode' || path === '/workshop') return true // public session pages (+ /workshop redirect)
   if (path === '/reset/survey' || path === '/api/survey') return true // post-Reset feedback survey (native)
   if (path === '/unsubscribe' || path === '/api/unsubscribe') return true // email opt-out (signed link from every campaign email)
@@ -34,9 +33,7 @@ function isPublic(path: string): boolean {
   if (path === '/book' || path === '/api/podcast/schedule') return true // guest scheduler (/book/manage stays private; admin actions check the cookie in the route)
   if (path === '/wellspring' || path === '/bethereforher/wellspring') return true // The Wellspring membership
   if (path === '/resetwelcome' || path === '/bethereforher/resetwelcome') return true // Reset registrants' welcome + gift
-  if (path === '/lite' || path === '/lite/welcome') return true
-  if (/^\/(seen|queen|captionwriter)\/welcome$/.test(path)) return true
-  if (path === '/api/journal-waitlist') return true // public waitlist form
+  if (path === '/api/journal-waitlist') return true // public signup form (podcast page, BTFH opt-in, Wellspring)
   return false
 }
 

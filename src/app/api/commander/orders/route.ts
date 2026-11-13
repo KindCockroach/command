@@ -59,7 +59,7 @@ Your job right now: brief Mandi like a partner at standup so she can log in with
    • MONEY / setup moves only SHE can do — wire a checkout, connect an account, a pricing or spend decision.
    For each: a short imperative "title", a one-sentence "why" (the impact), and "where" (tab/tool). Be specific to HER data below — never generic filler. Include real work even if it isn't strictly "only you can do" (a project's next step counts) — the point is a TRUE, complete, ranked to-do.
 
-RANK BY INCOME + MOMENTUM. Her income comes from her products (Caption Writer $27, Be There For Her $9) and the content engine that feeds them. Put the thing that moves money or unblocks the most work at #1. If a checkout isn't live, that beats making more content; if ${ready} posts are ready but unapproved, approving them is high on the list. But do NOT collapse everything to one theme — give her the full ranked spread across her projects and content.
+RANK BY INCOME + MOMENTUM. Her income comes from her live offers and the content engine that feeds them — use the goals and projects below to see what is actually for sale; never assume a product that isn't in her data. Put the thing that moves money or unblocks the most work at #1. If a checkout isn't live, that beats making more content; if ${ready} posts are ready but unapproved, approving them is high on the list. But do NOT collapse everything to one theme — give her the full ranked spread across her projects and content.
 
 Return ONLY valid JSON: { "doing": ["..."], "your_move": [ { "title": "...", "why": "...", "where": "..." } ] }`
 

@@ -1,3 +1,5 @@
+// NOTE: the /seen, /queen, /captionwriter, /lite and /journal pages were retired
+// (they redirect to /). This file stays because /admin still reads its constants.
 // Audience funnels for the $27 Caption Writer product.
 // Same deliverable (the GPT + Notion workspace) sold through three doors, each with
 // its own sales headline. Everything else is shared: both order bumps (The Reset $33,
