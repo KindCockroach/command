@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Loader2, RefreshCw, Moon, Send, MessageCircle, Search } from 'lucide-react'
 import CommanderModal from './CommanderModal'
-import { executeCommanderAction, commanderActionLabel, shouldAutoRun, type CommanderAction as Action } from '@/lib/commanderActions'
+import { parseReceipts, receiptLine, withReceipts, shredRequest, announceDataChanged, type CommanderReceipt } from '@/lib/commanderActions'
 
 // THE ACTIVITY STATION — the window into RISE while Mandi's away. A running, grouped
 // feed of everything the station did (drops, transcripts, drafts, approvals, the
@@ -11,7 +11,7 @@ import { executeCommanderAction, commanderActionLabel, shouldAutoRun, type Comma
 // become agentic without being present.
 
 type Ev = { id: number; ts: string; type: string; title: string; detail?: string; icon?: string; source?: string; account_id?: string | null; content_id?: number | null }
-type Msg = { role: 'user' | 'assistant'; content: string; actions?: Action[] }
+type Msg = { role: 'user' | 'assistant'; content: string; receipts?: CommanderReceipt[] }
 
 const TYPE_TINT: Record<string, string> = {
   drop: '#5A4FCF', transcribed: '#2B9CC4', post_created: '#7C3AED', post_approved: '#2E8B60',
@@ -45,8 +45,6 @@ export default function ActivityStation() {
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [q, setQ] = useState('')
   const [asking, setAsking] = useState(false)
-  const [actStatus, setActStatus] = useState<Record<string, string>>({})
-  const [queueRunning, setQueueRunning] = useState<number | null>(null)
   const [shredInput, setShredInput] = useState<string | null>(null)
   const chatEnd = useRef<HTMLDivElement>(null)
   // Hashtag scout
@@ -87,45 +85,18 @@ export default function ActivityStation() {
     const digest = events.slice(0, 40).map(e => `${rel(e.ts)} · ${e.title}${e.detail ? ` — ${e.detail}` : ''}`).join('\n')
     const sent = next.map((m, i) => i === next.length - 1
       ? { role: m.role, content: `${m.content}\n\n(RISE ACTIVITY FEED FOR CONTEXT — this is what you've been doing:\n${digest}\n)` }
-      : { role: m.role, content: m.content })
+      : { role: m.role, content: m.role === 'assistant' ? withReceipts(m.content, m.receipts) : m.content })
     try {
       const d = await fetch('/api/commander/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: sent }) }).then(r => r.json())
-      const actions: Action[] = Array.isArray(d.actions) ? d.actions : []
-      setMsgs(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Say that again?', actions }])
-      // Same JUST-DO-IT behavior as the Home Commander: auto-run everything except
-      // shred (which opens the 20-account preview). This chat used to drop actions entirely.
-      const mi = next.length // index of the assistant message just appended
-      const autoActions = actions.map((a, ai) => ({ a, ai })).filter(x => shouldAutoRun(x.a.type))
-      if (autoActions.length) {
-        setQueueRunning(mi)
-        for (const { a, ai } of autoActions) {
-          // eslint-disable-next-line no-await-in-loop
-          await runAction(`${mi}-${ai}`, a)
-        }
-        setQueueRunning(null)
-      }
+      // The tools already ran on the server. Receipts are what actually happened.
+      const receipts = parseReceipts(d.receipts)
+      const fallback = d.error ? `⚠ ${d.error}` : receipts.length ? '' : '⚠ No reply came back and nothing was done — say that again?'
+      setMsgs(m => [...m, { role: 'assistant', content: d.reply || fallback, receipts }])
+      announceDataChanged(receipts)
+      const shred = shredRequest(receipts)
+      if (shred !== null) setShredInput(shred)
     } catch { setMsgs(m => [...m, { role: 'assistant', content: 'Connection hiccup — try again.' }]) }
     setAsking(false)
-  }
-
-  // One action → the shared runner. shred opens the cross-account preview modal.
-  const runAction = async (key: string, a: Action) => {
-    if (a.type === 'shred') { const res = await executeCommanderAction(a); setShredInput(res.openShred ?? ''); setActStatus(s => ({ ...s, [key]: res.status })); return }
-    setActStatus(s => ({ ...s, [key]: '…' }))
-    const res = await executeCommanderAction(a)
-    if (res.openShred !== undefined) setShredInput(res.openShred)
-    setActStatus(s => ({ ...s, [key]: res.status }))
-  }
-
-  const runAllActions = async (mi: number, actions: Action[]) => {
-    setQueueRunning(mi)
-    for (let ai = 0; ai < actions.length; ai++) {
-      const key = `${mi}-${ai}`
-      if (actStatus[key]?.startsWith('✓')) continue
-      // eslint-disable-next-line no-await-in-loop
-      await runAction(key, actions[ai])
-    }
-    setQueueRunning(null)
   }
 
   const runScout = async () => {
@@ -201,25 +172,13 @@ export default function ActivityStation() {
             {msgs.map((m, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
                 <div style={{ padding: '9px 12px', borderRadius: m.role === 'user' ? '13px 13px 4px 13px' : '13px 13px 13px 4px', background: m.role === 'user' ? 'var(--purple)' : 'var(--surface-raised)', color: m.role === 'user' ? '#fff' : 'var(--text)', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.content}</div>
-                {m.actions && m.actions.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {m.actions.length > 1 && (
-                      <button onClick={() => runAllActions(i, m.actions!)} disabled={queueRunning !== null}
-                        style={{ fontSize: '12px', fontWeight: 800, padding: '6px 12px', borderRadius: '9px', border: 'none', cursor: queueRunning !== null ? 'default' : 'pointer', background: queueRunning === i ? 'var(--border)' : 'var(--purple)', color: '#fff', width: '100%' }}>
-                        {queueRunning === i ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite', display: 'inline', verticalAlign: 'middle' }} /> running {m.actions.length} in order…</> : `▶ Run all ${m.actions.length} (one at a time)`}
-                      </button>
-                    )}
-                    {m.actions.map((a, ai) => {
-                      const key = `${i}-${ai}`
-                      const st = actStatus[key]
-                      const done = st && st !== '…'
-                      return (
-                        <button key={ai} onClick={() => runAction(key, a)} disabled={st === '…' || (!!done && st.startsWith('✓'))}
-                          style={{ fontSize: '12px', fontWeight: 700, padding: '6px 11px', borderRadius: '9px', border: '1px solid var(--purple)', cursor: st === '…' ? 'default' : 'pointer', background: done && st.startsWith('✓') ? '#EAF7F0' : 'var(--surface)', color: done && st.startsWith('✓') ? '#2E8B60' : 'var(--purple)' }}>
-                          {st === '…' ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite', display: 'inline', verticalAlign: 'middle' }} /> working…</> : done ? st : commanderActionLabel(a)}
-                        </button>
-                      )
-                    })}
+                {m.receipts && m.receipts.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {m.receipts.map((r, ri) => (
+                      <div key={ri} style={{ fontSize: '12px', fontWeight: 700, lineHeight: 1.45, padding: '6px 10px', borderRadius: '9px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', border: `1px solid ${r.ok ? 'rgba(61,170,124,0.45)' : 'rgba(224,82,82,0.45)'}`, background: r.ok ? '#EAF7F0' : 'rgba(224,82,82,0.08)', color: r.ok ? '#2E8B60' : '#C0392B' }}>
+                        {receiptLine(r)}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

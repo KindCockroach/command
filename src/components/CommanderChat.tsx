@@ -2,13 +2,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { Loader2, Send, Paperclip, X } from 'lucide-react'
 import CommanderModal from './CommanderModal'
-import { executeCommanderAction, commanderActionLabel as actionLabel, shouldAutoRun, type CommanderAction as Action } from '@/lib/commanderActions'
+import { parseReceipts, receiptLine, withReceipts, shredRequest, announceDataChanged, type CommanderReceipt } from '@/lib/commanderActions'
 
 type Attach = { url: string; type: string; name: string }
-type Msg = { role: 'user' | 'assistant'; content: string; actions?: Action[]; attach?: Attach | null }
+type Msg = { role: 'user' | 'assistant'; content: string; receipts?: CommanderReceipt[]; attach?: Attach | null }
 
 const STORAGE_KEY = 'rise-commander-chat-v1'
-const GREETING = "I'm here. What are we working on? Drop an image, a video, an idea — or just talk it through with me. Tell me to store it, sort it, or tear it up across accounts, and I'll do it."
+const GREETING = "I'm here. What are we working on? Drop an image, a video, an idea — or just talk it through with me. Tell me to save it to a card, store it, or tear it up across accounts — you'll see a receipt for everything I actually do."
 
 export default function CommanderChat() {
   const [messages, setMessages] = useState<Msg[]>([])
@@ -16,7 +16,6 @@ export default function CommanderChat() {
   const [loading, setLoading] = useState(false)
   const [attach, setAttach] = useState<Attach | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [actStatus, setActStatus] = useState<Record<string, string>>({})
   const [shredInput, setShredInput] = useState<string | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -55,52 +54,21 @@ export default function CommanderChat() {
     try {
       const res = await fetch('/api/commander/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next.map(m => ({ role: m.role, content: m.content })), attachment: sentAttach }),
+        // Earlier receipts ride along as short text so "edit that card" has its id.
+        body: JSON.stringify({ messages: next.map(m => ({ role: m.role, content: m.role === 'assistant' ? withReceipts(m.content, m.receipts) : m.content })), attachment: sentAttach }),
       })
       const d = await res.json()
-      const actions: Action[] = Array.isArray(d.actions) ? d.actions : []
-      setMessages(m => [...m, { role: 'assistant', content: d.reply || d.error || 'Something glitched — say that again?', actions, attach: sentAttach }])
-      // JUST DO IT: auto-run everything she asked for — notes, tasks, posts, account
-      // edits, goals, projects, calendar, the lot. Only `shred` waits for a tap (it
-      // opens the 20-account preview). If it said it's doing it, it's already done.
-      const mi = next.length // index of the assistant message just appended
-      const autoActions = actions.map((a, ai) => ({ a, ai })).filter(x => shouldAutoRun(x.a.type))
-      if (autoActions.length) {
-        setQueueRunning(mi)
-        for (const { a, ai } of autoActions) {
-          // eslint-disable-next-line no-await-in-loop
-          await runAction(`${mi}-${ai}`, a, sentAttach)
-        }
-        setQueueRunning(null)
-      }
+      // The tools already ran on the server. Receipts are what actually happened.
+      const receipts = parseReceipts(d.receipts)
+      const fallback = d.error ? `⚠ ${d.error}` : receipts.length ? '' : '⚠ No reply came back and nothing was done — say that again?'
+      setMessages(m => [...m, { role: 'assistant', content: d.reply || fallback, receipts, attach: sentAttach }])
+      announceDataChanged(receipts)
+      // shred creates nothing on its own — it opens the cross-account preview.
+      const shred = shredRequest(receipts)
+      if (shred !== null) setShredInput(shred)
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: 'Connection hiccup — try that once more.' }])
     } finally { setLoading(false) }
-  }
-
-  const [queueRunning, setQueueRunning] = useState<number | null>(null)
-  // Run a whole batch of proposed actions ONE AT A TIME (awaited) instead of letting
-  // her tap 12 at once and stampede the server — that's what was throwing "failed".
-  const runAllActions = async (mi: number, actions: Action[], media?: Attach | null) => {
-    setQueueRunning(mi)
-    for (let ai = 0; ai < actions.length; ai++) {
-      const key = `${mi}-${ai}`
-      if (actStatus[key]?.startsWith('✓')) continue
-      // eslint-disable-next-line no-await-in-loop
-      await runAction(key, actions[ai], media)
-    }
-    setQueueRunning(null)
-  }
-
-  const runAction = async (key: string, a: Action, media?: Attach | null) => {
-    // All the real work (and the quirky LLM-shape handling) lives in the shared
-    // runner so this surface and the Activity chat behave identically. shred is the
-    // one that comes back needing the UI to open the cross-account preview modal.
-    if (a.type === 'shred') { const res = await executeCommanderAction(a, media); setShredInput(res.openShred ?? ''); setActStatus(s => ({ ...s, [key]: res.status })); return }
-    setActStatus(s => ({ ...s, [key]: '…' }))
-    const res = await executeCommanderAction(a, media)
-    if (res.openShred !== undefined) setShredInput(res.openShred)
-    setActStatus(s => ({ ...s, [key]: res.status }))
   }
 
   const bubble = (role: 'user' | 'assistant') => ({
@@ -123,7 +91,7 @@ export default function CommanderChat() {
           <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>Your partner behind the whole station · Claude Fable 5</p>
         </div>
         {messages.length > 0 && (
-          <button onClick={() => { setMessages([]); setActStatus({}); try { localStorage.removeItem(STORAGE_KEY) } catch {} }}
+          <button onClick={() => { setMessages([]); try { localStorage.removeItem(STORAGE_KEY) } catch {} }}
             style={{ marginLeft: 'auto', background: 'none', border: '1px solid var(--border)', borderRadius: '7px', color: 'var(--text-subtle)', fontSize: '11px', fontWeight: 700, padding: '4px 9px', cursor: 'pointer' }}>New chat</button>
         )}
       </div>
@@ -132,7 +100,7 @@ export default function CommanderChat() {
         <div style={bubble('assistant')}>{GREETING}</div>
         {messages.map((m, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '82%' }}>
-            <div style={{ ...bubble(m.role), maxWidth: '100%' }}>
+            {(m.content || m.attach) && <div style={{ ...bubble(m.role), maxWidth: '100%' }}>
               {m.attach && (
                 m.attach.type?.startsWith('image')
                   ? <img src={m.attach.url} alt={m.attach.name} title={m.attach.name} onClick={() => window.open(m.attach!.url, '_blank')}
@@ -140,26 +108,14 @@ export default function CommanderChat() {
                   : <div style={{ fontSize: '11px', opacity: 0.85, marginBottom: m.content ? '5px' : 0 }}>📎 {m.attach.name}</div>
               )}
               {m.content}
-            </div>
-            {m.actions && m.actions.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {m.actions.length > 1 && (
-                  <button onClick={() => runAllActions(i, m.actions!, m.attach)} disabled={queueRunning !== null}
-                    style={{ fontSize: '12px', fontWeight: 800, padding: '6px 12px', borderRadius: '9px', border: 'none', cursor: queueRunning !== null ? 'default' : 'pointer', background: queueRunning === i ? 'var(--border)' : 'var(--purple)', color: '#fff', width: '100%', marginBottom: '2px' }}>
-                    {queueRunning === i ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite', display: 'inline', verticalAlign: 'middle' }} /> running {m.actions.length} in order…</> : `▶ Run all ${m.actions.length} (one at a time)`}
-                  </button>
-                )}
-                {m.actions.map((a, ai) => {
-                  const key = `${i}-${ai}`
-                  const st = actStatus[key]
-                  const done = st && st !== '…'
-                  return (
-                    <button key={ai} onClick={() => runAction(key, a, m.attach)} disabled={st === '…' || (!!done && st.startsWith('✓'))}
-                      style={{ fontSize: '12px', fontWeight: 700, padding: '6px 11px', borderRadius: '9px', border: '1px solid var(--purple)', cursor: st === '…' ? 'default' : 'pointer', background: done && st.startsWith('✓') ? '#EAF7F0' : 'var(--surface)', color: done && st.startsWith('✓') ? '#2E8B60' : 'var(--purple)' }}>
-                      {st === '…' ? <><Loader2 size={11} style={{ animation: 'spin 1s linear infinite', display: 'inline', verticalAlign: 'middle' }} /> working…</> : done ? st : actionLabel(a)}
-                    </button>
-                  )
-                })}
+            </div>}
+            {m.receipts && m.receipts.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {m.receipts.map((r, ri) => (
+                  <div key={ri} style={{ fontSize: '12px', fontWeight: 700, lineHeight: 1.45, padding: '6px 10px', borderRadius: '9px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', border: `1px solid ${r.ok ? 'rgba(61,170,124,0.45)' : 'rgba(224,82,82,0.45)'}`, background: r.ok ? '#EAF7F0' : 'rgba(224,82,82,0.08)', color: r.ok ? '#2E8B60' : '#C0392B' }}>
+                    {receiptLine(r)}
+                  </div>
+                ))}
               </div>
             )}
           </div>
