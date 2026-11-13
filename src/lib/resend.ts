@@ -20,8 +20,10 @@ async function call(path: string, body: unknown): Promise<{ ok: boolean; error?:
   }
 }
 
-export function resendSend(to: string, subject: string, html: string, replyTo = 'hi@aimomeducation.com', from?: string) {
-  return call('/emails', { from: from || FROM(), to: [to], subject, html, reply_to: replyTo })
+// `headers` carries extra mail headers — campaign sends use it for List-Unsubscribe so
+// Gmail/Apple Mail show their own Unsubscribe button.
+export function resendSend(to: string, subject: string, html: string, replyTo = 'hi@aimomeducation.com', from?: string, headers?: Record<string, string>) {
+  return call('/emails', { from: from || FROM(), to: [to], subject, html, reply_to: replyTo, ...(headers ? { headers } : {}) })
 }
 
 export function resendAddContact(email: string, firstName?: string, audienceId?: string) {

@@ -366,6 +366,7 @@ export type PersonView = {
   contact_id?: string
   signup_note?: string
   events?: PersonEvent[]   // their timeline: what they signed up for, downloaded, and what we sent
+  unsubscribed?: boolean   // opted out of campaign email — every campaign send skips them
   created_at: string
 }
 
@@ -595,6 +596,7 @@ type Db = {
   waitlist?: WaitlistEntry[]
   contacts?: Contact[]
   sends?: SendRecord[]
+  unsubscribes?: { email: string; at: string }[]   // opt-outs — kept apart from contacts so deleting a contact never erases one
   surveys?: SurveyResponse[]
   products?: Product[]
   wellspring?: WellspringStore
@@ -1052,6 +1054,29 @@ export function addContactLabelByEmail(email: string, lbl: ContactLabel, opts: {
   return c
 }
 
+// --- Email opt-outs ---
+// One list of emails that asked not to receive campaign email. Campaign sends check it
+// before every send. Stored by lowercased email, independent of contact records.
+export function getUnsubscribedEmails(): Set<string> {
+  return new Set((readDb().unsubscribes ?? []).map(u => u.email))
+}
+
+export function isUnsubscribed(email: string): boolean {
+  return getUnsubscribedEmails().has(email.trim().toLowerCase())
+}
+
+// Opt someone out (on = true) or back in (on = false). Idempotent. Returns the stored state.
+export function setUnsubscribed(email: string, on: boolean): { email: string; unsubscribed: boolean } {
+  const db = readDb()
+  const e = email.trim().toLowerCase()
+  const list = db.unsubscribes ?? []
+  const has = list.some(u => u.email === e)
+  if (on && !has) db.unsubscribes = [...list, { email: e, at: new Date().toISOString() }]
+  else if (!on && has) db.unsubscribes = list.filter(u => u.email !== e)
+  if (on !== has) writeDb(db)
+  return { email: e, unsubscribed: (readDb().unsubscribes ?? []).some(u => u.email === e) }
+}
+
 // ─── THE WELLSPRING (membership) ─────────────────────────────────────────────
 const WELLSPRING_SEED: WellspringConfig = {
   live_url: '',
@@ -1410,6 +1435,8 @@ export function getPeople(): PersonView[] {
   }
 
   const people = [...byKey.values()]
+  const optedOut = new Set((db.unsubscribes ?? []).map(u => u.email))
+  for (const p of people) if (p.email && optedOut.has(p.email.trim().toLowerCase())) p.unsubscribed = true
   for (const p of people) p.events?.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
   return people.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 }

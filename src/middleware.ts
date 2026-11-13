@@ -16,6 +16,7 @@ function isPublic(path: string): boolean {
   if (path === '/journal') return true
   if (path === '/reset' || path === '/cheatcode' || path === '/workshop') return true // public session pages (+ /workshop redirect)
   if (path === '/reset/survey' || path === '/api/survey') return true // post-Reset feedback survey (native)
+  if (path === '/unsubscribe' || path === '/api/unsubscribe') return true // email opt-out (signed link from every campaign email)
   if (path === '/insait') return true // private $10 Reset (unlisted, no-index)
   if (path === '/bethereforher' || path === '/bethereforher/library' || path === '/bethereforher/intuition') return true // Be There For Her product
   if (path === '/bethereforher/in-the-kitchen' || path === '/api/kitchen' || path === '/api/kitchen/update') return true

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   if (!product) return NextResponse.json({ error: 'Unknown product.' }, { status: 400 })
 
   const labels: ContactLabel[] = Array.isArray(b.audience_labels) ? b.audience_labels.filter((l: string) => CONTACT_LABELS.includes(l as ContactLabel)) : []
-  const audience = getPeople().filter(p => p.email && (labels.length ? labels.some(l => p.labels.includes(l)) : true))
+  const audience = getPeople().filter(p => p.email && !p.unsubscribed && (labels.length ? labels.some(l => p.labels.includes(l)) : true))
   const count = Math.min(Math.max(1, Number(b.count) || 1), 5)
   const feedback = typeof b.feedback === 'string' ? b.feedback.slice(0, 2000) : ''
   const previous = typeof b.previous === 'string' ? b.previous.slice(0, 6000) : ''

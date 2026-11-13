@@ -12,7 +12,7 @@ type Product = {
   mission: string; fits: string; links: Link[]; cadence_days: number
   last_sent: string | null; days_since: number | null; overdue: boolean
 }
-type Person = { email?: string; labels: string[] }
+type Person = { email?: string; labels: string[]; unsubscribed?: boolean }
 type Draft = { subject: string; preview?: string; body: string; cta_label?: string; cta_url?: string; send_offset_days?: number }
 
 const BRAND_TEXT: Record<Brand, string> = { btfh: 'Be There For Her', wfh: 'AI Works For Her', joyful: 'Joyful Media' }
@@ -72,7 +72,7 @@ export default function CampaignsPanel() {
 
   // Live headcount — matches the backend's "any of these labels" (OR) filter.
   const audienceCount = useMemo(() => people.filter(p =>
-    p.email && (labels.length ? labels.some(l => p.labels.includes(l)) : true)).length, [people, labels])
+    p.email && !p.unsubscribed && (labels.length ? labels.some(l => p.labels.includes(l)) : true)).length, [people, labels])
 
   const pick = (id: string) => {
     setSelectedId(id); setDrafts([]); setErr(''); setResult(''); setShowDetails(false); setFeedback('')
@@ -98,11 +98,11 @@ export default function CampaignsPanel() {
     setBusy('send'); setErr('')
     const d = await fetch('/api/campaigns/send', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: selected.id, subject: dft.subject, body: dft.body, cta_label: dft.cta_label, cta_url: dft.cta_url, audience_labels: labels }),
+      body: JSON.stringify({ product_id: selected.id, subject: dft.subject, preview: dft.preview, body: dft.body, cta_label: dft.cta_label, cta_url: dft.cta_url, audience_labels: labels }),
     }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup.' }))
     setBusy(false)
     if (d.error) { setErr(d.error); return }
-    setResult(`Sent to ${d.sent}${d.failed ? `, ${d.failed} failed` : ''}.`)
+    setResult(`Sent to ${d.sent}${d.failed ? `, ${d.failed} failed${d.error_detail ? ` (${d.error_detail})` : ''}` : ''}${d.skipped ? `, ${d.skipped} skipped (unsubscribed)` : ''}.`)
     load()
   }
 
