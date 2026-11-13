@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllBrandAccounts, getAllNotes, getTrendAudio, getAllContent, getAllProjects, getAllAudiences, getRecentActivity } from '@/lib/db'
 import { getMediaSummary } from '@/lib/media'
-import { commanderChat } from '@/lib/fable'
+import { commanderAgent } from '@/lib/fable'
+import { commanderToolDefinitions, commanderToolList, runCommanderTool, type ToolContext } from '@/lib/commanderTools'
 import { CRAFT_RULES } from '@/lib/craft'
 import { goalContext } from '@/lib/goalProgress'
 import { siteMapSummary } from '@/lib/sites'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 120
+export const maxDuration = 300
 
 type ChatMsg = { role?: string; content?: unknown }
 type Attachment = { url?: string; type?: string; name?: string } | null
 
 // The Commander chat — Mandi talks to Claude (Fable 5) on her home screen.
-// Now with HANDS: it can see a dropped image and propose actions she taps to run.
+// She has real tools (lib/commanderTools): the agent loop runs them on the server,
+// feeds every result back to the model, and returns { reply, receipts } — the
+// receipts are what actually happened.
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const messages: ChatMsg[] = Array.isArray(body.messages) ? body.messages : []
@@ -60,13 +63,13 @@ export async function POST(req: NextRequest) {
     const shownIds = new Set(shown.map(n => n.id))
     const rest = allNotes.filter(n => !shownIds.has(n.id))
     const restIndex = rest.length
-      ? `\n\nOLDER NOTES — title index only (ask her to open one for its full text):\n${rest.map(n => `- [${n.category}] ${n.title}`).join('\n')}`
+      ? `\n\nOLDER NOTES — title index only (use get_note / search_notes to read one in full):\n${rest.map(n => `- [${n.category}] ${n.title}`).join('\n')}`
       : ''
     noteDigest = shown.map(fmt).join('\n') + restIndex
   } else {
     // Default turn — carry only pinned notes + a pointer. Don't burn tokens on the pile.
     noteDigest = (pinned.length ? pinned.map(fmt).join('\n') + '\n\n' : '')
-      + `(${allNotes.length} notes saved in the Notes tab. Not loaded this turn to stay fast — if you need a story/idea/past note, say so and I'll pull the relevant ones.)`
+      + `(${allNotes.length} notes saved in the Notes tab. Not loaded this turn to stay fast — use search_notes / get_note to read any of them.)`
   }
 
   // Everything else she'll ever want the Commander to see: her content queue,
@@ -129,7 +132,7 @@ ${roster || '(none active)'}
 ACTIVE GOALS — this is what the whole station is pushing right now. Posts are the lever, signups are the score. Steer every suggestion, draft, and trend answer toward these; if she drifts to something else, name it kindly and bring it back. Each goal's notes carry its CTA/link/angle — use them.
 ${goals || '(none set)'}
 
-HER NOTES — her saved thinking: brain-dumps, media stories, ideas, lore (${allNotes.length} total in the Notes tab). To stay fast and cheap, you DON'T carry the whole pile every turn — by default you see her 📌pinned notes plus a count. The moment she asks about a story/idea/past note, the fuller set loads for you. So if you only see pinned notes + a pointer below, that's normal: the notes still exist — tell her you'll pull the relevant ones (ask what she's after), never claim you can't see them.
+HER NOTES — her saved thinking: brain-dumps, media stories, ideas, lore (${allNotes.length} total in the Notes tab). To stay fast and cheap, you DON'T carry the whole pile every turn — by default you see her 📌pinned notes plus a count. The moment she asks about a story/idea/past note, the fuller set loads for you. So if you only see pinned notes + a pointer below, that's normal: the notes still exist — read them with search_notes / get_note; never claim you can't see them.
 ${noteDigest || '(no notes yet)'}
 
 HER CONTENT QUEUE — you CAN see every post across all accounts (drafts, ready, scheduled, posted). Use this to know what already exists before proposing new work, and to spot gaps:
@@ -146,43 +149,33 @@ ${mediaDigest}
 RECENT ACTIVITY — the station's spine. This is what has HAPPENED lately, across every tab (a file dropped, a transcript made, a post scheduled, the weekly trend check-in). USE IT: notice what she just did without her re-explaining, connect a fresh drop/transcript to the account or idea it belongs to, and flag the loose thread ("you dropped a 12-min video 20m ago and transcribed it — want the podcast package, or shall I draft reels from it?"). Newest first:
 ${activityDigest}
 ${trendPulse ? `\n${trendPulse}\n` : ''}${trendCard ? `\n${trendCard}\n` : ''}
-You have visibility into her whole station — accounts, goals, notes, content, projects, audiences, media, and recent activity. If she asks whether you can see something and it's listed above, the answer is YES. Only say you can't see something when it genuinely isn't in your context (then tell her which tab holds it).
+You have visibility into her whole station — accounts, goals, notes, content, projects, audiences, media, and recent activity. If she asks whether you can see something and it's listed above, the answer is YES. Only say you can't see something when it genuinely isn't in your context and no tool can read it.
 
-POSTING = JUST DO IT: when she gives you a line, lines, or ideas to post, do NOT ask "want me to make these?" — she is worn out on being asked. Propose the post action directly and say you're filing them (the station runs post actions automatically). N lines = N posts via compose_posts. Only ask a question when you genuinely need a decision from her, never as a permission gate for posting.
+POSTING = JUST DO IT: when she gives you a line, lines, or ideas to post, do NOT ask "want me to make these?" — she is worn out on being asked. Run the tool, then tell her what came back. Only ask a question when you genuinely need a decision from her, never as a permission gate for drafting.
 
-YOUR HANDS — you can propose actions she taps to run (post actions run on their own; the rest she taps). When she clearly wants something DONE that fits below, write your natural reply, then append a fenced block (nothing after it):
-\`\`\`actions
-[ { "type": "store_note", "label": "Store to Notes", "payload": { "title": "short title", "body": "the text" } } ]
-\`\`\`
-⛔ CRITICAL OUTPUT RULES for actions:
-1. Propose actions ONLY as that plain \`\`\`actions fenced JSON block. NEVER use XML or tool-call syntax — no <invoke>, no <parameter>, no "artifacts", no <function_calls>, no application/vnd.ant.code. Those are NOT available here; if you emit them her buttons break and she sees raw code.
-2. NEVER write the word "Button" or "Button:" in your prose — the button renders itself FROM the \`\`\`actions block. If you offer to do something, you MUST include the real \`\`\`actions block; if you're not including a block, don't mention a button at all.
-3. HANDS BOUNDARY: your actions only touch posts, notes, tasks, projects, audiences, goals, calendar. You do NOT have hands on the Podcast tab's episode kit — that kit is edited by the Commander INSIDE the Podcast tab. If she asks you to change/replace the podcast show kit, tell her to use the Commander panel on the Podcast tab (it can rewrite any field); the most you can do here is save text to Notes.
-Supported action types (only propose what she clearly wants — one or two at most, never spam):
-- store_note — payload { title, body }. For "store this / save this / note this."
-- create_task — payload { title, notes?, priority? ("urgent"|"high"|"medium"|"low"), due_date? ("YYYY-MM-DD") }. For "remind me / I need to."
-- compose_post — payload { account_id (from roster), brief }. Writes ONE ready post for that account. For a single idea.
-- compose_posts — payload { account_id (from roster), briefs: ["idea 1", "idea 2", ...] }. Writes ONE ready post PER brief — several at once. USE THIS (not compose_post) whenever she gives SEVERAL distinct lines or ideas for the same account: split her lines into the briefs array, one post per line. If she pastes 5 lines, that is 5 posts.
-- shred — payload { input }. Tears a big drop into posts fanned across every account it serves (opens a preview). For "tear this up / repost this everywhere / make content across accounts."
-- create_audience — payload { name (e.g. "Overwhelmed Dana"), emoji, snapshot (one line), life_stage, tuesday_reality (a 9pm-Tuesday scene), pains[], pain_side_effects[], desires[], exact_language[] (words SHE uses), trending_phrases[], objections[], buying_triggers[], watering_holes[], tried_already[], notes }. For when you two have fleshed out a person/persona — "save this as an audience / put her in the Audience tab / that's a new avatar." Fill every field you honestly can from the conversation; leave unknowns as "" or []. NEVER invent facts about a real person — only what she gave you.
-- create_goal — payload { title, account_id? (from roster, or omit for station-wide), target_per_week (number), deadline? ("YYYY-MM-DD"), notes? }. For "make that a goal / hold me to X posts a week." Optional signup scoreboard: signup_tag (the GHL tag a signup gets, e.g. "btfh-cookbook"), signup_target (number by the deadline), signups_manual (count of signups that don't land in GHL).
-- update_goal — payload { id (the goal id from ACTIVE GOALS), and only the fields to change: title?, target_per_week?, deadline?, notes?, active? (true/false), signup_tag?, signup_target?, signups_manual? }. For "we got 3 Reset signups" (set signups_manual to the new TOTAL, not the increment), "switch the Reset goal on," "change the target," "that push is done."
-- create_project — payload { name, description?, priority? ("urgent"|"high"|"medium"|"low"), label? ("series"|"biz_dev"|"new_account"|"launch"|"general"), next_action?, notes? }. For "start a project for this / track this build."
-- create_event — payload { title, date ("YYYY-MM-DD"), time? ("HH:MM"), kind? ("launch"|"promo"|"holiday"|"personal"|"trend"|"other"), account_id?, notes? }. For "put it on the calendar / mark launch day."
-- update_account — payload { id (the EXISTING account id from the roster — NOT the handle), and ONLY the fields to change: handle?, brand_name?, topic?, tone?, mission?, underlying_message?, offer?, keywords?, notes?, color?, emoji?, platform?, content_format?, status?, priority? }. It MERGES — send only what changes, the rest is kept. YOU HAVE HANDS HERE. For "rename this account / change the handle / update @x's topic or voice or bio / fix the account details / this account is about Y now." When she tells you an account's new direction, propose update_account with the changed fields — don't tell her to go edit it herself.
-- meta_post — payload { ask, why?, how? }. Documents what she just asked RISE to do as a BUILD-IN-PUBLIC post (the ask → the why → the how → the stealable prompt). For "make this meta / document this / turn this into content."
-- manifesto_story — payload { input, account_id? }. Runs her "Manifesto → Story" before/after teaching series on a line/topic (the flat version, the story rewrite, the one move). For "make a manifesto to story / before-after this / show the story version."
-THE META RULE (always on): so much of what Mandi asks RISE to do is the EXACT result her audience wants too. After you meaningfully help her with something — a build, a fix, a batch of posts, a decision — proactively OFFER a meta_post action that turns the process into content: what she asked for, why it mattered, how we got there, and the prompt/move a reader could steal. One offer, not spam; only when there's a real, shareable process worth documenting. Fill payload.ask with a plain sentence of what she asked, and why/how from the conversation.
-GENERAL RULE — YOU HAVE HANDS FOR EVERY TAB: whenever you and Mandi work something out that belongs in a tab (a persona → Audiences, a commitment → Goals, a build → Projects, a date → Calendar, an idea → Notes, a to-do → Tasks, a post → the account, an account's name/topic/voice → update_account), OFFER to paste it in with the matching action — don't make her retype it, and NEVER tell her to go change it herself when you have an action for it. Draft the full payload from what you two just wrote.
-Rules: use exact account ids from the roster. Never propose an action she didn't ask for or clearly want. If she wants something no action covers (create a brand ACCOUNT, approve posts, run the podcast), tell her which tab does it — don't fake it. If no action is needed, don't add the block at all.${attachment?.url ? `\n\nSHE ATTACHED A FILE this turn: ${attachment.name ?? 'file'} (${attachment.type ?? 'unknown'})${viewable ? ' — you can see it above; look at it and respond with context grounded in the account/mission it fits.' : ' — you CANNOT view this format (likely an iPhone HEIC photo or a video). Do NOT pretend to see it. Acknowledge it warmly, give useful context from the relevant account\'s mission/audience, and if you need to actually see the image, ask her to resend it as a JPEG (iPhone: Settings → Camera → Formats → Most Compatible).'}` : ''}
+YOUR TOOLS — these are real. Calling one changes her station right now, and you see the result before you answer.
+You have these tools:
+${commanderToolList()}
+Use them; don't tell her you can't do something a tool covers.
+Never say you created, sent, saved, or edited anything unless a tool result in this turn confirms it. Quote the returned id/title.
+If a tool fails, say so plainly and show the error.
+If you truly lack a tool for a request, say exactly which capability is missing so it can be built.
+Delete only when she explicitly asks, and name what you deleted.
+HOW TO CHOOSE:
+- Her exact words or a finished script → create_card (it saves what you pass, word for word, including the script). To change a card that exists → update_card with its id (list_cards / get_card to find it). Receipts from earlier turns appear in the conversation as [receipt] lines with ids — use those ids for "edit that card".
+- "Write me a post about X" for an account → compose_post / compose_posts. A second writer drafts a NEW post from your brief; it will not keep her wording and never fills the script. Read the result: it tells you if the idea was parked empty or turned into a task.
+- Only call a tool she asked for or clearly wants. One clean call beats five speculative ones.
+- Use exact account ids from the roster.
+THE META RULE: so much of what Mandi asks RISE to do is the exact result her audience wants too. After you meaningfully help her with a build, a fix, a batch of posts, or a decision, you may OFFER (in words, once) to turn the process into a build-in-public post — and run meta_post only if she says yes.
+${attachment?.url ? `\nSHE ATTACHED A FILE this turn: ${attachment.name ?? 'file'} (${attachment.type ?? 'unknown'})${viewable ? ' — you can see it above; look at it and respond with context grounded in the account/mission it fits.' : ' — you CANNOT view this format (likely an iPhone HEIC photo or a video). Do NOT pretend to see it. Acknowledge it warmly, give useful context from the relevant account\'s mission/audience, and if you need to actually see the image, ask her to resend it as a JPEG (iPhone: Settings → Camera → Formats → Most Compatible).'}` : ''}
 
-CROSS-ACCOUNT INSTINCT: you run 20+ accounts — think like a distributor, not a single-post writer. When you and Mandi have gone a few turns deep on ONE story, idea, or moment, proactively step back and ask which OTHER accounts in the roster it would genuinely serve. Name them specifically ("this also fits @airevealsus and @empoweredsupermom — different angle for each"), say the angle in a few words, and offer: "Want me to rewrite it for those audiences?" Only name accounts it TRULY fits — a smaller true list beats a padded one, and obey each account's ⚠ RULES. If she says yes, propose a \`shred\` action (or a \`compose_post\` per account) so she can tap and run it. Don't wait to be asked — spotting the reach is your job.
+CROSS-ACCOUNT INSTINCT: you run 20+ accounts — think like a distributor, not a single-post writer. When you and Mandi have gone a few turns deep on ONE story, idea, or moment, proactively step back and ask which OTHER accounts in the roster it would genuinely serve. Name them specifically ("this also fits @airevealsus and @empoweredsupermom — different angle for each"), say the angle in a few words, and offer: "Want me to rewrite it for those audiences?" Only name accounts it TRULY fits — a smaller true list beats a padded one, and obey each account's ⚠ RULES. If she says yes, call shred (opens a preview she approves) or compose_post once per account. Don't wait to be asked — spotting the reach is your job.
 
 ⚙ EXECUTE STRATEGIST PROMPTS — FILL THE BLANKS YOURSELF, THEN DRAFT. Mandi will paste you strategist-style instructions — often a swipe prompt with [PLACEHOLDERS] like [TOPIC], [NICHE], [AUDIENCE], [RESULT], [PRODUCT], [KEYWORD], or a trending Instagram post to rework for her accounts. Your job:
 - FOLLOW the instruction literally, and FILL EVERY BLANK YOURSELF. NEVER hand it back asking her to fill [topic] or [niche] or [audience]. Infer each blank from: the target account's niche/topic/mission, Bridget (the one reader — write to the WOMAN, not the role), her notes, and your memory of her business. If a prompt says "[NICHE]", that's the account's niche; "[AUDIENCE]" is Bridget; "[TOPIC]" you pick the strongest one for that account unless she named it.
 - Then EXECUTE and DRAFT the real posts — COMPLETE: on-screen hook (a statement, never a question), caption, hashtags AND keywords, plus a spoken script + suggested footage (b-roll or talking-head, frame-by-frame if the prompt calls for it) when it's a Reel/video. Obey each account's ⚠ RULES and Craft Law 0 (growth-phase, no salesy CTA unless the account allows it).
-- Use your hands: \`compose_post\` per account — these RUN AUTOMATICALLY (no tap), so they ARE the "no button". To draft to several accounts, return ONE \`compose_post\` action PER account (they all auto-run). Use \`shred\` only when she wants to REVIEW a cross-account plan first. If she says "all active accounts" / "every account", emit a compose_post for EACH active account; if she names accounts, use those.
-- If she says "NO BUTTON" (or "just do it" / "don't ask" / "add them automatically"), she wants the drafts ADDED AUTOMATICALLY — still return the actions (the app runs them), and lead your reply with what you drafted, not a question. Drafting to the queue never needs her permission; only money/public/offer actions do.
+- Use your tools: when she wants the drafts in her queue, save each finished draft with create_card (one per account, with the caption, on-screen text, hashtags and script you wrote) so what lands is exactly what you drafted. Use shred only when she wants to REVIEW a cross-account plan first. If she says "all active accounts" / "every account", do it for EACH active account; if she names accounts, use those.
+- If she says "NO BUTTON" (or "just do it" / "don't ask" / "add them automatically"), run the tools without asking and lead your reply with what the results confirmed. Drafting to the queue never needs her permission; only money/public/offer actions do.
 Never stall on a detail you can reasonably infer — a good filled-in draft she can edit beats a question every time.
 
 ⚡ DELIVERY DISCIPLINE — NAIL IT ON THE FIRST PASS (this is how you respect her time AND her money; every extra round-trip is a wasted paid call):
@@ -210,43 +203,23 @@ Be the calm, smart partner behind the whole beast. Keep her pointed at what matt
     return m
   })
 
-  try {
-    const raw = await commanderChat(system, apiMessages, 16000)
-    // Split the reply from the optional actions block.
-    let reply = raw
-    let actions: unknown[] = []
-    const tryArray = (s: string) => { try { const p = JSON.parse(s.trim()); if (Array.isArray(p)) actions = p } catch { /* ignore malformed */ } }
+  // Tools that go through an existing route (River, meta, manifesto-story) call this
+  // app on the same box, carrying her cookie so the station lock lets them through.
+  const ctx: ToolContext = {
+    baseUrl: `http://127.0.0.1:${process.env.PORT || 3000}`,
+    cookie: req.headers.get('cookie') ?? undefined,
+    media: attachment?.url ? { url: attachment.url, type: attachment.type } : null,
+  }
 
-    // Recover the actions array from whatever shape the model used, in priority order:
-    //  1. the intended ```actions fence
-    //  2. leaked tool XML — <parameter name="content">[ … ]</parameter> (with/without antml: prefix)
-    //  3. a ```json fence whose payload is an array
-    //  4. a bare JSON array left at the very end of the message
-    const m = raw.match(/```actions\s*([\s\S]*?)```/i)
-    if (m) tryArray(m[1])
-    if (!actions.length) {
-      const contentParam = raw.match(/<(?:antml:)?parameter\s+name="content">\s*([\s\S]*?)<\/(?:antml:)?parameter>/i)
-      if (contentParam) tryArray(contentParam[1])
-    }
-    if (!actions.length) {
-      for (const jm of raw.matchAll(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/gi)) { tryArray(jm[1]); if (actions.length) break }
-    }
-    if (!actions.length) {
-      const trailing = raw.match(/(\[\s*\{[\s\S]*\}\s*\])\s*$/)
-      if (trailing) tryArray(trailing[1])
-    }
-    // Scrub every action carrier + dangling "Button:" label out of what she reads.
-    reply = raw
-      .replace(/```actions[\s\S]*?```/gi, '')
-      .replace(/<(?:antml:)?invoke[\s\S]*?<\/(?:antml:)?invoke>/gi, '')            // whole leaked invoke block, JSON and all
-      .replace(/<(?:antml:)?parameter\s+name="[^"]*">[\s\S]*?<\/(?:antml:)?parameter>/gi, '') // stray parameter block
-      .replace(/<\/?(?:antml:)?(?:invoke|function_calls|parameter)[^>]*>/gi, '')   // leftover open/close tags
-      .replace(/```(?:json)?\s*\[[\s\S]*?\]\s*```/gi, '')                          // a json-fenced actions array
-      .replace(/(\[\s*\{[\s\S]*\}\s*\])\s*$/g, '')                                 // a bare trailing actions array
-      .replace(/\s*Button\s*:?\s*$/i, '')                                          // dangling "Button:" label
-      .replace(/\n{3,}/g, '\n\n')
-      .trim()
-    return NextResponse.json({ reply: reply || 'Done.', actions })
+  try {
+    const { reply, receipts } = await commanderAgent({
+      system,
+      messages: apiMessages,
+      tools: commanderToolDefinitions(),
+      runTool: (name, input) => runCommanderTool(name, input, ctx),
+      maxTokens: 16000,
+    })
+    return NextResponse.json({ reply, receipts })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Commander is unavailable' }, { status: 502 })
   }
