@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { parseMetaExport, guessAccount, type ExportGroup } from '@/lib/metaExport'
 
 // The Winner Loop, retroactive: Mandi posts natively, then pastes the week's
 // reel results here (copy the rows from the spreadsheet, headers included).
@@ -12,6 +13,7 @@ type Scored = {
   id: number; account_id: string; media_id: string; onscreen_text: string; visual: string
   views: number; follows: number; saves: number; shares: number; fb_views: number | null
   pct_from_followers: number | null; content_id: number | null
+  platform?: string
   verdict: Verdict; reasons: string[]; engagement_rate: number; keep_per_1k: number; views_vs_median: number; ig_views: number
 }
 type Account = { id: string; handle?: string; name?: string; status?: string }
@@ -23,54 +25,6 @@ const GROUPS: { verdict: Verdict; title: string; sub: string }[] = [
   { verdict: 'retire', title: 'Retire this angle', sub: 'Under typical on views and engagement.' },
   { verdict: 'reupload', title: 'Re-uploads', sub: 'Same text as an earlier reel. Exact re-posts get buried.' },
 ]
-
-// Header keyword → field. Order matters: more specific patterns first.
-const HEADER_MAP: [RegExp, string][] = [
-  [/per\s*1k|engagement rate|interactions|accounts engaged|^rank$/i, ''],
-  [/reel id|media id|^id$/i, 'media_id'],
-  [/7-day|7 day/i, 'views_7d'],
-  [/total views|^views$|^plays$/i, 'views'],
-  [/from followers/i, 'pct_from_followers'],
-  [/reach|viewers/i, 'reach'],
-  [/facebook/i, 'fb_views'],
-  [/^likes/i, 'likes'],
-  [/^comments/i, 'comments'],
-  [/^saves/i, 'saves'],
-  [/^shares/i, 'shares'],
-  [/^follows/i, 'follows'],
-  [/visual/i, 'visual'],
-  [/on-?screen|caption|text/i, 'onscreen_text'],
-  [/date|posted/i, 'posted_at'],
-]
-
-function splitLine(line: string, delim: string): string[] {
-  const out: string[] = []
-  let cur = '', q = false
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i]
-    if (ch === '"') { if (q && line[i + 1] === '"') { cur += '"'; i++ } else q = !q }
-    else if (ch === delim && !q) { out.push(cur); cur = '' }
-    else cur += ch
-  }
-  out.push(cur)
-  return out.map(s => s.trim())
-}
-
-// Accepts rows pasted from Excel/Sheets (tabs) or a CSV. Finds the header row
-// (the first line naming a reel id or views), skips title lines and a Total row.
-function parseTable(text: string): Record<string, string>[] {
-  const lines = text.split(/\r?\n/).filter(l => l.trim())
-  const delim = lines.some(l => l.includes('\t')) ? '\t' : ','
-  const hi = lines.findIndex(l => (/(reel|media) id/i.test(l) || (/views/i.test(l) && /likes/i.test(l))) && splitLine(l, delim).length > 3)
-  if (hi < 0) return []
-  const fields = splitLine(lines[hi], delim).map(h => HEADER_MAP.find(([re]) => re.test(h))?.[1] ?? '')
-  return lines.slice(hi + 1).map(l => {
-    const cells = splitLine(l, delim)
-    const row: Record<string, string> = {}
-    fields.forEach((f, i) => { if (f && cells[i] !== undefined && !(f in row)) row[f] = cells[i] })
-    return row
-  }).filter(r => r.media_id)
-}
 
 const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(Math.round(n)))
 
@@ -106,21 +60,51 @@ export default function WinnersPage() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/accounts').then(r => (r.ok ? r.json() : [])).then((a: Account[]) => setAccounts(a.filter(x => x.status === 'active'))).catch(() => {})
+    fetch('/api/accounts').then(r => (r.ok ? r.json() : [])).then((a: Account[]) => {
+      const active = a.filter(x => x.status === 'active')
+      setAccounts(active)
+      // The default id may not exist (handles get renamed) — fall back to the first active account so the picker and the list agree.
+      setAccountId(cur => (active.length && !active.some(x => x.id === cur) ? active[0].id : cur))
+    }).catch(() => {})
   }, [])
   useEffect(() => { load(accountId) }, [accountId, load])
 
+  // A dropped/pasted export is parsed first, then shown as one row per account
+  // named in the file, each with its RISE account picked (or "skip").
+  const [pending, setPending] = useState<{ name: string; kind: string; groups: (ExportGroup & { target: string })[] } | null>(null)
+  const [dragging, setDragging] = useState(false)
+
+  function stage(text: string, name: string) {
+    const p = parseMetaExport(text)
+    if (!p.groups.length) { setMsg('Couldn’t read that. Drop the CSV exactly as Meta Business Suite exports it, or paste rows with a “Reel ID” / “Post ID” header.'); return }
+    setMsg('')
+    setPending({ name, kind: p.kind, groups: p.groups.map(g => ({ ...g, target: g.source ? guessAccount(g.source, accounts) : accountId })) })
+  }
+
+  async function onFiles(files: FileList | null) {
+    const f = files?.[0]
+    if (!f) return
+    stage(await f.text(), f.name)
+  }
+
   async function doImport() {
-    const rows = parseTable(paste)
-    if (!rows.length) { setMsg('Couldn’t find a header row. Include the row that says “Reel ID”, “Total views”, and so on.'); return }
+    if (!pending) return
     setBusy(true); setMsg('')
-    const r = await fetch('/api/results', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ account_id: accountId, rows }) })
-    const d = await r.json().catch(() => ({}))
+    let added = 0, updated = 0, skippedGroups = 0
+    const errors: string[] = []
+    for (const g of pending.groups) {
+      if (!g.target) { skippedGroups++; continue }
+      const r = await fetch('/api/results', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ account_id: g.target, platform: g.platform, rows: g.rows }) })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { errors.push(`${g.source || g.target}: ${d.error || 'import failed'}`); continue }
+      added += d.added ?? 0; updated += d.updated ?? 0
+    }
     setBusy(false)
-    if (!r.ok) { setMsg(d.error || 'Import failed.'); return }
-    setMsg(`Imported ${d.added} new and updated ${d.updated} reels.`)
-    setPaste('')
-    setResults(d.results || [])
+    setMsg(`Imported ${added} new and updated ${updated} posts${skippedGroups ? ` · skipped ${skippedGroups} account${skippedGroups === 1 ? '' : 's'} you left on “skip”` : ''}${errors.length ? ` · failed: ${errors.join('; ')}` : ''}.`)
+    if (!errors.length) { setPending(null); setPaste('') }
+    const first = pending.groups.find(g => g.target)?.target
+    if (first && first !== accountId) setAccountId(first)   // show what was just imported
+    else load(accountId)
   }
 
   return (
@@ -129,7 +113,7 @@ export default function WinnersPage() {
       <div className="wrap">
         <p className="eyebrow">RISE · WINNER LOOP</p>
         <h1>What’s working</h1>
-        <p className="sub">Post natively, then paste the week’s reel results here. RISE compares each reel with this account’s typical reel and tells you what to make more of.</p>
+        <p className="sub">Post natively, then drop the week’s Meta export here. RISE compares each reel with this account’s typical reel and tells you what to make more of.</p>
 
         <div className="bar">
           <label htmlFor="acct">Account</label>
@@ -140,12 +124,38 @@ export default function WinnersPage() {
           </select>
         </div>
 
-        <details className="imp">
-          <summary>Import this week’s results</summary>
-          <p className="hint">Copy the rows from the spreadsheet (headers included) and paste them here. A CSV works too. Re-importing the same reels updates them.</p>
-          <textarea id="paste" rows={6} value={paste} onChange={e => setPaste(e.target.value)} placeholder="Rank	Reel ID	Views (7-day, grid)	Total views	…" />
-          <button className="go" onClick={doImport} disabled={busy || !paste.trim()}>{busy ? 'Importing…' : 'Import and score'}</button>
-        </details>
+        <div
+          className={`drop${dragging ? ' on' : ''}`}
+          onDragOver={e => { e.preventDefault(); setDragging(true) }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={e => { e.preventDefault(); setDragging(false); onFiles(e.dataTransfer.files) }}
+        >
+          <p className="dt">Drop this week’s Meta Business Suite export here</p>
+          <p className="hint">The Instagram and Facebook CSVs work exactly as Meta exports them. One file can hold several accounts. Re-importing the same posts updates them.</p>
+          <label className="pick">Choose a CSV<input type="file" accept=".csv,.tsv,.txt,text/csv" onChange={e => { onFiles(e.target.files); e.target.value = '' }} hidden /></label>
+          <details>
+            <summary>or paste rows</summary>
+            <textarea id="paste" rows={5} value={paste} onChange={e => setPaste(e.target.value)} placeholder="Rows with headers (Reel ID / Post ID, Views, …)" />
+            <button className="go" onClick={() => stage(paste, 'pasted rows')} disabled={!paste.trim()}>Read rows</button>
+          </details>
+        </div>
+
+        {pending && (
+          <div className="imp">
+            <p className="dt">{pending.name} · {pending.kind === 'facebook' ? 'Facebook videos' : pending.kind === 'instagram' ? 'Instagram posts' : 'rows'}</p>
+            {pending.groups.map((g, i) => (
+              <div className="bar" key={i}>
+                <span className="src">{g.source ? (g.platform === 'facebook' ? g.source : `@${g.source}`) : 'These rows'} · {g.rows.length} post{g.rows.length === 1 ? '' : 's'} →</span>
+                <select value={g.target} onChange={e => setPending(p => p && ({ ...p, groups: p.groups.map((x, j) => j === i ? { ...x, target: e.target.value } : x) }))}>
+                  <option value="">skip</option>
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.handle || a.name || a.id}</option>)}
+                </select>
+              </div>
+            ))}
+            <button className="go" onClick={doImport} disabled={busy || pending.groups.every(g => !g.target)}>{busy ? 'Importing…' : 'Import and score'}</button>
+            <button className="ghost" onClick={() => setPending(null)} disabled={busy}>Cancel</button>
+          </div>
+        )}
         {msg && <p className="msg">{msg}</p>}
 
         {!results.length && <p className="empty">No results for this account yet. Import a week of reels to start.</p>}
@@ -162,7 +172,7 @@ export default function WinnersPage() {
                   <p className="txt">{r.onscreen_text || '(no on-screen text recorded)'}</p>
                   {r.visual && <p className="vis">{r.visual}</p>}
                   <dl>
-                    <div><dt>IG views</dt><dd>{fmt(r.ig_views)}</dd></div>
+                    <div><dt>{r.platform === 'facebook' ? 'FB views' : 'IG views'}</dt><dd>{fmt(r.ig_views)}</dd></div>
                     <div><dt>vs typical</dt><dd>{r.views_vs_median.toFixed(1)}×</dd></div>
                     <div><dt>Engagement</dt><dd>{(r.engagement_rate * 100).toFixed(1)}%</dd></div>
                     <div><dt>Saves+shares /1K</dt><dd>{r.keep_per_1k.toFixed(1)}</dd></div>
@@ -175,7 +185,7 @@ export default function WinnersPage() {
                       {makingId === r.id ? 'Drafting…' : madeIds.has(r.id) ? '✓ Drafted — make 3 more' : r.verdict === 'rehook' ? 'Keep the line, draft 3 new hooks →' : 'Make 3 more of this →'}
                     </button>
                   )}
-                  <p className="meta">Reel {r.media_id}{r.content_id ? ` · matches RISE card #${r.content_id}` : ''}</p>
+                  <p className="meta">{r.platform === 'facebook' ? 'Facebook video' : 'Post'} {r.media_id}{r.content_id ? ` · matches RISE card #${r.content_id}` : ''}</p>
                 </article>
               ))}
             </section>
@@ -197,6 +207,13 @@ const css = `
 .wl select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid #E2D8C8;background:#fff}
 .wl .imp{background:#fff;border:1px solid #E2D8C8;border-radius:10px;padding:12px 14px;margin-bottom:12px}
 .wl .imp summary{cursor:pointer;font-weight:600}
+.wl .drop{background:#fff;border:2px dashed #CFC3AE;border-radius:12px;padding:16px;margin-bottom:12px;transition:border-color .15s,background .15s}
+.wl .drop.on{border-color:#5A4FCF;background:#F1EEFF}
+.wl .dt{font-weight:600;margin:0 0 4px}
+.wl .pick{display:inline-block;cursor:pointer;color:#5A4FCF;font-weight:600;font-size:14px;margin:4px 0 8px}
+.wl .src{font-size:13px;flex:1 1 220px;min-width:0;overflow-wrap:anywhere}
+.wl .ghost{background:none;border:none;color:#5C5F78;cursor:pointer;font:inherit;margin-left:8px}
+.wl .bar{flex-wrap:wrap}
 .wl .hint{font-size:13px;color:#5C5F78}
 .wl textarea{width:100%;font:13px ui-monospace,Menlo,monospace;border:1px solid #E2D8C8;border-radius:8px;padding:10px;box-sizing:border-box}
 .wl .go{margin-top:10px;background:#5A4FCF;color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;font-weight:600;cursor:pointer}

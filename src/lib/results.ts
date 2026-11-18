@@ -155,7 +155,9 @@ const median = (xs: number[]) => {
 export function scoreResults(accountId?: string | null): ScoredResult[] {
   const all = readStore().results.filter(r => !accountId || r.account_id === accountId)
   const byAccount = new Map<string, PostResult[]>()
-  for (const r of all) byAccount.set(r.account_id, [...(byAccount.get(r.account_id) ?? []), r])
+  // Score each platform against itself: a Facebook video's "typical" is other
+  // Facebook videos, never the Instagram median (or vice versa).
+  for (const r of all) { const k = `${r.account_id}|${r.platform}`; byAccount.set(k, [...(byAccount.get(k) ?? []), r]) }
 
   const out: ScoredResult[] = []
   byAccount.forEach(rows => {
