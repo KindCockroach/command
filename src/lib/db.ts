@@ -189,6 +189,7 @@ export type BrandAccount = {
   notes?: string
   audience_id?: string | null   // THE one audience this account serves
   avatar_id?: string | null     // THE one avatar who speaks on this account
+  branch_id?: BranchId | null   // which business this account belongs to (null = unplaced, waiting on Mandi)
   ghl_account_ids?: string[]    // EXACT GHL Social Planner account id(s) this posts to (reliable > name-matching)
 }
 
@@ -229,6 +230,8 @@ export type Goal = {
   signup_tag?: string | null
   signup_target?: number | null
   signups_manual?: number | null
+  branch_id?: BranchId | null      // null/absent = station-wide
+  plan_id?: string | null          // set when this goal was created from an approved Cap weekly plan
   created_at: string
   updated_at: string
 }
@@ -382,9 +385,112 @@ export type SendRecord = { id: string; email: string; at: string; subject: strin
 // Every product/offer under Joyful Media, in two brand houses. The Campaigns tab
 // renders them as an org chart; each carries its mission, how it fits the big
 // picture, funnel links, and a cadence rule (touch its people at least every N days).
+// ─── BRANCHES — the two businesses everything hangs off ─────────────────────
+// Joyful Media (mindfulness, PRIMARY) and WFH (AI, incl. the AI Mom podcast).
+// "Beck Team, Inc." is the tax entity only — never stored here as a public name.
+export type BranchId = 'joyful_media' | 'wfh'
+export type Branch = {
+  id: BranchId
+  name: string
+  short: string
+  primary: boolean          // Joyful Media wins every tie for Mandi's time and the create list
+  tagline: string
+  marketing: 'active' | 'paused'   // WFH marketing stays paused until Mandi says go
+  sort: number
+  created_at: string
+  updated_at: string
+}
+export const BRANCH_IDS: BranchId[] = ['joyful_media', 'wfh']
+export function seedBranches(now: string): Branch[] {
+  return [
+    { id: 'joyful_media', name: 'Joyful Media', short: 'Joyful Media', primary: true, tagline: 'The mindfulness branch: Be There For Her, The Reset, the $9 collection.', marketing: 'active', sort: 1, created_at: now, updated_at: now },
+    { id: 'wfh', name: 'WFH (Works For Her)', short: 'WFH', primary: false, tagline: 'The AI branch: the AI Mom podcast, and the AI services (paused).', marketing: 'paused', sort: 2, created_at: now, updated_at: now },
+  ]
+}
+// Accounts Mandi has placed. Anything else is "unplaced" until she says (never guessed).
+const ACCOUNT_BRANCH: Record<string, BranchId> = { mandijoybeck: 'joyful_media', aimompodcast: 'wfh', aimom888: 'wfh' }
+export function branchOfAccount(a: { id: string; handle?: string; brand_name?: string; branch_id?: BranchId | null } | null | undefined): BranchId | null {
+  if (!a) return null
+  if (a.branch_id) return a.branch_id
+  const keys = [a.id, a.handle ?? '', a.brand_name ?? ''].map(x => x.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9]/g, ''))
+  for (const k of keys) if (ACCOUNT_BRANCH[k]) return ACCOUNT_BRANCH[k]
+  if (keys.some(k => k === 'medium')) return 'joyful_media'   // brief: Medium belongs to Joyful Media
+  return null
+}
+export function branchOfProduct(p: { id: string; brand: ProductBrand; branch_id?: BranchId }): BranchId {
+  if (p.branch_id) return p.branch_id
+  return p.brand === 'wfh' || p.id === 'guest_track' ? 'wfh' : 'joyful_media'
+}
+// Email-list label → branch. Podcast subs and guests are WFH; everything BTFH/Joyful is Joyful Media.
+export function branchOfLabel(l: ContactLabel): BranchId | null {
+  if (l === 'sub_podcast' || l === 'guest') return 'wfh'
+  if (l === 'sub_btfh' || l === 'sub_joyful' || l === 'member_wellspring') return 'joyful_media'
+  return null
+}
+export function getBranches(): Branch[] {
+  const db = readDb()
+  return [...(db.branches ?? seedBranches(new Date().toISOString()))].sort((a, b) => a.sort - b.sort)
+}
+
+// ─── CAP'S PLANS + THE CALENDAR ─────────────────────────────────────────────
+// Monthly plan (per branch) → weekly cadence (per account) → daily calendar items.
+// A calendar item holds NO copy, script or status of its own: it points at ONE
+// existing ContentPiece (content_id). Content Day reads the same records.
+export type PlanStatus = 'proposed' | 'approved' | 'superseded'
+export type MonthlyPlanBody = {
+  goals: string[]
+  initiatives: string[]
+  campaigns: { product_id: string; note: string }[]
+  dates: { date: string; label: string }[]       // Reset Sundays, podcast days
+  priorities: string[]
+  paused: string[]
+}
+export type WeeklyPlanBody = {
+  account_id: string
+  handle: string
+  channels: { format: string; per_week: number }[]
+  posts_per_week: number
+  per_day: string                                // "1–2"
+  batch: string
+  campaign_balance: string
+  arc: string
+}
+export type Plan = {
+  id: string
+  level: 'monthly' | 'weekly'
+  branch_id: BranchId
+  period_start: string                           // YYYY-MM-DD
+  period_end: string
+  status: PlanStatus
+  summary: string
+  monthly?: MonthlyPlanBody
+  weekly?: WeeklyPlanBody
+  proposed_by: 'cap'
+  approved_at?: string | null
+  parent_plan_id?: string | null                 // weekly → the approved monthly it follows
+  created_at: string
+  updated_at: string
+}
+export type CalendarItem = {
+  id: string
+  date: string                                   // YYYY-MM-DD
+  branch_id: BranchId
+  account_id: string | null
+  content_id: number                             // THE one content record. Never duplicated.
+  plan_id: string
+  slot: 'reset' | 'podcast' | 'post'
+  created_at: string
+}
+export type PlanConfig = {
+  reset_anchor: string       // a Sunday a Reset runs on; every 14 days from here
+  podcast_anchor: string     // a day a podcast episode lands; every 14 days from here
+  day_capacity: number       // how many items Mandi can make/handle per day (joyful first)
+}
+export const DEFAULT_PLAN_CONFIG: PlanConfig = { reset_anchor: '2026-11-22', podcast_anchor: '2026-11-24', day_capacity: 6 }
+
 export type ProductBrand = 'btfh' | 'wfh' | 'joyful'
 export type ProductKind = 'free_download' | 'paid_download' | 'live' | 'membership' | 'podcast' | 'service' | 'guest_track' | 'newsletter'
-export type ProductStatus = 'live' | 'soon'
+export type ProductStatus = 'live' | 'soon' | 'deferred' | 'paused'
 export type ProductLink = { label: string; url: string }
 export type Product = {
   id: string
@@ -396,6 +502,7 @@ export type Product = {
   mission: string
   fits: string            // how it fits the big picture
   links: ProductLink[]
+  branch_id?: BranchId     // which business owns it (derived from brand when absent)
   cadence_days: number     // 0 = no touch-clock (e.g. podcast, coming-soon)
   send_match: string[]     // send-log product keys that count as "touching" this product
   sort: number
@@ -574,7 +681,7 @@ export type WellspringConfig = {
 export type WellspringPost = { id: string; at: string; email: string; name: string; body: string; pinned?: boolean }
 export type WellspringStore = { config: WellspringConfig; posts: WellspringPost[] }
 
-type Db = {
+export type Db = {
   content: ContentPiece[]
   lines?: Line[]
   next_line_id?: number
@@ -599,6 +706,12 @@ type Db = {
   unsubscribes?: { email: string; at: string }[]   // opt-outs — kept apart from contacts so deleting a contact never erases one
   surveys?: SurveyResponse[]
   products?: Product[]
+  branches?: Branch[]
+  plans?: Plan[]
+  calendar_items?: CalendarItem[]
+  next_plan_id?: number
+  next_calendar_id?: number
+  plan_config?: PlanConfig
   wellspring?: WellspringStore
   build_log?: BuildLogEntry[]
   memories: Memory[]
@@ -801,14 +914,8 @@ export function readDb(): Db {
   // now — explicitly a next-year build, not this quarter).
   {
     const cadenceNow = new Date().toISOString()
-    const CADENCE: Array<{ title: string; per_week: number; notes: string }> = [
-      { title: 'Daily Medium article', per_week: 7, notes: '[cadence] 1/day — long-form home (📝 Medium).' },
-      { title: 'Daily YouTube video', per_week: 7, notes: '[cadence] 1/day — long-form (YouTube).' },
-      { title: 'YouTube Shorts', per_week: 21, notes: '[cadence] 3/day — can reuse the IG-wall / TikTok video.' },
-      { title: 'IG Trial Reels', per_week: 70, notes: '[cadence] 10/day — the volume engine; feeds the Winner Loop.' },
-      { title: 'IG wall posts', per_week: 28, notes: '[cadence] 4/day — the keepers that stay on the grid.' },
-      { title: 'TikToks', per_week: 21, notes: '[cadence] 3/day — can be the same video as IG wall / YT Shorts.' },
-    ]
+    // Retired 2026-11-18: the six November 11 quotas are replaced by Cap's weekly plan (Plan tab). Not reseeded.
+    const CADENCE: Array<{ title: string; per_week: number; notes: string }> = []
     const existing = new Set((db.goals ?? []).map(g => g.title))
     let maxId = (db.goals ?? []).reduce((m, g) => Math.max(m, g.id), 0)
     let goalsChanged = false
@@ -1135,12 +1242,36 @@ export function deleteWellspringPost(id: string): boolean {
   return changed
 }
 
+// Phase 2 (2026-11-18) product facts, applied to a fresh seed AND by the one-time migration
+// to the live roster. Owner decisions: Reset every other Sunday 8 PM CT, $33 / $25 returning
+// ($8 coupon) / $44-a-month pass after two attendances, no two-pack, keep Luma; the $9
+// collection is "Listen To Your Intuition"; Wellspring deferred; AI services paused;
+// the podcast is its own thing (podcast-only, never a funnel).
+export const PHASE2_PRODUCT_PATCHES: Record<string, Partial<Product>> = {
+  reset: {
+    branch_id: 'joyful_media', price: '$33 · $25 returning · $44/mo pass after 2 Resets',
+    mission: 'One hour to yourself, every other Sunday at 8 PM CT — a live, guided reset to press pause before the week begins again. $33 standard; $25 returning (an $8 coupon in the thank-you email); a $44/month pass for unlimited Resets, offered only after two attendances. No two-pack. Registration, confirmations and reminders stay on Luma.',
+    fits: 'The near-term commercial focus of Joyful Media. The pass is not the Wellspring.',
+    cadence_days: 14,
+  },
+  intuition: { branch_id: 'joyful_media', name: 'Listen To Your Intuition' },
+  cookbook: { branch_id: 'joyful_media' },
+  wellspring: { branch_id: 'joyful_media', status: 'deferred', cadence_days: 0, fits: 'DEFERRED to later in 2027. Not this quarter; the every-other-week Reset earns the right to it first.' },
+  podcast: {
+    branch_id: 'wfh', cadence_days: 14,
+    fits: 'The AI Mom podcast lives in WFH and runs every other week for audience growth. Podcast-only: no Reset invites, no Joyful Media offers, and no WFH services CTA until Mandi says so.',
+  },
+  cheatcode: { branch_id: 'wfh', status: 'paused', cadence_days: 0, fits: 'PAUSED (Nov 18). WFH marketing starts only on Mandi\u2019s word.' },
+  local: { branch_id: 'wfh', status: 'paused', cadence_days: 0, fits: 'PAUSED (Nov 18). WFH marketing starts only on Mandi\u2019s word.' },
+  guest_track: { branch_id: 'wfh', fits: 'Feeds the AI Mom podcast. Guests are a WFH relationship track.' },
+}
+
 // --- Products (the Campaigns tab) ---
 // First-run roster, drafted in Mandi's voice and editable in-place. Two brand houses
 // under Joyful Media + the cross-cutting Guests comms track.
 function seedProducts(now: string): Product[] {
   const p = (o: Omit<Product, 'created_at' | 'updated_at'>): Product => ({ ...o, created_at: now, updated_at: now })
-  return [
+  return ([
     p({ id: 'cookbook', name: 'The Magic Is in the Making', brand: 'btfh', kind: 'free_download', status: 'live', price: 'Free',
       mission: 'A seasonal cookbook that invites play, joy, and relief back into the kitchen — the free front door to Be There For Her.',
       fits: 'Top of the Be There For Her funnel: a gentle, no-cost yes that introduces a woman to Mandi and warms her toward The Reset and The Wellspring.',
@@ -1178,7 +1309,7 @@ function seedProducts(now: string): Product[] {
       fits: 'Feeds the AI Mom Podcast and cross-pollinates every brand; relationships are the compounding asset of Joyful Media.',
       links: [{ label: 'Guest booking', url: 'https://www.aiworksforher.com/book' }],
       cadence_days: 3, send_match: [], sort: 80 }),
-  ]
+  ]).map(x => ({ ...x, ...(PHASE2_PRODUCT_PATCHES[x.id] ?? {}) }))
 }
 
 export function getProducts(): Product[] {
@@ -1249,7 +1380,7 @@ export function getProductsWithCadence(): ProductView[] {
     const last = times.length ? times.reduce((a, b) => (new Date(a) > new Date(b) ? a : b)) : null
     const days_since = last ? Math.floor((Date.now() - new Date(last).getTime()) / 86400000) : null
     const overdue = prod.cadence_days > 0 && (days_since === null || days_since >= prod.cadence_days)
-    return { ...prod, last_sent: last, days_since, overdue }
+    return { ...prod, branch_id: branchOfProduct(prod), last_sent: last, days_since, overdue }
   })
 }
 
@@ -2449,6 +2580,15 @@ export function deleteSavedHeadline(id: number): boolean {
 // Backs up the whole db first (reversible), renames each account's id via `map`,
 // then rewrites every `account_id` reference across ALL collections in a single
 // pass (map lookup → collision-safe even when an id is both a source and a target).
+// Copies the live db.json next to itself before any data migration. Returns the backup path.
+export function backupDb(label: string): string {
+  const db = readDb()
+  const ts = new Date().toISOString().replace(/[:.]/g, '-')
+  const backup = path.join(DB_DIR, `db.backup.${label}.${ts}.json`)
+  fs.writeFileSync(backup, JSON.stringify(db, null, 2))
+  return backup
+}
+
 export function remapAccountIds(map: Record<string, string>): { backup: string; counts: Record<string, number> } {
   const db = readDb()
   const ts = new Date().toISOString().replace(/[:.]/g, '-')

@@ -27,13 +27,15 @@ import AuditPanel from './AuditPanel'
 import AudiencePanel from './AudiencePanel'
 import GoalsPanel from './GoalsPanel'
 import SitesPanel from './SitesPanel'
+import WinnersPanel from './WinnersPanel'
+import PlanPanel from './PlanPanel'
 import { Archive, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target, Megaphone } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 // Props are still passed by the page; the old Kanban pipeline view that used them is gone.
 interface Props { initialContent: unknown[]; stats: Stats }
-type View = 'lines' | 'command' | 'activity' | 'contentday' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'sites' | 'audience' | 'media' | 'podcast' | 'people' | 'campaigns' | 'story' | 'pitch' | 'audit' | 'goals' | 'research'
+type View = 'lines' | 'command' | 'activity' | 'contentday' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'sites' | 'audience' | 'media' | 'podcast' | 'people' | 'campaigns' | 'story' | 'pitch' | 'audit' | 'goals' | 'research' | 'winners' | 'plan'
 
 // Renders children on first activation and KEEPS them mounted after — hidden with
 // display:none when inactive — so long-running work (podcast generation) and state
@@ -77,6 +79,8 @@ export default function Dashboard(_props: Props) {
     { id: 'activity',   label: 'Activity',      icon: <Radar size={12} /> },
     { id: 'contentday', label: 'Content Day',   icon: <Mic size={12} /> },
     { id: 'goals',      label: 'Goals',         icon: <Target size={12} /> },
+    { id: 'plan',        label: 'Plan',          icon: <Target size={12} /> },
+    { id: 'winners',    label: 'Winners',       icon: <Star size={12} /> },
     { id: 'projects',   label: 'Projects',      icon: <FolderKanban size={12} /> },
     { id: 'tasks',      label: 'Tasks',         icon: <CheckSquare size={12} /> },
     { id: 'assistants', label: 'Assistants',    icon: <Bot size={12} /> },
@@ -212,6 +216,8 @@ export default function Dashboard(_props: Props) {
         {view === 'audit'      && <AuditPanel />}
         <KeepAlive active={view === 'research'}><ResearchPanel /></KeepAlive>
         {view === 'goals'      && <GoalsPanel />}
+        {view === 'plan'       && <PlanPanel />}
+        {view === 'winners'    && <WinnersPanel embedded />}
         {/* Podcast stays mounted once opened, so a running generation survives
             clicking to another tab and finishes into the still-live component. */}
         <KeepAlive active={view === 'podcast'}>

@@ -3,7 +3,7 @@
 // EVERY generation call, so every word here is a recurring cost. Same rules,
 // fewer tokens. Add a rule only if it earns its tokens.
 
-import { getVoiceLessonsContext } from './db'
+import { getVoiceLessonsContext, readDb, branchOfAccount } from './db'
 
 export const CRAFT_RULES = `
 🔥 YOUR JOB IS TO ELEVATE, NOT ECHO (read this first, it's why you exist). What Mandi gives you — her context, notes, on-screen text, headline, even the last line — is RAW MATERIAL to transform into something better than she could dash off herself. NEVER paraphrase it. NEVER summarize it. NEVER just restate her input in prettier words — that is failure, and it's the #1 thing she hates. RECEIVE it → ASSESS it → find the golden thread → then WRITE something with real craft she didn't hand you: a genuine ARC (an ordinary moment → a small tension → a turn → a shift she feels), specific sensory detail, a voice that earns the scroll. If she GIVES you fixed pieces (on-screen text / headline / a last line), treat those as locked ANCHORS — keep them exactly — and write NEW, richer body to fill the arc BETWEEN them. The body must add something that wasn't in her input: a beat, an image, a turn, a truth she didn't spell out. If your draft could be described as "a cleaned-up version of what she gave me," throw it out and write the version that surprises her. BUT elevated does NOT mean flowery or purple — "a choir of exhaustion quietly symphoning sanity" is WORSE than plain. Add depth through CONCRETE, specific detail and a real emotional turn, never through ornate adjectives or metaphor stacking. Plain and true still rules (law 5): say the deeper thing in the simplest words. Depth, not decoration.
@@ -101,6 +101,7 @@ AI MOM PODCAST CONSTITUTION (non-negotiable, overrides generic instructions; upd
 - THE SHOW: jobs, education, and creativity after AI. PRAGMATIC, SPECIFIC, PRESCRIPTIVE — help the listener assimilate: use AI to do whatever she needs to do (work, school, home, making things). Talk TO the listener about HER job, HER kids' school, HER creative work. Mandi's personal story is seasoning, never the subject.
 - POSITIONING: fight fire with fire. Use what's available — AI included — to become MORE human, MORE empowered, and to stay ahead of AI on innovation and values. Not pro-AI, not anti-AI: pro-reality. Women, hear us roar. ⛔ No soft "from fear to curiosity," "gentle," or "safe space" framing — that waters her down.
 - EVERY EPISODE HAS FOUR PARTS: (1) THE NEWS — this week's development, verified, explained plainly. (2) THE MOVE — a named tool, program, skill, or step she can do THIS WEEK (names, prices, links, deadlines checked at script time). (3) THE PUSHBACK — one concrete method for pushing back against data centers, protecting our water, or protecting our children: a real action (a meeting to attend, a records request, a setting to change, a letter to send), never vague outrage. (4) THE HUMAN THREAD — mindfulness, creativity, human potential, or women's intuition, woven in, never lectured.
+- PODCAST-ONLY (2026-11-18, no cross-promotion): the show promotes ONLY itself: listen, follow, share, review, apply to be a guest. NEVER a Reset invite, meditation/$9/Wellspring/Joyful Media offer, and NEVER a WFH services CTA (paused until Mandi says go). Never write "Beck Team, Inc.".
 - ENERGY LAW: DIRECTIVE, bold, a little delusional-funny. Tell her exactly what to do. No convincing, no begging, no fake urgency.
 - TRUTH LAW: separate verified fact, company claim, forecast, and opinion. Women's intuition as humanity's exponential potential is a THESIS she is researching — say so; never claim it's proven. Never promise jobs, income, or a future-proof career.
 - Boundary: NO avatars, NO creator/influencer monetization content.
@@ -178,6 +179,18 @@ export function accountHashtags(accountId?: string | null): string[] {
   return set.slice(0, 5)
 }
 
+
+// NO CROSS-PROMOTION (owner decision 2026-11-18). Two separate businesses; nothing written for one
+// invites people to the other. Law 0 (one direct CTA) still applies, but the CTA stays inside the branch.
+export const NO_CROSS_PROMOTION = `
+⛔ NO CROSS-PROMOTION (outranks Law 0's CTA choice). Two separate businesses, separate readers, separate offers. Never send one audience to the other's offers.
+- NEVER write "Beck Team, Inc." anywhere. It is a tax entity, not a brand.
+- WFH marketing is PAUSED until Mandi says go: no AI services, Cheat Code, Local Support, assessments or "work with me on AI" CTAs from any account.`
+const JOYFUL_ONLY = `
+- This account is JOYFUL MEDIA (mindfulness). Its CTA points only to Joyful Media things: the Reset (every other Sunday, 8 PM CT, $33; $25 returning), a free practice, or following. NEVER mention or promote the AI Mom podcast, AI, WFH, or episodes.`
+const PODCAST_ONLY = `
+- This account is the AI MOM PODCAST (WFH). Its CTA is podcast-only: listen, follow, share, or apply to be a guest. NEVER mention the Reset, meditation offers, the $9 collection, the Wellspring or any Joyful Media offer, and NEVER a WFH services CTA.`
+
 export function craftFor(accountId?: string | null): string {
   let base = CRAFT_RULES
   if (accountId === 'aimompodcast') base = `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}`
@@ -190,5 +203,8 @@ export function craftFor(accountId?: string | null): string {
   const anchorLine = anchors
     ? `\nALWAYS include ${anchors.join(' ')}. Anchors count toward the 5; fill the other slots from the pool so the set reads 1 tag for who she is, 2 for what she's going through, 2 small communities. Max 5 total.`
     : ''
-  return `${base}${tagLine}${anchorLine}${getVoiceLessonsContext()}`
+  let branch: ReturnType<typeof branchOfAccount> = null
+  try { branch = accountId ? branchOfAccount(readDb().brand_accounts.find(a => a.id === accountId) ?? { id: accountId }) : null } catch { /* db unreadable: fall back to the generic rule */ }
+  const noCross = `${NO_CROSS_PROMOTION}${branch === 'wfh' ? PODCAST_ONLY : branch === 'joyful_media' ? JOYFUL_ONLY : ''}`
+  return `${base}${noCross}${tagLine}${anchorLine}${getVoiceLessonsContext()}`
 }

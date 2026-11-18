@@ -8,7 +8,7 @@ import { Loader2, X, Save, Plus, Trash2, ExternalLink, Sparkles, Send, Eye, Chev
 type Brand = 'btfh' | 'wfh' | 'joyful'
 type Link = { label: string; url: string }
 type Product = {
-  id: string; name: string; brand: Brand; kind: string; status: 'live' | 'soon'; price?: string
+  id: string; name: string; brand: Brand; kind: string; status: 'live' | 'soon' | 'deferred' | 'paused'; price?: string; branch_id: 'joyful_media' | 'wfh'
   mission: string; fits: string; links: Link[]; cadence_days: number
   last_sent: string | null; days_since: number | null; overdue: boolean
 }
@@ -19,7 +19,13 @@ const BRAND_TEXT: Record<Brand, string> = { btfh: 'Be There For Her', wfh: 'AI W
 const BRAND_COLOR: Record<Brand, string> = { btfh: '#C2693F', wfh: '#5A4FCF', joyful: '#E2508A' }
 const BRAND_EMOJI: Record<Brand, string> = { btfh: '🌙', wfh: '🎈', joyful: '🎙' }
 const KIND_TEXT: Record<string, string> = { free_download: 'Free download', paid_download: 'Paid download', live: 'Live session', membership: 'Membership', podcast: 'Podcast', service: 'Service', guest_track: 'Comms track', newsletter: 'Newsletter' }
-const ORDER: Brand[] = ['btfh', 'wfh', 'joyful']
+const ORDER: Brand[] = ['btfh', 'wfh', 'joyful']   // brand houses, still used by the Add-campaign form
+// Two branches, Joyful Media first (it is the primary business). The podcast lives under WFH.
+const BRANCHES: { id: 'joyful_media' | 'wfh'; name: string; emoji: string; color: string; note: string }[] = [
+  { id: 'joyful_media', name: 'Joyful Media', emoji: '🌙', color: '#C2693F', note: 'Mindfulness · primary' },
+  { id: 'wfh', name: 'WFH (Works For Her)', emoji: '🎙', color: '#5A4FCF', note: 'AI · podcast only for now, marketing paused' },
+]
+const STATUS_BADGE: Record<string, string> = { soon: 'SOON', deferred: 'DEFERRED', paused: 'PAUSED' }
 const AUDIENCE: { id: string; text: string }[] = [
   { id: 'free_customer', text: 'Free Customers' }, { id: 'paid_customer', text: 'Paid Customers' },
   { id: 'sub_podcast', text: 'Podcast subs' }, { id: 'sub_btfh', text: 'BTFH subs' }, { id: 'sub_joyful', text: 'Joyful subs' },
@@ -143,29 +149,32 @@ export default function CampaignsPanel() {
           {/* STEP 1 — what are you sending */}
           <p style={{ ...stepLbl, margin: '0 0 10px' }}>1 · What are you sending?</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-            {ORDER.map(brand => {
-              const items = products.filter(p => p.brand === brand)
+            {BRANCHES.map(br => {
+              const items = products.filter(p => p.branch_id === br.id)
               if (!items.length) return null
               return (
-                <div key={brand}>
+                <div key={br.id}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '13px' }}>{BRAND_EMOJI[brand]}</span>
-                    <span style={{ fontSize: '11.5px', fontWeight: 800, color: BRAND_COLOR[brand] }}>{BRAND_TEXT[brand]}</span>
+                    <span style={{ fontSize: '13px' }}>{br.emoji}</span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 800, color: br.color }}>{br.name}</span>
+                    <span style={{ fontSize: '10.5px', color: 'var(--text-subtle)' }}>{br.note}</span>
                   </div>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {items.map(p => {
                       const on = p.id === selectedId
                       const cad = cadenceText(p)
+                      const held = p.status === 'deferred' || p.status === 'paused'
                       return (
-                        <button key={p.id} onClick={() => pick(p.id)} style={{
-                          textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
+                        <button key={p.id} onClick={() => !held && pick(p.id)} disabled={held} title={held ? (p.status === 'deferred' ? 'Deferred to later in 2027' : 'Paused until you say go') : undefined} style={{
+                          opacity: held ? 0.55 : 1, cursor: held ? 'not-allowed' : 'pointer',
+                          textAlign: 'left', fontFamily: 'inherit',
                           border: `1.5px solid ${on ? BRAND_COLOR[p.brand] : 'var(--border)'}`,
                           background: on ? BRAND_COLOR[p.brand] : 'var(--bg)', color: on ? '#fff' : 'var(--text)',
                           borderRadius: '13px', padding: '9px 13px', display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '130px',
                         }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13.5px', fontWeight: 800 }}>
                             {p.name}
-                            {p.status === 'soon' && <span style={{ fontSize: '8.5px', fontWeight: 800, letterSpacing: '0.04em', color: on ? '#fff' : '#92400E', background: on ? 'rgba(255,255,255,0.25)' : '#FEF3C7', padding: '1px 6px', borderRadius: '999px' }}>SOON</span>}
+                            {p.status !== 'live' && <span style={{ fontSize: '8.5px', fontWeight: 800, letterSpacing: '0.04em', color: on ? '#fff' : '#92400E', background: on ? 'rgba(255,255,255,0.25)' : '#FEF3C7', padding: '1px 6px', borderRadius: '999px' }}>{STATUS_BADGE[p.status]}</span>}
                           </span>
                           <span style={{ fontSize: '10.5px', opacity: 0.85, color: on ? '#fff' : cad.color, fontWeight: 600 }}>
                             {KIND_TEXT[p.kind] || p.kind}{p.price ? ` · ${p.price}` : ''}
