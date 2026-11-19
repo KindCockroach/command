@@ -15,14 +15,14 @@ export const metadata: Metadata = {
     description: 'The Reset — come set down your brain for an hour, live with Mandi, every Sunday at 8 PM CT. $33.',
     url: 'https://www.bethereforher.com/reset',
     siteName: 'Be There For Her',
-    images: [{ url: '/og-reset.png', width: 1200, height: 630 }],
+    images: [{ url: '/og-reset-nov22.jpg', width: 1200, height: 675 }],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'You’re invited to reset.',
     description: 'The Reset. Come set down your brain for an hour, every Sunday at 8 PM CT.',
-    images: ['/og-reset.png'],
+    images: ['/og-reset-nov22.jpg'],
   },
 }
 
