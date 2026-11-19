@@ -63,6 +63,7 @@ export default function PlanPanel() {
   const [open, setOpen] = useState<{ id: string; mode: 'ask' | 'decline' } | null>(null)
   const [text, setText] = useState('')
   const [mirror, setMirror] = useState('')
+  const [drafts, setDrafts] = useState<Record<string, number[]>>({})   // unsaved per-week counts, per plan
 
   const load = useCallback(async () => { setData(await fetch('/api/plan').then(r => r.json()).catch(() => null)) }, [])
   useEffect(() => { load() }, [load])
@@ -74,10 +75,13 @@ export default function PlanPanel() {
     setMsg(d.error ? String(d.error) : summarize ? summarize(d) : '')
     load(); setCalKey(k => k + 1)
   }
-  const setChannel = (plan: Plan, i: number, n: number) => {
-    const channels = plan.weekly!.channels.map((c, j) => (j === i ? { ...c, per_week: n } : c))
-    run('edit', { action: 'edit', id: plan.id, patch: { channels } })
-  }
+  // Count changes stay a draft until she presses Save or Approve; Approve carries them in the same call.
+  const draftChannels = (plan: Plan) => { const d = drafts[plan.id]; return d ? plan.weekly!.channels.map((c, j) => ({ ...c, per_week: d[j] ?? c.per_week })) : null }
+  const isDirty = (plan: Plan) => { const d = drafts[plan.id]; return !!d && plan.weekly!.channels.some((c, j) => d[j] !== undefined && d[j] !== c.per_week) }
+  const setDraft = (plan: Plan, i: number, n: number) => setDrafts(ds => { const cur = ds[plan.id] ?? plan.weekly!.channels.map(c => c.per_week); const next = [...cur]; next[i] = n; return { ...ds, [plan.id]: next } })
+  const clearDraft = (id: string) => setDrafts(ds => { const n = { ...ds }; delete n[id]; return n })
+  const approve = async (p: Plan) => { const ch = p.weekly && isDirty(p) ? draftChannels(p) : null; await run('a' + p.id, { action: 'approve', id: p.id, ...(ch ? { channels: ch } : {}) }, () => `Approved${ch ? ' with your new counts' : ''}.`); clearDraft(p.id) }
+  const saveDraft = async (p: Plan) => { await run('e' + p.id, { action: 'edit', id: p.id, patch: { channels: draftChannels(p) } }, () => p.status === 'approved' ? 'Saved. Changing an approved plan sends it back for your approval.' : 'Saved.'); clearDraft(p.id) }
 
   const setPlatform = async (id: string, platform: string) => {
     setBusy('pl' + id)
@@ -110,7 +114,9 @@ export default function PlanPanel() {
           </div>
         )}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
-          {p.status !== 'approved' && <button style={primary} disabled={!!busy} onClick={() => run('a' + p.id, { action: 'approve', id: p.id })}>Approve</button>}
+          {p.status !== 'approved' && <button style={primary} disabled={!!busy} onClick={() => approve(p)}>{busy === 'a' + p.id ? 'Approving…' : p.weekly && isDirty(p) ? 'Approve with these counts' : 'Approve'}</button>}
+          {p.weekly && isDirty(p) && <button style={btn} disabled={!!busy} onClick={() => saveDraft(p)}>Save counts</button>}
+          {p.weekly && isDirty(p) && <button style={{ ...btn, border: '1px solid transparent', color: 'var(--text-subtle)' }} onClick={() => clearDraft(p.id)}>Undo</button>}
           <button style={{ ...btn, ...(isOpen && open!.mode === 'ask' ? { borderColor: '#5A4FCF', color: '#5A4FCF' } : {}) }} disabled={!!busy} onClick={() => openBox(p.id, 'ask')}>Ask Cap</button>
           {p.status === 'declined'
             ? <button style={btn} disabled={!!busy} onClick={() => run('o' + p.id, { action: 'reopen', id: p.id })}>Reopen</button>
@@ -195,8 +201,8 @@ export default function PlanPanel() {
           </div>
           {p.weekly!.channels.map((c, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, margin: '5px 0', color: 'var(--text)' }}>
-              <input type="number" min={0} defaultValue={c.per_week} style={{ width: 52, padding: '3px 6px', border: '1px solid var(--border)', borderRadius: 7, background: 'var(--bg)', color: 'var(--text)' }}
-                onBlur={e => { const n = Number(e.target.value); if (n !== c.per_week) setChannel(p, i, n) }} /> a week · {c.format}
+              <input type="number" min={0} value={drafts[p.id]?.[i] ?? c.per_week} style={{ width: 52, padding: '3px 6px', border: `1px solid ${drafts[p.id] && drafts[p.id][i] !== c.per_week ? '#5A4FCF' : 'var(--border)'}`, borderRadius: 7, background: 'var(--bg)', color: 'var(--text)' }}
+                onChange={e => setDraft(p, i, Math.max(0, Math.round(Number(e.target.value) || 0)))} /> a week · {c.format}
             </div>
           ))}
           <p style={{ margin: '6px 0', fontSize: 12, color: 'var(--text-subtle)' }}>{p.weekly!.campaign_balance} {p.weekly!.batch}</p>

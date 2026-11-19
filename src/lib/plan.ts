@@ -109,6 +109,8 @@ export function proposeMonthly(from = todayStr(), branches: BranchId[] = BRANCH_
 }
 
 // ── weekly cadence (per account; needs an approved monthly for its branch) ───────
+const cadenceWords = (n: number) => n >= 7 ? '1–2 a day' : n >= 3 ? 'every 2–3 days' : n === 2 ? 'twice a week' : n === 1 ? 'once a week' : 'paused this week'
+
 function weeklyBody(a: { id: string; handle: string }, branch: BranchId): WeeklyPlanBody {
   const k = `${a.id} ${a.handle}`.toLowerCase().replace(/[^a-z0-9 ]/g, '')
   let channels: { format: string; per_week: number }[]
@@ -124,7 +126,7 @@ function weeklyBody(a: { id: string; handle: string }, branch: BranchId): Weekly
   const wfh = branch === 'wfh'
   return {
     account_id: a.id, handle: a.handle || a.id, channels, posts_per_week: total,
-    per_day: total >= 7 ? '1–2 a day' : total >= 3 ? 'every 2–3 days' : 'about once a week',
+    per_day: cadenceWords(total),
     batch: 'Batch about 20 posts at a time; post 1–2 a day. Counts are starting points.',
     campaign_balance: wfh ? 'Podcast only. No Reset invites, no Joyful Media offers, no WFH services.' : 'Roughly 1 in 3 posts points to the next Reset; the rest is value and story. Never the podcast.',
     arc: 'This account gets its own footage, on-screen text and captions. No identical Reels across accounts. One new format a week.',
@@ -169,9 +171,22 @@ export function proposeWeekly(): { plans: Plan[]; skipped: string[] } {
 
 export function getPlans(): Plan[] { return (readDb().plans ?? []).filter(p => p.status !== 'superseded') }
 
-export function approvePlan(id: string): Plan | null {
+// Apply new per-week counts to a weekly plan and keep its one-line summary truthful.
+function applyChannels(p: Plan, channels: { format: string; per_week: number }[]) {
+  if (!p.weekly) return
+  p.weekly.channels = channels.map(c => ({ format: String(c.format), per_week: Math.max(0, Math.round(Number(c.per_week) || 0)) }))
+  const total = p.weekly.channels.reduce((n, c) => n + c.per_week, 0)
+  p.weekly.posts_per_week = total
+  p.weekly.per_day = cadenceWords(total)
+  p.summary = `${p.weekly.handle}: ${total} post${total === 1 ? '' : 's'} a week (${p.weekly.per_day}).`
+}
+
+// Approve, optionally with her last-second count changes in the same step (so an edit and
+// an Approve click can never race each other).
+export function approvePlan(id: string, channels?: { format: string; per_week: number }[] | null): Plan | null {
   const db = readDb()
   const p = (db.plans ?? []).find(x => x.id === id); if (!p || p.status === 'superseded') return null
+  if (channels && Array.isArray(channels)) applyChannels(p, channels)
   p.status = 'approved'; p.approved_at = new Date().toISOString(); p.updated_at = p.approved_at
   writeDb(db); return p
 }
@@ -242,10 +257,7 @@ export function editPlan(id: string, patch: { channels?: { format: string; per_w
   const db = readDb()
   const p = (db.plans ?? []).find(x => x.id === id); if (!p || p.status === 'superseded') return null
   if (patch.summary) p.summary = patch.summary
-  if (p.weekly && patch.channels) {
-    p.weekly.channels = patch.channels.map(c => ({ format: String(c.format), per_week: Math.max(0, Math.round(Number(c.per_week) || 0)) }))
-    p.weekly.posts_per_week = p.weekly.channels.reduce((n, c) => n + c.per_week, 0)
-  }
+  if (p.weekly && patch.channels) applyChannels(p, patch.channels)
   if (p.monthly) { if (patch.goals) p.monthly.goals = patch.goals; if (patch.priorities) p.monthly.priorities = patch.priorities }
   p.status = 'proposed'; p.approved_at = null; p.updated_at = new Date().toISOString()
   writeDb(db); return p
@@ -264,6 +276,15 @@ export function getCalendar(from: string, to: string): CalendarView[] {
     const c = content.get(i.content_id)
     return { ...i, title: c?.title ?? '(content record missing)', status: c?.status ?? 'missing', has_script: !!c?.script, has_media: !!(c?.media_url || c?.media_urls?.length), handle: i.account_id ? (acct.get(i.account_id)?.handle || i.account_id) : '' }
   })
+}
+
+// Take an item off the calendar. Only the calendar entry goes; the content card stays in Content Day.
+export function removeCalendarItem(id: string): boolean {
+  const db = readDb()
+  const before = (db.calendar_items ?? []).length
+  db.calendar_items = (db.calendar_items ?? []).filter(i => i.id !== id)
+  if (db.calendar_items.length === before) return false
+  writeDb(db); return true
 }
 
 // Mandi drags an item to another day (and optionally an hour). Only the calendar item moves;
@@ -319,17 +340,20 @@ export function generateCalendar(from = todayStr(), days = 14): { created: numbe
 
   // Attach each need to ONE content record: an existing one if it fits, else a new idea card.
   const usedContent = new Set(existing.map(i => i.content_id))
-  const sameKey = (n: Need) => (i: CalendarItem) => i.plan_id === n.plan_id && i.date === n.date && i.account_id === n.account_id && i.slot === n.slot
+  // Already-there check is per WEEK (Mon–Sun), not per exact day: when a busy day pushes a post
+  // to the next day, or Mandi drags it, a re-fill still recognizes it and never adds it twice.
+  const weekOf = (d: string) => { const ms = toMs(d); const dow = (new Date(ms).getUTCDay() + 6) % 7; return addDays(d, -dow) }
+  const keyOf = (x: { plan_id: string; account_id: string | null; slot: string; date: string }) => `${x.plan_id}|${x.account_id ?? ''}|${x.slot}|${weekOf(x.date)}`
+  const have: Record<string, number> = {}
+  for (const i of existing) if (i.date >= from && i.date <= to) have[keyOf(i)] = (have[keyOf(i)] ?? 0) + 1
+  const wantedBy: Record<string, number> = {}
+  for (const n of placed) wantedBy[keyOf(n)] = (wantedBy[keyOf(n)] ?? 0) + 1
   const out: CalendarItem[] = []
   let created = 0, reused = 0
-  const seenKeys: Need[] = []
   for (const n of placed) {
-    // an item already on the calendar for the same plan/day/account/slot is not made twice (counts handle several posts a day)
-    const already = existing.filter(sameKey(n)).length + out.filter(sameKey(n)).length
-    const wanted = placed.filter(x => x.plan_id === n.plan_id && x.date === n.date && x.account_id === n.account_id && x.slot === n.slot).length
-    const idx = seenKeys.filter(x => x.plan_id === n.plan_id && x.date === n.date && x.account_id === n.account_id && x.slot === n.slot).length
-    seenKeys.push(n)
-    if (already > idx || already >= wanted) continue
+    const k = keyOf(n)
+    if ((have[k] ?? 0) >= wantedBy[k]) continue
+    have[k] = (have[k] ?? 0) + 1
     let card: ContentPiece | undefined
     if (n.slot === 'post') {
       const fresh = readDb().content.find(c => c.account_id === n.account_id && (c.status === 'idea' || c.status === 'in_progress') && !usedContent.has(c.id) && !c.scheduled_at)

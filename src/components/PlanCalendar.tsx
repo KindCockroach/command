@@ -104,6 +104,14 @@ export default function PlanCalendar({ refreshKey = 0 }: { refreshKey?: number }
     else flash(`Moved to ${fmt(date, { weekday: 'short', month: 'short', day: 'numeric' })}${time ? `, ${timeLabel(time)}` : ''}`)
   }
 
+  async function remove(id: string) {
+    const before = items.find(i => i.id === id); if (!before) return
+    setItems(xs => xs.filter(i => i.id !== id)); setOpen(null)
+    const r = await fetch('/api/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove', id }) }).then(x => x.json()).catch(() => ({ error: 'Connection hiccup.' }))
+    if (r.error) { setItems(xs => [...xs, before]); flash(`Didn’t remove: ${r.error}`) }
+    else flash('Taken off the calendar. The card is still in Content Day.')
+  }
+
   // drag + drop (desktop). The drop key says where: "YYYY-MM-DD" (keep time) / "YYYY-MM-DD@" (any time) / "YYYY-MM-DD@HH:00".
   const dragProps = (it: Item) => ({
     draggable: true,
@@ -300,7 +308,8 @@ export default function PlanCalendar({ refreshKey = 0 }: { refreshKey?: number }
               {open.time && <button className="pc-btn ghost" onClick={() => move(open.id, open.date, null)}>Any time</button>}
             </div>
             <button className="pc-btn primary" onClick={() => { setOpen(null); window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'contentday' } })) }}>Open in Content Day →</button>
-            <p className="pc-foot">Card #{open.content_id}. Moving it here never copies the card.</p>
+            <button className="pc-btn ghost" style={{ marginTop: 8 }} onClick={() => remove(open.id)}>Remove from calendar</button>
+            <p className="pc-foot">Card #{open.content_id}. Moving it here never copies the card; removing it keeps the card in Content Day.</p>
           </div>
         </div>
       )}

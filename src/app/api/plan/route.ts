@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPlans, getCalendar, moveCalendarItem, getPlanConfig, setPlanConfig, proposeMonthly, proposeWeekly, approvePlan, editPlan, declinePlan, reopenPlan, askAboutPlan, generateCalendar, retireCadenceGoals, addDays, todayStr } from '@/lib/plan'
+import { getPlans, getCalendar, moveCalendarItem, removeCalendarItem, getPlanConfig, setPlanConfig, proposeMonthly, proposeWeekly, approvePlan, editPlan, declinePlan, reopenPlan, askAboutPlan, generateCalendar, retireCadenceGoals, addDays, todayStr } from '@/lib/plan'
 import { getBranches, readDb } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -22,10 +22,11 @@ export async function POST(req: NextRequest) {
     switch (b.action) {
       case 'propose_monthly': return NextResponse.json({ plans: proposeMonthly(b.from || todayStr()) })
       case 'propose_weekly': return NextResponse.json(proposeWeekly())
-      case 'approve': { const p = approvePlan(String(b.id)); return p ? NextResponse.json({ plan: p }) : NextResponse.json({ error: 'Plan not found.' }, { status: 404 }) }
+      case 'approve': { const p = approvePlan(String(b.id), Array.isArray(b.channels) ? b.channels : null); return p ? NextResponse.json({ plan: p }) : NextResponse.json({ error: 'Plan not found.' }, { status: 404 }) }
       case 'decline': { const p = declinePlan(String(b.id), String(b.reason || ''), b.mirrors_account_id ? String(b.mirrors_account_id) : null); return 'error' in p ? NextResponse.json(p, { status: 400 }) : NextResponse.json({ plan: p }) }
       case 'reopen': { const p = reopenPlan(String(b.id)); return p ? NextResponse.json({ plan: p }) : NextResponse.json({ error: 'Only a declined plan can be reopened.' }, { status: 400 }) }
       case 'ask': { const p = await askAboutPlan(String(b.id), String(b.question || '')); return 'error' in p ? NextResponse.json(p, { status: 400 }) : NextResponse.json({ plan: p }) }
+      case 'remove': return removeCalendarItem(String(b.id)) ? NextResponse.json({ ok: true }) : NextResponse.json({ error: 'That item isn\u2019t on the calendar.' }, { status: 404 })
       case 'edit': { const p = editPlan(String(b.id), b.patch || {}); return p ? NextResponse.json({ plan: p }) : NextResponse.json({ error: 'Plan not found.' }, { status: 404 }) }
       case 'move': { const it = moveCalendarItem(String(b.id), String(b.date), b.time ? String(b.time) : null); return it ? NextResponse.json({ item: it }) : NextResponse.json({ error: 'Couldn\u2019t move that item.' }, { status: 400 }) }
       case 'generate_calendar': return NextResponse.json(generateCalendar(b.from || todayStr(), 14))
