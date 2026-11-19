@@ -188,10 +188,21 @@ export function getCalendar(from: string, to: string): CalendarView[] {
   const db = readDb()
   const content = new Map(db.content.map(c => [c.id, c]))
   const acct = new Map((db.brand_accounts ?? []).map(a => [a.id, a]))
-  return (db.calendar_items ?? []).filter(i => i.date >= from && i.date <= to).sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)).map(i => {
+  return (db.calendar_items ?? []).filter(i => i.date >= from && i.date <= to).sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? '').localeCompare(b.time ?? '') || a.id.localeCompare(b.id)).map(i => {
     const c = content.get(i.content_id)
     return { ...i, title: c?.title ?? '(content record missing)', status: c?.status ?? 'missing', has_script: !!c?.script, has_media: !!(c?.media_url || c?.media_urls?.length), handle: i.account_id ? (acct.get(i.account_id)?.handle || i.account_id) : '' }
   })
+}
+
+// Mandi drags an item to another day (and optionally an hour). Only the calendar item moves;
+// the content record it points at is untouched, so Content Day still shows the same card.
+export function moveCalendarItem(id: string, date: string, time: string | null = null): CalendarItem | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
+  if (time !== null && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null
+  const db = readDb()
+  const it = (db.calendar_items ?? []).find(i => i.id === id); if (!it) return null
+  it.date = date; it.time = time
+  writeDb(db); return it
 }
 
 export function generateCalendar(from = todayStr(), days = 14): { created: number; reused: number; moved: number; dropped: string[]; window: [string, string] } {
@@ -262,7 +273,7 @@ export function generateCalendar(from = todayStr(), days = 14): { created: numbe
       created++
     }
     usedContent.add(card.id)
-    out.push({ id: '', date: n.date, branch_id: n.branch, account_id: n.account_id, content_id: card.id, plan_id: n.plan_id, slot: n.slot, created_at: '' })
+    out.push({ id: '', date: n.date, branch_id: n.branch, account_id: n.account_id, content_id: card.id, plan_id: n.plan_id, slot: n.slot, time: n.slot === 'reset' ? '20:00' : null, created_at: '' })
   }
   const db = readDb()
   db.calendar_items ??= []; db.next_calendar_id ??= 1

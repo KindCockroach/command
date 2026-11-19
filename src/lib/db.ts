@@ -479,6 +479,7 @@ export type CalendarItem = {
   content_id: number                             // THE one content record. Never duplicated.
   plan_id: string
   slot: 'reset' | 'podcast' | 'post'
+  time?: string | null                           // 'HH:MM' when Mandi drops it on an hour; null = any time that day
   created_at: string
 }
 export type PlanConfig = {
@@ -616,9 +617,22 @@ export type PodcastGuest = {
   media_folder: string
   notes?: string
   comms?: GuestComm[]     // communications log, newest last
+  kit?: GuestKit          // invite → checklist → questionnaire → follow-up kit (Phase 2b)
   created_at: string
   updated_at: string
 }
+// The guest kit: everything for one guest or collaborator, kept ON the guest card (one record).
+export type GuestKit = {
+  kind?: 'podcast' | 'collab'
+  handles?: { instagram?: string; tiktok?: string; youtube?: string; linkedin?: string; website?: string; other?: string }
+  collab_idea?: string
+  checklist?: Record<string, string>                 // step id → when she ticked it (ISO)
+  questionnaire?: { token: string; sent_at?: string; answered_at?: string; answers?: Record<string, string>; last_try?: string }
+  followup?: { replay_url?: string; episode_url?: string; assets?: { label: string; url: string }[]; caption?: string; sent_at?: string }
+  invite?: { sent_at?: string; subject?: string }
+  collab_date?: string                               // YYYY-MM-DD for a collaboration (podcast guests use their booking)
+}
+export type GuestKitConfig = { auto_questionnaire: boolean; questionnaire_days_before: number }
 // One touchpoint with a guest — an email sent through RISE, a draft, or a DM/text/
 // call she logged by hand.
 export type GuestComm = {
@@ -712,6 +726,7 @@ export type Db = {
   next_plan_id?: number
   next_calendar_id?: number
   plan_config?: PlanConfig
+  guest_kit_config?: GuestKitConfig
   wellspring?: WellspringStore
   build_log?: BuildLogEntry[]
   memories: Memory[]

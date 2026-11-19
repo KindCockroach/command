@@ -33,6 +33,7 @@ function isPublic(path: string): boolean {
   if (path === '/book' || path === '/api/podcast/schedule') return true // guest scheduler (/book/manage stays private; admin actions check the cookie in the route)
   if (path === '/wellspring' || path === '/bethereforher/wellspring') return true // The Wellspring membership
   if (path === '/resetwelcome' || path === '/bethereforher/resetwelcome') return true // Reset registrants' welcome + gift
+  if (path === '/guest' || path === '/api/guest-questionnaire') return true // podcast/collab guest questionnaire (private token link)
   if (path === '/api/journal-waitlist') return true // public signup form (podcast page, BTFH opt-in, Wellspring)
   return false
 }

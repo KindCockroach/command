@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import PlanCalendar from './PlanCalendar'
 
 // CAP'S PLAN + CALENDAR. Monthly plan per branch → weekly cadence per account → the next two
 // weeks of daily items. Each calendar item points at ONE content record (the same record
@@ -12,8 +13,7 @@ type Plan = {
   monthly?: { goals: string[]; initiatives: string[]; campaigns: { product_id: string; note: string }[]; dates: { date: string; label: string }[]; priorities: string[]; paused: string[] }
   weekly?: { account_id: string; handle: string; channels: Channel[]; posts_per_week: number; per_day: string; batch: string; campaign_balance: string; arc: string }
 }
-type Item = { id: string; date: string; branch_id: string; slot: string; handle: string; title: string; status: string; has_script: boolean; has_media: boolean; content_id: number }
-type Data = { plans: Plan[]; calendar: Item[]; window: [string, string] }
+type Data = { plans: Plan[] }
 
 const NAME = { joyful_media: 'Joyful Media', wfh: 'WFH' } as const
 const card = { border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 14px', background: 'var(--bg)', marginBottom: '10px' } as const
@@ -28,6 +28,7 @@ export default function PlanPanel() {
   const [data, setData] = useState<Data | null>(null)
   const [busy, setBusy] = useState('')
   const [msg, setMsg] = useState('')
+  const [calKey, setCalKey] = useState(0)
 
   const load = useCallback(async () => { setData(await fetch('/api/plan').then(r => r.json()).catch(() => null)) }, [])
   useEffect(() => { load() }, [load])
@@ -37,7 +38,7 @@ export default function PlanPanel() {
     const d = await post(body).catch(() => ({ error: 'Connection hiccup.' }))
     setBusy('')
     setMsg(d.error ? String(d.error) : summarize ? summarize(d) : '')
-    load()
+    load(); setCalKey(k => k + 1)
   }
   const setChannel = (plan: Plan, i: number, n: number) => {
     const channels = plan.weekly!.channels.map((c, j) => (j === i ? { ...c, per_week: n } : c))
@@ -49,10 +50,9 @@ export default function PlanPanel() {
   const weekly = data.plans.filter(p => p.level === 'weekly').sort((a, b) => (a.branch_id === 'joyful_media' ? -1 : 1) - (b.branch_id === 'joyful_media' ? -1 : 1))
   const monthlyApproved = monthly.some(p => p.status === 'approved')
   const weeklyApproved = weekly.some(p => p.status === 'approved')
-  const days = [...new Set(data.calendar.map(i => i.date))].sort()
 
   return (
-    <div style={{ padding: '4px 2px', maxWidth: 760 }}>
+    <div style={{ padding: '4px 2px', maxWidth: 1180 }}>
       <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--text)' }}>Plan</h2>
       <p style={{ fontSize: 12.5, color: 'var(--text-subtle)', margin: '2px 0 4px' }}>Cap drafts, you approve. Month first, then each account&rsquo;s week, then the days appear. Joyful Media wins every tie.</p>
       {msg && <p style={{ fontSize: 13, color: msg.toLowerCase().includes('hiccup') || msg.toLowerCase().includes('no approved') ? '#B23A48' : '#2F7D5B' }}>{msg}</p>}
@@ -98,22 +98,9 @@ export default function PlanPanel() {
       {weeklyApproved && <button style={btn} disabled={!!busy} onClick={() => run('r', { action: 'retire_cadence' }, d => d.error ? String(d.error) : `Preview: this would retire ${(d.goals_retired as string[]).length} old November 11 quota goals (kept, not deleted) and add ${(d.goals_created as string[]).length} goals from the plan. Press again to confirm.`)}>Retire the old daily quotas…</button>}
       {msg.startsWith('Preview:') && <button style={{ ...primary, marginLeft: 8 }} disabled={!!busy} onClick={() => run('r2', { action: 'retire_cadence', confirm: true }, d => `Done. Retired ${(d.goals_retired as string[]).length} old goals and added ${(d.goals_created as string[]).length} from Cap’s plan. Backup saved first.`)}>Confirm</button>}
 
-      <p style={lbl}>3 · The next two weeks</p>
+      <p style={lbl}>3 · The calendar</p>
       <button style={btn} disabled={!!busy || !weeklyApproved && !monthlyApproved} onClick={() => run('c', { action: 'generate_calendar' }, d => `Added ${d.created} new items and reused ${d.reused} existing cards.${(d.dropped as string[]).length ? ` ${(d.dropped as string[]).length} didn’t fit.` : ''}`)}>{busy === 'c' ? 'Building…' : 'Fill the calendar from approved plans'}</button>
-      {!days.length && <p style={{ fontSize: 13, color: 'var(--text-subtle)' }}>Nothing on the calendar yet.</p>}
-      {days.map(d => (
-        <div key={d} style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>{day(d)}</div>
-          {data.calendar.filter(i => i.date === d).sort((a, b) => (a.branch_id === 'joyful_media' ? 0 : 1) - (b.branch_id === 'joyful_media' ? 0 : 1)).map(i => (
-            <div key={i.id} style={{ ...card, padding: '7px 11px', marginBottom: 5, display: 'flex', gap: 8, alignItems: 'center', fontSize: 12.5, color: 'var(--text)' }}>
-              <span style={{ fontSize: 10.5, fontWeight: 800, color: i.branch_id === 'joyful_media' ? '#C2693F' : '#5A4FCF' }}>{NAME[i.branch_id as 'wfh']}</span>
-              <span style={{ flex: 1 }}>{i.title}</span>
-              <span style={{ fontSize: 11, color: 'var(--text-subtle)' }}>{i.status}{i.has_script ? ' · script' : ''}{i.has_media ? ' · media' : ''}</span>
-              <button style={{ ...btn, padding: '3px 8px' }} onClick={() => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'contentday' } }))}>Content Day →</button>
-            </div>
-          ))}
-        </div>
-      ))}
+      <div style={{ marginTop: 14 }}><PlanCalendar refreshKey={calKey} /></div>
     </div>
   )
 }
