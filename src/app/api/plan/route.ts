@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPlans, getCalendar, moveCalendarItem, getPlanConfig, setPlanConfig, proposeMonthly, proposeWeekly, approvePlan, editPlan, generateCalendar, retireCadenceGoals, addDays, todayStr } from '@/lib/plan'
-import { getBranches } from '@/lib/db'
+import { getPlans, getCalendar, moveCalendarItem, getPlanConfig, setPlanConfig, proposeMonthly, proposeWeekly, approvePlan, editPlan, declinePlan, reopenPlan, askAboutPlan, generateCalendar, retireCadenceGoals, addDays, todayStr } from '@/lib/plan'
+import { getBranches, readDb } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
   // any window up to ~3 months (month view asks for 6 weeks); default is the two-week plan
   let to = q.get('to') || addDays(from, 13)
   if (to < from || to > addDays(from, 92)) to = addDays(from, 13)
-  return NextResponse.json({ branches: getBranches(), plans: getPlans(), calendar: getCalendar(from, to), window: [from, to], config: getPlanConfig() })
+  const accounts = (readDb().brand_accounts ?? []).map(a => ({ id: a.id, handle: a.handle, platform: a.platform, status: a.status, mirrors_account_id: a.mirrors_account_id ?? null }))
+  return NextResponse.json({ branches: getBranches(), accounts, plans: getPlans(), calendar: getCalendar(from, to), window: [from, to], config: getPlanConfig() })
 }
 
 export async function POST(req: NextRequest) {
@@ -22,6 +23,9 @@ export async function POST(req: NextRequest) {
       case 'propose_monthly': return NextResponse.json({ plans: proposeMonthly(b.from || todayStr()) })
       case 'propose_weekly': return NextResponse.json(proposeWeekly())
       case 'approve': { const p = approvePlan(String(b.id)); return p ? NextResponse.json({ plan: p }) : NextResponse.json({ error: 'Plan not found.' }, { status: 404 }) }
+      case 'decline': { const p = declinePlan(String(b.id), String(b.reason || ''), b.mirrors_account_id ? String(b.mirrors_account_id) : null); return 'error' in p ? NextResponse.json(p, { status: 400 }) : NextResponse.json({ plan: p }) }
+      case 'reopen': { const p = reopenPlan(String(b.id)); return p ? NextResponse.json({ plan: p }) : NextResponse.json({ error: 'Only a declined plan can be reopened.' }, { status: 400 }) }
+      case 'ask': { const p = await askAboutPlan(String(b.id), String(b.question || '')); return 'error' in p ? NextResponse.json(p, { status: 400 }) : NextResponse.json({ plan: p }) }
       case 'edit': { const p = editPlan(String(b.id), b.patch || {}); return p ? NextResponse.json({ plan: p }) : NextResponse.json({ error: 'Plan not found.' }, { status: 404 }) }
       case 'move': { const it = moveCalendarItem(String(b.id), String(b.date), b.time ? String(b.time) : null); return it ? NextResponse.json({ item: it }) : NextResponse.json({ error: 'Couldn\u2019t move that item.' }, { status: 400 }) }
       case 'generate_calendar': return NextResponse.json(generateCalendar(b.from || todayStr(), 14))

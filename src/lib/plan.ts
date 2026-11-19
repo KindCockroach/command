@@ -6,7 +6,7 @@
 import {
   readDb, writeDb, createContent, backupDb, getBranches, branchOfAccount, branchOfProduct, seedBranches,
   PHASE2_PRODUCT_PATCHES, DEFAULT_PLAN_CONFIG, BRANCH_IDS,
-  type BranchId, type Plan, type CalendarItem, type PlanConfig, type MonthlyPlanBody, type WeeklyPlanBody, type ContentPiece,
+  type BranchId, type Plan, type PlanNote, type CalendarItem, type PlanConfig, type MonthlyPlanBody, type WeeklyPlanBody, type ContentPiece,
 } from './db'
 
 // ── dates (plain YYYY-MM-DD math in UTC so it never drifts with the server's timezone) ──
@@ -142,12 +142,24 @@ export function proposeWeekly(): { plans: Plan[]; skipped: string[] } {
     if (!b) { skipped.push(`${a.handle || a.id}: not placed in a branch yet`); continue }
     const parent = db.plans.filter(p => p.level === 'monthly' && p.branch_id === b && p.status === 'approved').sort((x, y) => y.period_start.localeCompare(x.period_start))[0]
     if (!parent) { skipped.push(`${a.handle || a.id}: the ${b === 'wfh' ? 'WFH' : 'Joyful Media'} monthly plan isn't approved yet`); continue }
-    for (const old of db.plans) if (old.level === 'weekly' && old.weekly?.account_id === a.id && old.status === 'proposed') { old.status = 'superseded'; old.updated_at = now }
+    if (db.plans.some(x => x.level === 'weekly' && x.weekly?.account_id === a.id && x.status === 'approved' && x.parent_plan_id === parent.id)) continue // already approved for this month
+    if (a.mirrors_account_id) {
+      const src = (db.brand_accounts ?? []).find(x => x.id === a.mirrors_account_id)
+      skipped.push(`${a.handle || a.id}: mirrors ${src?.handle || a.mirrors_account_id}, so it posts automatically and needs no plan of its own`)
+      for (const old of db.plans) if (old.level === 'weekly' && old.weekly?.account_id === a.id && (old.status === 'proposed' || old.status === 'declined')) { old.status = 'superseded'; old.updated_at = now }
+      continue
+    }
+    // Her notes on the drafts she hadn't approved (questions, declines) ride onto the new draft.
+    const carried: PlanNote[] = []
+    for (const old of db.plans) if (old.level === 'weekly' && old.weekly?.account_id === a.id && (old.status === 'proposed' || old.status === 'declined')) {
+      carried.push(...(old.feedback ?? [])); old.status = 'superseded'; old.updated_at = now
+    }
     const body = weeklyBody({ id: a.id, handle: a.handle }, b)
     const plan: Plan = {
       id: `plan_${db.next_plan_id++}`, level: 'weekly', branch_id: b, period_start: parent.period_start, period_end: parent.period_end, status: 'proposed',
       summary: `${body.handle}: ${body.posts_per_week} post${body.posts_per_week === 1 ? '' : 's'} a week (${body.per_day}).`, weekly: body, proposed_by: 'cap',
       approved_at: null, parent_plan_id: parent.id, created_at: now, updated_at: now,
+      ...(carried.length ? { feedback: carried } : {}),
     }
     db.plans.push(plan); made.push(plan)
   }
@@ -161,6 +173,66 @@ export function approvePlan(id: string): Plan | null {
   const db = readDb()
   const p = (db.plans ?? []).find(x => x.id === id); if (!p || p.status === 'superseded') return null
   p.status = 'approved'; p.approved_at = new Date().toISOString(); p.updated_at = p.approved_at
+  writeDb(db); return p
+}
+
+// Mandi's "no": a decline needs her reason (kept on the plan and carried onto Cap's next draft).
+// Optionally she marks the account as a mirror of another (e.g. a FB page that auto-posts from IG),
+// so Cap stops drafting a separate plan for it.
+export function declinePlan(id: string, reason: string, mirrorsAccountId?: string | null): Plan | { error: string } {
+  const text = String(reason || '').trim()
+  if (!text) return { error: 'Tell Cap why, in a sentence, so the next draft is better.' }
+  const db = readDb()
+  const p = (db.plans ?? []).find(x => x.id === id); if (!p || p.status === 'superseded') return { error: 'Plan not found.' }
+  const now = new Date().toISOString()
+  p.status = 'declined'; p.approved_at = null; p.updated_at = now
+  ;(p.feedback ??= []).push({ kind: 'decline', text, at: now })
+  if (mirrorsAccountId && p.weekly) {
+    const acct = (db.brand_accounts ?? []).find(a => a.id === p.weekly!.account_id)
+    const src = (db.brand_accounts ?? []).find(a => a.id === mirrorsAccountId)
+    if (acct && src && src.id !== acct.id) acct.mirrors_account_id = src.id
+  }
+  writeDb(db); return p
+}
+
+// Changed her mind: a declined plan goes back to waiting (her reason stays in the history).
+export function reopenPlan(id: string): Plan | null {
+  const db = readDb()
+  const p = (db.plans ?? []).find(x => x.id === id); if (!p || p.status !== 'declined') return null
+  const now = new Date().toISOString()
+  p.status = 'proposed'; p.updated_at = now
+  ;(p.feedback ??= []).push({ kind: 'reopen', text: 'Reopened', at: now })
+  writeDb(db); return p
+}
+
+// Her question about a plan. Cap answers from the plan itself, its monthly parent and the
+// account's card. The question is saved first, so it is never lost if the answer fails.
+export async function askAboutPlan(id: string, question: string): Promise<Plan | { error: string }> {
+  const q = String(question || '').trim()
+  if (!q) return { error: 'Type your question first.' }
+  let db = readDb()
+  let p = (db.plans ?? []).find(x => x.id === id); if (!p || p.status === 'superseded') return { error: 'Plan not found.' }
+  const at = new Date().toISOString()
+  ;(p.feedback ??= []).push({ kind: 'question', text: q, at, answer: null })
+  writeDb(db)
+  const parent = p.parent_plan_id ? (db.plans ?? []).find(x => x.id === p!.parent_plan_id) : null
+  const acct = p.weekly ? (db.brand_accounts ?? []).find(a => a.id === p!.weekly!.account_id) : null
+  const ctx = {
+    plan: { level: p.level, branch: p.branch_id, period: [p.period_start, p.period_end], status: p.status, summary: p.summary, monthly: p.monthly, weekly: p.weekly },
+    monthly_parent: parent ? { summary: parent.summary, goals: parent.monthly?.goals, dates: parent.monthly?.dates, priorities: parent.monthly?.priorities } : null,
+    account: acct ? { handle: acct.handle, platform: acct.platform, status: acct.status, mission: acct.mission, topic: acct.topic, content_format: acct.content_format, mirrors_account_id: acct.mirrors_account_id ?? null } : null,
+    earlier_notes: (p.feedback ?? []).slice(0, -1),
+  }
+  const system = 'You are Cap, the planner in Mandi\'s RISE station. Mandi is asking about one of your draft plans. Answer her plainly and briefly (2 to 5 sentences): why you drafted it this way, and what you would change if she wants. Use only the facts given. If the answer depends on something you do not know, say so and say what she could tell you. Never promise results. Rules you plan by: Joyful Media and WFH never cross-promote; Joyful wins ties; podcast accounts carry podcast-only CTAs; every account gets its own footage.'
+  let answer: string | null = null
+  try {
+    const { callGPT } = await import('./ai')
+    answer = (await callGPT('cap', `Plan context (JSON):\n${JSON.stringify(ctx)}\n\nMandi asks: ${q}`, system)).trim() || null
+  } catch { answer = null }
+  db = readDb()
+  p = (db.plans ?? []).find(x => x.id === id)!
+  const note = (p.feedback ?? []).find(n => n.kind === 'question' && n.at === at)
+  if (note) { note.answer = answer ?? 'Cap couldn\u2019t answer just now. Your question is saved; ask again in a minute.'; note.answered_at = answer ? new Date().toISOString() : null }
   writeDb(db); return p
 }
 

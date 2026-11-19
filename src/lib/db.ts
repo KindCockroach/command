@@ -190,6 +190,7 @@ export type BrandAccount = {
   audience_id?: string | null   // THE one audience this account serves
   avatar_id?: string | null     // THE one avatar who speaks on this account
   branch_id?: BranchId | null   // which business this account belongs to (null = unplaced, waiting on Mandi)
+  mirrors_account_id?: string | null   // this account auto-posts whatever goes to that one (e.g. a FB page fed by IG) → no plan of its own
   ghl_account_ids?: string[]    // EXACT GHL Social Planner account id(s) this posts to (reliable > name-matching)
 }
 
@@ -436,7 +437,9 @@ export function getBranches(): Branch[] {
 // Monthly plan (per branch) → weekly cadence (per account) → daily calendar items.
 // A calendar item holds NO copy, script or status of its own: it points at ONE
 // existing ContentPiece (content_id). Content Day reads the same records.
-export type PlanStatus = 'proposed' | 'approved' | 'superseded'
+export type PlanStatus = 'proposed' | 'approved' | 'superseded' | 'declined'
+// Mandi's side of a plan: a question for Cap (Cap answers), a decline with her reason, or a reopen.
+export type PlanNote = { kind: 'question' | 'decline' | 'reopen'; text: string; at: string; answer?: string | null; answered_at?: string | null }
 export type MonthlyPlanBody = {
   goals: string[]
   initiatives: string[]
@@ -468,6 +471,7 @@ export type Plan = {
   proposed_by: 'cap'
   approved_at?: string | null
   parent_plan_id?: string | null                 // weekly → the approved monthly it follows
+  feedback?: PlanNote[]                          // her questions/declines on this plan, oldest first (carried onto Cap's next draft)
   created_at: string
   updated_at: string
 }
