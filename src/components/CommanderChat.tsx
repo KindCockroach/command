@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
+import { uploadBig, folderFor } from '@/lib/uploadBig'
 import { Loader2, Send, Paperclip, X } from 'lucide-react'
 import CommanderModal from './CommanderModal'
 import { parseReceipts, receiptLine, withReceipts, shredRequest, announceDataChanged, type CommanderReceipt } from '@/lib/commanderActions'
@@ -16,6 +17,7 @@ export default function CommanderChat() {
   const [loading, setLoading] = useState(false)
   const [attach, setAttach] = useState<Attach | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadPct, setUploadPct] = useState(0)
   const [shredInput, setShredInput] = useState<string | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -36,13 +38,10 @@ export default function CommanderChat() {
   const upload = async (f: File) => {
     setUploading(true)
     try {
-      const fd = new FormData()
-      fd.append('file', f)
-      fd.append('folder', f.type.startsWith('image') ? 'images' : f.type.startsWith('video') ? 'videos' : 'files')
-      const res = await fetch('/api/upload', { method: 'POST', body: fd })
-      const d = await res.json()
-      if (d.publicUrl) setAttach({ url: d.publicUrl, type: f.type, name: f.name })
-    } catch { /* ignore */ } finally { setUploading(false) }
+      setUploadPct(0)
+      const d = await uploadBig(f, folderFor(f), p => setUploadPct(p.pct))
+      setAttach({ url: d.publicUrl, type: f.type, name: f.name })
+    } catch (e) { alert(`Upload incomplete: ${e instanceof Error ? e.message : 'it stopped'}. Nothing was attached. Drop the file again to retry.`) } finally { setUploading(false) }
   }
 
   const send = async () => {
@@ -148,7 +147,7 @@ export default function CommanderChat() {
         <input ref={fileRef} type="file" accept="image/*,video/*,audio/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = '' }} />
         <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Attach an image, video, or file"
           style={{ padding: '10px', background: 'var(--surface-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          {uploading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Paperclip size={14} />}
+          {uploading ? <span style={{ fontSize: '10px', fontWeight: 700 }}>{uploadPct}%</span> : <Paperclip size={14} />}
         </button>
         <textarea value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}

@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, PutBucketCorsCommand, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, PutBucketCorsCommand, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand, ListPartsCommand, ListMultipartUploadsCommand, HeadObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { randomUUID } from 'crypto'
 
@@ -126,6 +126,44 @@ export async function abortMultipart(key: string, uploadId: string): Promise<voi
   const client = r2Client()
   if (!client) return
   await client.send(new AbortMultipartUploadCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId })).catch(() => {})
+}
+
+/** Parts R2 already holds for an unfinished multipart upload (for resuming). */
+export async function listParts(key: string, uploadId: string): Promise<{ PartNumber: number; ETag: string; Size: number }[]> {
+  const client = r2Client()
+  if (!client) return []
+  const out: { PartNumber: number; ETag: string; Size: number }[] = []
+  let marker: string | undefined
+  for (let i = 0; i < 50; i++) {
+    const r = await client.send(new ListPartsCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId, PartNumberMarker: marker }))
+    for (const p of r.Parts ?? []) if (p.PartNumber && p.ETag) out.push({ PartNumber: p.PartNumber, ETag: p.ETag, Size: p.Size ?? 0 })
+    if (!r.IsTruncated || !r.NextPartNumberMarker) break
+    marker = String(r.NextPartNumberMarker)
+  }
+  return out
+}
+
+/** Unfinished multipart uploads in the bucket (to sweep orphans). */
+export async function listOpenMultipart(): Promise<{ key: string; uploadId: string; initiated: string | null }[]> {
+  const client = r2Client()
+  if (!client) return []
+  const r = await client.send(new ListMultipartUploadsCommand({ Bucket: BUCKET }))
+  return (r.Uploads ?? []).filter(u => u.Key && u.UploadId).map(u => ({ key: u.Key!, uploadId: u.UploadId!, initiated: u.Initiated ? new Date(u.Initiated).toISOString() : null }))
+}
+
+/** Does a finished object exist in R2? (size in bytes, or null if not there) */
+export async function headObject(key: string): Promise<number | null> {
+  const client = r2Client()
+  if (!client) return null
+  try { const r = await client.send(new HeadObjectCommand({ Bucket: BUCKET, Key: key })); return r.ContentLength ?? 0 } catch { return null }
+}
+
+/** The bucket key behind one of our public media URLs (null if it isn't ours). */
+export function keyFromPublicUrl(url: string): string | null {
+  const base = process.env.R2_PUBLIC_URL ?? ''
+  if (base && url.startsWith(base + '/')) return decodeURIComponent(url.slice(base.length + 1))
+  if (url.startsWith('/api/media/')) return decodeURIComponent(url.slice('/api/media/'.length))
+  return null
 }
 
 /** Public URL for a stored object (requires R2 public bucket or custom domain) */

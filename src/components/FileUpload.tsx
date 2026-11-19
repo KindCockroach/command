@@ -1,6 +1,8 @@
 'use client'
 import { useState, useRef, useCallback } from 'react'
-import { Upload, Film, Image, Mic, FileText, CheckCheck, X, Loader2 } from 'lucide-react'
+import { Upload, Film, Image, Mic, FileText, CheckCheck, X } from 'lucide-react'
+import { uploadBig, formatBytes, type UploadProgress } from '@/lib/uploadBig'
+import UploadBar from './UploadBar'
 
 type UploadedFile = {
   name: string
@@ -24,11 +26,6 @@ const TYPE_ICON = {
   other: <FileText size={16} />,
 }
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
 interface Props {
   folder?: string
@@ -41,74 +38,24 @@ interface Props {
 export default function FileUpload({ folder = 'uploads', onUploaded, accept, label = 'Drop a file or click to browse', compact = false }: Props) {
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [progress, setProgress] = useState(0)
+  const [progress, setProgress] = useState<UploadProgress | null>(null)
+  const [current, setCurrent] = useState('')
   const [uploaded, setUploaded] = useState<UploadedFile | null>(null)
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   const upload = useCallback(async (file: File) => {
-    setError(''); setUploading(true); setProgress(0); setUploaded(null)
-
-    // Send bytes with an upload-progress bar. Used for both the server multipart
-    // POST and the direct-to-R2 PUT.
-    const send = (method: string, url: string, body: XMLHttpRequestBodyInit, headers?: Record<string, string>) =>
-      new Promise<XMLHttpRequest>((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.open(method, url)
-        if (headers) for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v)
-        xhr.upload.onprogress = e => { if (e.lengthComputable) setProgress(Math.round(e.loaded / e.total * 100)) }
-        xhr.onload = () => xhr.status < 300 ? resolve(xhr) : reject(new Error(`HTTP ${xhr.status}`))
-        xhr.onerror = () => reject(new Error('Network error during upload'))
-        xhr.send(body)
-      })
-
-    // Server path: multipart to our API, which relays to R2. No browser CORS
-    // involved — works even when the R2 bucket has no CORS rule. (Don't set
-    // Content-Type; the browser adds the multipart boundary.)
-    const viaServer = async () => {
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('folder', folder)
-      const xhr = await send('POST', '/api/upload', fd)
-      return JSON.parse(xhr.responseText) as { publicUrl: string; key: string }
-    }
-
-    // Direct path: presigned URL, then browser PUTs straight to R2. Needed for
-    // big files (server would buffer + OOM), but requires the bucket to allow
-    // cross-origin PUT from this site.
-    const viaDirect = async () => {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, folder }),
-      })
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Failed to get upload URL')
-      const { uploadUrl, publicUrl, key } = await res.json()
-      await send('PUT', uploadUrl, file, { 'Content-Type': file.type })
-      return { publicUrl, key }
-    }
-
-    const SERVER_LIMIT = 60 * 1024 * 1024 // ≤60MB goes through our server (no R2 CORS needed); above that, straight to R2
+    setError(''); setUploading(true); setProgress(null); setUploaded(null); setCurrent(file.name)
+    // The one upload path (lib/uploadBig): relay for small files, resumable chunks for big
+    // ones, automatic part retries, and no bucket CORS needed at any size.
     try {
-      let out: { publicUrl: string; key: string }
-      if (file.size <= SERVER_LIMIT) {
-        // Small/medium files: server relay avoids R2's browser-CORS requirement.
-        // Fall back to the direct path only if the server rejects it.
-        try { out = await viaServer() }
-        catch { setProgress(0); out = await viaDirect() }
-      } else {
-        // Big files must stream straight to R2 to avoid OOMing the server.
-        try { out = await viaDirect() }
-        catch (e) {
-          const origin = typeof location !== 'undefined' ? location.origin : 'this site'
-          throw new Error(`${e instanceof Error ? e.message : 'Upload failed'} — files over 60MB upload directly to Cloudflare R2, which needs a bucket CORS rule allowing PUT from ${origin}.`)
-        }
-      }
-      const result: UploadedFile = { name: file.name, publicUrl: out.publicUrl, key: out.key, type: fileCategory(file.type), size: file.size }
+      const { publicUrl } = await uploadBig(file, folder, p => setProgress(p))
+      const key = publicUrl.split('/').slice(-2).join('/')
+      const result: UploadedFile = { name: file.name, publicUrl, key, type: fileCategory(file.type), size: file.size }
       setUploaded(result)
       onUploaded?.(result)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed')
+      setError(`Upload incomplete: ${e instanceof Error ? e.message : 'it stopped'}. Nothing was saved. Drop the file again to retry.`)
     } finally {
       setUploading(false)
     }
@@ -158,18 +105,12 @@ export default function FileUpload({ folder = 'uploads', onUploaded, accept, lab
         }}
       >
         {uploading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-            <Loader2 size={24} color="var(--hot-pink)" style={{ animation: 'spin 1s linear infinite' }} />
-            <div style={{ width: '100%', maxWidth: '200px', height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${progress}%`, background: 'var(--hot-pink)', borderRadius: '2px', transition: 'width 0.2s' }} />
-            </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Uploading to Cloudflare R2... {progress}%</p>
-          </div>
+          <div onClick={e => e.stopPropagation()} style={{ textAlign: 'left' }}><UploadBar name={current} progress={progress} /></div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
             <Upload size={compact ? 18 : 24} color={dragging ? 'var(--hot-pink)' : 'var(--text-muted)'} />
             <p style={{ fontSize: compact ? '12px' : '13px', color: dragging ? 'var(--hot-pink)' : 'var(--text-muted)', fontWeight: 500 }}>{label}</p>
-            {!compact && <p style={{ fontSize: '11px', color: 'var(--text-muted)', opacity: 0.6 }}>Video, audio, image — up to 2GB</p>}
+            {!compact && <p style={{ fontSize: '11px', color: 'var(--text-muted)', opacity: 0.6 }}>Video, audio, image, any size</p>}
           </div>
         )}
       </div>
@@ -178,7 +119,6 @@ export default function FileUpload({ folder = 'uploads', onUploaded, accept, lab
 
       <input ref={inputRef} type="file" accept={accept} onChange={onFileChange} style={{ display: 'none' }} />
 
-      <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }

@@ -8,6 +8,7 @@ import {
   PHASE2_PRODUCT_PATCHES, DEFAULT_PLAN_CONFIG, BRANCH_IDS,
   type BranchId, type Plan, type PlanNote, type CalendarItem, type PlanConfig, type MonthlyPlanBody, type WeeklyPlanBody, type ContentPiece,
 } from './db'
+import { effectiveUpload } from './cardMedia'
 
 // ── dates (plain YYYY-MM-DD math in UTC so it never drifts with the server's timezone) ──
 const DAY = 86400000
@@ -266,15 +267,16 @@ export function editPlan(id: string, patch: { channels?: { format: string; per_w
 // ── the daily calendar ───────────────────────────────────────────────────────────
 type Need = { date: string; branch: BranchId; account_id: string | null; slot: CalendarItem['slot']; plan_id: string; label: string; format?: string }
 
-export type CalendarView = CalendarItem & { title: string; status: string; has_script: boolean; has_media: boolean; handle: string }
+export type CalendarView = CalendarItem & { title: string; status: string; has_script: boolean; has_media: boolean; handle: string; upload_state: 'uploading' | 'incomplete' | null; waiting_on_cap: boolean }
 
 export function getCalendar(from: string, to: string): CalendarView[] {
   const db = readDb()
   const content = new Map(db.content.map(c => [c.id, c]))
   const acct = new Map((db.brand_accounts ?? []).map(a => [a.id, a]))
+  const waiting = new Set((db.handoffs ?? []).filter(h => h.status === 'open' && h.to === 'cap').map(h => h.content_id))
   return (db.calendar_items ?? []).filter(i => i.date >= from && i.date <= to).sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? '').localeCompare(b.time ?? '') || a.id.localeCompare(b.id)).map(i => {
     const c = content.get(i.content_id)
-    return { ...i, title: c?.title ?? '(content record missing)', status: c?.status ?? 'missing', has_script: !!c?.script, has_media: !!(c?.media_url || c?.media_urls?.length), handle: i.account_id ? (acct.get(i.account_id)?.handle || i.account_id) : '' }
+    return { ...i, title: c?.title ?? '(content record missing)', status: c?.status ?? 'missing', has_script: !!c?.script, has_media: !!(c?.media_url || c?.media_urls?.length), handle: i.account_id ? (acct.get(i.account_id)?.handle || i.account_id) : '', upload_state: effectiveUpload(c?.upload)?.state ?? null, waiting_on_cap: waiting.has(i.content_id) }
   })
 }
 

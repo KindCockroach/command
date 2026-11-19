@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createMultipart, uploadPart, completeMultipart, abortMultipart, getPublicUrl, isR2Configured, mediaKey, type PartTag } from '@/lib/r2'
+import { createMultipart, uploadPart, completeMultipart, abortMultipart, getPublicUrl, isR2Configured, mediaKey, listParts, type PartTag } from '@/lib/r2'
+import { sweepOrphanUploads } from '@/lib/cardMedia'
 import { logActivity } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -13,6 +14,9 @@ export const maxDuration = 300
 //         than one part, and each request stays under the proxy body limit.
 //   3. POST JSON { action:'complete', key, uploadId, parts:[{PartNumber,ETag}] } → { publicUrl }
 //   ( POST JSON { action:'abort', key, uploadId } to clean up a failed upload. )
+//   ( POST JSON { action:'list_parts', key, uploadId } → { parts } to RESUME an interrupted one. )
+//   ( POST JSON { action:'sweep' } aborts unfinished uploads older than 24h. Also runs, at most
+//     hourly, whenever a new upload starts, so abandoned partial uploads don't pile up in R2. )
 export async function POST(req: NextRequest) {
   if (!isR2Configured()) return NextResponse.json({ error: 'R2 not configured yet' }, { status: 503 })
 
@@ -50,6 +54,7 @@ export async function POST(req: NextRequest) {
     if (!filename || !ct) return NextResponse.json({ error: 'filename and contentType required' }, { status: 400 })
     const ext = String(filename).split('.').pop() ?? 'bin'
     const key = mediaKey(folder, filename, ext)
+    sweepOrphanUploads().catch(() => {})   // best-effort, throttled, never blocks the upload
     try {
       const uploadId = await createMultipart(key, ct)
       if (!uploadId) return NextResponse.json({ error: 'Could not start the upload (R2 create failed)' }, { status: 502 })
@@ -76,6 +81,21 @@ export async function POST(req: NextRequest) {
       await abortMultipart(key, uploadId)
       return NextResponse.json({ error: `complete failed: ${e instanceof Error ? e.message : 'unknown'}` }, { status: 502 })
     }
+  }
+
+  if (action === 'list_parts') {
+    const { key, uploadId } = body as { key: string; uploadId: string }
+    if (!key || !uploadId) return NextResponse.json({ error: 'key and uploadId required' }, { status: 400 })
+    try {
+      return NextResponse.json({ parts: await listParts(key, uploadId) })
+    } catch (e) {
+      // NoSuchUpload: it finished, was aborted, or was swept → the client starts fresh.
+      return NextResponse.json({ error: `That upload can't be resumed (${e instanceof Error ? e.name : 'gone'})` }, { status: 404 })
+    }
+  }
+
+  if (action === 'sweep') {
+    return NextResponse.json(await sweepOrphanUploads(true))
   }
 
   if (action === 'abort') {

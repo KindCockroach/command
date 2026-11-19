@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { uploadBig } from '@/lib/uploadBig'
 import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus, CheckSquare, Eye, Heart, MessageCircle, Send, Bookmark, ChevronLeft, ChevronRight, Rows3, LayoutGrid, GalleryHorizontal, Search } from 'lucide-react'
 import { postPurpose, PURPOSE_META, type Purpose } from '@/lib/contentStatus'
 import type { BrandAccount, ContentPiece } from '@/lib/db'
@@ -360,10 +361,7 @@ function PodcastAudioDrop({ accountId, accentColor, onDone }: { accountId: strin
   const run = async (file: File) => {
     try {
       setState('uploading'); setMsg(file.name)
-      const fd = new FormData(); fd.append('file', file); fd.append('folder', 'post-media')
-      const up = await fetch('/api/upload', { method: 'POST', body: fd })
-      const uj = await up.json()
-      if (!up.ok || !uj.publicUrl) throw new Error(uj.error || 'Upload failed')
+      const uj = await uploadBig(file, 'post-media', p => setMsg(`${file.name} · ${p.pct}%`))
 
       const cr = await fetch('/api/content', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -489,6 +487,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
 
   const [marking, setMarking] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadPct, setUploadPct] = useState(0)
   const [uploadErr, setUploadErr] = useState('')
 
   // Pull existing files from the Media library onto this card.
@@ -712,13 +711,10 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
   const gallery = post.media_urls?.length ? post.media_urls : (post.media_url ? [post.media_url] : [])
 
   const uploadOne = async (file: File): Promise<string> => {
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('folder', 'post-media')
-    const res = await fetch('/api/upload', { method: 'POST', body: fd })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok || !data.publicUrl) throw new Error(data.error || `upload failed (${res.status})`)
-    return data.publicUrl
+    // The one upload path (any size, retried, chunked for big videos).
+    setUploadPct(0)
+    const { publicUrl } = await uploadBig(file, 'post-media', p => setUploadPct(p.pct))
+    return publicUrl
   }
 
   // Attach one or MANY images (carousel) — appends to the ordered gallery
@@ -1141,7 +1137,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
                 <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: uploading ? 'default' : 'pointer' }}>
-                  {uploading ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>➕ Add slide(s)</>}
+                  {uploading ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Uploading {uploadPct}%…</> : <>➕ Add slide(s)</>}
                   <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
                 </label>
                 <button onClick={() => openPicker('add')} style={{ border: 'none', background: 'none', padding: 0, fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: 'pointer' }}>📁 From Media</button>
@@ -1160,7 +1156,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
                   </button>
                 )}
                 <label style={{ flex: 1, minWidth: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: uploading ? 'default' : 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
-                  {uploading ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</> : <>📎 Attach your own</>}
+                  {uploading ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Uploading {uploadPct}%…</> : <>📎 Attach your own</>}
                   <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
                 </label>
                 <button onClick={() => openPicker('add')} style={{ flex: 1, minWidth: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>

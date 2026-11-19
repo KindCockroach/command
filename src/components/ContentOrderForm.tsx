@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { uploadBig, folderFor } from '@/lib/uploadBig'
 import { Sparkles, Loader2, Plus, Minus, CheckCircle2, Image as ImageIcon, X } from 'lucide-react'
 
 type ContentOrder = { type: string; qty: number }
@@ -98,16 +99,15 @@ export default function ContentOrderForm({ projectName, projectDescription, proj
   const [mediaUrl, setMediaUrl] = useState('')
   const [mediaPreview, setMediaPreview] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [uploadPct, setUploadPct] = useState(0)
 
   const uploadMedia = (file: File) => {
     setMediaPreview(URL.createObjectURL(file))
     setUploading(true)
-    const fd = new FormData()
-    fd.append('file', file)
-    fetch('/api/upload', { method: 'POST', body: fd })
-      .then(r => r.json())
-      .then(d => { if (d.publicUrl) setMediaUrl(d.publicUrl) })
-      .catch(() => {})
+    setUploadPct(0)
+    uploadBig(file, folderFor(file), p => setUploadPct(p.pct))
+      .then(d => setMediaUrl(d.publicUrl))
+      .catch(e => { setMediaPreview(''); alert(`Upload incomplete: ${e instanceof Error ? e.message : 'it stopped'}. Nothing was attached. Pick the file again to retry.`) })
       .finally(() => setUploading(false))
   }
   const clearMedia = () => { setMediaUrl(''); setMediaPreview(''); }
@@ -266,7 +266,7 @@ export default function ContentOrderForm({ projectName, projectDescription, proj
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', background: 'var(--bg)', border: '1px solid var(--border)' }}>
             <img src={mediaPreview} style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '6px' }} />
             <div style={{ flex: 1, fontSize: '12px', color: 'var(--text-muted)' }}>
-              {uploading ? <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--hot-pink)', fontWeight: 600 }}><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…</span>
+              {uploading ? <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--hot-pink)', fontWeight: 600 }}><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Uploading {uploadPct}%…</span>
                 : <span style={{ color: '#3daa7c', fontWeight: 600 }}>✓ Attached — the generated post(s) will use this</span>}
             </div>
             <button onClick={clearMedia} title="Remove" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', padding: '2px', display: 'flex' }}><X size={15} /></button>

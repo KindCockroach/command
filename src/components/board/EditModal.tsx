@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { ContentPiece } from '@/lib/db'
 import { X, Trash2, CheckCircle, Send, Sparkles, Loader2, Copy, Volume2, Film, Eye, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal } from 'lucide-react'
 import FileUpload from '../FileUpload'
+import CardMedia from '../CardMedia'
 
 function parseMeta(notes: string) {
   const get = (key: string) => { const m = notes.match(new RegExp(`${key}:\\s*([^|]+)`)); return m ? m[1].trim() : '' }
@@ -545,7 +546,18 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
   }
   const handleSave = async () => {
     setSaving(true)
-    const res = await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, id: piece.id }) })
+    // Uploads and per-platform posts are saved the moment they change (CardMedia), so this
+    // form never writes its older copy of them back. Media it generated here is merged with
+    // whatever was uploaded onto the card while the editor was open.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { upload, platform_posts, footage_at, ...rest } = form
+    const cur = await fetch(`/api/content/media?id=${piece.id}`).then(r => r.json()).catch(() => null) as { media?: string[] } | null
+    if (cur?.media && ('media_urls' in rest || 'media_url' in rest)) {
+      const mine = ((rest.media_urls ?? []) as string[]).concat(rest.media_url ? [rest.media_url] : [])
+      rest.media_urls = Array.from(new Set([...cur.media, ...mine]))
+      rest.media_url = rest.media_url || rest.media_urls[0] || ''
+    }
+    const res = await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...rest, id: piece.id }) })
     onSave(await res.json())
     setSaving(false)
   }
@@ -880,22 +892,9 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
             )}
 
             <div>
-              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '8px' }}>Upload Main File (video / audio / image)</p>
-              <FileUpload
-                folder="content"
-                label="Drop your video, audio, or image here"
-                onUploaded={f => {
-                  set('file_path', f.publicUrl)
-                  set('type', f.type === 'audio' ? 'podcast' : f.type === 'video' ? 'video' : f.type === 'image' ? 'image' : form.type)
-                  // A video/image uploaded here IS the post's publishable media —
-                  // wire it to media_url/media_urls (what the card + GHL publish use),
-                  // not only file_path. Audio stays a source file (file_path).
-                  if (f.type === 'video' || f.type === 'image') {
-                    set('media_url', f.publicUrl)
-                    set('media_urls', [...(((form.media_urls ?? []) as string[]).filter(u => u !== f.publicUrl)), f.publicUrl])
-                  }
-                }}
-              />
+              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '8px' }}>Footage and media (video / audio / image)</p>
+              {/* Uploads straight onto THIS card (saved at once, no Save needed) and tells Cap. */}
+              <CardMedia contentId={piece.id} showPlatforms={false} />
             </div>
 
             <div>

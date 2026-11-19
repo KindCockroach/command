@@ -58,6 +58,59 @@ export type ContentPiece = {
   higgsfield_request_id?: string
   higgsfield_url?: string
   canva_design_url?: string        // Canva autofill result (brand template filled with this post's slides)
+  // Phase 3: the asset handoff
+  upload?: UploadRecord | null     // an upload in flight or left incomplete (cleared once the file is attached)
+  footage_at?: string | null       // when finished footage/media last landed on this card
+  platform_posts?: PlatformPost[]  // one caption + status per platform this card goes to
+}
+
+// An upload into a card that hasn't finished. 'uploading' that stops updating for a few
+// minutes (tab closed, connection gone) reads as incomplete. key/upload_id let it resume.
+export type UploadRecord = {
+  state: 'uploading' | 'incomplete'
+  filename: string
+  size: number
+  content_type: string
+  last_modified?: number | null
+  key?: string | null               // multipart only: the R2 object being built
+  upload_id?: string | null         // multipart only: R2's upload id (resumable until swept after 24h)
+  parts_done?: number
+  parts_total?: number
+  error?: string | null
+  started_at: string
+  updated_at: string
+}
+
+export type PlatformPostStatus = 'draft' | 'scheduled' | 'posted'
+export type PlatformPost = {
+  platform: string                  // 'Instagram', 'TikTok', 'YouTube', 'Facebook', …
+  caption: string
+  status: PlatformPostStatus
+  scheduled_at?: string | null      // 'YYYY-MM-DDTHH:MM' (local) when Scheduled
+  posted_url?: string | null        // the live post link when Posted
+  posted_at?: string | null
+  updated_at: string
+}
+
+// A note from one agent (or Mandi) to another about a card. Phase 3 writes only the
+// first kind: footage landed → Cap. Phase 4 builds receipts and more kinds on this.
+export type HandoffMissing = 'script' | 'caption' | 'cover'
+export type Handoff = {
+  id: string
+  kind: 'footage_in'
+  from: 'mandi'
+  to: 'cap'
+  content_id: number
+  account_id: string | null
+  calendar_item_id?: string | null
+  media_urls: string[]              // what arrived (newest last)
+  missing: HandoffMissing[]         // what the card still needs, when it was written
+  status: 'open' | 'done'
+  note?: string                     // optional: what changed from the plan
+  created_at: string
+  updated_at: string
+  done_at?: string | null
+  done_by?: string | null
 }
 
 export type ContentPieceRow = ContentPiece
@@ -727,6 +780,7 @@ export type Db = {
   branches?: Branch[]
   plans?: Plan[]
   calendar_items?: CalendarItem[]
+  handoffs?: Handoff[]
   next_plan_id?: number
   next_calendar_id?: number
   plan_config?: PlanConfig

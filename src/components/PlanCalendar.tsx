@@ -2,15 +2,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, X, UserPlus } from 'lucide-react'
 import { GuestKitModal, InviteModal, handleUrl, HANDLE_ICON, type Kit } from './GuestKit'
+import CardMedia from './CardMedia'
+import { uploadToCard } from '@/lib/cardUpload'
 
 // The calendar for Cap's plan: Month / Week / Day, Google-Calendar style.
 // Drag any piece to another day (or hour, in Week and Day). Only the calendar item
 // moves; the content card it points at stays the one Content Day shows.
 // Tap a piece to open it: move it by date/time there (works on phones), or jump to Content Day.
+// Footage: drop files from Finder onto a piece (or open it and drop/pick). They upload into
+// that piece's ONE content card, which Content Day shows too, and Cap gets a note.
 
 type Item = {
   id: string; date: string; time?: string | null; branch_id: 'joyful_media' | 'wfh'; slot: 'reset' | 'podcast' | 'post'
   handle: string; title: string; status: string; has_script: boolean; has_media: boolean; content_id: number
+  upload_state?: 'uploading' | 'incomplete' | null; waiting_on_cap?: boolean
 }
 type View = 'month' | 'week' | 'day'
 type Filter = 'all' | 'joyful_media' | 'wfh'
@@ -54,6 +59,7 @@ export default function PlanCalendar({ refreshKey = 0 }: { refreshKey?: number }
   const [dragId, setDragId] = useState<string | null>(null)
   const [over, setOver] = useState<string | null>(null)
   const [toast, setToast] = useState('')
+  const [fileOver, setFileOver] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [guests, setGuests] = useState<Kit[]>([])
   const [guestOpen, setGuestOpen] = useState<string | null>(null)
@@ -113,16 +119,35 @@ export default function PlanCalendar({ refreshKey = 0 }: { refreshKey?: number }
   }
 
   // drag + drop (desktop). The drop key says where: "YYYY-MM-DD" (keep time) / "YYYY-MM-DD@" (any time) / "YYYY-MM-DD@HH:00".
+  // Footage dropped straight onto a piece → upload into its card, open it to show progress.
+  const fileDropProps = (it: Item) => ({
+    onDragOver: (e: React.DragEvent) => { if (!e.dataTransfer.types.includes('Files')) return; e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'copy'; if (fileOver !== it.id) setFileOver(it.id) },
+    onDragLeave: () => setFileOver(f => (f === it.id ? null : f)),
+    onDrop: (e: React.DragEvent) => {
+      if (!e.dataTransfer.types.includes('Files')) return
+      e.preventDefault(); e.stopPropagation(); setFileOver(null)
+      const files = Array.from(e.dataTransfer.files).filter(f => f.size > 0)
+      if (!files.length) { flash('That came straight from Photos, which won’t hand files to a browser. Drag it to the Desktop first.'); return }
+      setOpen(it)
+      ;(async () => { for (const f of files) if (!(await uploadToCard(it.content_id, f, { calendarItemId: it.id, onDone: () => load() }))) break })()
+    },
+  })
   const dragProps = (it: Item) => ({
+    ...fileDropProps(it),
     draggable: true,
     onDragStart: (e: React.DragEvent) => { e.dataTransfer.setData('text/plain', it.id); e.dataTransfer.effectAllowed = 'move'; setDragId(it.id) },
     onDragEnd: () => { setDragId(null); setOver(null) },
   })
   const dropProps = (key: string) => ({
-    onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (over !== key) setOver(key) },
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault()
+      if (e.dataTransfer.types.includes('Files')) { e.dataTransfer.dropEffect = 'none'; return }   // footage goes on a piece, not a day
+      e.dataTransfer.dropEffect = 'move'; if (over !== key) setOver(key)
+    },
     onDragLeave: () => setOver(o => (o === key ? null : o)),
     onDrop: (e: React.DragEvent) => {
       e.preventDefault(); setOver(null)
+      if (e.dataTransfer.files?.length) { flash('Drop footage onto a piece (or open it) so it lands on the right card.'); return }
       const id = e.dataTransfer.getData('text/plain') || dragId; if (!id) return
       const [date, t] = key.split('@')
       const keep = items.find(i => i.id === id)?.time ?? null
@@ -138,13 +163,14 @@ export default function PlanCalendar({ refreshKey = 0 }: { refreshKey?: number }
   const chip = (it: Item, rich = false) => {
     const b = BRANCH[it.branch_id]; const st = STATUS[it.status] ?? { text: it.status, color: '#8A8CA3' }
     return (
-      <button key={it.id} {...dragProps(it)} onClick={e => { e.stopPropagation(); setOpen(it) }} className={`pc-chip${dragId === it.id ? ' dragging' : ''}${it.status === 'published' ? ' done' : ''}`}
+      <button key={it.id} {...dragProps(it)} onClick={e => { e.stopPropagation(); setOpen(it) }} className={`pc-chip${dragId === it.id ? ' dragging' : ''}${it.status === 'published' ? ' done' : ''}${fileOver === it.id ? ' fileover' : ''}`}
         style={{ ['--c' as string]: b.color, ['--s' as string]: b.soft }} title={`${it.title} · ${st.text}`}>
         <span className="pc-dot" style={{ background: st.color }} />
         <span className="pc-chip-txt">
           {it.time && <b className="pc-time">{timeLabel(it.time)}</b>}
+          {it.upload_state === 'incomplete' ? <span className="pc-flag bad" title="Upload incomplete">⚠ </span> : it.waiting_on_cap ? <span className="pc-flag" title="Footage in, waiting on Cap">🎬 </span> : null}
           {slotIcon(it.slot)}{rich ? it.title : (it.handle ? it.title.replace(`${it.handle}: `, '') : it.title)}
-          {rich && <span className="pc-sub">{it.handle || b.name} · {st.text}{it.has_script ? ' · script' : ''}{it.has_media ? ' · media' : ''}</span>}
+          {rich && <span className="pc-sub">{it.handle || b.name} · {st.text}{it.has_script ? ' · script' : ''}{it.has_media ? ' · media' : ''}{it.upload_state === 'incomplete' ? ' · upload incomplete' : it.waiting_on_cap ? ' · footage in, waiting on Cap' : ''}</span>}
         </span>
         {!rich && it.handle && <span className="pc-handle">{it.handle.replace(/^@/, '')}</span>}
       </button>
@@ -256,7 +282,7 @@ export default function PlanCalendar({ refreshKey = 0 }: { refreshKey?: number }
             {f !== 'all' && <i style={{ background: BRANCH[f].color }} />}{f === 'all' ? 'Everything' : BRANCH[f].name}<span>{counts[f]}</span>
           </button>
         ))}
-        <span className="pc-hint">{loading ? 'Loading…' : 'Drag a piece to move it. Tap to open.'}</span>
+        <span className="pc-hint">{loading ? 'Loading…' : 'Drag a piece to move it. Tap to open. Drop footage on a piece to attach it.'}</span>
       </div>
 
       {view === 'day' && (guestsByDay[anchor] ?? []).length > 0 && (
@@ -307,6 +333,7 @@ export default function PlanCalendar({ refreshKey = 0 }: { refreshKey?: number }
               <label>Time<input type="time" step={900} value={open.time ?? ''} onChange={e => move(open.id, open.date, e.target.value || null)} /></label>
               {open.time && <button className="pc-btn ghost" onClick={() => move(open.id, open.date, null)}>Any time</button>}
             </div>
+            <CardMedia contentId={open.content_id} calendarItemId={open.id} onChanged={load} />
             <button className="pc-btn primary" onClick={() => { setOpen(null); window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'contentday' } })) }}>Open in Content Day →</button>
             <button className="pc-btn ghost" style={{ marginTop: 8 }} onClick={() => remove(open.id)}>Remove from calendar</button>
             <p className="pc-foot">Card #{open.content_id}. Moving it here never copies the card; removing it keeps the card in Content Day.</p>
@@ -347,6 +374,9 @@ const css = `
 .pc-chip:hover{box-shadow:0 2px 8px rgba(0,0,0,.10);transform:translateY(-1px)}
 .pc-chip:focus-visible{outline:2px solid var(--c);outline-offset:1px}
 .pc-chip.dragging{opacity:.35}
+.pc-chip.fileover{box-shadow:0 0 0 2px #E2508A;background:rgba(226,80,138,.12)}
+.pc-flag{font-size:11px}
+.pc-flag.bad{color:#B23A48}
 .pc-chip.done .pc-chip-txt{text-decoration:line-through;opacity:.6}
 .pc-dot{flex:none;width:7px;height:7px;border-radius:50%;margin-top:4px;display:inline-block}
 .pc-chip-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -389,7 +419,7 @@ const css = `
 .pc-now::before{content:'';position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#E2508A}
 
 .pc-scrim{position:fixed;inset:0;background:rgba(15,18,40,.35);display:grid;place-items:center;z-index:60;padding:16px;animation:pcfade .15s ease}
-.pc-card{position:relative;width:min(420px,100%);background:var(--pc-bg);color:var(--pc-text);border-radius:18px;padding:20px 20px 16px;box-shadow:0 20px 60px rgba(0,0,0,.25);border-top:5px solid var(--c);animation:pcpop .18s ease}
+.pc-card{position:relative;width:min(480px,100%);max-height:calc(100vh - 32px);overflow-y:auto;box-sizing:border-box;background:var(--pc-bg);color:var(--pc-text);border-radius:18px;padding:20px 20px 16px;box-shadow:0 20px 60px rgba(0,0,0,.25);border-top:5px solid var(--c);animation:pcpop .18s ease}
 .pc-x{position:absolute;top:10px;right:10px}
 .pc-tag{font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--c);text-transform:uppercase}
 .pc-card h4{margin:6px 0 6px;font-size:18px;line-height:1.3;padding-right:28px}

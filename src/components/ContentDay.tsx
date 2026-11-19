@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { ContentPiece, BrandAccount, ShootFormat } from '@/lib/db'
 import { hasMedia, postPurpose, PURPOSE_META, type Purpose } from '@/lib/contentStatus'
-import { RefreshCw, Camera, Clapperboard, Loader2, Sparkles, MessageCircle, RotateCcw, Trash2 } from 'lucide-react'
+import { RefreshCw, Camera, Clapperboard, Loader2, Sparkles, MessageCircle, RotateCcw, Trash2, Upload } from 'lucide-react'
+import CardMedia from './CardMedia'
 
 // CONTENT DAY — the shoot list, designed like the Format Finder concept cards, and
 // with a SHOOT PLAN: turn a script into something she can actually film without
@@ -80,11 +81,16 @@ export default function ContentDay() {
   const [purposeFilter, setPurposeFilter] = useState<'all' | Purpose>('all')
   const [acctFilter, setAcctFilter] = useState<string>('all')
   const [formatFilter, setFormatFilter] = useState<'all' | ShootFormat>('all')
+  const [waiting, setWaiting] = useState<number[]>([])          // cards with footage in, waiting on Cap
+  const [footageOpen, setFootageOpen] = useState<Record<number, boolean>>({})
 
   const load = useCallback(() => {
     setLoading(true)
-    Promise.all([fetch('/api/content').then(r => r.json()), fetch('/api/accounts').then(r => r.json())])
-      .then(([c, a]) => { setPosts(Array.isArray(c) ? c : []); setAccounts(Array.isArray(a) ? a : []) })
+    Promise.all([fetch('/api/content').then(r => r.json()), fetch('/api/accounts').then(r => r.json()), fetch('/api/handoffs?to=cap&status=open').then(r => r.json()).catch(() => ({}))])
+      .then(([c, a, h]) => {
+        setPosts(Array.isArray(c) ? c : []); setAccounts(Array.isArray(a) ? a : [])
+        setWaiting(Array.from(new Set(((h?.handoffs ?? []) as { content_id: number }[]).map(x => x.content_id))))
+      })
       .finally(() => setLoading(false))
   }, [])
   useEffect(() => { load() }, [load])
@@ -208,6 +214,8 @@ export default function ContentDay() {
   }, [posts]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const remaining = lines.filter(l => !done[l.key]).length
+  // Footage that landed (here or from the calendar) stays visible on its card until Cap picks it up.
+  const footageIn = posts.filter(p => waiting.includes(p.id) && !['published', 'archived'].includes(p.status))
 
   const pill = (broll?: boolean): React.CSSProperties => ({ fontFamily: MONO, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '3px 9px', borderRadius: '99px', background: broll ? 'var(--purple-light)' : 'rgba(232,68,138,0.14)', color: broll ? 'var(--purple)' : '#E8448A' })
   const metaStyle: React.CSSProperties = { fontFamily: MONO, fontSize: '11.5px', color: 'var(--text-subtle)', letterSpacing: '0.01em' }
@@ -333,6 +341,27 @@ export default function ContentDay() {
         </div>
       )}
 
+      {footageIn.length > 0 && (
+        <div style={{ padding: '12px 12px 0' }}>
+          <p style={{ ...labelStyle, color: '#7C4DDB', margin: '2px 2px 8px' }}>🎬 Footage in, waiting on Cap · {footageIn.length}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {footageIn.map(p => {
+              const a = acct(p.account_id)
+              return (
+                <div key={`fi-${p.id}`} style={{ border: '1px solid rgba(124,77,219,.3)', borderRadius: '12px', background: 'var(--surface)', padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'baseline', flexWrap: 'wrap' }}>
+                    {a && <span style={{ fontSize: '11px', fontWeight: 700, color: a.color || 'var(--text-subtle)' }}>{a.emoji} {a.handle}</span>}
+                    <span style={{ ...metaStyle }}>Card #{p.id}</span>
+                  </div>
+                  <p style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.4, margin: '4px 0 0' }}>{p.onscreen_text || p.title}</p>
+                  <CardMedia contentId={p.id} onChanged={load} />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div style={{ padding: '12px' }}>
         {loading && <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '14px', textAlign: 'center' }}>Compiling your shoot list…</p>}
         {!loading && lines.length === 0 && (
@@ -363,6 +392,7 @@ export default function ContentDay() {
                         <Sparkles size={13} /> Caption + trial reels with Rex
                       </button>
                       <p style={{ fontSize: '10.5px', color: 'var(--text-subtle)', marginTop: '7px', lineHeight: 1.5 }}>Rex writes 1 caption + 6 hook variations + 6 CTAs to run this clip as 4&ndash;8 trial reels.</p>
+                      <CardMedia contentId={l.postId} showPlatforms={false} onChanged={load} />
                     </div>
                   </div>
                 </div>
@@ -396,6 +426,11 @@ export default function ContentDay() {
                     <p style={{ ...metaStyle, marginBottom: '7px' }}>{plan ? (plan.mode === 'dialogue' ? `${l.kind} · ${plan.sections?.length ?? 0} roles to film` : `${l.kind} · retention plan`) : `${l.kind} · ${l.length}${rest.length ? ` · ${bs.length} beats` : ''}`}</p>
                     <p style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.4, letterSpacing: '-0.01em', textDecoration: isDone ? 'line-through' : 'none' }}>{hook}</p>
 
+                    <button onClick={() => setFootageOpen(f => ({ ...f, [l.postId]: !f[l.postId] }))}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '9px', marginRight: '6px', padding: '7px 12px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 800, fontSize: '11.5px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <Upload size={12} /> {footageOpen[l.postId] ? 'Hide footage' : 'Add footage'}
+                    </button>
+                    {footageOpen[l.postId] && <CardMedia contentId={l.postId} showPlatforms={false} onChanged={load} />}
                     {/* Plan this shoot — dialogue → by role, solo → retention beats */}
                     {!l.broll && !plan && (
                       <div style={{ marginTop: '9px' }}>

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { uploadBig } from '@/lib/uploadBig'
 import { Zap, Battery, BatteryLow, BatteryMedium, BatteryFull, Flame, CheckCheck, Sparkles, Loader2, ImageIcon, Target, Copy, Plus, HelpCircle, Crown, Waves } from 'lucide-react'
 import ResearchBrief from './ResearchBrief'
 import HeadlinesPanel from './HeadlinesPanel'
@@ -244,30 +245,25 @@ export default function DailyCommand() {
     setTranscribeNote('')
     if (isVideo) {
       setPendingImage('video')  // sentinel: preview shows a video chip, not an <img>
-      const fd = new FormData()
-      fd.append('file', file)
-      // /api/transcribe stores the file AND returns a Whisper transcript
-      fetch('/api/transcribe', { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(d => {
-          if (d.publicUrl) setCapturedMediaUrl(d.publicUrl)
-          if (d.transcript) setCapturedTranscript(d.transcript)
-          if (d.error && !d.transcript) setTranscribeNote(d.error)
+      // Store it through the one upload path (any size), THEN transcribe from the stored link.
+      setTranscribeNote('Uploading…')
+      uploadBig(file, 'videos', p => setTranscribeNote(`Uploading ${p.pct}%…`))
+        .then(async ({ publicUrl }) => {
+          setCapturedMediaUrl(publicUrl); setTranscribeNote('Transcribing…')
+          const d = await fetch('/api/transcribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audioUrl: publicUrl }) }).then(r => r.json()).catch(() => ({ error: 'Could not transcribe the video — it will still be filed.' }))
+          if (d.transcript) { setCapturedTranscript(d.transcript); setTranscribeNote('') }
+          else setTranscribeNote(d.error || 'Could not transcribe the video — it will still be filed.')
         })
-        .catch(() => setTranscribeNote('Could not transcribe the video — it will still be filed.'))
+        .catch(e => setTranscribeNote(`Upload incomplete: ${e instanceof Error ? e.message : 'it stopped'}. Nothing was saved. Drop the video again to retry.`))
         .finally(() => setAnalyzing(false))
       return
     }
     const reader = new FileReader()
     reader.onload = e => { if (e.target?.result) setPendingImage(e.target.result as string) }
     reader.readAsDataURL(file)
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('folder', 'media')
-    fetch('/api/upload', { method: 'POST', body: fd })
-      .then(r => r.json())
-      .then(d => { if (d.publicUrl) setCapturedMediaUrl(d.publicUrl) })
-      .catch(() => {})
+    uploadBig(file, 'media')
+      .then(d => setCapturedMediaUrl(d.publicUrl))
+      .catch(e => setTranscribeNote(`Upload incomplete: ${e instanceof Error ? e.message : 'it stopped'}. Drop the image again to retry.`))
       .finally(() => setAnalyzing(false))
   }
   const clearImage = () => { setPendingImage(null); setCapturedMediaUrl(''); setMediaType(''); setCapturedTranscript(''); setTranscribeNote('') }
