@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: 'Not a class. 60 minutes of guided time to yourself, live with Mandi on Sunday nights. Leave with a quieter mind, a little more patience, and one less to-do in your head. $33.',
   openGraph: {
     title: 'You’re invited to reset.',
-    description: 'The Reset — come set down your brain for an hour, live with Mandi, every Sunday at 8 PM CT. $33.',
+    description: 'The Reset — come set down your brain for an hour, live with Mandi, alternating Sundays at 8 PM CT. $33.',
     url: 'https://www.bethereforher.com/reset',
     siteName: 'Be There For Her',
     images: [{ url: '/og-reset-nov22.jpg', width: 1200, height: 675 }],
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'You’re invited to reset.',
-    description: 'The Reset. Come set down your brain for an hour, every Sunday at 8 PM CT.',
+    description: 'The Reset. Come set down your brain for an hour, alternating Sundays at 8 PM CT.',
     images: ['/og-reset-nov22.jpg'],
   },
 }
@@ -65,9 +65,9 @@ const CHOICES = [
 ]
 
 const LEAVE = [
-  { t: 'The Audit', d: 'Back to your factory settings. No more obligations for the sake of \u201cshould.\u201d You\u2019ll leave with a clear picture of what you actually need today, this week, and this season of life.' },
+  { t: 'The Audit', d: 'Back to your factory settings. No more obligations for the sake of \u201cshould.\u201d Learn what it looks like to make a to-do list that actually serves.' },
   { t: 'The Somatic Reset', d: 'A reset you can return to whenever life gets too loud.' },
-  { t: 'The Missing Instructions', d: 'Two simple prompts to better understand your child\u2019s unique behaviors and support them with newfound Momfidence.' },
+  { t: 'The Missing Instructions', d: 'Your parents didn\u2019t get a pamphlet for raising kids and neither did you. Reparenting yourself starts here.' },
 ]
 
 export default function ResetPage() {
@@ -123,7 +123,7 @@ export default function ResetPage() {
         <div className="wrap">
           <h2>The details</h2>
           <dl className="details">
-            <div><dt>When</dt><dd>Every Sunday at 8 PM CT</dd></div>
+            <div><dt>When</dt><dd>Alternating Sundays at 8 PM CT</dd></div>
             <div><dt>Where</dt><dd>Virtual (Google Meet link provided upon registration)</dd></div>
             <div><dt>Investment</dt><dd>$33 (beta price while we find our rhythm)</dd></div>
           </dl>
