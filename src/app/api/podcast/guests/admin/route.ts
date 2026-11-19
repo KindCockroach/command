@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPodcastGuests, getPodcastSchedule, addGuestComm, updatePodcastBooking, logActivity, type GuestComm } from '@/lib/db'
 import { fableText } from '@/lib/fable'
 import { parseKit } from '@/lib/jsonkit'
+import { EMAIL_FROM } from '@/lib/wfhServer'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -44,7 +45,7 @@ async function ghlSendEmail(to: string, name: string, subject: string, body: str
   const res = await fetch(`${GHL_BASE}/conversations/messages`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, Version: '2021-04-15', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type: 'Email', contactId, subject, html }),
+    body: JSON.stringify({ type: 'Email', contactId, subject, html, emailFrom: EMAIL_FROM }),
     signal: AbortSignal.timeout(15000),
   })
   if (!res.ok) return { ok: false, error: `GHL send (${res.status}): ${(await res.text()).slice(0, 200)}` }

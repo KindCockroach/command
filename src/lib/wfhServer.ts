@@ -7,6 +7,9 @@ import { QUESTIONS, RISE_FEATURES, type Answers, type Assessment, type RiseRecom
 
 const GHL_BASE = 'https://services.leadconnectorhq.com'
 export const NOTIFY_EMAIL = process.env.WFH_NOTIFY_EMAIL || 'hi@aimomeducation.com'
+// Sender shown on every email the site sends (Resend or GHL).
+export const EMAIL_FROM = process.env.EMAIL_FROM || '"Mandi \\"AI Mom\\" Beck" <hi@aimomeducation.com>'
+const REPLY_TO = 'hi@aimomeducation.com'
 
 // Readable "Question: answer" lines for the prompt and for Mandi's email.
 export function answerLines(a: Answers): string[] {
@@ -91,22 +94,42 @@ export async function ghlContact(c: { name: string; email: string; phone?: strin
   }
 }
 
-// Send an HTML email through GHL to a contact (upserting it first). Best effort.
-export async function ghlEmail(to: { name: string; email: string }, subject: string, html: string, source: string): Promise<boolean> {
-  const token = process.env.GHL_API_KEY
+// Send an HTML email from the site. Uses Resend when RESEND_API_KEY is set,
+// otherwise falls back to GHL. The contact is still upserted in GHL (when
+// connected) so leads keep landing there until contacts move off GHL. Best effort.
+export async function sendSiteEmail(to: { name: string; email: string }, subject: string, html: string, source: string): Promise<boolean> {
   const contactId = await ghlContact({ ...to, source })
+  if (process.env.RESEND_API_KEY) return resendEmail(to.email, subject, html)
+  const token = process.env.GHL_API_KEY
   if (!token || !contactId) return false
   try {
     const res = await fetch(`${GHL_BASE}/conversations/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, Version: '2021-04-15', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'Email', contactId, subject, html }),
+      body: JSON.stringify({ type: 'Email', contactId, subject, html, emailFrom: EMAIL_FROM }),
       signal: AbortSignal.timeout(15000),
     })
     if (!res.ok) { logActivity({ type: 'note', title: `⚠ WFH email failed (${res.status})`, detail: `${subject} → ${to.email}: ${(await res.text()).slice(0, 160)}`, icon: '⚠️', source: 'wfh' }); return false }
     return true
   } catch (e) {
     logActivity({ type: 'note', title: '⚠ WFH email failed', detail: e instanceof Error ? e.message : 'network error', icon: '⚠️', source: 'wfh' })
+    return false
+  }
+}
+
+// Send through Resend's REST API (https://resend.com/docs/api-reference/emails/send-email).
+async function resendEmail(to: string, subject: string, html: string): Promise<boolean> {
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: EMAIL_FROM, to: [to], reply_to: REPLY_TO, subject, html }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) { logActivity({ type: 'note', title: `⚠ Email failed via Resend (${res.status})`, detail: `${subject} → ${to}: ${(await res.text()).slice(0, 160)}`, icon: '⚠️', source: 'wfh' }); return false }
+    return true
+  } catch (e) {
+    logActivity({ type: 'note', title: '⚠ Email failed via Resend', detail: e instanceof Error ? e.message : 'network error', icon: '⚠️', source: 'wfh' })
     return false
   }
 }

@@ -45,3 +45,6 @@ pnpm-workspace.yaml
 # local secrets / runtime data
 data/canva-tokens.json
 data/usage.json
+
+# local Claude Code launch config (not app code)
+/.claude/

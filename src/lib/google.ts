@@ -70,7 +70,7 @@ export async function createGoogleDoc(title: string, content: string, accessToke
 export async function sendGmail(to: string, subject: string, body: string, accessToken: string): Promise<void> {
   const email = [
     `To: ${to}`,
-    `From: hi@aimomeducation.com`,
+    `From: "Mandi \\"AI Mom\\" Beck" <hi@aimomeducation.com>`,
     `Subject: ${subject}`,
     `Content-Type: text/plain; charset=utf-8`,
     '',

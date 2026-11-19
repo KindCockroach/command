@@ -10,8 +10,17 @@ export const dynamic = 'force-dynamic'
 // POST {weekly}  → set her available weekly slot(s)
 // PATCH {id, date?, time?, seen?} → reschedule a booking / acknowledge its notice
 // DELETE ?id=    → remove a booking (frees the slot)
+// This route is public (the /book page uses it), so every "her" action checks the
+// station cookie. FAIL-CLOSED: with no STATION_KEY set, those actions are refused.
+function isAdmin(req: NextRequest) {
+  const key = process.env.STATION_KEY
+  return !!key && req.cookies.get('station_auth')?.value === key
+}
+const denied = () => NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
 export function GET(req: NextRequest) {
   const admin = new URL(req.url).searchParams.get('admin') === '1'
+  if (admin && !isAdmin(req)) return denied()
   const s = getPodcastSchedule()
   if (admin) return NextResponse.json({ weekly: s.weekly, from: s.from ?? null, bookings: s.booked.slice().sort((a, b) => a.date.localeCompare(b.date)) })
   return NextResponse.json({ weekly: s.weekly, from: s.from ?? null, booked: s.booked.map(b => ({ date: b.date, time: b.time })) })
@@ -21,6 +30,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
 
   if (Array.isArray(body.weekly)) {
+    if (!isAdmin(req)) return denied()
     const weekly = body.weekly
       .filter((w: { dow?: number; time?: string }) => typeof w?.dow === 'number' && typeof w?.time === 'string')
       .map((w: { dow: number; time: string; end?: string }) => ({ dow: w.dow, time: w.time, ...(w.end ? { end: String(w.end) } : {}) }))
@@ -52,6 +62,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!isAdmin(req)) return denied()
   const body = await req.json().catch(() => ({}))
   if (!body.id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   const before = getPodcastSchedule().booked.find(b => b.id === body.id)
@@ -72,6 +83,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!isAdmin(req)) return denied()
   const id = new URL(req.url).searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   return NextResponse.json({ ok: removePodcastBooking(id) })

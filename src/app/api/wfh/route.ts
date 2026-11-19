@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getWfhSchedule, setWfhWeekly, addWfhBooking, removeWfhBooking, addWfhLead, getWfhLeads, getPodcastSchedule, logActivity } from '@/lib/db'
 import { assess, serviceLabel, type Answers } from '@/lib/wfh'
-import { recommendRise, ghlContact, ghlEmail, clientEmailHtml, mandiLeadHtml, esc, NOTIFY_EMAIL } from '@/lib/wfhServer'
+import { recommendRise, ghlContact, sendSiteEmail, clientEmailHtml, mandiLeadHtml, esc, NOTIFY_EMAIL } from '@/lib/wfhServer'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -60,8 +60,8 @@ export async function POST(req: NextRequest) {
     // Emails go out in the background so she sees her recommendation right away.
     void (async () => {
       await ghlContact({ name, email, tag: 'wfh-ai-assessment', source: 'WFH AI questionnaire' })
-      await ghlEmail({ name, email }, 'Your personalized RISE recommendation', clientEmailHtml(name, rec, bookUrl), 'WFH AI questionnaire')
-      await ghlEmail({ name: 'Mandi Beck', email: NOTIFY_EMAIL }, `New AI questionnaire: ${name}${business ? ` (${business})` : ''}`, mandiLeadHtml({ name, email, business, website }, answers, result, rec, by, bookUrl), 'WFH notices')
+      await sendSiteEmail({ name, email }, 'Your personalized RISE recommendation', clientEmailHtml(name, rec, bookUrl), 'WFH AI questionnaire')
+      await sendSiteEmail({ name: 'Mandi Beck', email: NOTIFY_EMAIL }, `New AI questionnaire: ${name}${business ? ` (${business})` : ''}`, mandiLeadHtml({ name, email, business, website }, answers, result, rec, by, bookUrl), 'WFH notices')
     })()
     return NextResponse.json({ ok: true, lead_id: lead.id, recommendation: rec })
   }
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     const bk = booking!
     void (async () => {
       await ghlContact({ name, email, phone: bk.phone, tag: 'wfh-meeting-booked', source: `WFH booking · ${serviceLabel(bk.service)}` })
-      await ghlEmail({ name: 'Mandi Beck', email: NOTIFY_EMAIL }, `New call booked: ${bk.name} · ${bk.date} ${bk.time} CT`,
+      await sendSiteEmail({ name: 'Mandi Beck', email: NOTIFY_EMAIL }, `New call booked: ${bk.name} · ${bk.date} ${bk.time} CT`,
         `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6"><h2 style="font-family:Georgia,serif">New call booked</h2><p><b>${esc(bk.name)}</b> booked <b>${esc(serviceLabel(bk.service))}</b><br>${esc(bk.date)} at ${esc(bk.time)} CT</p><p>Email: ${esc(bk.email)}<br>Phone: ${esc(bk.phone || '—')}<br>Business: ${esc(bk.business || '—')}</p>${bk.notes ? `<p>Notes: ${esc(bk.notes)}</p>` : ''}${bk.lead_id ? '<p>They took the AI questionnaire first; their recommendation is in your earlier email.</p>' : ''}<p>Send them the Google Meet link.</p></div>`, 'WFH notices')
     })()
     return NextResponse.json({ ok: true, booking })
