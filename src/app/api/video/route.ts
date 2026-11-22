@@ -27,7 +27,7 @@ ${craftFor(opts.accountId)}
 
 Produce, in her voice — the WHOLE package:
 - "title": ONE strong title — a claim addressed to the viewer, true to what she said.
-- "hooks": 3-5 DISTINCT on-screen hook options — each a bold STATEMENT (never a question), the overlay line that stops the scroll. Different angles on the same golden thread.
+- "hooks": 3-5 DISTINCT on-screen hook options — the overlay line that stops the scroll (statements by default). Different angles on the same idea.
 - "caption": ONE ready-to-post caption, spaced with real line breaks, in her voice; must NOT just restate a hook. ${opts.titleFirst ? 'The caption\'s FIRST sentence MUST BE the title, verbatim.' : ''}
 - "hashtags": 3-5 REAL, relevant hashtags actually used in this niche (no spam/banned/invented); camelCase multi-word.
 - "keywords": 5-8 SEO keywords/phrases for this topic (plain phrases, for discovery — NOT hashtags).

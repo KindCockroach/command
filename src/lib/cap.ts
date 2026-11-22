@@ -77,6 +77,8 @@ export async function capWriteCaptions(id: number, opts: { note?: string; platfo
   const topic = [c.title, c.post_job, c.onscreen_text, c.script, c.transcript, note, c.source_context].filter(Boolean).join(' ').slice(0, 4000)
   const well = wellLinesFor(topic, 5)
   const cal = (db.calendar_items ?? []).find(i => i.content_id === id)
+  // The newest live winner review for this account: its hypothesis and experiment steer the write.
+  const lesson = (readDb().winner_reviews ?? []).filter(w => w.account_id === c.account_id && w.status !== 'dismissed').sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
   const facts = [
     `Card: ${c.title}`,
     c.post_job && `The one job of this post: ${c.post_job}`,
@@ -85,6 +87,7 @@ export async function capWriteCaptions(id: number, opts: { note?: string; platfo
     c.source_context && `HER OWN WORDS behind this post:\n${c.source_context.slice(0, 1500)}`,
     note && `MANDI'S NOTE ON THE FINISHED VIDEO (what changed from the plan; this wins over the plan):\n${note}`,
     well.length && `HER WORDS FROM THE WELL (her own past captions on this theme; pull and sharpen her phrasing first, never invent a voice):\n${well.map(w => `- (${w.date.slice(0, 10)}) ${w.cap}`).join('\n')}`,
+    lesson && `WHAT CAP LEARNED FROM THIS ACCOUNT'S RESULTS (${lesson.period}; evidence beats the DEFAULTS):\nHypothesis: ${lesson.hypothesis}\nExperiment to run: ${lesson.experiment.what}${lesson.experiment.how ? ' (' + lesson.experiment.how + ')' : ''}`,
     cal && `Planned for ${cal.date}${cal.time ? ' at ' + cal.time : ''}.`,
     acct && `Account: ${acct.handle} on ${acct.platform}. ${acct.mission ?? ''}`,
     opts.edReasons && Object.keys(opts.edReasons).length && `ED SENT THESE BACK. Fix exactly this, keep the rest:\n${Object.entries(opts.edReasons).map(([p, r]) => `- ${p}: ${r.join(' ')}\n  Your last draft: ${(post(p)?.caption ?? '').slice(0, 600)}`).join('\n')}`,
@@ -94,7 +97,7 @@ export async function capWriteCaptions(id: number, opts: { note?: string; platfo
 
 You are Cap. Mandi uploaded the finished footage for this card. Write ONE caption per platform below, each adapted to its platform:
 ${targets.map(p => '- ' + (PLATFORM_STYLE[p] ?? p)).join('\n') || '- (no captions needed this time)'}
-Write to the reader (you/your), in Mandi's voice, from her own words first. Exactly ONE call to action, inside this account's branch. The caption's first line must NOT repeat the on-screen text and must NOT be a question. Never invent facts about her life or the video; if you know little about the video, stay honest and general.
+Write to the reader (you/your), in Mandi's voice, from her own words first. Exactly ONE call to action, inside this account's branch. The caption's first line is a SECOND hook: a different door from the on-screen text, never a repeat. Vary the call to action across posts. Never invent facts about her life or the video; if you know little about the video, stay honest and general.
 ${wantsCover ? 'Also write "cover_note": one line for the cover frame: which moment to grab and the few words to put on it.' : ''}
 Reply ONLY with JSON: {"captions": {${targets.map(p => `"${p}": "..."`).join(', ')}}${wantsCover ? ', "cover_note": "..."' : ''}}`
 

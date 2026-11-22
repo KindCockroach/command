@@ -61,7 +61,7 @@ ${getLoreContext(String(context ?? ''))}
 
 ${craft}
 
-The CRAFT LAWS above are binding — obey them over any instinct. Especially: STEP 0 (find the golden thread first, put it in the headline), law 2a (the on-screen hook and the caption's first line are STATEMENTS, NEVER questions — assume the audience's answer and say it), law 0 (GROWTH PHASE = NO CTA of any kind — no "comment", no keyword, no "link in bio"), and spacing (captions use real line breaks: hook line, blank line, short paragraphs). No links in captions.
+The HARD RULES above are binding; the DEFAULTS are starting bets you may break when the evidence points elsewhere. Especially: one idea per post (Step 0), two different hooks (law 2: the caption's first line is a second door, never the on-screen line repeated), ONE call to action that varies across posts (law 0), and spacing (captions use real line breaks: hook line, blank line, short paragraphs). No links in captions.
 
 ON-SCREEN TEXT RULES — get this right first, it's the #1 thing Mandi flags:
 - If the media is a VIDEO of a PERSON SPEAKING TO CAMERA (talking-head / vlog / avatar — you can see her talking in the frames), on-screen text MUST be EMPTY (""). The spoken words ARE the hook; NEVER stamp text beats over a video of someone talking — that is the exact "garbage" failure. The written hook goes in the caption's first line instead.

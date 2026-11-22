@@ -35,7 +35,7 @@ ${watch}
 ${getAudienceContext(accounts.find(a => a.id === 'aimomatwork')?.audience_id)}
 ${CRAFT_RULES}
 
-⛔ HARD RULE FOR EVERY "onscreen_text" AND "hook": it is a BOLD CLAIM, never a question. NO question hooks — no "Ever feel like…?", "Are you…?", "What if…?". You already know the answer, so state it straight (Law 2a). If your first line ends in a question mark, rewrite it as a declarative claim before returning.
+DEFAULT FOR EVERY "onscreen_text" AND "hook": a bold claim stated straight, rather than a question (law 2a). Break it only on purpose.
 
 Return ONLY valid JSON:
 {

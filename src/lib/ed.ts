@@ -1,7 +1,7 @@
 // Ed · Check a draft (SOP Ed 1). Phase 4: consistent, visible, not clever.
 //
 // Ed reads each platform's draft against the rules that can be checked the same way every
-// time: two different hooks, one call to action, no question hook, no cross-promotion
+// time: two different hooks, one call to action, no cross-promotion
 // between branches, no "Beck Team, Inc.", a sane hashtag count, and the plain-text voice
 // lessons that name a phrase to avoid. Pass, or send it back to the writer with the reason.
 // Ed never rewrites the piece.
@@ -63,9 +63,7 @@ export function edCheck(c: ContentPiece, d: EdInput): Omit<EdVerdict, 'round' | 
 
   // Two hooks: the caption opens a different door than the on-screen line.
   if (hook && similar(first, hook)) reasons.push(`Two hooks: the caption opens with the on-screen line ("${hook.slice(0, 60)}"). Open a different door.`)
-  // No question hooks (Law 2a).
-  const firstSentence = first.match(/^[^.!?\n]*[.!?]?/)?.[0] ?? first
-  if (/\?\s*$/.test(firstSentence) || /^(ever|are you|do you|have you|what if|tired of|why do)\b/i.test(first)) reasons.push('Question hook: the first line asks her a question. Say the true thing instead.')
+  // Question openings are no longer Ed's call (Nov 22): statements are a DEFAULT Cap may test.
 
   // One call to action.
   const kinds = CTAS.filter(([, re]) => re.test(text)).map(([k]) => k)
