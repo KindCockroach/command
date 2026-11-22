@@ -4,7 +4,10 @@
 // obeys them automatically (craftFor → getVoiceLessonsContext).
 //
 // Used by both "Save Changes" (plain save) and "Save Changes & Adjust" (revise).
-import { addVoiceLesson } from './db'
+import { addVoiceLesson, coreVoiceLessons } from './db'
+
+// Her core voice rules: a new lesson must add something these don't already say.
+const coreList = () => coreVoiceLessons().map(m => '- ' + m.title).join('\n') || '(none yet)'
 import { fableText } from './fable'
 
 type Fields = { onscreen_text?: string | null; script?: string | null; description?: string | null }
@@ -23,13 +26,13 @@ export async function learnFromFeedback(opts: {
   if (!feedback) return []
   try {
     const out = await fableText({
-      instructions: `Mandi gave feedback to redirect a caption's voice. Distill the DEEP, durable preference behind her feedback into 1-3 craft rules (each under 25 words, imperative voice) a content generator can obey FOREVER — capture the taste (her rhythm, what she rejects, the tone she wants), never a one-off fact. If the feedback is too vague or trivial to generalize, return an empty array. Return ONLY a JSON array of strings.`,
+      instructions: `Mandi gave feedback to redirect a caption's voice. Distill the DEEP, durable preference behind her feedback into AT MOST ONE specific craft rule (under 25 words, imperative voice) a content generator can obey FOREVER — capture the taste (her rhythm, what she rejects, the tone she wants), never a one-off fact. If the feedback is too vague to generalize, is generic advice ("use clear language", "be concise", "engage the reader"), or is already covered by her core rules below, return an empty array. Return ONLY a JSON array of strings.\n\nHER CORE RULES (don't repeat these):\n${coreList()}`,
       input: `POST: ${opts.title}\n\nHER FEEDBACK: ${feedback}\n\nCAPTION BEFORE:\n${opts.before}\n\nCAPTION AFTER (following her feedback):\n${opts.after}`,
       maxTokens: 400,
       effort: 'low',
     })
     const arr = JSON.parse(out.match(/\[[\s\S]*\]/)?.[0] ?? '[]') as unknown[]
-    const rules = arr.map(r => String(r).trim().replace(/^["']|["']$/g, '')).filter(Boolean).slice(0, 3)
+    const rules = arr.map(r => String(r).trim().replace(/^["']|["']$/g, '')).filter(Boolean).slice(0, 1)
     for (const r of rules) addVoiceLesson(r, opts.before, opts.after, opts.accountId)
     return rules
   } catch {
@@ -63,13 +66,13 @@ export async function learnFromEdits(opts: {
 
   try {
     const out = await fableText({
-      instructions: `Mandi hand-edited a post. Study what she changed across the fields below and distill the DEEP pattern behind her edits into 1-3 durable craft rules (each under 25 words, imperative voice) a content generator can obey forever. Look for TASTE — specificity over description, pain over pictures, her rhythm, the words she deletes, the tone she adds, what she made shorter — never surface wording or one-off facts. If the change is trivial (a typo, a single swapped word), return an empty array. Return ONLY a JSON array of strings.`,
+      instructions: `Mandi hand-edited a post. Study what she changed across the fields below and distill the DEEP pattern behind her edits into AT MOST ONE specific, durable craft rule (under 25 words, imperative voice) a content generator can obey forever. Look for TASTE — specificity over description, pain over pictures, her rhythm, the words she deletes, the tone she adds, what she made shorter — never surface wording or one-off facts. If the change is trivial (a typo, a single swapped word), the rule would be generic advice ("use clear language", "be concise", "engage the reader"), or her core rules below already say it, return an empty array. Return ONLY a JSON array of strings.\n\nHER CORE RULES (don't repeat these):\n${coreList()}`,
       input: `POST: ${opts.title}\n\n${diff}`,
       maxTokens: 500,
       effort: 'low',
     })
     const arr = JSON.parse(out.match(/\[[\s\S]*\]/)?.[0] ?? '[]') as unknown[]
-    const rules = arr.map(r => String(r).trim().replace(/^["']|["']$/g, '')).filter(Boolean).slice(0, 3)
+    const rules = arr.map(r => String(r).trim().replace(/^["']|["']$/g, '')).filter(Boolean).slice(0, 1)
     const bCombined = changed.map(f => `[${f.label}] ${f.b}`).join(' | ')
     const aCombined = changed.map(f => `[${f.label}] ${f.a}`).join(' | ')
     for (const r of rules) addVoiceLesson(r, bCombined, aCombined, opts.accountId)

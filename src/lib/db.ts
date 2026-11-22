@@ -175,7 +175,7 @@ export type ContentPieceRow = ContentPiece
 
 export type Memory = {
   id: number
-  category: 'decision' | 'pattern' | 'voice' | 'lesson' | 'goal' | 'fact' | 'note'
+  category: 'decision' | 'pattern' | 'voice' | 'voice_archive' | 'lesson' | 'goal' | 'fact' | 'note'
   title: string
   body: string
   agent_tags: string[]   // which agents should see this
@@ -1863,17 +1863,29 @@ export function addVoiceLesson(rule: string, before: string, after: string, acco
   return createMemory({
     category: 'voice',
     title: rule,
-    body: `Machine wrote: "${before}" → Mandi rewrote: "${after}"${accountId ? ` (on ${accountId})` : ''}`,
+    body: `Machine wrote: "${before.slice(0, 500)}" → Mandi rewrote: "${after.slice(0, 500)}"${accountId ? ` (on ${accountId})` : ''}`,
     agent_tags: ['craft'],
   })
 }
 
-export function getVoiceLessonsContext(limit = 15): string {
-  const lessons = getAllMemories('voice').slice(-limit)
-  if (!lessons.length) return ''
-  return `
-VOICE LESSONS — Mandi has rewritten machine output before. Each rule is law; each diff shows her taste. Write like her rewrites, never like the originals:
-${lessons.map(l => `• ${l.title}${l.body ? ` [${l.body}]` : ''}`).join('\n')}`
+// Mandi's voice, as every writer sees it (distilled Nov 22, 2026):
+// the CORE set (voice lessons tagged 'core', ranked by the order they were saved) always goes in,
+// plus the few newest lessons learned from her edits since. Old lessons live on as 'voice_archive'.
+export function coreVoiceLessons(): Memory[] {
+  return getAllMemories('voice').filter(m => (m.agent_tags ?? []).includes('core')).sort((a, b) => a.id - b.id)
+}
+export function getVoiceLessonsContext(recent = 3): string {
+  const all = getAllMemories('voice')
+  const core = all.filter(m => (m.agent_tags ?? []).includes('core')).sort((a, b) => a.id - b.id)
+  const fresh = all.filter(m => !(m.agent_tags ?? []).includes('core')).slice(-recent)
+  if (!core.length && !fresh.length) return ''
+  const coreText = core.length ? `
+HER VOICE — Mandi's core rules, most important first. Write like this:
+${core.map(l => `${l.title} ${l.body.replace(/\s*\([^()]*(#\d+|voice_|From:)[^()]*\)\s*$/, '')}`).join('\n')}` : ''
+  const freshText = fresh.length ? `
+Recent lessons from her edits (lighter weight; the core rules win any conflict):
+${fresh.map(l => `• ${l.title}`).join('\n')}` : ''
+  return `${coreText}${freshText}`
 }
 
 export function updateMemory(id: number, updates: Partial<Memory>): Memory | null {
