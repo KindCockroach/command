@@ -65,9 +65,9 @@ const CHOICES = [
 ]
 
 const LEAVE = [
-  { t: 'The Audit', d: 'Back to your factory settings. No more obligations for the sake of \u201cshould.\u201d Learn what it looks like to make a to-do list that actually serves.' },
+  { t: 'The Audit', d: 'Back to your factory settings. No more obligations for the sake of \u201cshould.\u201d Learn what it looks like to make a to-do list that actually serves YOU.' },
   { t: 'The Somatic Reset', d: 'A reset you can return to whenever life gets too loud.' },
-  { t: 'The Missing Instructions', d: 'Your parents didn\u2019t get a pamphlet for raising kids and neither did you. Reparenting yourself starts here.' },
+  { t: 'The Missing Instructions', d: 'Your parents didn\u2019t get a pamphlet for raising kids and neither did you. Two creative and useful AI prompts to be more present with yourself and your kids.' },
 ]
 
 export default function ResetPage() {
