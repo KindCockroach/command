@@ -62,6 +62,8 @@ export type ContentPiece = {
   upload?: UploadRecord | null     // an upload in flight or left incomplete (cleared once the file is attached)
   footage_at?: string | null       // when finished footage/media last landed on this card
   platform_posts?: PlatformPost[]  // one caption + status per platform this card goes to
+  cover_note?: string | null       // Phase 4: Cap's note for the cover (the frame + the words on it)
+  cap_needs?: string[]             // Phase 4: what Cap still needs from Mandi, said plainly
 }
 
 // An upload into a card that hasn't finished. 'uploading' that stops updating for a few
@@ -89,28 +91,84 @@ export type PlatformPost = {
   scheduled_at?: string | null      // 'YYYY-MM-DDTHH:MM' (local) when Scheduled
   posted_url?: string | null        // the live post link when Posted
   posted_at?: string | null
+  written_by?: 'cap' | 'mandi' | null   // who wrote the caption as it stands
+  ed?: EdVerdict | null             // Ed's check of the draft (cleared when Mandi edits it)
   updated_at: string
 }
 
-// A note from one agent (or Mandi) to another about a card. Phase 3 writes only the
-// first kind: footage landed → Cap. Phase 4 builds receipts and more kinds on this.
+// A note from one agent (or Mandi) to another: the ONE way agents pass work (Phase 4).
+// Phase 3 wrote only footage_in → Cap. Every handoff now carries from, to, what, the record it
+// is about, a status (open → done, or failed with the reason) and a receipt of what was produced.
+// A failed or stuck one stays visible with a retry; nothing is ever silently "done".
 export type HandoffMissing = 'script' | 'caption' | 'cover'
+export type HandoffAgent = 'mandi' | 'her' | 'commander' | 'cap' | 'ed' | 'rex' | 'pod' | 'biz' | 'notes' | 'build_log' | 'posted'
+export type HandoffKind =
+  | 'footage_in'      // Mandi uploaded footage → Cap writes the platform captions
+  | 'ed_check'        // a writer finished drafts → Ed checks them
+  | 'rewrite'         // Ed sent a draft back → the writer fixes the one thing
+  | 'her_note'        // Her took what Mandi said → Commander (or Cap / the build log)
+  | 'piece'           // Commander shredded a note → one piece for Cap or Biz
+  | 'winners_in'      // Mandi dropped a Meta export → Cap weighs it
+export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log'; id: string | number; label?: string }
 export type Handoff = {
   id: string
-  kind: 'footage_in'
-  from: 'mandi'
-  to: 'cap'
-  content_id: number
+  kind: HandoffKind
+  from: HandoffAgent
+  to: HandoffAgent
+  what?: string                     // one line: what is being handed over
+  content_id: number | null         // the card, when it is about one
+  ref?: HandoffRef | null           // the record it is about, when that is not a card (or as well)
   account_id: string | null
   calendar_item_id?: string | null
-  media_urls: string[]              // what arrived (newest last)
-  missing: HandoffMissing[]         // what the card still needs, when it was written
-  status: 'open' | 'done'
-  note?: string                     // optional: what changed from the plan
+  media_urls: string[]              // footage_in: what arrived (newest last)
+  missing: HandoffMissing[]         // footage_in: what the card still needs, when it was written
+  status: 'open' | 'done' | 'failed'
+  note?: string                     // optional: what changed from the plan (footage_in), or the reason (rewrite)
+  receipt?: string | null           // what was produced, in one or two plain lines
+  receipt_refs?: HandoffRef[]       // the records produced (cards, notes, reviews, …)
+  error?: string | null             // why it failed
+  attempts?: number                 // runs so far (a retry adds one)
+  round?: number                    // ed_check / rewrite: which pass this is (Cap gets one rewrite)
+  parent_id?: string | null         // the handoff this one came out of
+  thread_id?: string | null         // the Her conversation it started in
   created_at: string
   updated_at: string
   done_at?: string | null
   done_by?: string | null
+}
+
+// Her: one conversation with Mandi she can pick back up later without asking again.
+export type HerTurn = { role: 'mandi' | 'her'; text: string; at: string; handoff_ids?: string[]; note_id?: number | null; spoken?: boolean }
+export type HerThread = {
+  id: string
+  title: string
+  turns: HerTurn[]
+  questions: { id: string; text: string; from: HandoffAgent; handoff_id?: string | null; answered?: boolean }[]
+  status: 'open' | 'closed'
+  created_at: string
+  updated_at: string
+}
+
+// Ed's verdict on one platform's draft. Consistent rule checks, shown on the card.
+export type EdVerdict = { verdict: 'pass' | 'sent_back'; reasons: string[]; notes?: string[]; round: number; checked_at: string; needs_you?: boolean; let_through?: boolean }   // needs_you: old records only. let_through: passed on the last round, leftovers in notes
+
+// Cap's read of a week's results (Cap 4 · Weigh the winners). He proposes; Mandi's plan decides.
+export type WinnerReview = {
+  id: string
+  account_id: string
+  platform: string
+  created_at: string
+  posts: number
+  period: string
+  evidence: string[]               // what the numbers show (metrics, not causes)
+  guesses: string[]                // plausible reasons, labeled as guesses
+  missing: string[]                // what the data can't tell us
+  hypothesis: string
+  experiment: { what: string; how: string; measure: string }
+  compared: { media_id: string; content_id: number | null; verdict: string; views: number; line: string }[]
+  status: 'proposed' | 'in_plan' | 'dismissed'
+  plan_id?: string | null
+  handoff_id?: string | null
 }
 
 export type ContentPieceRow = ContentPiece
@@ -510,6 +568,7 @@ export type WeeklyPlanBody = {
   batch: string
   campaign_balance: string
   arc: string
+  experiments?: { review_id: string; text: string }[]   // Cap's proposed tests from the latest winners
 }
 export type Plan = {
   id: string
@@ -781,6 +840,8 @@ export type Db = {
   plans?: Plan[]
   calendar_items?: CalendarItem[]
   handoffs?: Handoff[]
+  her_threads?: HerThread[]
+  winner_reviews?: WinnerReview[]
   next_plan_id?: number
   next_calendar_id?: number
   plan_config?: PlanConfig

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Loader2, RefreshCw, Moon, Send, MessageCircle, Search } from 'lucide-react'
 import CommanderModal from './CommanderModal'
+import HandoffList from './HandoffList'
 import { parseReceipts, receiptLine, withReceipts, shredRequest, announceDataChanged, type CommanderReceipt } from '@/lib/commanderActions'
 
 // THE ACTIVITY STATION — the window into RISE while Mandi's away. A running, grouped
@@ -122,6 +123,13 @@ export default function ActivityStation() {
         <button onClick={load} title="Refresh" style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 13px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
           <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : undefined} /> Refresh
         </button>
+      </div>
+
+      {/* Phase 4: handoffs between agents, with receipts. Failed/stuck ones stay here with Retry. */}
+      <div className="rise-float" style={{ borderRadius: '16px', border: '1px solid var(--border)', background: 'var(--surface)', padding: '14px 16px' }}>
+        <p style={{ fontSize: '13px', fontWeight: 900, color: 'var(--text)', marginBottom: '4px' }}>Handoffs between agents</p>
+        <p style={{ fontSize: '11.5px', color: 'var(--text-subtle)', marginBottom: '10px' }}>Who passed what to whom, and the receipt. Anything that failed or stopped stays here until it’s retried.</p>
+        <HandoffList limit={40} onChanged={load} />
       </div>
 
       {/* While you were away */}

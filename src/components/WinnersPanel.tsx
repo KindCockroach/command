@@ -17,6 +17,7 @@ type Scored = {
   verdict: Verdict; reasons: string[]; engagement_rate: number; keep_per_1k: number; views_vs_median: number; ig_views: number
 }
 type Account = { id: string; handle?: string; name?: string; status?: string }
+type Review = { id: string; account_id: string; platform: string; created_at: string; posts: number; period: string; evidence: string[]; guesses: string[]; missing: string[]; hypothesis: string; experiment: { what: string; how: string; measure: string }; status: 'proposed' | 'in_plan' | 'dismissed'; plan_id?: string | null }
 
 const GROUPS: { verdict: Verdict; title: string; sub: string }[] = [
   { verdict: 'make_more', title: 'Make more of this', sub: 'Beat this account’s typical reel. Re-angle the same pain point with new footage and new words.' },
@@ -35,23 +36,31 @@ export default function WinnersPanel({ embedded = false }: { embedded?: boolean 
   const [paste, setPaste] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
-  const [makingId, setMakingId] = useState<number | null>(null)
-  const [madeIds, setMadeIds] = useState<Set<number>>(new Set())
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [capBusy, setCapBusy] = useState(false)
 
-  async function doMakeMore(r: Scored) {
-    setMakingId(r.id); setMsg('')
-    try {
-      const res = await fetch('/api/results/makemore', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ account_id: r.account_id, onscreen_text: r.onscreen_text, visual: r.visual, verdict: r.verdict, count: 3 }),
-      })
-      const d = await res.json().catch(() => ({}))
-      if (!res.ok) { setMsg(d.error || 'Couldn’t draft re-angles.'); return }
-      setMadeIds(prev => new Set(prev).add(r.id))
-      setMsg(`Drafted ${d.created} re-angle${d.created === 1 ? '' : 's'} into Content Day (status: idea).`)
-    } finally {
-      setMakingId(null)
-    }
+  // Winners go to Cap (Cap 4): he weighs what shipped against how it did, and proposes ONE
+  // experiment for the next weekly plan. Nothing becomes a card from here.
+  async function askCap(account: string, platform: string): Promise<string | null> {
+    const r = await fetch('/api/results/cap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ account_id: account, platform }) })
+    const d = await r.json().catch(() => ({}))
+    return r.ok ? null : (d.error || 'Cap couldn’t weigh them.')
+  }
+  async function weighNow() {
+    setCapBusy(true); setMsg('')
+    const plat = results.some(r => r.platform === 'facebook') && !results.some(r => (r.platform ?? 'instagram') === 'instagram') ? 'facebook' : 'instagram'
+    const e = await askCap(accountId, plat)
+    setCapBusy(false)
+    setMsg(e ? `Cap: ${e} (It stays in Activity with Retry.)` : 'Cap weighed them. His read is below.')
+    loadReviews(accountId)
+  }
+  const loadReviews = useCallback(async (id: string) => {
+    const d = await fetch(`/api/results/cap?account_id=${encodeURIComponent(id)}`).then(r => r.json()).catch(() => null)
+    setReviews(d?.reviews ?? [])
+  }, [])
+  async function dismiss(id: string) {
+    await fetch('/api/results/cap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'dismiss', id }) })
+    loadReviews(accountId)
   }
 
   const load = useCallback(async (id: string) => {
@@ -67,7 +76,7 @@ export default function WinnersPanel({ embedded = false }: { embedded?: boolean 
       setAccountId(cur => (active.length && !active.some(x => x.id === cur) ? active[0].id : cur))
     }).catch(() => {})
   }, [])
-  useEffect(() => { load(accountId) }, [accountId, load])
+  useEffect(() => { load(accountId); loadReviews(accountId) }, [accountId, load, loadReviews])
 
   // A dropped/pasted export is parsed first, then shown as one row per account
   // named in the file, each with its RISE account picked (or "skip").
@@ -99,12 +108,18 @@ export default function WinnersPanel({ embedded = false }: { embedded?: boolean 
       if (!r.ok) { errors.push(`${g.source || g.target}: ${d.error || 'import failed'}`); continue }
       added += d.added ?? 0; updated += d.updated ?? 0
     }
+    // Hand each imported account to Cap.
+    const capErrs: string[] = []
+    if (!errors.length) {
+      setMsg('Imported. Cap is weighing the results…')
+      for (const g of pending.groups) if (g.target) { const e = await askCap(g.target, g.platform); if (e) capErrs.push(`${g.source || g.target}: ${e}`) }
+    }
     setBusy(false)
-    setMsg(`Imported ${added} new and updated ${updated} posts${skippedGroups ? ` · skipped ${skippedGroups} account${skippedGroups === 1 ? '' : 's'} you left on “skip”` : ''}${errors.length ? ` · failed: ${errors.join('; ')}` : ''}.`)
+    setMsg(`${capErrs.length ? `Cap couldn’t weigh: ${capErrs.join('; ')} (it stays in Activity with Retry). ` : errors.length ? '' : 'Cap weighed them; his read is below. '}Imported ${added} new and updated ${updated} posts${skippedGroups ? ` · skipped ${skippedGroups} account${skippedGroups === 1 ? '' : 's'} you left on “skip”` : ''}${errors.length ? ` · failed: ${errors.join('; ')}` : ''}.`)
     if (!errors.length) { setPending(null); setPaste('') }
     const first = pending.groups.find(g => g.target)?.target
     if (first && first !== accountId) setAccountId(first)   // show what was just imported
-    else load(accountId)
+    else { load(accountId); loadReviews(accountId) }
   }
 
   return (
@@ -113,7 +128,7 @@ export default function WinnersPanel({ embedded = false }: { embedded?: boolean 
       <div className="wrap">
         <p className="eyebrow">RISE · WINNER LOOP</p>
         <h1>What’s working</h1>
-        <p className="sub">Post natively, then drop the week’s Meta export here. RISE compares each reel with this account’s typical reel and tells you what to make more of.</p>
+        <p className="sub">Post natively, then drop the week’s Meta export here. RISE scores each reel against this account’s typical reel, then hands the results to Cap. He compares them with what actually shipped and proposes one experiment for next week’s plan.</p>
 
         <div className="bar">
           <label htmlFor="acct">Account</label>
@@ -158,6 +173,26 @@ export default function WinnersPanel({ embedded = false }: { embedded?: boolean 
         )}
         {msg && <p className="msg">{msg}</p>}
 
+        {results.length > 0 && (
+          <section className="capread">
+            <div className="caphead"><h2>Cap’s read</h2><button className="go" onClick={weighNow} disabled={capBusy}>{capBusy ? 'Cap is weighing…' : reviews.length ? 'Weigh again' : 'Ask Cap to weigh these'}</button></div>
+            {reviews.filter(w => w.status !== 'dismissed').slice(0, 2).map(w => (
+              <article key={w.id} className="card">
+                <p className="meta">{w.platform === 'facebook' ? 'Facebook' : 'Instagram'} · {w.posts} posts · {w.period} · {new Date(w.created_at).toLocaleDateString()}</p>
+                <p className="lbl">What the numbers show</p><ul className="why">{w.evidence.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                <p className="lbl">Cap’s guesses (not proven)</p><ul className="why">{w.guesses.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                {w.missing.length > 0 && <><p className="lbl">What this data can’t tell us</p><ul className="why">{w.missing.map((x, i) => <li key={i}>{x}</li>)}</ul></>}
+                <p className="lbl">Hypothesis</p><p className="txt">{w.hypothesis}</p>
+                <p className="lbl">Experiment for next week</p><p className="txt">{w.experiment.what}</p>
+                {w.experiment.how && <p className="vis">How: {w.experiment.how}</p>}
+                {w.experiment.measure && <p className="vis">Measure: {w.experiment.measure}</p>}
+                <p className="meta">{w.status === 'in_plan' ? `On the next weekly plan draft (${w.plan_id}) for you to approve.` : 'Proposed. It rides onto this account’s next weekly plan draft; you approve the plan.'}{w.status === 'proposed' && <> · <button className="ghost" onClick={() => dismiss(w.id)}>Set aside</button></>}</p>
+              </article>
+            ))}
+            {!reviews.length && <p className="gsub">Cap hasn’t weighed this account yet.</p>}
+          </section>
+        )}
+
         {!results.length && <p className="empty">No results for this account yet. Import a week of reels to start.</p>}
 
         {GROUPS.map(g => {
@@ -180,11 +215,6 @@ export default function WinnersPanel({ embedded = false }: { embedded?: boolean 
                     {r.fb_views !== null && <div><dt>Facebook</dt><dd>{fmt(r.fb_views)}</dd></div>}
                   </dl>
                   {r.reasons.length > 0 && <ul className="why">{r.reasons.map((x, i) => <li key={i}>{x}</li>)}</ul>}
-                  {(r.verdict === 'make_more' || r.verdict === 'rehook') && (
-                    <button className="makemore" onClick={() => doMakeMore(r)} disabled={makingId === r.id}>
-                      {makingId === r.id ? 'Drafting…' : madeIds.has(r.id) ? '✓ Drafted — make 3 more' : r.verdict === 'rehook' ? 'Keep the line, draft 3 new hooks →' : 'Make 3 more of this →'}
-                    </button>
-                  )}
                   <p className="meta">{r.platform === 'facebook' ? 'Facebook video' : 'Post'} {r.media_id}{r.content_id ? ` · matches RISE card #${r.content_id}` : ''}</p>
                 </article>
               ))}
@@ -197,6 +227,9 @@ export default function WinnersPanel({ embedded = false }: { embedded?: boolean 
 }
 
 const css = `
+.wl .capread{margin:18px 0 8px}
+.wl .caphead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.wl .lbl{margin:8px 0 2px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#6B6F8A}
 .wl{min-height:100vh;background:#F5EFE6;color:#171C3A;font-family:system-ui,-apple-system,sans-serif;padding:32px 16px 64px}
 .wl .wrap{max-width:760px;margin:0 auto}
 .wl.emb{min-height:0;padding:0;background:transparent}

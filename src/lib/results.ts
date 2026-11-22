@@ -30,6 +30,7 @@ export type PostResult = {
   pct_from_followers: number | null // 0 = shown only to non-followers (Trial Reel)
   fb_views: number | null
   content_id: number | null        // matched RISE card, if any
+  permalink?: string | null        // the live post link (Instagram exports carry it)
   imported_at: string
   updated_at: string
 }
@@ -77,13 +78,17 @@ const numOrNull = (v: unknown): number | null => (v === null || v === undefined 
 // Word-overlap match of a reel's on-screen text to a RISE card (on-screen text or
 // title). Needs ≥60% of the reel's meaningful words to land on the card.
 const words = (s: string) => new Set(String(s || '').toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(w => w.length > 3))
-function matchContent(accountId: string, text: string): number | null {
+// The authoritative match: the post link she pasted when she marked the card Posted.
+const shortcode = (u: string) => u.match(/instagram\.com\/(?:[^/]+\/)?(?:p|reel|reels)\/([A-Za-z0-9_-]+)/)?.[1] ?? null
+function matchContent(accountId: string, text: string, permalink?: string | null): number | null {
+  const code = permalink ? shortcode(permalink) : null
+  if (code) for (const c of getAllContent()) if ((c.platform_posts ?? []).some(p => p.posted_url && shortcode(p.posted_url) === code)) return c.id
   const want = words(text)
   if (want.size < 3) return null
   let best: { id: number; score: number } | null = null
   for (const c of getAllContent()) {
     if (c.account_id && c.account_id !== accountId) continue
-    const have = words(`${c.onscreen_text ?? ''} ${c.title ?? ''}`)
+    const have = words(`${c.onscreen_text ?? ''} ${c.title ?? ''} ${c.description ?? ''} ${(c.platform_posts ?? []).map(p => p.caption).join(' ')}`)
     let hit = 0
     want.forEach(w => { if (have.has(w)) hit++ })
     const score = hit / want.size
@@ -120,14 +125,15 @@ export function importResults(accountId: string, rows: ImportRow[], platform = '
       follows: num(r.follows),
       pct_from_followers: numOrNull(r.pct_from_followers),
       fb_views: numOrNull(r.fb_views),
+      permalink: r.permalink ? String(r.permalink) : null,
     }
     const idx = store.results.findIndex(x => x.platform === platform && x.media_id === mediaId)
     if (idx >= 0) {
       const prev = store.results[idx]
-      store.results[idx] = { ...prev, ...fields, content_id: prev.content_id ?? matchContent(accountId, onscreen), updated_at: now }
+      store.results[idx] = { ...prev, ...fields, content_id: prev.content_id ?? matchContent(accountId, onscreen, fields.permalink), updated_at: now }
       updated++
     } else {
-      store.results.push({ id: store.next_id++, ...fields, content_id: matchContent(accountId, onscreen), imported_at: now, updated_at: now })
+      store.results.push({ id: store.next_id++, ...fields, content_id: matchContent(accountId, onscreen, fields.permalink), imported_at: now, updated_at: now })
       added++
     }
   }

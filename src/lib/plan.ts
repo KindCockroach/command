@@ -158,12 +158,20 @@ export function proposeWeekly(): { plans: Plan[]; skipped: string[] } {
       carried.push(...(old.feedback ?? [])); old.status = 'superseded'; old.updated_at = now
     }
     const body = weeklyBody({ id: a.id, handle: a.handle }, b)
+    // Cap 4: his proposed experiment from the latest winners rides onto this draft. Her approval of the plan is the yes.
+    const planId = `plan_${db.next_plan_id}`
+    const exps = (db.winner_reviews ?? []).filter(w => w.account_id === a.id && (w.status === 'proposed' || (w.status === 'in_plan' && db.plans!.some(x => x.id === w.plan_id && x.status !== 'approved'))))
+    if (exps.length) {
+      body.experiments = exps.map(w => ({ review_id: w.id, text: `${w.experiment.what}${w.experiment.measure ? ` Measure: ${w.experiment.measure}` : ''}` }))
+      for (const w of exps) { w.status = 'in_plan'; w.plan_id = planId }
+    }
     const plan: Plan = {
-      id: `plan_${db.next_plan_id++}`, level: 'weekly', branch_id: b, period_start: parent.period_start, period_end: parent.period_end, status: 'proposed',
+      id: planId, level: 'weekly', branch_id: b, period_start: parent.period_start, period_end: parent.period_end, status: 'proposed',
       summary: `${body.handle}: ${body.posts_per_week} post${body.posts_per_week === 1 ? '' : 's'} a week (${body.per_day}).`, weekly: body, proposed_by: 'cap',
       approved_at: null, parent_plan_id: parent.id, created_at: now, updated_at: now,
       ...(carried.length ? { feedback: carried } : {}),
     }
+    db.next_plan_id++
     db.plans.push(plan); made.push(plan)
   }
   writeDb(db)

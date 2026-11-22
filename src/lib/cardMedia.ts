@@ -60,6 +60,14 @@ export function mirrorsOf(db: ReturnType<typeof readDb>, accountId: string | nul
   return (db.brand_accounts ?? []).filter(a => a.mirrors_account_id === accountId).map(a => ({ id: a.id, handle: a.handle, platform: normPlatform(a.platform), brand_name: a.brand_name }))
 }
 
+// The platforms this card posts to itself: a platform a mirrored account reposts
+// automatically is never one more caption to write or one more "Posted" to wait for.
+export function ownPlatforms(db: ReturnType<typeof readDb>, c: ContentPiece, acct?: BrandAccount | null): string[] {
+  const own = acct ? normPlatform(acct.platform) : ''
+  const mirrored = new Set(mirrorsOf(db, c.account_id).map(m => m.platform).filter(p => p !== own))
+  return cardPlatforms(c, acct).filter(p => !mirrored.has(p))
+}
+
 export function missingFor(c: ContentPiece): HandoffMissing[] {
   const m: HandoffMissing[] = []
   if (!(c.script ?? '').trim()) m.push('script')
@@ -88,10 +96,12 @@ export function cardMediaView(id: number) {
     media, cover: c.thumbnail_url || '', script: !!(c.script ?? '').trim(), description: c.description ?? '',
     upload: effectiveUpload(c.upload),
     footage_at: c.footage_at ?? null,
-    platforms: cardPlatforms(c, acct),
+    platforms: ownPlatforms(db, c, acct),
     platform_posts: c.platform_posts ?? [],
     mirrors: mirrorsOf(db, c.account_id),
-    handoff: handoff ? { ...handoff, missing: handoff.status === 'open' ? missingFor(c) : handoff.missing } : null,
+    handoff: handoff ? { ...handoff, missing: handoff.status === 'open' ? missingFor(c) : (handoff.missing ?? []) } : null,
+    cover_note: c.cover_note ?? null,
+    cap_needs: c.cap_needs ?? [],
     calendar: cal ? { id: cal.id, date: cal.date, time: cal.time ?? null } : null,
   }
 }
@@ -168,9 +178,10 @@ export async function attachMedia(id: number, url: string, opts: { calendar_item
     h.media_urls = Array.from(new Set([...h.media_urls, url])); h.missing = missing; h.updated_at = now
     if (opts.note) h.note = opts.note
     if (cal && !h.calendar_item_id) h.calendar_item_id = cal
+    h.status = 'open'
   } else {
     const n = db.handoffs.length + 1
-    h = { id: `ho_${Date.now().toString(36)}_${n}`, kind: 'footage_in', from: 'mandi', to: 'cap', content_id: id, account_id: c.account_id ?? null, calendar_item_id: cal, media_urls: [url], missing, status: 'open', note: opts.note, created_at: now, updated_at: now }
+    h = { id: `ho_${Date.now().toString(36)}_${n}`, kind: 'footage_in', from: 'mandi', to: 'cap', what: `Footage landed on “${c.title.slice(0, 80)}”: write the platform captions`, content_id: id, attempts: 0, account_id: c.account_id ?? null, calendar_item_id: cal, media_urls: [url], missing, status: 'open', note: opts.note, created_at: now, updated_at: now }
     db.handoffs.push(h)
   }
   writeDb(db)
@@ -197,7 +208,7 @@ export function getHandoffs(f: { to?: string; status?: string; content_id?: numb
   const content = new Map(db.content.map(c => [c.id, c]))
   return (db.handoffs ?? [])
     .filter(h => (!f.to || h.to === f.to) && (!f.status || h.status === f.status) && (!f.content_id || h.content_id === f.content_id))
-    .map(h => { const c = content.get(h.content_id); return h.status === 'open' && c ? { ...h, missing: missingFor(c) } : h })
+    .map(h => { const c = h.content_id ? content.get(h.content_id) : undefined; return h.status === 'open' && c ? { ...h, missing: missingFor(c) } : h })
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
 
@@ -209,7 +220,7 @@ export function closeHandoff(id: string, by = 'cap'): Handoff | null {
 
 // ── per-platform caption + status ──
 const STATUSES: PlatformPostStatus[] = ['draft', 'scheduled', 'posted']
-export function setPlatformPost(id: number, platform: string, patch: Partial<Pick<PlatformPost, 'caption' | 'status' | 'scheduled_at' | 'posted_url'>>) {
+export function setPlatformPost(id: number, platform: string, patch: Partial<Pick<PlatformPost, 'caption' | 'status' | 'scheduled_at' | 'posted_url' | 'ed'>>, by: 'cap' | 'mandi' = 'mandi') {
   const name = normPlatform(platform)
   if (!name) return { error: 'Which platform?' }
   if (patch.status && !STATUSES.includes(patch.status)) return { error: 'Status is Draft, Scheduled or Posted.' }
@@ -221,7 +232,13 @@ export function setPlatformPost(id: number, platform: string, patch: Partial<Pic
   let pp = c.platform_posts.find(p => p.platform === name)
   const now = nowIso()
   if (!pp) { pp = { platform: name, caption: '', status: 'draft', updated_at: now }; c.platform_posts.push(pp) }
-  if (typeof patch.caption === 'string') pp.caption = patch.caption.slice(0, 5000)
+  if (typeof patch.caption === 'string' && patch.caption !== pp.caption) {
+    pp.caption = patch.caption.slice(0, 5000)
+    pp.written_by = by
+    // Her own words stand as written: Ed's verdict was about the draft she replaced.
+    if (by === 'mandi') pp.ed = null
+  }
+  if ('ed' in patch) pp.ed = patch.ed ?? null
   if (patch.status) {
     pp.status = patch.status
     if (patch.status === 'posted' && !pp.posted_at) pp.posted_at = now
@@ -233,11 +250,11 @@ export function setPlatformPost(id: number, platform: string, patch: Partial<Pic
   if (!(c.platforms ?? []).map(normPlatform).includes(name)) c.platforms = [...(c.platforms ?? []), name]
 
   // The card's own status follows its platforms (only once every one has moved on).
-  const all = cardPlatforms(c, acct).map(p => c.platform_posts!.find(x => x.platform === p)?.status ?? 'draft')
+  const all = ownPlatforms(db, c, acct).map(p => c.platform_posts!.find(x => x.platform === p)?.status ?? 'draft')
   if (all.length && all.every(s => s === 'posted')) {
     c.status = 'published'; c.published_at ??= now
     // Posted everywhere → nothing left for Cap on this card.
-    for (const h of db.handoffs ?? []) if (h.content_id === id && h.status === 'open') { h.status = 'done'; h.done_at = now; h.done_by = 'posted'; h.updated_at = now }
+    for (const h of db.handoffs ?? []) if (h.content_id === id && h.status === 'open') { h.status = 'done'; h.done_at = now; h.done_by = 'posted'; h.receipt ??= 'Posted on every platform, so nothing is left to hand over.'; h.updated_at = now }
   }
   else if (all.length && all.every(s => s !== 'draft')) {
     c.status = 'scheduled'

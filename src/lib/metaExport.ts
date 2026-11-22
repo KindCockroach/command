@@ -84,6 +84,7 @@ export function parseMetaExport(text: string): ParsedExport {
         media_id: id,
         posted_at: r[c('Publish time')] ?? '',
         onscreen_text: (r[c('Description')] ?? '').slice(0, 500),
+        permalink: r[c('Permalink')] ?? '',
         visual: '',   // the export doesn't say what was on screen; Post type ("IG reel") would make every same-caption post look like a re-upload
         views: r[c('Views')] ?? '', reach: r[c('Reach')] ?? '', likes: r[c('Likes')] ?? '',
         shares: r[c('Shares')] ?? '', follows: r[c('Follows')] ?? '', comments: r[c('Comments')] ?? '', saves: r[c('Saves')] ?? '',

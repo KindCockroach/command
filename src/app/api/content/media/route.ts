@@ -1,7 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { openHandoff, listHandoffs } from '@/lib/handoffs'
+import { runHandoff } from '@/lib/agentRun'
+import { readDb, writeDb } from '@/lib/db'
 import { cardMediaView, startUpload, progressUpload, failUpload, discardUpload, attachMedia, removeMedia, setPlatformPost } from '@/lib/cardMedia'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300
 
 // One content card's media, upload state, Cap note and per-platform posts.
 // GET ?id=  → the view.   POST { action, id, … } → one step:
@@ -39,7 +43,29 @@ export async function POST(req: NextRequest) {
     case 'attach': {
       if (!b.url) return NextResponse.json({ error: 'url required' }, { status: 400 })
       const r = await attachMedia(id, String(b.url), { calendar_item_id: b.calendar_item_id ?? null, note: b.note ? String(b.note).slice(0, 1000) : undefined })
-      return 'error' in r ? NextResponse.json(r, { status: 422 }) : NextResponse.json(r)
+      if ('error' in r) return NextResponse.json(r, { status: 422 })
+      // Phase 4: Cap picks the footage up right away (after the reply, so the upload isn't kept waiting).
+      const hid = r.handoff.id
+      after(async () => { await runHandoff(hid) })
+      return NextResponse.json(r)
+    }
+    case 'cap_note': {
+      // What changed from the plan (typed or spoken). Cap rewrites his own drafts with it; hers stay.
+      const note = String(b.note ?? '').trim().slice(0, 2000)
+      if (!note) return NextResponse.json({ error: 'Say what changed first.' }, { status: 400 })
+      const v = cardMediaView(id); if (!v) return nf()
+      const db = readDb()
+      for (const x of db.handoffs ?? []) if (x.content_id === id && x.kind === 'footage_in' && x.status !== 'done') { x.status = 'done'; x.done_by = 'cap'; x.receipt = 'Replaced by your newer note.'; x.updated_at = new Date().toISOString() }
+      writeDb(db)
+      const h = openHandoff({ kind: 'footage_in', from: 'mandi', to: 'cap', what: `Your note on “${v.title.slice(0, 60)}”: ${note.slice(0, 80)}`, content_id: id, account_id: v.account_id, note })
+      await runHandoff(h.id)
+      return NextResponse.json({ handoff: listHandoffs({ content_id: id })[0] ?? null, view: cardMediaView(id) })
+    }
+    case 'ed_check': {
+      const v = cardMediaView(id); if (!v) return nf()
+      const h = openHandoff({ kind: 'ed_check', from: 'mandi', to: 'ed', what: `Check the captions on “${v.title.slice(0, 60)}”`, content_id: id, account_id: v.account_id })
+      await runHandoff(h.id)
+      return NextResponse.json({ handoffs: listHandoffs({ content_id: id }), view: cardMediaView(id) })
     }
     case 'remove_media': {
       const v = removeMedia(id, String(b.url || ''))
@@ -49,6 +75,7 @@ export async function POST(req: NextRequest) {
       const r = setPlatformPost(id, String(b.platform || ''), b.patch ?? {})
       return 'error' in r ? NextResponse.json(r, { status: 400 }) : NextResponse.json(r)
     }
+    case 'handoffs': return NextResponse.json({ handoffs: listHandoffs({ content_id: id }) })
     default: return NextResponse.json({ error: `unknown action "${b.action}"` }, { status: 400 })
   }
 }

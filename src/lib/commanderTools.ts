@@ -6,7 +6,9 @@
 // actually happened. Handlers write through lib/db directly, validate their input,
 // and return either { ok: true, summary, data } (the object as stored) or
 // { ok: false, error } with a plain reason. Nothing is swallowed.
+import { learnFromEdits } from './learn'
 import {
+  logActivity,
   getAllContent, createContent, updateContent, deleteContent,
   getAllNotes, createNote, updateNote, deleteNote,
   getAllTasks, createTask, updateTask, deleteTask,
@@ -182,7 +184,7 @@ const cardTools: CommanderTool[] = [
     name: 'update_card',
     description: 'Edit an existing Card by id. Send ONLY the fields that change; everything else is kept. Text fields replace the stored text exactly. Returns the card as stored after the edit.',
     input_schema: { type: 'object', properties: { id: { type: 'integer' }, ...cardFields }, required: ['id'] },
-    handler: i => {
+    handler: async i => {
       const id = intId(i)
       if (!id) return fail('id must be a positive whole number.')
       const existing = findCard(id)
@@ -200,9 +202,19 @@ const cardTools: CommanderTool[] = [
       if (has(i, 'account_id')) updates.account_id = text(i.account_id) || null
       const changed = Object.keys(updates)
       if (!changed.length) return fail('nothing to change — send at least one field besides id.')
+      const before = { onscreen_text: existing!.onscreen_text, script: existing!.script, description: existing!.description }
       const saved = updateContent(id, updates)
       if (!saved) return fail(`card ${id} could not be updated.`)
-      return { ok: true, summary: `Card updated: "${saved.title}" (id ${saved.id}) — changed ${changed.map(k => (k === 'description' ? 'caption' : k)).join(', ')}`, data: cardView(saved) }
+      // Phase 4: a chat edit teaches the voice lessons the same way an Accounts edit does.
+      let taught = ''
+      if (has(i, 'onscreen_text') || has(i, 'script') || has(i, 'caption')) {
+        const learned = await learnFromEdits({ title: saved.title, accountId: saved.account_id, before, after: { onscreen_text: saved.onscreen_text, script: saved.script, description: saved.description } }).catch(() => [] as string[])
+        if (learned.length) {
+          taught = ` · learned ${learned.length} voice lesson${learned.length > 1 ? 's' : ''}: ${learned.map(r => `“${r}”`).join(' ')}`
+          logActivity({ type: 'voice_lesson', icon: '🎓', source: 'commander', account_id: saved.account_id ?? null, content_id: saved.id, title: `Learned from your chat edit: ${learned[0]}`.slice(0, 140), detail: learned.slice(1).join(' · ') || undefined })
+        }
+      }
+      return { ok: true, summary: `Card updated: "${saved.title}" (id ${saved.id}) — changed ${changed.map(k => (k === 'description' ? 'caption' : k)).join(', ')}${taught}`, data: cardView(saved) }
     },
   },
   {

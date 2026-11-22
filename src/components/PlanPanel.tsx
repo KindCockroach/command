@@ -13,7 +13,7 @@ type Plan = {
   status: 'proposed' | 'approved' | 'declined'; summary: string
   feedback?: { kind: 'question' | 'decline' | 'reopen'; text: string; at: string; answer?: string | null }[]
   monthly?: { goals: string[]; initiatives: string[]; campaigns: { product_id: string; note: string }[]; dates: { date: string; label: string }[]; priorities: string[]; paused: string[] }
-  weekly?: { account_id: string; handle: string; channels: Channel[]; posts_per_week: number; per_day: string; batch: string; campaign_balance: string; arc: string }
+  weekly?: { account_id: string; handle: string; channels: Channel[]; posts_per_week: number; per_day: string; batch: string; campaign_balance: string; arc: string; experiments?: { review_id: string; text: string }[] }
 }
 type Acct = { id: string; handle: string; platform: string; status: string; mirrors_account_id: string | null }
 type Data = { plans: Plan[]; accounts?: Acct[] }
@@ -180,6 +180,11 @@ export default function PlanPanel() {
             </div>
           ))}
           <p style={{ margin: '6px 0', fontSize: 12, color: 'var(--text-subtle)' }}>{p.weekly!.campaign_balance} {p.weekly!.batch}</p>
+          {(p.weekly!.experiments?.length ?? 0) > 0 && (
+            <div style={{ margin: '6px 0', padding: '8px 10px', borderRadius: 10, background: 'rgba(124,77,219,.08)', fontSize: 12.5, color: 'var(--text)' }}>
+              <b>🧪 Cap’s experiment from the winners:</b>{p.weekly!.experiments!.map(e => <div key={e.review_id}>{e.text}</div>)}
+            </div>
+          )}
           {actions(p)}
         </div>
       ))}

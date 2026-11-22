@@ -5,12 +5,15 @@ import UploadBar from './UploadBar'
 import { PlatformBadge, PLATFORM_CHOICES } from './PlatformBadge'
 import { uploadToCard, stopUpload, retryUpload, forgetUpload, getActiveUpload, subscribeUploads, uploadsVersion } from '@/lib/cardUpload'
 import { formatBytes } from '@/lib/uploadBig'
+import HandoffList from './HandoffList'
+import DictateButton from './DictateButton'
 
 // One content card's media + per-platform posts. Used by the calendar's item card and
 // Content Day; both point at the same card id, so both show the same media and statuses.
 // Drop or pick footage → it uploads into THIS card (never a new one) → Cap gets a note.
 
-type PlatformPost = { platform: string; caption: string; status: 'draft' | 'scheduled' | 'posted'; scheduled_at?: string | null; posted_url?: string | null; posted_at?: string | null }
+type EdVerdict = { verdict: 'pass' | 'sent_back'; reasons: string[]; notes?: string[]; round: number; needs_you?: boolean; let_through?: boolean }
+type PlatformPost = { platform: string; caption: string; status: 'draft' | 'scheduled' | 'posted'; scheduled_at?: string | null; posted_url?: string | null; posted_at?: string | null; written_by?: 'cap' | 'mandi' | null; ed?: EdVerdict | null }
 type View = {
   id: number; title: string; status: string; account_id: string | null; handle: string; account_platform: string
   media: string[]; cover: string; script: boolean; description: string
@@ -18,7 +21,8 @@ type View = {
   footage_at: string | null
   platforms: string[]; platform_posts: PlatformPost[]
   mirrors: { id: string; handle: string; platform: string; brand_name: string }[]
-  handoff: { id: string; status: 'open' | 'done'; missing: string[]; created_at: string } | null
+  handoff: { id: string; kind?: string; status: 'open' | 'done' | 'failed'; missing: string[]; created_at: string; updated_at?: string; note?: string } | null
+  cover_note?: string | null; cap_needs?: string[]
   calendar: { id: string; date: string; time: string | null } | null
 }
 
@@ -42,6 +46,13 @@ export default function CardMedia({ contentId, calendarItemId, onChanged, showPl
     if (d.error) setErr(d.error); else { setView(d); setErr('') }
   }, [contentId])
   useEffect(() => { load() }, [load])
+  // Cap and Ed run on the server after an upload; watch the card until they hand back.
+  const agentsWorking = view?.handoff?.status === 'open'
+  useEffect(() => {
+    if (!agentsWorking) return
+    const t = setInterval(() => { load(); onChanged?.() }, 4000)
+    return () => clearInterval(t)
+  }, [agentsWorking, load, onChanged])
 
   const afterUpload = useCallback(() => { load(); onChanged?.() }, [load, onChanged])
 
@@ -95,11 +106,21 @@ export default function CardMedia({ contentId, calendarItemId, onChanged, showPl
       onDrop={e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); e.stopPropagation(); setDragging(false); take(e.dataTransfer.files) } }}>
       <style>{css}</style>
 
-      {waiting && (
+      {waiting && view.handoff!.kind === 'footage_in' && (
         <div className="cm-cap">
-          <b>🎬 Footage in, waiting on Cap</b>
-          <span>{view.handoff!.missing.length ? `Still needs: ${view.handoff!.missing.map(m => MISSING_LABEL[m] ?? m).join(', ')}` : 'Has a script and caption; Cap writes the platform captions.'}</span>
+          <b>🎬 Footage in. Cap is writing the captions</b>
+          <span>{view.handoff!.missing.length ? `Still needs: ${view.handoff!.missing.map(m => MISSING_LABEL[m] ?? m).join(', ')}` : 'Then Ed checks them.'}</span>
         </div>
+      )}
+      {(view.cap_needs?.length ?? 0) > 0 && (
+        <div className="cm-box bad"><b>Cap needs from you</b>{view.cap_needs!.map((n, i) => <span key={i}>{n}</span>)}</div>
+      )}
+      {view.cover_note && <div className="cm-note"><b>Cover (Cap):</b> {view.cover_note}</div>}
+      {view.handoff && (
+        <details className="cm-ho" open={view.handoff.status !== 'done'}>
+          <summary>Who has this card · receipts</summary>
+          <HandoffList key={`${view.handoff.id}:${view.handoff.status}:${view.handoff.updated_at ?? ''}`} query={`content_id=${view.id}`} limit={8} compact onChanged={load} empty="No handoffs on this card yet." />
+        </details>
       )}
 
       {view.media.length > 0 && (
@@ -168,11 +189,34 @@ function PlatformPosts({ view, setView, onChanged }: { view: View; setView: (v: 
     try { await navigator.clipboard.writeText(text); setCopied(platform); setTimeout(() => setCopied(''), 1600) } catch { setErr('Copy didn’t work here. Select the text and copy it.') }
   }
   const extra = PLATFORM_CHOICES.filter(p => !view.platforms.includes(p) && !view.mirrors.some(m => m.platform === p))
+  const [note, setNote] = useState('')
+  const [spoken, setSpoken] = useState(false)
+  const [busy, setBusy] = useState('')
+  const act = async (action: 'cap_note' | 'ed_check') => {
+    setBusy(action); setErr('')
+    const d = await fetch('/api/content/media', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, id: view.id, note: spoken ? `(spoken) ${note}` : note }) }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup. Try again.' }))
+    setBusy('')
+    if (d.error) { setErr(d.error); return }
+    if (action === 'cap_note') { setNote(''); setSpoken(false) }
+    if (d.view) setView(d.view)
+    onChanged?.()
+  }
+  const hasCapDrafts = view.platform_posts.some(p => p.caption.trim() && p.written_by !== 'mandi' && p.status === 'draft')
 
   return (
     <div className="cm-plats">
       <p className="cm-h">Captions and posting</p>
       {view.platforms.length === 0 && <p className="cm-note">No platform yet. Add the one this goes to.</p>}
+      {view.platforms.length > 0 && (
+        <div className="cm-said">
+          <textarea value={note} rows={2} placeholder="What changed from the plan? (Optional. Type or speak it; Cap rewrites his drafts with it. Your own captions stay.)" onChange={e => setNote(e.target.value)} />
+          <div className="cm-row">
+            <DictateButton title="Say it" onText={t => setNote(n => (n ? n + ' ' : '') + t)} onSpoken={() => setSpoken(true)} />
+            <button type="button" className="cm-btn primary" disabled={!note.trim() || !!busy} onClick={() => act('cap_note')}>{busy === 'cap_note' ? 'Cap is writing…' : 'Tell Cap'}</button>
+            {hasCapDrafts && <button type="button" className="cm-btn" disabled={!!busy} onClick={() => act('ed_check')}>{busy === 'ed_check' ? 'Ed is checking…' : 'Ask Ed to check again'}</button>}
+          </div>
+        </div>
+      )}
       {view.platforms.map(pl => {
         const pp = view.platform_posts.find(p => p.platform === pl) ?? { platform: pl, caption: '', status: 'draft' as const }
         const text = drafts[pl] ?? pp.caption
@@ -189,6 +233,16 @@ function PlatformPosts({ view, setView, onChanged }: { view: View; setView: (v: 
                 ))}
               </div>
             </div>
+            {pp.caption.trim() && (
+              <div className="cm-ed">
+                <span className="cm-by">{pp.written_by === 'mandi' ? 'Your words' : pp.written_by === 'cap' ? 'Cap wrote this' : ''}</span>
+                {pp.ed && (pp.ed.verdict === 'pass'
+                  ? <span className="cm-v pass">{pp.ed.let_through ? `✓ Ed let it through after ${pp.ed.round - 1} rewrites` : pp.ed.round > 1 ? '✓ Ed passed Cap’s rewrite' : '✓ Ed passed it'}</span>
+                  : <span className="cm-v back">{pp.ed.needs_you ? '⚠ Ed: still off after Cap’s rewrite, needs your eye' : '↩ Ed sent it back to Cap'}</span>)}
+              </div>
+            )}
+            {pp.ed?.verdict === 'sent_back' && <ul className="cm-why-list">{pp.ed.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>}
+            {(pp.ed?.notes?.length ?? 0) > 0 && <p className="cm-note">Ed noticed: {pp.ed!.notes!.join(' ')}</p>}
             <textarea value={text} rows={3} placeholder={`The ${pl} caption`} onChange={e => setDrafts(d => ({ ...d, [pl]: e.target.value }))}
               onBlur={() => { if (drafts[pl] !== undefined && drafts[pl] !== pp.caption) save(pl, { caption: drafts[pl] }).then(ok => ok && setDrafts(d => { const n = { ...d }; delete n[pl]; return n })) }} />
             <div className="cm-row">
@@ -246,6 +300,17 @@ const css = `
 .cm-drop:hover,.cm-drop.on{border-color:#E2508A;background:rgba(226,80,138,.05);color:var(--text)}
 .cm-drop b{color:var(--text)}
 .cm-drop small{font-size:11px}
+
+.cm-ho{font-size:12px}
+.cm-ho summary{cursor:pointer;font-weight:800;color:var(--text-subtle);margin-bottom:6px}
+.cm-said{display:flex;flex-direction:column;gap:6px}
+.cm-said textarea{font:inherit;font-size:13px;line-height:1.45;color:var(--text);background:var(--surface,#fff);border:1px solid var(--border,#E7E1D6);border-radius:10px;padding:8px 10px;resize:vertical;width:100%;box-sizing:border-box}
+.cm-ed{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11.5px}
+.cm-by{color:var(--text-subtle);font-weight:700}
+.cm-v{font-weight:800;padding:2px 8px;border-radius:999px}
+.cm-v.pass{background:rgba(47,125,91,.12);color:#2F7D5B}
+.cm-v.back{background:rgba(178,58,72,.1);color:#B23A48}
+.cm-why-list{margin:0;padding-left:18px;font-size:12px;color:#B23A48}
 .cm-err{font-size:12px;color:#B23A48;margin:0}
 .cm-note{font-size:11px;color:var(--text-subtle)}
 .cm-plats{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--border,#E7E1D6);padding-top:10px}

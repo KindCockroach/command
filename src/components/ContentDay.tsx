@@ -86,10 +86,11 @@ export default function ContentDay() {
 
   const load = useCallback(() => {
     setLoading(true)
-    Promise.all([fetch('/api/content').then(r => r.json()), fetch('/api/accounts').then(r => r.json()), fetch('/api/handoffs?to=cap&status=open').then(r => r.json()).catch(() => ({}))])
+    Promise.all([fetch('/api/content').then(r => r.json()), fetch('/api/accounts').then(r => r.json()), fetch('/api/handoffs?kind=footage_in&limit=200').then(r => r.json()).catch(() => ({}))])
       .then(([c, a, h]) => {
         setPosts(Array.isArray(c) ? c : []); setAccounts(Array.isArray(a) ? a : [])
-        setWaiting(Array.from(new Set(((h?.handoffs ?? []) as { content_id: number }[]).map(x => x.content_id))))
+        // Footage Cap hasn't finished with: working, stuck or failed (a failed run stays here with Retry).
+        setWaiting(Array.from(new Set(((h?.handoffs ?? []) as { content_id: number | null; state: string }[]).filter(x => x.content_id && x.state !== 'done').map(x => x.content_id as number))))
       })
       .finally(() => setLoading(false))
   }, [])
@@ -343,7 +344,7 @@ export default function ContentDay() {
 
       {footageIn.length > 0 && (
         <div style={{ padding: '12px 12px 0' }}>
-          <p style={{ ...labelStyle, color: '#7C4DDB', margin: '2px 2px 8px' }}>🎬 Footage in, waiting on Cap · {footageIn.length}</p>
+          <p style={{ ...labelStyle, color: '#7C4DDB', margin: '2px 2px 8px' }}>🎬 Footage in, with Cap · {footageIn.length}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {footageIn.map(p => {
               const a = acct(p.account_id)

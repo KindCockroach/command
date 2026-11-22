@@ -1,0 +1,36 @@
+// Runs (or retries) one handoff with the agent it belongs to. Used right after a handoff
+// opens (from `after()` in the route, so Mandi isn't kept waiting) and by Retry in Activity.
+// A run that throws becomes a FAILED handoff with the reason, never a silent stop.
+
+import { getHandoff, failHandoff, AUTO_KINDS } from './handoffs'
+import { runFootageIn, runEdCheck, runRewrite } from './cap'
+import { runCommanderPickup } from './her'
+import { runWeighWinners } from './capWinners'
+
+const running = new Set<string>()
+
+export async function runHandoff(id: string): Promise<{ ok: boolean; error?: string }> {
+  const h = getHandoff(id)
+  if (!h) return { ok: false, error: 'No such handoff.' }
+  if (!AUTO_KINDS.includes(h.kind)) return { ok: false, error: `${h.to} picks this up in planning; there is nothing to run.` }
+  if (h.status === 'done') return { ok: false, error: 'This one is already done.' }
+  if (running.has(id)) return { ok: false, error: 'It is running right now.' }
+  running.add(id)
+  try {
+    switch (h.kind) {
+      case 'footage_in': await runFootageIn(h); break
+      case 'ed_check': await runEdCheck(h); break
+      case 'rewrite': await runRewrite(h); break
+      case 'her_note': await runCommanderPickup(h); break
+      case 'winners_in': await runWeighWinners(h); break
+    }
+    const after = getHandoff(id)
+    return after?.status === 'failed' ? { ok: false, error: after.error ?? 'failed' } : { ok: true }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    failHandoff(id, `It broke partway: ${msg}`)
+    return { ok: false, error: msg }
+  } finally {
+    running.delete(id)
+  }
+}
