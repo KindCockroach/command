@@ -63,7 +63,7 @@ export function wellLinesFor(topic: string, n = 5): WellLine[] {
     }
     return { l, s }
   }).filter(x => x.s > 0).sort((a, b2) => b2.s - a.s)
-  return scored.slice(0, n).map(x => ({ date: x.l.date, cap: x.l.cap.replace(/\s*(#\w+\s*)+$/g, '').slice(0, 450) }))
+  return scored.slice(0, n).map(x => ({ date: x.l.date, cap: Array.from(x.l.cap.replace(/\s*(#\w+\s*)+$/g, '')).slice(0, 450).join('') }))
 }
 
 export function wellStatus() { return { loaded: readWell().length > 0, lines: readWell().length } }

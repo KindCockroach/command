@@ -297,9 +297,11 @@ Reply ONLY with JSON: {"subject": "...", "preheader": "...", "body": "...", "cta
 subject under 60 characters; preheader under 90; cta_label 2-5 words; ps optional (empty string if none).`
   const input = [
     `CAP'S BRIEF — ${p.title}${p.day_offset !== null ? ` (goes out ${p.day_offset} day${p.day_offset === 1 ? '' : 's'} after the Reset)` : ' (sent right after she joins)'}:\n${p.brief}`,
-    well.length ? `HER WORDS FROM THE WELL (her own past captions; pull and sharpen her phrasing first, never invent a voice):\n${well.map(w => `- ${w.cap.slice(0, 400)}`).join('\n')}` : 'The Well isn’t loaded here: stay plain and honest, and keep it short.',
+    well.length ? `HER WORDS FROM THE WELL (her own past captions; pull and sharpen her phrasing first, never invent a voice):\n${well.map(w => `- ${Array.from(w.cap).slice(0, 400).join("")}`).join('\n')}` : 'The Well isn’t loaded here: stay plain and honest, and keep it short.',
     rewrite && `CAP SENT YOUR LAST DRAFT BACK. Fix exactly this and keep the rest:\n${e0.cap_reasons.map(r => '- ' + r).join('\n')}\n\nYour last draft:\n${JSON.stringify({ subject: e0.subject, preheader: e0.preheader, body: e0.body, cta_label: e0.cta_label, ps: e0.ps, extras: e0.extras })}`,
   ].filter(Boolean).join('\n\n')
+    // drop half-emoji (lone surrogates) so the AI request body is always valid JSON
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
 
   let out: { subject?: string; preheader?: string; body?: string; cta_label?: string; ps?: string; extras?: Record<string, string> } = {}
   try {
