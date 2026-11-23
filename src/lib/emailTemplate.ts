@@ -54,7 +54,7 @@ export const EMAIL_BRANDS: Record<EmailBrand, BrandSkin> = {
     ],
   },
   wfh: {
-    name: 'AI Works For Her', company: 'Joyful Media',
+    name: 'AI Works For Her', company: 'AI Works For Her',
     header: '#5A4FCF', headerText: '#FFFFFF', accent: '#5A4FCF', rule: '#CFCBF5', ink: '#26233F', page: '#F3F2FB',
     role: 'AI Mom Podcast · AI Works For Her',
     links: [
@@ -68,7 +68,6 @@ export const EMAIL_BRANDS: Record<EmailBrand, BrandSkin> = {
     role: 'Joyful Media',
     links: [
       { label: 'Website', url: 'https://www.aiworksforher.com/joyful-media' },
-      { label: 'Podcast', url: 'https://www.aiworksforher.com/listen' },
     ],
   },
 }

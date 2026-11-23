@@ -6,6 +6,7 @@ import { getHandoff, failHandoff, AUTO_KINDS } from './handoffs'
 import { runFootageIn, runWrite, runReview, runRewrite, runFilmNow } from './cap'
 import { runCommanderPickup } from './her'
 import { runWeighWinners } from './capWinners'
+import { runEmailWrite, runEmailReview } from './resetSequence'
 
 const running = new Set<string>()
 
@@ -25,6 +26,8 @@ export async function runHandoff(id: string): Promise<{ ok: boolean; error?: str
       case 'rewrite': await runRewrite(h); break
       case 'her_note': await runCommanderPickup(h); break
       case 'winners_in': await runWeighWinners(h); break
+      case 'email_write': case 'email_rewrite': await runEmailWrite(h); break
+      case 'email_review': await runEmailReview(h); break
     }
     const after = getHandoff(id)
     return after?.status === 'failed' ? { ok: false, error: after.error ?? 'failed' } : { ok: true }

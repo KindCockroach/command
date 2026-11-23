@@ -126,7 +126,10 @@ export type HandoffKind =
   | 'her_note'        // Her took what Mandi said → Commander (or Cap / the build log)
   | 'piece'           // Commander shredded a note → one piece for Cap or Biz
   | 'winners_in'      // Mandi dropped a Meta export → Cap weighs it
-export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log'; id: string | number; label?: string }
+  | 'email_write'     // Phase 5: Cap briefed an email (Reset sequence / welcome) → Ed writes it
+  | 'email_review'    // Ed → Cap: the email draft is in; Cap confirms (it waits for Mandi) or sends it back
+  | 'email_rewrite'   // Cap sent an email back → Ed fixes exactly what Cap named
+export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log' | 'email'; id: string | number; label?: string }
 export type Handoff = {
   id: string
   kind: HandoffKind
@@ -454,12 +457,13 @@ export type WaitlistEntry = {
 // the People view: waitlist signups (labels derived from what they claimed),
 // podcast guests (the Guest label + their deep outreach record), and manually
 // added contacts (persons of interest, paid customers, anyone Mandi adds by hand).
-export const CONTACT_LABELS = ['free_customer', 'paid_customer', 'member_wellspring', 'sub_podcast', 'sub_btfh', 'sub_joyful', 'guest', 'poi', 'invited'] as const
+export const CONTACT_LABELS = ['free_customer', 'paid_customer', 'member_wellspring', 'sub_podcast', 'sub_btfh', 'sub_joyful', 'reset_attendee', 'reset_pass', 'guest', 'poi', 'invited'] as const
 export type ContactLabel = typeof CONTACT_LABELS[number]
 export const CONTACT_LABEL_TEXT: Record<ContactLabel, string> = {
   free_customer: 'Free Customer', paid_customer: 'Paid Customer',
   member_wellspring: 'Member: The Wellspring',
   sub_podcast: 'Subscriber: Podcast', sub_btfh: 'Subscriber: Be There For Her', sub_joyful: 'Subscriber: Joyful Media',
+  reset_attendee: 'Reset: attended', reset_pass: 'Reset pass ($44/mo)',
   guest: 'Guest', poi: 'Person of Interest', invited: 'Invited',
 }
 
@@ -476,9 +480,80 @@ export type Contact = {
   why?: string          // why we follow them (POI) / why they matter
   notes?: string
   products?: string[]    // product keys they claimed or paid for
+  // Phase 5: the Reset (Luma imports). Merges only ever ADD to these; nothing is wiped.
+  resets?: ResetAttendance[]        // one per Reset event she appears on in a Luma export
+  has_joined_event?: boolean        // attended at least one Reset (Luma's has_joined_event = Yes)
+  attendance_count?: number         // how many Resets she actually attended
+  consent?: ContactConsent          // marketing consent, as each source gave it
+  bounced?: boolean                 // a send bounced: every later send skips her
+  history?: PersonEvent[]           // CRM-owned history lines: imports, sequence sends, skips, failures
   created_at: string
   updated_at: string
 }
+
+// Marketing consent per source. 'unknown' = the source didn't say (Luma's guest export has no
+// consent column unless the event asks a registration question about email). Unknown is NOT yes.
+export type ConsentValue = 'yes' | 'no' | 'unknown'
+export type ContactConsent = { luma?: { value: ConsentValue; question?: string; at: string } }
+
+// One person on one Reset, from a Luma guest export. Registered vs actually attended.
+export type ResetAttendance = {
+  event_id: string                  // ResetEvent.id
+  status: 'registered' | 'invited' | 'pending' | 'waitlist' | 'declined' | string   // Luma approval_status, read plainly
+  attended: boolean                 // has_joined_event = Yes. Once true it stays true on a re-import.
+  paid?: string                     // e.g. "$33.00"; "$0.00" = free / fully discounted
+  coupon?: string
+  ticket?: string
+  luma_guest_id?: string
+  registered_at?: string            // Luma created_at
+  imported_at: string
+}
+
+// A Reset date RISE knows about, from a Luma import (past or upcoming).
+export type ResetEvent = { id: string; name: string; date: string; imported_at: string; updated_at: string; counts?: { rows: number; registered: number; attended: number; invited: number } }
+
+// ─── THE RESET SEQUENCE (Phase 5) ──────────────────────────────────────────
+// Cap briefs → Ed writes (short-form) → Cap confirms or sends back → Mandi approves.
+// Nothing sends until she approves the draft AND turns the sequence (or welcome) live.
+export type SeqEmailKey = 'welcome_joyful_media' | 'welcome_wfh' | 't1' | 't2' | 't3' | 't4' | 't5' | 't6'
+export type SeqEmailStatus = 'brief' | 'writing' | 'review' | 'sent_back' | 'confirmed' | 'approved'
+export type SeqEmail = {
+  key: SeqEmailKey
+  branch: BranchId
+  title: string                     // plain name: "Touch 1 · Thank you + survey + coupon"
+  day_offset: number | null         // days after the Reset (touches only)
+  brief: string                     // Cap's brief to Ed: the job, the must-haves, the timing
+  subject: string
+  preheader: string
+  body: string                      // paragraphs; tokens: {{first_name}} {{next_reset_date}} {{coupon_code}}
+  cta_label: string
+  cta: 'survey' | 'next_reset' | 'nine' | 'gift' | 'podcast' | 'reply' | 'none'
+  ps: string
+  extras: Record<string, string>    // segment blocks: coupon_block, pass_offer, pass_holder_note, medium_note
+  status: SeqEmailStatus
+  round: number                     // Cap's review rounds so far
+  cap_reasons: string[]             // the last send-back reasons
+  cap_notes: string[]               // what Cap would still change (let-through)
+  written_by: 'ed' | 'mandi' | null
+  approved_at: string | null
+  updated_at: string
+}
+export type SeqSettings = {
+  coupon_code: string               // the $8 returning coupon on Luma ($33 → $25). Needed by touch 1 + 4.
+  next_reset_url: string            // where "save your seat" goes (Luma via the /reset page)
+  survey_url: string
+  nine_url: string                  // the $9 Listen To Your Intuition collection. Blank = touch 2 holds.
+  pass_url: string                  // how to get the $44/mo pass. Blank = the pass paragraph is left out.
+  gift_name: string                 // touch 6: a genuine free gift. Blank = touch 6 holds.
+  gift_url: string
+  medium_url: string                // pass holders: a personal story on Medium
+  podcast_url: string               // WFH welcome
+  sequence_live: boolean            // the six touches may send for real (still only to eligible, due people)
+  welcome_live: Record<BranchId, boolean>
+}
+// One line per (event, touch, email) that actually went out (or failed). The "once each" guard.
+export type SeqSend = { id: string; event_id: string | null; key: SeqEmailKey; email: string; at: string; status: 'sent' | 'failed'; error?: string; segment?: string }
+export type ResetSequenceStore = { settings: SeqSettings; emails: SeqEmail[]; sends: SeqSend[] }
 
 // The merged, read-only shape the People tab renders — one person, all labels,
 // wherever they came from. guest_id opens the deep guest record; contact_id means
@@ -499,12 +574,19 @@ export type PersonView = {
   signup_note?: string
   events?: PersonEvent[]   // their timeline: what they signed up for, downloaded, and what we sent
   unsubscribed?: boolean   // opted out of campaign email — every campaign send skips them
+  // Phase 5
+  lists?: BranchId[]       // which branch email lists she is on (Joyful Media / WFH). Never inferred across branches.
+  consent_luma?: ConsentValue
+  has_joined_event?: boolean
+  attendance_count?: number
+  resets?: ResetAttendance[]
+  bounced?: boolean
   created_at: string
 }
 
 // One line in a person's history — a signup, a free download/claim, or a message we
 // sent/received. Powers the "everything they've done" dropdown on the People tab.
-export type PersonEvent = { at: string; kind: 'signup' | 'download' | 'sent' | 'received' | 'note'; text: string; status?: string }
+export type PersonEvent = { at: string; kind: 'signup' | 'download' | 'sent' | 'received' | 'note' | 'event' | 'skipped'; text: string; status?: string }
 
 // A message RISE sent to a person (the per-person send-log that replaces GHL's history).
 // Attached to the People timeline by email, and the source of truth for cadence.
@@ -553,9 +635,25 @@ export function branchOfProduct(p: { id: string; brand: ProductBrand; branch_id?
 // Email-list label → branch. Podcast subs and guests are WFH; everything BTFH/Joyful is Joyful Media.
 export function branchOfLabel(l: ContactLabel): BranchId | null {
   if (l === 'sub_podcast' || l === 'guest') return 'wfh'
-  if (l === 'sub_btfh' || l === 'sub_joyful' || l === 'member_wellspring') return 'joyful_media'
+  if (l === 'sub_btfh' || l === 'sub_joyful' || l === 'member_wellspring' || l === 'reset_attendee' || l === 'reset_pass') return 'joyful_media'
   return null
 }
+// EMAIL LISTS per branch (Phase 5). Only labels that mean "she asked for this list's email"
+// count, plus Luma consent = yes for the Joyful Media list (the Reset lives there). Being a
+// podcast guest, a Reset attendee or a paid customer is NOT a list. Lists never cross branches:
+// a podcast subscriber is on WFH only unless she also joined Joyful Media herself.
+const LIST_LABELS: Record<BranchId, ContactLabel[]> = {
+  joyful_media: ['sub_btfh', 'sub_joyful', 'member_wellspring', 'reset_pass'],
+  wfh: ['sub_podcast'],
+}
+export function listsOf(labels: ContactLabel[], consentLuma?: ConsentValue): BranchId[] {
+  const out: BranchId[] = []
+  const joyfulByLabel = LIST_LABELS.joyful_media.some(l => labels.includes(l))
+  if (joyfulByLabel || consentLuma === 'yes') out.push('joyful_media')
+  if (LIST_LABELS.wfh.some(l => labels.includes(l))) out.push('wfh')
+  return out
+}
+export const LIST_LABEL_FOR: Record<BranchId, ContactLabel> = { joyful_media: 'sub_joyful', wfh: 'sub_podcast' }
 export function getBranches(): Branch[] {
   const db = readDb()
   return [...(db.branches ?? seedBranches(new Date().toISOString()))].sort((a, b) => a.sort - b.sort)
@@ -852,6 +950,8 @@ export type Db = {
   sends?: SendRecord[]
   unsubscribes?: { email: string; at: string }[]   // opt-outs — kept apart from contacts so deleting a contact never erases one
   surveys?: SurveyResponse[]
+  reset_events?: ResetEvent[]
+  reset_sequence?: ResetSequenceStore
   products?: Product[]
   branches?: Branch[]
   plans?: Plan[]
@@ -1251,6 +1351,13 @@ function signupLabels(w: WaitlistEntry): ContactLabel[] {
   if (note.includes('cookbook')) out.push('free_customer')
   if (note.includes('newsletter')) { const s = SOURCE_SUB[w.source]; if (s) out.push(s) }
   return out
+}
+
+// Phase 5: which branch list a signup just joined (for the welcome email), or null.
+export function signupListOf(source: string, note?: string): BranchId | null {
+  const w = { id: 0, email: '', name: '', source, note, created_at: '' }
+  for (const l of signupLabels(w)) { const b = listsOf([l])[0]; if (b) return b }
+  return null
 }
 
 export function getContacts(): Contact[] { return readDb().contacts ?? [] }
@@ -1714,11 +1821,16 @@ export function getPeople(): PersonView[] {
     if (c.why) p.why = c.why
     if (c.notes) p.notes = c.notes
     if (!p.sources.includes('manual')) p.sources.push('manual')
+    for (const h of (c.history ?? [])) ev(p, h)
+    if (c.resets?.length) { p.resets = c.resets; p.has_joined_event = !!c.has_joined_event; p.attendance_count = c.attendance_count ?? 0 }
+    if (c.consent?.luma) p.consent_luma = c.consent.luma.value
+    if (c.bounced) p.bounced = true
   }
 
   const people = [...byKey.values()]
   const optedOut = new Set((db.unsubscribes ?? []).map(u => u.email))
   for (const p of people) if (p.email && optedOut.has(p.email.trim().toLowerCase())) p.unsubscribed = true
+  for (const p of people) p.lists = listsOf(p.labels, p.consent_luma)
   for (const p of people) p.events?.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
   return people.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 }

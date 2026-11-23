@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { isOwner } from '@/lib/ownerAuth'
-import { addWaitlistEntry, getWaitlist } from '@/lib/db'
+import { addWaitlistEntry, getWaitlist, signupListOf } from '@/lib/db'
+import { welcomeOnSignup } from '@/lib/resetSequence'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
     source: body.source || 'journal',
     note: body.note,
   })
+  // Phase 5: the list's welcome email, only when Mandi has approved it and switched it live.
+  const list = duplicate ? null : signupListOf(body.source || 'journal', body.note)
+  if (list) after(() => welcomeOnSignup(email, list, body.name || ''))
   return NextResponse.json({ ok: true, duplicate })
 }
 

@@ -2,20 +2,35 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Plus, Search, X, ExternalLink, Save, ChevronDown } from 'lucide-react'
 import GuestsPanel from './GuestsPanel'
+import ResetPeoplePanel from './ResetPeoplePanel'
 
 // PEOPLE — RISE's CRM, replacing GoHighLevel. One list of everyone (signups,
 // guests, persons of interest, customers) wearing LABELS, with filters + search.
 // The deep podcast-guest workspace lives behind the "Guests" sub-view, unchanged.
-type Label = 'free_customer' | 'paid_customer' | 'sub_podcast' | 'sub_btfh' | 'sub_joyful' | 'guest' | 'poi' | 'invited'
-type PEvent = { at: string; kind: 'signup' | 'download' | 'sent' | 'received' | 'note'; text: string; status?: string }
+type Label = 'free_customer' | 'paid_customer' | 'member_wellspring' | 'sub_podcast' | 'sub_btfh' | 'sub_joyful' | 'reset_attendee' | 'reset_pass' | 'guest' | 'poi' | 'invited'
+type PEvent = { at: string; kind: 'signup' | 'download' | 'sent' | 'received' | 'note' | 'event' | 'skipped'; text: string; status?: string }
 type Person = {
   key: string; name: string; email?: string; labels: Label[]; sources: string[]
   instagram?: string; website?: string; phone?: string; why?: string; notes?: string
   guest_id?: string; contact_id?: string; signup_note?: string; events?: PEvent[]; created_at: string
+  lists?: ('joyful_media' | 'wfh')[]; consent_luma?: 'yes' | 'no' | 'unknown'; attendance_count?: number; unsubscribed?: boolean; bounced?: boolean
 }
 
-const EVENT_ICON: Record<PEvent['kind'], string> = { signup: '✍️', download: '📥', sent: '📤', received: '📨', note: '📝' }
+const EVENT_ICON: Record<PEvent['kind'], string> = { signup: '✍️', download: '📥', sent: '📤', received: '📨', note: '📝', event: '🌙', skipped: '⏭️' }
 const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) } catch { return '' } }
+
+// Which branch email lists she's on, plus Reset attendance and consent. Lists never cross branches.
+function ListLine({ p }: { p: Person }) {
+  const bits: string[] = []
+  if (p.lists?.includes('joyful_media')) bits.push('✉︎ Joyful Media list')
+  if (p.lists?.includes('wfh')) bits.push('✉︎ WFH list')
+  if (!p.lists?.length && p.email) bits.push('no email list')
+  if (p.attendance_count) bits.push(`🌙 ${p.attendance_count} Reset${p.attendance_count === 1 ? '' : 's'}`)
+  if (p.consent_luma) bits.push(`Luma consent: ${p.consent_luma}`)
+  if (p.unsubscribed) bits.push('unsubscribed')
+  if (p.bounced) bits.push('bounced')
+  return <div style={{ fontSize: '10.5px', color: 'var(--text-subtle)', marginTop: '2px' }}>{bits.join(' · ')}</div>
+}
 
 // A person's history timeline — what they signed up for, downloaded, and what we sent.
 function Timeline({ events }: { events?: PEvent[] }) {
@@ -35,11 +50,13 @@ function Timeline({ events }: { events?: PEvent[] }) {
 
 const LABEL_TEXT: Record<Label, string> = {
   free_customer: 'Free Customer', paid_customer: 'Paid Customer',
+  member_wellspring: 'Member · Wellspring',
   sub_podcast: 'Subscriber · Podcast', sub_btfh: 'Subscriber · Be There For Her', sub_joyful: 'Subscriber · Joyful Media',
+  reset_attendee: 'Reset · attended', reset_pass: 'Reset pass ($44/mo)',
   guest: 'Guest', poi: 'Person of Interest', invited: 'Invited',
 }
 const LABEL_COLOR: Record<Label, string> = {
-  free_customer: '#3DAA7C', paid_customer: '#D97706', sub_podcast: '#5A4FCF', sub_btfh: '#C2693F', sub_joyful: '#E2508A', guest: '#2D6E3E', poi: '#6B7280', invited: '#2563EB',
+  free_customer: '#3DAA7C', paid_customer: '#D97706', member_wellspring: '#8B5CF6', sub_podcast: '#5A4FCF', sub_btfh: '#C2693F', sub_joyful: '#E2508A', reset_attendee: '#7C3AED', reset_pass: '#B45309', guest: '#2D6E3E', poi: '#6B7280', invited: '#2563EB',
 }
 const ALL_LABELS = Object.keys(LABEL_TEXT) as Label[]
 
@@ -47,19 +64,20 @@ const label = { fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase' 
 const input = { width: '100%', border: '1px solid var(--border)', borderRadius: '9px', padding: '8px 11px', fontSize: '13px', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit' as const }
 
 function Chip({ l, active, onClick }: { l: Label; active?: boolean; onClick?: () => void }) {
-  const c = LABEL_COLOR[l]
-  return (
-    <button onClick={onClick} style={{
-      border: `1px solid ${c}`, color: active ? '#fff' : c, background: active ? c : 'transparent',
-      borderRadius: '999px', padding: '4px 11px', fontSize: '11.5px', fontWeight: 700, cursor: onClick ? 'pointer' : 'default', fontFamily: 'inherit',
-    }}>{LABEL_TEXT[l]}</button>
-  )
+  const c = LABEL_COLOR[l] ?? '#6B7280'
+  const style = {
+    border: `1px solid ${c}`, color: active ? '#fff' : c, background: active ? c : 'transparent',
+    borderRadius: '999px', padding: '4px 11px', fontSize: '11.5px', fontWeight: 700, cursor: onClick ? 'pointer' : 'default', fontFamily: 'inherit',
+  }
+  // Inside a row button a chip is plain text: a button can't hold another button.
+  if (!onClick) return <span style={{ ...style, display: 'inline-block' }}>{LABEL_TEXT[l] ?? l}</span>
+  return <button onClick={onClick} style={style}>{LABEL_TEXT[l] ?? l}</button>
 }
 
 export default function PeoplePanel() {
   // Daily Command's "Open guest admin" lands here → jump straight to the guest workspace
   // (GuestsPanel itself consumes the guests-mode flag for admin, so we only peek).
-  const [mode, setMode] = useState<'people' | 'guests'>(() => {
+  const [mode, setMode] = useState<'people' | 'guests' | 'reset'>(() => {
     try { if (typeof window !== 'undefined' && sessionStorage.getItem('guests-mode') === 'admin') return 'guests' } catch { /* ignore */ }
     return 'people'
   })
@@ -94,17 +112,17 @@ export default function PeoplePanel() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text)' }}>People</h2>
         <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-subtle, rgba(0,0,0,0.04))', padding: '3px', borderRadius: '10px' }}>
-          {(['people', 'guests'] as const).map(m => (
+          {(['people', 'reset', 'guests'] as const).map(m => (
             <button key={m} onClick={() => setMode(m)} style={{
               border: 0, borderRadius: '8px', padding: '6px 14px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
               background: mode === m ? 'var(--accent, #5A4FCF)' : 'transparent', color: mode === m ? '#fff' : 'var(--text-subtle)',
-            }}>{m === 'people' ? 'All people' : 'Guest workspace'}</button>
+            }}>{m === 'people' ? 'All people' : m === 'reset' ? 'Reset · Luma + emails' : 'Guest workspace'}</button>
           ))}
         </div>
         {mode === 'people' && <span style={{ ...label, marginLeft: 'auto' }}>{people.length} contacts</span>}
       </div>
 
-      {mode === 'guests' ? <GuestsPanel /> : (
+      {mode === 'guests' ? <GuestsPanel /> : mode === 'reset' ? <ResetPeoplePanel onImported={load} /> : (
         <>
           {/* Search + add */}
           <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
@@ -147,6 +165,7 @@ export default function PeoplePanel() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name || p.email || 'Unnamed'}</div>
                           {p.email && <div style={{ fontSize: '11.5px', color: 'var(--text-subtle)' }}>{p.email}</div>}
+                          <ListLine p={p} />
                         </div>
                         <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '55%' }}>
                           {p.labels.map(l => <Chip key={l} l={l} />)}
