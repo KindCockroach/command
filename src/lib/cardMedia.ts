@@ -181,7 +181,7 @@ export async function attachMedia(id: number, url: string, opts: { calendar_item
     h.status = 'open'
   } else {
     const n = db.handoffs.length + 1
-    h = { id: `ho_${Date.now().toString(36)}_${n}`, kind: 'footage_in', from: 'mandi', to: 'cap', what: `Footage landed on “${c.title.slice(0, 80)}”: write the platform captions`, content_id: id, attempts: 0, account_id: c.account_id ?? null, calendar_item_id: cal, media_urls: [url], missing, status: 'open', note: opts.note, created_at: now, updated_at: now }
+    h = { id: `ho_${Date.now().toString(36)}_${n}`, kind: 'footage_in', from: 'mandi', to: 'cap', what: `Footage landed on “${c.title.slice(0, 80)}”: brief the writers`, content_id: id, attempts: 0, account_id: c.account_id ?? null, calendar_item_id: cal, media_urls: [url], missing, status: 'open', note: opts.note, created_at: now, updated_at: now }
     db.handoffs.push(h)
   }
   writeDb(db)
@@ -220,7 +220,7 @@ export function closeHandoff(id: string, by = 'cap'): Handoff | null {
 
 // ── per-platform caption + status ──
 const STATUSES: PlatformPostStatus[] = ['draft', 'scheduled', 'posted']
-export function setPlatformPost(id: number, platform: string, patch: Partial<Pick<PlatformPost, 'caption' | 'status' | 'scheduled_at' | 'posted_url' | 'ed'>>, by: 'cap' | 'mandi' = 'mandi') {
+export function setPlatformPost(id: number, platform: string, patch: Partial<Pick<PlatformPost, 'caption' | 'status' | 'scheduled_at' | 'posted_url' | 'ed'>>, by: 'cap' | 'ed' | 'pod' | 'mandi' = 'mandi') {
   const name = normPlatform(platform)
   if (!name) return { error: 'Which platform?' }
   if (patch.status && !STATUSES.includes(patch.status)) return { error: 'Status is Draft, Scheduled or Posted.' }

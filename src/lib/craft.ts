@@ -4,6 +4,7 @@
 // fewer tokens. Add a rule only if it earns its tokens.
 
 import { getVoiceLessonsContext, readDb, branchOfAccount } from './db'
+import { rosterForWriters } from './characters'
 
 export const CRAFT_RULES = `
 🔥 YOUR JOB IS TO ELEVATE, NOT ECHO (read this first, it's why you exist). What Mandi gives you — her context, notes, on-screen text, headline, even the last line — is RAW MATERIAL to transform into something better than she could dash off herself. NEVER paraphrase it. NEVER summarize it. NEVER just restate her input in prettier words — that is failure, and it's the #1 thing she hates. RECEIVE it → ASSESS it → find the one idea → then WRITE something with real craft she didn't hand you: specific detail, a real turn of thought, a voice that earns the scroll. If she GIVES you fixed pieces (on-screen text / headline / a last line), treat those as locked ANCHORS — keep them exactly — and write NEW, richer body BETWEEN them. The body must add something that wasn't in her input: a beat, an image, a turn, a truth she didn't spell out. If your draft could be described as "a cleaned-up version of what she gave me," throw it out and write the version that surprises her. BUT elevated does NOT mean flowery or purple — "a choir of exhaustion quietly symphoning sanity" is WORSE than plain. Add depth through CONCRETE, specific detail and a real emotional turn, never through ornate adjectives or metaphor stacking. Plain and true still rules (law 5): say the deeper thing in the simplest words. Depth, not decoration.
@@ -206,5 +207,7 @@ export function craftFor(accountId?: string | null): string {
   let branch: ReturnType<typeof branchOfAccount> = null
   try { branch = accountId ? branchOfAccount(readDb().brand_accounts.find(a => a.id === accountId) ?? { id: accountId }) : null } catch { /* db unreadable: fall back to the generic rule */ }
   const noCross = `${NO_CROSS_PROMOTION}${branch === 'wfh' ? PODCAST_ONLY : branch === 'joyful_media' ? JOYFUL_ONLY : ''}`
-  return `${base}${noCross}${tagLine}${anchorLine}${getVoiceLessonsContext()}`
+  let roster = ''
+  try { roster = rosterForWriters(readDb()) } catch { /* db unreadable */ }
+  return `${base}${noCross}${tagLine}${anchorLine}${roster}${getVoiceLessonsContext()}`
 }

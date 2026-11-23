@@ -1,10 +1,13 @@
-// Ed · Check a draft (SOP Ed 1). Phase 4: consistent, visible, not clever.
+// Cap's review of a writer's draft. Consistent, visible, not clever.
 //
-// Ed reads each platform's draft against the rules that can be checked the same way every
-// time: two different hooks, one call to action, no cross-promotion
-// between branches, no "Beck Team, Inc.", a sane hashtag count, and the plain-text voice
-// lessons that name a phrase to avoid. Pass, or send it back to the writer with the reason.
-// Ed never rewrites the piece.
+// Nov 22 reversal (intentional): Ed and Pod WRITE, Cap REVIEWS. Before that, Cap wrote and Ed
+// checked, which is why these checks started life as "Ed's". Don't swap it back.
+//
+// Cap reads each platform's draft against the rules that can be checked the same way every
+// time: two different hooks, one call to action, no cross-promotion between branches, no
+// "Beck Team, Inc.", a sane hashtag count, and the voice lessons that name a phrase to avoid.
+// Pass (Cap confirms and schedules), or send it back to the writer with the reason.
+// Cap never rewrites the piece himself.
 
 import { readDb, branchOfAccount, getAllMemories, type ContentPiece, type EdVerdict } from './db'
 
@@ -51,9 +54,9 @@ function avoidPhrases(): { phrase: string; rule: string }[] {
   return out
 }
 
-export type EdInput = { platform: string; caption: string }
+export type ReviewInput = { platform: string; caption: string }
 
-export function edCheck(c: ContentPiece, d: EdInput): Omit<EdVerdict, 'round' | 'checked_at'> {
+export function capReview(c: ContentPiece, d: ReviewInput): Omit<EdVerdict, 'round' | 'checked_at'> {
   const reasons: string[] = []
   const notes: string[] = []
   const text = d.caption.trim()
@@ -63,13 +66,13 @@ export function edCheck(c: ContentPiece, d: EdInput): Omit<EdVerdict, 'round' | 
 
   // Two hooks: the caption opens a different door than the on-screen line.
   if (hook && similar(first, hook)) reasons.push(`Two hooks: the caption opens with the on-screen line ("${hook.slice(0, 60)}"). Open a different door.`)
-  // Question openings are no longer Ed's call (Nov 22): statements are a DEFAULT Cap may test.
+  // Question openings are no longer a send-back (Nov 22): statements are a DEFAULT Cap may test.
 
   // One call to action.
   const kinds = CTAS.filter(([, re]) => re.test(text)).map(([k]) => k)
   if (kinds.length > 1) reasons.push(`More than one call to action (${kinds.join(' + ')}). Keep one.`)
   // Not finding one is a note, not a send-back: a practice ("take one breath") is a fine CTA that no pattern can see.
-  if (kinds.length === 0 && !['Pinterest', 'Medium', 'Substack'].includes(d.platform)) notes.push('Ed found no call to action he recognizes. Make sure there is one clear next step.')
+  if (kinds.length === 0 && !['Pinterest', 'Medium', 'Substack'].includes(d.platform)) notes.push('Cap found no call to action he recognizes. Make sure there is one clear next step.')
 
   // No cross-promotion between branches.
   const db = readDb()

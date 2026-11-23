@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(r)
     }
     case 'cap_note': {
-      // What changed from the plan (typed or spoken). Cap rewrites his own drafts with it; hers stay.
+      // What changed from the plan (typed or spoken). Cap briefs the writers with it; her own captions stay.
       const note = String(b.note ?? '').trim().slice(0, 2000)
       if (!note) return NextResponse.json({ error: 'Say what changed first.' }, { status: 400 })
       const v = cardMediaView(id); if (!v) return nf()
@@ -61,9 +61,10 @@ export async function POST(req: NextRequest) {
       await runHandoff(h.id)
       return NextResponse.json({ handoff: listHandoffs({ content_id: id })[0] ?? null, view: cardMediaView(id) })
     }
-    case 'ed_check': {
+    case 'review': case 'ed_check': {
+      // Mandi asks Cap to review the writers' drafts again (ed_check = the old name of this button).
       const v = cardMediaView(id); if (!v) return nf()
-      const h = openHandoff({ kind: 'ed_check', from: 'mandi', to: 'ed', what: `Check the captions on “${v.title.slice(0, 60)}”`, content_id: id, account_id: v.account_id })
+      const h = openHandoff({ kind: 'review', from: 'mandi', to: 'cap', what: `Review the captions on “${v.title.slice(0, 60)}”`, content_id: id, account_id: v.account_id })
       await runHandoff(h.id)
       return NextResponse.json({ handoffs: listHandoffs({ content_id: id }), view: cardMediaView(id) })
     }

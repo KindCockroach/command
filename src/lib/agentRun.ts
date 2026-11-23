@@ -3,7 +3,7 @@
 // A run that throws becomes a FAILED handoff with the reason, never a silent stop.
 
 import { getHandoff, failHandoff, AUTO_KINDS } from './handoffs'
-import { runFootageIn, runEdCheck, runRewrite } from './cap'
+import { runFootageIn, runWrite, runReview, runRewrite, runFilmNow } from './cap'
 import { runCommanderPickup } from './her'
 import { runWeighWinners } from './capWinners'
 
@@ -19,7 +19,9 @@ export async function runHandoff(id: string): Promise<{ ok: boolean; error?: str
   try {
     switch (h.kind) {
       case 'footage_in': await runFootageIn(h); break
-      case 'ed_check': await runEdCheck(h); break
+      case 'write': await runWrite(h); break
+      case 'review': case 'ed_check': await runReview(h); break   // ed_check = old records, now Cap's review
+      case 'film_now': await runFilmNow(h); break
       case 'rewrite': await runRewrite(h); break
       case 'her_note': await runCommanderPickup(h); break
       case 'winners_in': await runWeighWinners(h); break

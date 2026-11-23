@@ -1,9 +1,13 @@
 // Her: the front door (SOP Her 1, Her 2, Her 6; Loop 12, acceptance scenario 1).
 //
 // Mandi says or types something. Her works out what she means, says it back, saves her words
-// to Notes as they are, and hands it to the right place with a receipt:
-//   Commander (an idea or a decision to shred), Cap (plainly about the plan or calendar),
-//   the build log (a change to RISE), or nowhere (private, or a question Her can answer).
+// to Notes as they are, and hands it to the right place with a receipt.
+// The chain (Nov 22): Idea → Her → Man (Commander, the CEO) → Cap → Ed / Pod → back to Cap.
+// Her never skips Man: ideas, decisions, requests and plan changes all go to him; he shreds them
+// and hands content pieces to Cap. The build log takes changes to RISE; private stays private.
+// "I want to film this NOW": Her protects the schedule. She pushes back once when what's due is
+// still unfilmed, or lets it pass and hands it to Cap, who puts it on Content Day and fits the
+// plan around it (film_now).
 // The conversation is a thread. When Mandi comes back, Her reads what happened to every
 // handoff in it (receipts, failures, Commander's questions) so she never has to repeat herself.
 // Her never writes or edits a piece, never places anything on the map, never sends.
@@ -43,24 +47,45 @@ function outcomeText(threadId: string): string {
 
 type HerRead = {
   reply: string
-  kind: 'idea' | 'decision' | 'request' | 'status' | 'rise_change' | 'private' | 'answer'
+  kind: 'idea' | 'decision' | 'request' | 'status' | 'rise_change' | 'private' | 'answer' | 'film_now'
   route: 'commander' | 'cap' | 'build_log' | 'none'
+  film_now?: 'push_back' | 'let_pass' | null
+  account?: string | null
   what: string
   title?: string
   answers_question_id?: string | null
 }
 
-const HER_RULES = `You are Her, the one agent between Mandi and the rest of RISE. You think with her and route; you never write, edit or rewrite a piece, never put anything on the map or change a date, never send or publish.
+const HER_RULES = `You are Her, Mandi's thought partner and the one agent between her and the rest of RISE. Man (Commander) is the CEO who holds the whole picture; Cap runs the content and the calendar. You think with her and route; you never write, edit or rewrite a piece, never put anything on the map or change a date, never send or publish.
 
 Read what she just said, against the thread so far and what already happened to it. Decide:
-- kind: "idea" (a thought worth using), "decision" (she decided something), "request" (she wants something done), "status" (she is asking what happened / where things stand), "rise_change" (an idea for changing the RISE app itself), "private" (a personal reflection or what she is going through, not for content), "answer" (she is answering one of the open questions listed).
-- route: "commander" for ideas, decisions, requests and answers (he shreds them and hands each piece on); "cap" ONLY when it is plainly about the content plan, the calendar or a card's captions; "build_log" for rise_change; "none" for status and private.
+- kind: "idea" (a thought worth using), "decision" (she decided something), "request" (she wants something done), "status" (she is asking what happened / where things stand), "rise_change" (an idea for changing the RISE app itself), "private" (a personal reflection or what she is going through, not for content), "answer" (she is answering one of the open questions listed), "film_now" (she wants to film an idea right now, today, instead of what is planned).
+- route: "commander" for ideas, decisions, requests, answers and anything about the plan or calendar (Man, the CEO, shreds them and hands content to Cap; never skip him); "build_log" for rise_change; "none" for status and private. For film_now use route "cap".
+- film_now (only for kind film_now): protect the schedule. "push_back" when posts due in the next 3 days are still unfilmed (listed below): say once, plainly, what is due and that filming those first keeps the week on track, and offer to bank the idea for Man. "let_pass" when nothing due is waiting, or she insists after a push-back in this thread: say it's going on Content Day now and Cap will fit the plan around it.
+- account: for film_now, the handle it is for, if she said or it is obvious from the accounts listed; else null.
 - what: one plain line naming what is being handed over, in her terms. Never claim it is done.
-- reply: 2 to 4 short sentences to her. For a decision, say it back in one sentence. Push back once when it helps: name the strongest reason it might fail, kindly and directly. Say where it is going ("Handing this to Commander."). For status, answer ONLY from the receipts listed; if something failed or is stuck, say so plainly. Never pretend something happened that the receipts don't show. Never ask her something the thread already answers.
+- reply: 2 to 4 short sentences to her. For a decision, say it back in one sentence. Push back once when it helps: name the strongest reason it might fail, kindly and directly. Say where it is going ("Handing this to Man."). For status, answer ONLY from the receipts listed; if something failed or is stuck, say so plainly. Never pretend something happened that the receipts don't show. Never ask her something the thread already answers.
 - title: 3 to 6 words naming this thread (only if it is new).
 - answers_question_id: the id of the open question she answered, if any.
 Private context (her cycle, what she is going through) is never passed down the line; route "none".
-Reply ONLY with JSON: {"reply":"","kind":"","route":"","what":"","title":"","answers_question_id":null}`
+Reply ONLY with JSON: {"reply":"","kind":"","route":"","what":"","title":"","answers_question_id":null,"film_now":null,"account":null}`
+
+// What is due soon and still has to be filmed: Her's reason to push back on "film it now".
+function dueUnfilmed(days = 3): string {
+  const db = readDb()
+  const today = new Date().toISOString().slice(0, 10)
+  const until = new Date(Date.now() + days * 86400000).toISOString().slice(0, 10)
+  const isVid = (u?: string | null) => !!u && /\.(mp4|mov|m4v|webm)(\?|$)/i.test(u)
+  const out: string[] = []
+  for (const i of db.calendar_items ?? []) {
+    if (i.date < today || i.date > until) continue
+    const c = db.content.find(x => x.id === i.content_id)
+    if (!c || ['published', 'archived'].includes(c.status) || !(c.script ?? '').trim() || c.filmed_at) continue
+    if (isVid(c.media_url) || (c.media_urls ?? []).some(isVid)) continue
+    out.push(`- ${i.date}: ${c.title}${c.characters?.length ? ` (${c.characters.join(' + ')})` : ''}`)
+  }
+  return out.slice(0, 10).join('\n')
+}
 
 export async function herSay(input: { text: string; thread_id?: string | null; spoken?: boolean }): Promise<{ thread: ReturnType<typeof getThread>; handoff?: Handoff | null; note_id?: number | null } | { error: string }> {
   const text = (input.text ?? '').trim().slice(0, 6000)
@@ -79,7 +104,8 @@ export async function herSay(input: { text: string; thread_id?: string | null; s
   const goals = (db.goals ?? []).filter(g => g.active).slice(0, 8).map(g => `- ${g.title}`).join('\n')
   const history = t.turns.slice(-12, -1).map(x => `${x.role === 'mandi' ? 'MANDI' : 'HER'}: ${x.text.slice(0, 700)}`).join('\n')
   const openQs = t.questions.filter(q => !q.answered).map(q => `- [${q.id}] from ${AGENT_LABEL[q.from]}: ${q.text}`).join('\n')
-  const ctx = `ACTIVE GOALS:\n${goals || '(none)'}\n\nTHE THREAD SO FAR:\n${history || '(new conversation)'}\n\nWHAT HAPPENED TO WHAT SHE HANDED OVER (live receipts):\n${outcomeText(threadId)}\n\nOPEN QUESTIONS FOR HER:\n${openQs || '(none)'}\n\nWHAT SHE JUST SAID${input.spoken ? ' (spoken, transcribed)' : ''}:\n${text}`
+  const accts = db.brand_accounts.filter(a => a.status === 'active').map(a => `${a.handle} (${a.id})`).join(', ')
+  const ctx = `ACTIVE GOALS:\n${goals || '(none)'}\n\nACCOUNTS: ${accts}\n\nDUE IN THE NEXT 3 DAYS AND NOT FILMED YET:\n${dueUnfilmed() || '(nothing)'}\n\nTHE THREAD SO FAR:\n${history || '(new conversation)'}\n\nWHAT HAPPENED TO WHAT SHE HANDED OVER (live receipts):\n${outcomeText(threadId)}\n\nOPEN QUESTIONS FOR HER:\n${openQs || '(none)'}\n\nWHAT SHE JUST SAID${input.spoken ? ' (spoken, transcribed)' : ''}:\n${text}`
 
   let read: HerRead
   try {
@@ -91,7 +117,12 @@ export async function herSay(input: { text: string; thread_id?: string | null; s
     writeDb(db)
     return { thread: getThread(threadId) }
   }
-  const route = (['commander', 'cap', 'build_log', 'none'] as const).includes(read.route) ? read.route : 'commander'
+  // Never skip Man: anything Her would have sent straight to Cap goes to Commander now,
+  // except a film-now Her let through (Cap puts it on Content Day).
+  let route = (['commander', 'cap', 'build_log', 'none'] as const).includes(read.route) ? read.route : 'commander'
+  const filmNow = read.kind === 'film_now'
+  if (filmNow) route = read.film_now === 'let_pass' ? 'cap' : 'none'
+  else if (route === 'cap') route = 'commander'
   const what = (read.what || text).trim().slice(0, 200)
 
   // Her 2: save her words as they are (not for status questions).
@@ -106,7 +137,9 @@ export async function herSay(input: { text: string; thread_id?: string | null; s
   if (route === 'commander') {
     handoff = openHandoff({ kind: 'her_note', from: 'her', to: 'commander', what, ref, thread_id: threadId, note: text })
   } else if (route === 'cap') {
-    handoff = openHandoff({ kind: 'piece', from: 'her', to: 'cap', what, ref, thread_id: threadId, note: text })
+    const want = String(read.account ?? '').replace(/^@/, '').toLowerCase()
+    const acct = want ? db.brand_accounts.find(a => a.id.toLowerCase() === want || a.handle.replace(/^@/, '').toLowerCase() === want) : undefined
+    handoff = openHandoff({ kind: 'film_now', from: 'her', to: 'cap', what: `Film now: ${what}`, ref, thread_id: threadId, note: text, account_id: acct?.id ?? null })
   } else if (route === 'build_log') {
     handoff = openHandoff({ kind: 'piece', from: 'her', to: 'build_log', what, ref, thread_id: threadId, note: text })
     const e = addBuildLogEntry({ title: what, detail: text.slice(0, 1000), status: 'todo', source: 'rise' })

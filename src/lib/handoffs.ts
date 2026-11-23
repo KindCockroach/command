@@ -11,11 +11,11 @@ const nowIso = () => new Date().toISOString()
 
 // Handoffs an agent picks up by itself. If one of these is still open after this long,
 // the run died (a restart, a timeout) and it shows as stuck with a retry.
-export const AUTO_KINDS: HandoffKind[] = ['footage_in', 'ed_check', 'rewrite', 'her_note', 'winners_in']
+export const AUTO_KINDS: HandoffKind[] = ['footage_in', 'write', 'review', 'ed_check', 'rewrite', 'her_note', 'winners_in', 'film_now']
 export const STUCK_MS = 10 * 60 * 1000
 
 export const AGENT_LABEL: Record<HandoffAgent, string> = {
-  mandi: 'You', her: 'Her', commander: 'Commander', cap: 'Cap', ed: 'Ed', rex: 'Rex', pod: 'Pod', biz: 'Biz',
+  mandi: 'You', her: 'Her', commander: 'Man', cap: 'Cap', ed: 'Ed', rex: 'Rex', pod: 'Pod', biz: 'Biz',
   notes: 'Notes', build_log: 'Build log', posted: 'Posted',
 }
 
@@ -48,7 +48,7 @@ export function getHandoff(id: string): Handoff | null {
 
 // Phase 3 records predate from/to/what on every kind; read them the same way.
 function normalize(h: Handoff): Handoff {
-  return { ...h, media_urls: h.media_urls ?? [], missing: h.missing ?? [], content_id: h.content_id ?? null, what: h.what ?? (h.kind === 'footage_in' ? 'Footage landed: write the platform captions' : undefined) }
+  return { ...h, media_urls: h.media_urls ?? [], missing: h.missing ?? [], content_id: h.content_id ?? null, what: h.what ?? (h.kind === 'footage_in' ? 'Footage landed: brief the writers' : undefined) }
 }
 
 let seq = 0

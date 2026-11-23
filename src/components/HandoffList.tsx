@@ -13,7 +13,7 @@ export type HandoffRow = {
   ref?: { type: string; id: string | number; label?: string } | null
 }
 
-const NAME: Record<string, string> = { mandi: 'You', her: 'Her', commander: 'Commander', cap: 'Cap', ed: 'Ed', rex: 'Rex', pod: 'Pod', biz: 'Biz', notes: 'Notes', build_log: 'Build log', posted: 'Posted' }
+const NAME: Record<string, string> = { mandi: 'You', her: 'Her', commander: 'Man', cap: 'Cap', ed: 'Ed', rex: 'Rex', pod: 'Pod', biz: 'Biz', notes: 'Notes', build_log: 'Build log', posted: 'Posted' }
 const TONE: Record<HandoffRow['state'], { bg: string; fg: string; label: string }> = {
   open: { bg: 'rgba(124,77,219,.12)', fg: '#7C4DDB', label: 'Working' },
   waiting: { bg: 'rgba(138,140,163,.15)', fg: '#5F6178', label: 'Waiting' },

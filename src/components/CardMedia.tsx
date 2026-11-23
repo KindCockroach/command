@@ -13,7 +13,7 @@ import DictateButton from './DictateButton'
 // Drop or pick footage → it uploads into THIS card (never a new one) → Cap gets a note.
 
 type EdVerdict = { verdict: 'pass' | 'sent_back'; reasons: string[]; notes?: string[]; round: number; needs_you?: boolean; let_through?: boolean }
-type PlatformPost = { platform: string; caption: string; status: 'draft' | 'scheduled' | 'posted'; scheduled_at?: string | null; posted_url?: string | null; posted_at?: string | null; written_by?: 'cap' | 'mandi' | null; ed?: EdVerdict | null }
+type PlatformPost = { platform: string; caption: string; status: 'draft' | 'scheduled' | 'posted'; scheduled_at?: string | null; posted_url?: string | null; posted_at?: string | null; written_by?: 'cap' | 'ed' | 'pod' | 'mandi' | null; ed?: EdVerdict | null }   // ed = Cap's review (field name predates the Nov 22 reversal)
 type View = {
   id: number; title: string; status: string; account_id: string | null; handle: string; account_platform: string
   media: string[]; cover: string; script: boolean; description: string
@@ -46,7 +46,7 @@ export default function CardMedia({ contentId, calendarItemId, onChanged, showPl
     if (d.error) setErr(d.error); else { setView(d); setErr('') }
   }, [contentId])
   useEffect(() => { load() }, [load])
-  // Cap and Ed run on the server after an upload; watch the card until they hand back.
+  // Cap, Ed and Pod run on the server after an upload; watch the card until they hand back.
   const agentsWorking = view?.handoff?.status === 'open'
   useEffect(() => {
     if (!agentsWorking) return
@@ -108,8 +108,8 @@ export default function CardMedia({ contentId, calendarItemId, onChanged, showPl
 
       {waiting && view.handoff!.kind === 'footage_in' && (
         <div className="cm-cap">
-          <b>🎬 Footage in. Cap is writing the captions</b>
-          <span>{view.handoff!.missing.length ? `Still needs: ${view.handoff!.missing.map(m => MISSING_LABEL[m] ?? m).join(', ')}` : 'Then Ed checks them.'}</span>
+          <b>🎬 Footage in. Cap is briefing Ed and Pod</b>
+          <span>{view.handoff!.missing.length ? `Still needs: ${view.handoff!.missing.map(m => MISSING_LABEL[m] ?? m).join(', ')}` : 'They write the captions, then Cap reviews and schedules them.'}</span>
         </div>
       )}
       {(view.cap_needs?.length ?? 0) > 0 && (
@@ -192,7 +192,7 @@ function PlatformPosts({ view, setView, onChanged }: { view: View; setView: (v: 
   const [note, setNote] = useState('')
   const [spoken, setSpoken] = useState(false)
   const [busy, setBusy] = useState('')
-  const act = async (action: 'cap_note' | 'ed_check') => {
+  const act = async (action: 'cap_note' | 'review') => {
     setBusy(action); setErr('')
     const d = await fetch('/api/content/media', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, id: view.id, note: spoken ? `(spoken) ${note}` : note }) }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup. Try again.' }))
     setBusy('')
@@ -209,11 +209,11 @@ function PlatformPosts({ view, setView, onChanged }: { view: View; setView: (v: 
       {view.platforms.length === 0 && <p className="cm-note">No platform yet. Add the one this goes to.</p>}
       {view.platforms.length > 0 && (
         <div className="cm-said">
-          <textarea value={note} rows={2} placeholder="What changed from the plan? (Optional. Type or speak it; Cap rewrites his drafts with it. Your own captions stay.)" onChange={e => setNote(e.target.value)} />
+          <textarea value={note} rows={2} placeholder="What changed from the plan? (Optional. Type or speak it; Cap briefs Ed and Pod with it and they rewrite their drafts. Your own captions stay.)" onChange={e => setNote(e.target.value)} />
           <div className="cm-row">
             <DictateButton title="Say it" onText={t => setNote(n => (n ? n + ' ' : '') + t)} onSpoken={() => setSpoken(true)} />
-            <button type="button" className="cm-btn primary" disabled={!note.trim() || !!busy} onClick={() => act('cap_note')}>{busy === 'cap_note' ? 'Cap is writing…' : 'Tell Cap'}</button>
-            {hasCapDrafts && <button type="button" className="cm-btn" disabled={!!busy} onClick={() => act('ed_check')}>{busy === 'ed_check' ? 'Ed is checking…' : 'Ask Ed to check again'}</button>}
+            <button type="button" className="cm-btn primary" disabled={!note.trim() || !!busy} onClick={() => act('cap_note')}>{busy === 'cap_note' ? 'Cap is briefing the writers…' : 'Tell Cap'}</button>
+            {hasCapDrafts && <button type="button" className="cm-btn" disabled={!!busy} onClick={() => act('review')}>{busy === 'review' ? 'Cap is reviewing…' : 'Ask Cap to review again'}</button>}
           </div>
         </div>
       )}
@@ -235,21 +235,21 @@ function PlatformPosts({ view, setView, onChanged }: { view: View; setView: (v: 
             </div>
             {pp.caption.trim() && (
               <div className="cm-ed">
-                <span className="cm-by">{pp.written_by === 'mandi' ? 'Your words' : pp.written_by === 'cap' ? 'Cap wrote this' : ''}</span>
+                <span className="cm-by">{pp.written_by === 'mandi' ? 'Your words' : pp.written_by === 'ed' ? 'Ed wrote this' : pp.written_by === 'pod' ? 'Pod wrote this' : pp.written_by === 'cap' ? 'Cap wrote this (before the writers took over)' : ''}</span>
                 {pp.ed && (pp.ed.verdict === 'pass'
-                  ? <span className="cm-v pass">{pp.ed.let_through ? `✓ Ed let it through after ${pp.ed.round - 1} rewrites` : pp.ed.round > 1 ? '✓ Ed passed Cap’s rewrite' : '✓ Ed passed it'}</span>
-                  : <span className="cm-v back">{pp.ed.needs_you ? '⚠ Ed: still off after Cap’s rewrite, needs your eye' : '↩ Ed sent it back to Cap'}</span>)}
+                  ? <span className="cm-v pass">{pp.ed.let_through ? `✓ Cap let it through after ${pp.ed.round - 1} rewrites` : pp.ed.round > 1 ? '✓ Cap confirmed the rewrite' : '✓ Cap confirmed it'}</span>
+                  : <span className="cm-v back">{pp.ed.needs_you ? '⚠ Still off after a rewrite, needs your eye' : `↩ Cap sent it back to ${pp.written_by === 'pod' ? 'Pod' : 'Ed'}`}</span>)}
               </div>
             )}
             {pp.ed?.verdict === 'sent_back' && <ul className="cm-why-list">{pp.ed.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>}
-            {(pp.ed?.notes?.length ?? 0) > 0 && <p className="cm-note">Ed noticed: {pp.ed!.notes!.join(' ')}</p>}
+            {(pp.ed?.notes?.length ?? 0) > 0 && <p className="cm-note">Cap noticed: {pp.ed!.notes!.join(' ')}</p>}
             <textarea value={text} rows={3} placeholder={`The ${pl} caption`} onChange={e => setDrafts(d => ({ ...d, [pl]: e.target.value }))}
               onBlur={() => { if (drafts[pl] !== undefined && drafts[pl] !== pp.caption) save(pl, { caption: drafts[pl] }).then(ok => ok && setDrafts(d => { const n = { ...d }; delete n[pl]; return n })) }} />
             <div className="cm-row">
               <button type="button" className="cm-btn" disabled={!text.trim()} onClick={() => copy(pl, text)}>{copied === pl ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy</>}</button>
               {!text.trim() && view.description.trim() && <button type="button" className="cm-btn" onClick={() => save(pl, { caption: view.description })}>Use the card’s caption</button>}
               {pp.status === 'scheduled' && (
-                <label className="cm-when">For<input type="datetime-local" value={pp.scheduled_at ?? when} onChange={e => save(pl, { scheduled_at: e.target.value })} /></label>
+                <label className="cm-when">For<input type="datetime-local" value={pp.scheduled_at ? (pp.scheduled_at.includes('T') ? pp.scheduled_at : `${pp.scheduled_at}T09:00`) : when} onChange={e => save(pl, { scheduled_at: e.target.value })} /></label>
               )}
               {pp.status === 'posted' && (
                 <label className="cm-when grow">Link<input type="url" placeholder="https://…" defaultValue={pp.posted_url ?? ''} onBlur={e => { if ((e.target.value || null) !== (pp.posted_url ?? null)) save(pl, { posted_url: e.target.value }) }} /></label>

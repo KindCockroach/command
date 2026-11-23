@@ -18,6 +18,6 @@ export async function POST(req: NextRequest) {
   const r = await herSay({ text: String(b.text ?? ''), thread_id: b.thread_id ? String(b.thread_id) : null, spoken: !!b.spoken })
   if ('error' in r) return NextResponse.json(r, { status: 400 })
   // Commander reads the note after Her answers, so she isn't kept waiting.
-  if (r.handoff && r.handoff.kind === 'her_note') { const id = r.handoff.id; after(async () => { await runHandoff(id) }) }
+  if (r.handoff && (r.handoff.kind === 'her_note' || r.handoff.kind === 'film_now')) { const id = r.handoff.id; after(async () => { await runHandoff(id) }) }
   return NextResponse.json(r)
 }

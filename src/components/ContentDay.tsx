@@ -1,17 +1,23 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import type { ContentPiece, BrandAccount, ShootFormat } from '@/lib/db'
-import { hasMedia, postPurpose, PURPOSE_META, type Purpose } from '@/lib/contentStatus'
-import { RefreshCw, Camera, Clapperboard, Loader2, Sparkles, MessageCircle, RotateCcw, Trash2, Upload } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import type { ContentPiece, BrandAccount, Character, Db } from '@/lib/db'
+import { parseScript, isChildCharacter, type ScriptLine } from '@/lib/characters'
+import { RefreshCw, Camera, Clapperboard, Loader2, ChevronLeft, ChevronRight, Check, X, Plus } from 'lucide-react'
 import CardMedia from './CardMedia'
 
-// CONTENT DAY — the shoot list, designed like the Format Finder concept cards, and
-// with a SHOOT PLAN: turn a script into something she can actually film without
-// flipping back and forth. A two-voice script (Inner Child / Higher Self) regroups
-// BY ROLE — film every line of one character, then switch once — each line with an
-// emotion cue and a camera position. A solo script maps onto the retention template.
+// CONTENT DAY is EXCLUSIVELY for filming: the director's chair. The script, the emotion to hit,
+// the context that sells the acting. Not a place to plan or coordinate content (that's Cap's
+// plan and the calendar).
+//
+// • Only posts that still need filming: a card with a video on it, or one she marked Filmed ✓,
+//   leaves the deck.
+// • CHARACTER RAIL: batch the shoot by outfit. Tap a character → only that character's cards.
+// • FILM view (default): the script big, her character's lines front and center, the director
+//   strip beside it. ← → (or swipe) moves to the next card in the SAME character.
+// • POST view: the card as it will publish (caption, hashtags, status, account). Toggle back.
 
 const MONO = 'ui-monospace, "IBM Plex Mono", Menlo, monospace'
+const UNTAGGED = '__untagged'
 
 type PlanLine = { text: string; emotion: string; camera: string }
 type ShootPlan = {
@@ -20,466 +26,360 @@ type ShootPlan = {
   sections?: { role: string; setup: string; lines: PlanLine[] }[]
   beats?: { label: string; cue: string; text: string; emotion: string; camera: string }[]
 }
-type Line = { key: string; kind: string; length: string; script: string; account?: string; color?: string; postId: number; accountId?: string | null; broll?: boolean; purpose: Purpose; format: ShootFormat }
 
-// The 3 formats that require Mandi to film herself.
-const FORMAT_META: Record<ShootFormat, { label: string; emoji: string; color: string }> = {
-  talking_head: { label: 'Talking head', emoji: '🎤', color: '#3DAA7C' },
-  role_play: { label: 'Role play', emoji: '🎭', color: '#7C3AED' },
-  multi_scene: { label: 'Multi-scene', emoji: '🎬', color: '#E8448A' },
-}
-const FORMATS = Object.keys(FORMAT_META) as ShootFormat[]
+const isVideo = (u?: string | null) => !!u && /\.(mp4|mov|m4v|webm|avi|mkv)(\?|$)/i.test(u)
+const hasVideo = (p: ContentPiece) => isVideo(p.media_url) || (p.media_urls ?? []).some(isVideo)
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim()
 
-// Which film-yourself format is this post? Honor a saved choice; otherwise infer from
-// the script + any saved shoot plan (dialogue → role play; multiple scenes → multi-scene).
-function classifyFormat(p: ContentPiece): ShootFormat {
-  if (p.shoot_format) return p.shoot_format
-  const script = p.script ?? ''
-  let planMode = ''
-  if (p.shoot_plan) { try { planMode = (JSON.parse(p.shoot_plan)?.mode as string) || '' } catch { /* ignore */ } }
-  const speakerLines = (script.match(/^[A-Za-z][A-Za-z '’\-]{1,20}:\s/gm) ?? []).length
-  if (planMode === 'dialogue' || speakerLines >= 2) return 'role_play'
-  const blob = `${script}\n${p.frame_plan ?? ''}\n${p.notes ?? ''}`.toLowerCase()
-  if (/scene\s*\d|\bcut to\b|multi-?scene|\bb-?roll\b/.test(blob) || (blob.match(/\bscene\b/g) ?? []).length >= 2) return 'multi_scene'
-  return 'talking_head'
-}
-
-function estLength(script: string): string {
-  const words = script.trim().split(/\s+/).filter(Boolean).length
-  if (!words) return '10s'
-  const secs = Math.max(5, Math.round((words / 2.5) / 5) * 5)
-  return `~${secs}s`
-}
-
-// Break a talking-head script into readable beats (fallback before a plan is built).
-function beats(script: string): string[] {
-  const raw = script.trim()
-  if (!raw) return []
-  let parts = raw.split(/\n+/).map(s => s.trim()).filter(Boolean)
-  if (parts.length <= 1) parts = raw.split(/(?<=[.!?])\s+(?=[A-Z"'])/).map(s => s.trim()).filter(Boolean)
-  return parts.slice(0, 10)
-}
-
-const sig = (script: string) => `${script.length}:${script.slice(0, 24)}`
-
-// Content Day is PURELY for shooting yourself on camera. A post is FACELESS (skip
-// it) when its script/plan/notes say so — trend clips, text-on-screen only, b-roll,
-// voiceover-only, "no face". Those get made elsewhere, not filmed by Mandi.
-function isFaceless(p: { script?: string; frame_plan?: string; notes?: string; post_job?: string; onscreen_text?: string }): boolean {
+// Faceless posts (trend clips, text on screen, b-roll, voiceover only) aren't filmed by Mandi.
+function isFaceless(p: ContentPiece): boolean {
   const blob = `${p.script ?? ''} ${p.frame_plan ?? ''} ${p.notes ?? ''} ${p.post_job ?? ''}`.toLowerCase()
-  return /no[- ]?face|faceless|trend(ing)? clip|text[- ]on[- ]screen|text on screen|b[- ]?roll only|voice[- ]?over only|no talking|don'?t show your face|do not show your face|on[- ]screen only|stock (clip|footage)|\bcapcut\b/.test(blob)
+  return /no[- ]?face|faceless|trend(ing)? clip|text[- ]on[- ]screen|b[- ]?roll only|voice[- ]?over only|no talking|don'?t show your face|do not show your face|on[- ]screen only|stock (clip|footage)|\bcapcut\b/.test(blob)
+}
+
+function readPlan(p: ContentPiece): ShootPlan | null {
+  if (!p.shoot_plan) return null
+  try { const x = JSON.parse(p.shoot_plan); return x && (x.sections?.length || x.beats?.length) ? x : null } catch { return null }
+}
+
+// Match a plan line (emotion + camera) to a script line by its opening words.
+function planCue(plan: ShootPlan | null, text: string): { emotion?: string; camera?: string } {
+  if (!plan) return {}
+  const k = norm(text).slice(0, 28)
+  if (!k) return {}
+  const all: { text: string; emotion: string; camera: string }[] = [...(plan.sections ?? []).flatMap(s => s.lines ?? []), ...(plan.beats ?? [])]
+  const hit = all.find(l => { const n = norm(l.text); return n.startsWith(k) || k.startsWith(n.slice(0, 28)) })
+  return hit ? { emotion: hit.emotion, camera: hit.camera } : {}
 }
 
 export default function ContentDay() {
   const [posts, setPosts] = useState<ContentPiece[]>([])
   const [accounts, setAccounts] = useState<BrandAccount[]>([])
+  const [roster, setRoster] = useState<Character[]>([])
+  const [dates, setDates] = useState<Record<number, string>>({})
   const [loading, setLoading] = useState(true)
-  const [done, setDone] = useState<Record<string, boolean>>({})
-  const [plans, setPlans] = useState<Record<number, ShootPlan>>({})
+  const [view, setView] = useState<'film' | 'post'>('film')          // always opens in Film
+  const [character, setCharacter] = useState<string>('')
+  const [idx, setIdx] = useState(0)
+  const [filmedNow, setFilmedNow] = useState<number[]>([])           // filmed this session: greyed at the bottom
   const [planning, setPlanning] = useState<Record<number, boolean>>({})
-  const [planErr, setPlanErr] = useState<Record<number, string>>({})
-  const [purposeFilter, setPurposeFilter] = useState<'all' | Purpose>('all')
-  const [acctFilter, setAcctFilter] = useState<string>('all')
-  const [formatFilter, setFormatFilter] = useState<'all' | ShootFormat>('all')
-  const [waiting, setWaiting] = useState<number[]>([])          // cards with footage in, waiting on Cap
-  const [footageOpen, setFootageOpen] = useState<Record<number, boolean>>({})
+  const [err, setErr] = useState('')
+  const [addName, setAddName] = useState('')
 
   const load = useCallback(() => {
     setLoading(true)
-    Promise.all([fetch('/api/content').then(r => r.json()), fetch('/api/accounts').then(r => r.json()), fetch('/api/handoffs?kind=footage_in&limit=200').then(r => r.json()).catch(() => ({}))])
-      .then(([c, a, h]) => {
-        setPosts(Array.isArray(c) ? c : []); setAccounts(Array.isArray(a) ? a : [])
-        // Footage Cap hasn't finished with: working, stuck or failed (a failed run stays here with Retry).
-        setWaiting(Array.from(new Set(((h?.handoffs ?? []) as { content_id: number | null; state: string }[]).filter(x => x.content_id && x.state !== 'done').map(x => x.content_id as number))))
-      })
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch('/api/characters').then(r => r.json()).catch(() => ({})),   // tags untagged cards first
+      fetch('/api/content').then(r => r.json()),
+      fetch('/api/accounts').then(r => r.json()),
+      fetch('/api/plan').then(r => r.json()).catch(() => ({})),
+    ]).then(([ch, c, a, pl]) => {
+      setRoster(Array.isArray(ch?.characters) ? ch.characters : [])
+      setPosts(Array.isArray(c) ? c : [])
+      setAccounts(Array.isArray(a) ? a : [])
+      const d: Record<number, string> = {}
+      for (const i of (pl?.calendar ?? []) as { content_id: number; date: string }[]) if (!d[i.content_id] || i.date < d[i.content_id]) d[i.content_id] = i.date
+      setDates(d)
+    }).finally(() => setLoading(false))
   }, [])
   useEffect(() => { load() }, [load])
-  useEffect(() => { try { const s = localStorage.getItem('rise-contentday-done'); if (s) setDone(JSON.parse(s)) } catch { /* fresh */ } }, [])
-  const toggle = (k: string) => setDone(d => { const n = { ...d, [k]: !d[k] }; try { localStorage.setItem('rise-contentday-done', JSON.stringify(n)) } catch { /* ok */ } return n })
 
-  // Build a shoot plan for a post's script (cached per post + script signature).
-  const buildPlan = async (postId: number, script: string, accountId?: string | null) => {
-    setPlanning(p => ({ ...p, [postId]: true })); setPlanErr(e => ({ ...e, [postId]: '' }))
-    try {
-      const r = await fetch('/api/shootplan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ script, accountId }) })
-      const d = await r.json().catch(() => ({}))
-      if (d.plan) {
-        setPlans(p => ({ ...p, [postId]: d.plan }))
-        try { localStorage.setItem(`rise-shootplan-${postId}`, JSON.stringify({ sig: sig(script), plan: d.plan })) } catch { /* ok */ }
-        // Persist ONTO the post so it survives refresh and shows on the post card.
-        setPosts(ps => ps.map(p => p.id === postId ? { ...p, shoot_plan: JSON.stringify(d.plan) } : p))
-        fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, shoot_plan: JSON.stringify(d.plan) }) }).catch(() => {})
-      } else setPlanErr(e => ({ ...e, [postId]: d.error || 'Could not build the plan — try again.' }))
-    } catch { setPlanErr(e => ({ ...e, [postId]: 'Connection error' })) } finally { setPlanning(p => ({ ...p, [postId]: false })) }
-  }
-
+  const rosterDb = useMemo(() => ({ characters: roster.map(r => ({ ...r })) }) as unknown as Db, [roster])
   const acct = (id?: string | null) => accounts.find(a => a.id === id)
 
-  const allLines: Line[] = []
-  for (const p of posts) {
-    if (['published', 'archived'].includes(p.status)) continue
-    // Talking-head only: a real spoken script, no video filmed yet, and NOT faceless.
-    if (!(p.script ?? '').trim()) continue
-    if (isFaceless(p)) continue
-    if (hasMedia(p) && /\.(mp4|mov|webm)/i.test((p.media_url || p.media_urls?.[0] || ''))) continue
-    const a = acct(p.account_id)
-    const acctLabel = a ? `${a.emoji} ${a.handle}` : undefined
-    const purpose = postPurpose(p)
-    const format = classifyFormat(p)
-    allLines.push({ key: `${p.id}-th`, kind: FORMAT_META[format].label, length: estLength(p.script as string), script: p.script as string, account: acctLabel, color: a?.color, postId: p.id, accountId: p.account_id, purpose, format })
-  }
-  const purposeCounts = allLines.reduce((m, l) => { m[l.purpose] = (m[l.purpose] ?? 0) + 1; return m }, {} as Record<Purpose, number>)
-  const formatCounts = allLines.reduce((m, l) => { m[l.format] = (m[l.format] ?? 0) + 1; return m }, {} as Record<ShootFormat, number>)
-  // Accounts that actually have something to film (for the account filter).
-  const acctOptions = Array.from(new Map(allLines.filter(l => l.accountId).map(l => [l.accountId as string, l.account || l.accountId as string])).entries())
-  const lines = allLines.filter(l => (purposeFilter === 'all' || l.purpose === purposeFilter) && (acctFilter === 'all' || l.accountId === acctFilter) && (formatFilter === 'all' || l.format === formatFilter))
+  // The shoot list: scripted, not faceless, no video yet, not filmed (unless filmed just now).
+  const shoot = useMemo(() => posts.filter(p =>
+    !['published', 'archived'].includes(p.status) && (p.script ?? '').trim() && !isFaceless(p) && !hasVideo(p)
+    && (!p.filmed_at || filmedNow.includes(p.id))
+  ), [posts, filmedNow])
 
-  // Hand off to Dir (the Content Director) — seed a chat and jump to Assistants.
-  const openDir = (seed: string) => {
-    try {
-      localStorage.setItem('station-open-agent', 'content_director')
-      localStorage.setItem('station-agent-prefill', seed)
-    } catch { /* ok */ }
-    window.dispatchEvent(new CustomEvent('station:open-agent', { detail: {} }))
-    window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'assistants' } }))
-  }
+  // Character rail: counts are UNFILMED cards (the batch size for that outfit).
+  const rail = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const p of shoot) {
+      if (p.filmed_at) continue
+      const cs = p.characters?.length ? p.characters : [UNTAGGED]
+      for (const c of cs) counts.set(c, (counts.get(c) ?? 0) + 1)
+    }
+    const order = roster.map(r => r.name)
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || order.indexOf(a[0]) - order.indexOf(b[0]))
+  }, [shoot, roster])
 
-  // After filming: Rex writes the caption + hook/CTA variations for 4–8 trial reels.
-  const handoffToDir = (l: Line) => {
-    const post = posts.find(p => p.id === l.postId)
-    const a = acct(l.accountId)
-    const seed = [
-      `🎬 I just filmed this — help me turn it into trial reels.`,
-      post?.title ? `CONCEPT: ${post.title}` : '',
-      post?.onscreen_text ? `ON-SCREEN HOOK: ${post.onscreen_text}` : '',
-      `WHAT I FILMED: ${l.script}`,
-      a ? `ACCOUNT: ${a.handle}${a.brand_name ? ` — ${a.brand_name}` : ''}` : '',
-      ``,
-      `I'm running the SAME footage as 4–8 trial reels to see what lands. In my voice, give me:`,
-      `1) One ready-to-post CAPTION.`,
-      `2) SIX on-screen HOOK variations (same clip, different angle).`,
-      `3) SIX CTA variations.`,
-      `Number everything so I can mix and match across the trial reels.`,
-    ].filter(Boolean).join('\n')
-    openDir(seed)
-  }
-
-  // "Talk through Content Day" — a general planning chat about the whole shoot list.
-  const talkThrough = () => {
-    const list = lines.map(l => {
-      const post = posts.find(p => p.id === l.postId)
-      const head = (post?.onscreen_text || l.script.split('\n')[0] || '').slice(0, 80)
-      return `• ${head}${l.account ? ` (${l.account})` : ''}`
-    }).join('\n')
-    openDir(`Let's talk through my Content Day. Here's what's on my shoot list:\n${list || '(nothing yet)'}\n\nHelp me decide what to film, what to cut, and how to make each one travel.`)
-  }
-
-  // "Undo the directing" — clear a generated shoot plan off a post.
-  const clearPlan = async (postId: number) => {
-    setPlans(p => { const n = { ...p }; delete n[postId]; return n })
-    setPosts(ps => ps.map(p => p.id === postId ? { ...p, shoot_plan: '' } : p))
-    try { localStorage.removeItem(`rise-shootplan-${postId}`) } catch { /* ok */ }
-    fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, shoot_plan: '' }) }).catch(() => {})
-  }
-
-  // Set this shoot's format (talking head / role play / multi-scene) — saved on the post.
-  const setFormat = (postId: number, fmt: ShootFormat) => {
-    setPosts(ps => ps.map(p => p.id === postId ? { ...p, shoot_format: fmt } : p))
-    fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, shoot_format: fmt }) }).catch(() => {})
-  }
-
-  // Thumbs-down / delete — removes the underlying content card from RISE entirely.
-  const deletePost = (postId: number, label: string) => {
-    if (!confirm(`Delete this content card for good?\n\n“${label.slice(0, 80)}”\n\nThis removes it from RISE everywhere — not just Content Day. It can't be undone.`)) return
-    setPosts(ps => ps.filter(p => p.id !== postId))
-    fetch(`/api/content?id=${postId}`, { method: 'DELETE' }).catch(() => {})
-  }
-
-  // Rehydrate plans — the post's saved shoot_plan is the durable source (survives
-  // refresh + shows on the post card); localStorage is a fast fallback.
+  // Pick the character: the last one she used if it still has cards, else the biggest batch.
   useEffect(() => {
-    const next: Record<number, ShootPlan> = {}
-    for (const l of lines) {
-      if (l.broll || plans[l.postId]) continue
-      const post = posts.find(p => p.id === l.postId)
-      if (post?.shoot_plan) {
-        try { const plan = JSON.parse(post.shoot_plan); if (plan) { next[l.postId] = plan; continue } } catch { /* fall through */ }
-      }
-      try {
-        const raw = localStorage.getItem(`rise-shootplan-${l.postId}`)
-        if (raw) { const { sig: s, plan } = JSON.parse(raw); if (s === sig(l.script) && plan) next[l.postId] = plan }
-      } catch { /* ignore */ }
+    if (!rail.length) return
+    if (character && rail.some(([c]) => c === character)) return
+    let saved = ''
+    try { saved = localStorage.getItem('rise-contentday-character') || '' } catch { /* ok */ }
+    setCharacter(rail.some(([c]) => c === saved) ? saved : rail[0][0]); setIdx(0)
+  }, [rail, character])
+  const pick = (c: string) => { setCharacter(c); setIdx(0); try { localStorage.setItem('rise-contentday-character', c) } catch { /* ok */ } }
+
+  // The deck for this character: soonest date first; filmed ones drop to the bottom.
+  const deck = useMemo(() => shoot
+    .filter(p => character === UNTAGGED ? !p.characters?.length : (p.characters ?? []).includes(character))
+    .sort((a, b) => (a.filmed_at ? 1 : 0) - (b.filmed_at ? 1 : 0) || (dates[a.id] ?? '9999').localeCompare(dates[b.id] ?? '9999') || a.id - b.id)
+  , [shoot, character, dates])
+  const left = deck.filter(p => !p.filmed_at).length
+  const cur = deck[Math.min(idx, Math.max(0, deck.length - 1))]
+
+  const go = useCallback((d: number) => setIdx(i => deck.length ? (i + d + deck.length) % deck.length : 0), [deck.length])
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      if (e.key === 'ArrowRight') go(1)
+      if (e.key === 'ArrowLeft') go(-1)
     }
-    if (Object.keys(next).length) setPlans(p => ({ ...next, ...p }))
-  }, [posts]) // eslint-disable-line react-hooks/exhaustive-deps
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [go])
+  const touch = useRef<{ x: number; y: number } | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY } }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s = touch.current; touch.current = null
+    if (!s) return
+    const dx = e.changedTouches[0].clientX - s.x, dy = e.changedTouches[0].clientY - s.y
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1)
+  }
 
-  const remaining = lines.filter(l => !done[l.key]).length
-  // Footage that landed (here or from the calendar) stays visible on its card until Cap picks it up.
-  const footageIn = posts.filter(p => waiting.includes(p.id) && !['published', 'archived'].includes(p.status))
+  const patch = (id: number, body: Partial<ContentPiece>) =>
+    fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...body }) }).then(r => r.json()).catch(() => null)
 
-  const pill = (broll?: boolean): React.CSSProperties => ({ fontFamily: MONO, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '3px 9px', borderRadius: '99px', background: broll ? 'var(--purple-light)' : 'rgba(232,68,138,0.14)', color: broll ? 'var(--purple)' : '#E8448A' })
-  const metaStyle: React.CSSProperties = { fontFamily: MONO, fontSize: '11.5px', color: 'var(--text-subtle)', letterSpacing: '0.01em' }
-  const labelStyle: React.CSSProperties = { fontFamily: MONO, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--purple)' }
-  const emotionPill: React.CSSProperties = { fontSize: '11px', fontWeight: 600, fontStyle: 'italic', padding: '2px 9px', borderRadius: '99px', background: 'rgba(242,166,90,0.16)', color: '#B96A1E' }
-  const cameraLine: React.CSSProperties = { fontFamily: MONO, fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '5px', alignItems: 'baseline' }
+  // Filmed ✓ → greys out and drops to the bottom of the batch; it's gone next time she opens.
+  const markFilmed = async (p: ContentPiece) => {
+    const on = !p.filmed_at
+    const at = on ? new Date().toISOString() : null
+    setPosts(ps => ps.map(x => x.id === p.id ? { ...x, filmed_at: at } : x))
+    if (on) setFilmedNow(f => [...f, p.id])
+    const r = await patch(p.id, { filmed_at: at })
+    if (!r || r.error) { setErr('Couldn’t save that. Try again.'); setPosts(ps => ps.map(x => x.id === p.id ? { ...x, filmed_at: p.filmed_at ?? null } : x)) }
+    // Stay on the next unfilmed card in this character (the filmed one moved to the bottom).
+    if (on) setIdx(i => Math.min(i, Math.max(0, left - 2)))
+  }
 
-  const PlanBlock = ({ plan }: { plan: ShootPlan }) => {
-    if (plan.mode === 'dialogue' && plan.sections?.length) {
-      return (
-        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed var(--border)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {plan.sections.map((sec, si) => (
-            <div key={si} style={{ borderRadius: '11px', border: '1px solid var(--border)', overflow: 'hidden' }}>
-              <div style={{ padding: '9px 12px', background: 'var(--purple-light)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <Clapperboard size={13} style={{ color: 'var(--purple)' }} />
-                <span style={{ fontSize: '12.5px', fontWeight: 900, color: 'var(--purple)' }}>Film all as {sec.role}</span>
-                <span style={{ ...metaStyle, marginLeft: 'auto' }}>{sec.lines?.length ?? 0} lines · one setup</span>
-              </div>
-              {sec.setup && <p style={{ ...cameraLine, padding: '8px 12px 0' }}><span style={labelStyle}>Set-up</span> {sec.setup}</p>}
-              <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
-                {(sec.lines ?? []).map((ln, li) => (
-                  <div key={li} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                    <span style={{ fontFamily: MONO, fontSize: '11px', color: 'var(--text-subtle)', minWidth: '18px', flexShrink: 0, paddingTop: '3px', fontVariantNumeric: 'tabular-nums' }}>{String(li + 1).padStart(2, '0')}</span>
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <p style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4 }}>&ldquo;{ln.text}&rdquo;</p>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                        {ln.emotion && <span style={emotionPill}>{ln.emotion}</span>}
-                        {ln.camera && <span style={cameraLine}>🎥 {ln.camera}</span>}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )
-    }
-    if (plan.mode === 'solo' && plan.beats?.length) {
-      return (
-        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed var(--border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {plan.beats.map((b, i) => (
-            <div key={i} style={{ display: 'flex', gap: '11px', alignItems: 'flex-start' }}>
-              <div style={{ flexShrink: 0, width: '74px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontFamily: MONO, fontSize: '9.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--purple)' }}>{b.label}</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'var(--text-subtle)', fontVariantNumeric: 'tabular-nums' }}>{b.cue}</span>
-              </div>
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: '2px solid var(--border)', paddingLeft: '11px' }}>
-                <p style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)', lineHeight: 1.45 }}>{b.text}</p>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  {b.emotion && <span style={emotionPill}>{b.emotion}</span>}
-                  {b.camera && <span style={cameraLine}>🎥 {b.camera}</span>}
+  // Direction (emotion + camera per line) for a card that hasn't been directed yet.
+  const direct = async (p: ContentPiece) => {
+    setPlanning(x => ({ ...x, [p.id]: true })); setErr('')
+    try {
+      const r = await fetch('/api/shootplan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ script: p.script, accountId: p.account_id }) })
+      const d = await r.json().catch(() => ({}))
+      if (d.plan) {
+        const sp = JSON.stringify(d.plan)
+        setPosts(ps => ps.map(x => x.id === p.id ? { ...x, shoot_plan: sp } : x))
+        await patch(p.id, { shoot_plan: sp })
+      } else setErr(d.error || 'Couldn’t direct it. Try again.')
+    } catch { setErr('Connection error') } finally { setPlanning(x => ({ ...x, [p.id]: false })) }
+  }
+
+  const setChars = async (p: ContentPiece, names: string[]) => {
+    setPosts(ps => ps.map(x => x.id === p.id ? { ...x, characters: names, characters_by: 'mandi' } : x))
+    const r = await patch(p.id, { characters: names })
+    if (r && !r.error) { setPosts(ps => ps.map(x => x.id === p.id ? r : x)); fetch('/api/characters').then(x => x.json()).then(d => Array.isArray(d?.characters) && setRoster(d.characters)).catch(() => {}) }
+  }
+
+  // ── styles ──
+  const label: React.CSSProperties = { fontFamily: MONO, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--purple)' }
+  const btn: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 800, fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }
+  const charName = (c: string) => c === UNTAGGED ? 'No character' : c
+
+  // ── FILM view pieces ──
+  const ScriptBlock = ({ p }: { p: ContentPiece }) => {
+    const plan = readPlan(p)
+    const { lines } = parseScript(rosterDb, p.script ?? '')
+    const spoken = lines.filter(l => !l.direction)
+    const speakers = new Set(spoken.map(l => l.speaker).filter(Boolean))
+    const dialogue = speakers.size > 1
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: dialogue ? '12px' : '14px' }}>
+        {spoken.map((l: ScriptLine, i) => {
+          const mine = !dialogue || l.speaker === character || character === UNTAGGED || (!l.speaker && !character)
+          const child = isChildCharacter(l.speaker ?? (dialogue ? null : character))
+          const cue = planCue(plan, l.text)
+          return (
+            <div key={i} style={{
+              opacity: mine ? 1 : 0.45,
+              padding: mine && dialogue ? '10px 14px' : dialogue ? '2px 14px' : '0',
+              borderRadius: child && mine ? '18px' : '10px',
+              background: mine && dialogue ? (child ? 'rgba(232,68,138,0.09)' : 'rgba(124,77,219,0.08)') : 'transparent',
+              borderStyle: mine && dialogue ? (child ? 'dashed' : 'solid') : 'none',
+              borderColor: child ? 'rgba(232,68,138,0.45)' : 'var(--purple)',
+              borderWidth: mine && dialogue ? (child ? '2px' : '0 0 0 4px') : 0,
+            }}>
+              {dialogue && l.speaker && <p style={{ ...label, color: child ? '#D0397A' : 'var(--purple)', marginBottom: '3px' }}>{l.speaker}{mine ? '' : ' · cue'}</p>}
+              <p style={{
+                fontSize: mine ? (dialogue ? '22px' : '24px') : '15px',
+                lineHeight: 1.35, fontWeight: mine ? 800 : 600, letterSpacing: '-0.01em',
+                color: child && mine ? '#B42D6A' : 'var(--text)',
+                fontStyle: child && mine ? 'italic' : 'normal',
+              }}>{l.text}</p>
+              {mine && (cue.emotion || cue.camera) && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px' }}>
+                  {cue.emotion && <span style={{ fontSize: '12px', fontWeight: 700, fontStyle: 'italic', padding: '2px 10px', borderRadius: '99px', background: 'rgba(242,166,90,0.18)', color: '#B96A1E' }}>{cue.emotion}</span>}
+                  {cue.camera && <span style={{ fontFamily: MONO, fontSize: '11.5px', color: 'var(--text-muted)' }}>🎥 {cue.camera}</span>}
                 </div>
-              </div>
+              )}
             </div>
-          ))}
+          )
+        })}
+      </div>
+    )
+  }
+
+  const DirectorStrip = ({ p }: { p: ContentPiece }) => {
+    const plan = readPlan(p)
+    const { lines } = parseScript(rosterDb, p.script ?? '')
+    const dirs = lines.filter(l => l.direction)
+    const pick = (re: RegExp) => dirs.filter(l => re.test(l.direction!)).map(l => l.text).filter(Boolean)
+    const section = plan?.sections?.find(s => norm(s.role) === norm(character)) ?? plan?.sections?.[0]
+    const myLines = plan?.sections ? (section?.lines ?? []) : (plan?.beats ?? [])
+    const emotions = Array.from(new Set(myLines.map(l => l.emotion).filter(Boolean)))
+    const onscreen = [p.onscreen_text, ...pick(/overlay|on ?screen|text/i)].filter(Boolean) as string[]
+    const shot = [section?.setup, ...pick(/visual|shot|camera|setup|scene/i), !plan && !dirs.length ? (p.frame_plan ?? '').slice(0, 240) : ''].filter(Boolean) as string[]
+    const context = [p.post_job || p.title, ...pick(/note/i)].filter(Boolean) as string[]
+    const her = (p.source_context ?? '').trim()
+    const Row = ({ k, children }: { k: string; children: React.ReactNode }) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingBottom: '11px', borderBottom: '1px dashed var(--border)' }}>
+        <span style={label}>{k}</span>
+        <div style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.45 }}>{children}</div>
+      </div>
+    )
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '11px', padding: '14px', borderRadius: '14px', background: 'var(--surface-raised, rgba(124,77,219,0.04))', border: '1px solid var(--border)' }}>
+        <Row k="Emotion to hit">
+          {emotions.length ? emotions.join(' → ') : (
+            <button style={{ ...btn, padding: '6px 10px', borderColor: 'var(--purple)', color: 'var(--purple)' }} disabled={!!planning[p.id]} onClick={() => direct(p)}>
+              {planning[p.id] ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Directing…</> : <><Clapperboard size={12} /> Direct this</>}
+            </button>
+          )}
+        </Row>
+        <Row k="What sells the moment">
+          {context.map((c, i) => <p key={i}>{c}</p>)}
+          {her && <p style={{ marginTop: '5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Your words: “{her.slice(0, 220)}{her.length > 220 ? '…' : ''}”</p>}
+        </Row>
+        <Row k="On-screen text">{onscreen.length ? onscreen.map((o, i) => <p key={i} style={{ fontWeight: 700 }}>{o}</p>) : <span style={{ color: 'var(--text-subtle)' }}>None</span>}</Row>
+        <Row k="Shot and setup">{shot.length ? shot.map((s, i) => <p key={i}>{s}</p>) : <span style={{ color: 'var(--text-subtle)' }}>Your call</span>}</Row>
+      </div>
+    )
+  }
+
+  // ── POST view: the card as it will publish ──
+  const PostView = ({ p }: { p: ContentPiece }) => {
+    const a = acct(p.account_id)
+    const chars = p.characters ?? []
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'baseline' }}>
+          {a && <span style={{ fontSize: '13px', fontWeight: 800, color: a.color || 'var(--text)' }}>{a.emoji ? `${a.emoji} ` : ''}{a.handle}</span>}
+          <span style={{ fontFamily: MONO, fontSize: '11px', color: 'var(--text-subtle)' }}>{p.status}{dates[p.id] ? ` · ${dates[p.id]}` : ' · not on the calendar'}</span>
         </div>
-      )
-    }
-    return null
+        {p.onscreen_text && <div><p style={label}>On-screen</p><p style={{ fontSize: '16px', fontWeight: 800 }}>{p.onscreen_text}</p></div>}
+        {(p.description ?? '').trim() && <div><p style={label}>Caption</p><p style={{ fontSize: '14px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{p.description}</p></div>}
+        {(p.hashtags ?? '').trim() && <p style={{ fontSize: '13px', color: 'var(--purple)' }}>{p.hashtags}</p>}
+        <div>
+          <p style={label}>Characters</p>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginTop: '5px' }}>
+            {chars.map(c => (
+              <span key={c} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 6px 4px 10px', borderRadius: '99px', background: 'var(--purple-light)', color: 'var(--purple)', fontSize: '12px', fontWeight: 700 }}>
+                {c}<button aria-label={`Remove ${c}`} onClick={() => setChars(p, chars.filter(x => x !== c))} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', display: 'flex', padding: '1px' }}><X size={12} /></button>
+              </span>
+            ))}
+            <form onSubmit={e => { e.preventDefault(); const n = addName.trim(); if (n && !chars.includes(n)) setChars(p, [...chars, n]); setAddName('') }} style={{ display: 'inline-flex', gap: '4px' }}>
+              <input list="rise-characters" value={addName} onChange={e => setAddName(e.target.value)} placeholder="Add or name a new one" style={{ padding: '5px 9px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', width: '170px' }} />
+              <button type="submit" style={{ ...btn, padding: '5px 8px' }} aria-label="Add character"><Plus size={13} /></button>
+              <datalist id="rise-characters">{roster.map(r => <option key={r.name} value={r.name} />)}</datalist>
+            </form>
+          </div>
+        </div>
+        <CardMedia contentId={p.id} onChanged={load} />
+      </div>
+    )
   }
 
   return (
     <div className="rise-float" style={{ borderRadius: '16px', border: '1px solid var(--border)', background: 'var(--surface)', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '11px', padding: '15px 16px', borderBottom: '1px solid var(--border)', background: 'linear-gradient(120deg, var(--purple-light), transparent)' }}>
+      {/* Header + view toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '11px', padding: '14px 16px', borderBottom: '1px solid var(--border)', background: 'linear-gradient(120deg, var(--purple-light), transparent)' }}>
         <Camera size={18} color="var(--purple)" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--purple)' }}>Shoot list</p>
+          <p style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--purple)' }}>Director’s chair</p>
           <p style={{ fontSize: '17px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.015em', lineHeight: 1.1 }}>Content Day</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontFamily: MONO, fontSize: '11.5px', color: 'var(--text-subtle)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{remaining}/{lines.length} left</span>
-          <button onClick={talkThrough} title="Talk through Content Day with Rex" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 11px', borderRadius: '9px', border: '1px solid var(--purple)', background: 'var(--purple-light)', color: 'var(--purple)', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-            <MessageCircle size={13} /> Talk it through
-          </button>
-          <button onClick={load} disabled={loading} title="Refresh" style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 9px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer' }}>
-            <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : undefined} />
-          </button>
+        <div role="group" aria-label="View" style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+          {(['film', 'post'] as const).map(v => (
+            <button key={v} onClick={() => setView(v)} aria-pressed={view === v}
+              style={{ padding: '7px 11px', border: 0, background: view === v ? 'var(--purple)' : 'var(--surface)', color: view === v ? '#fff' : 'var(--text-muted)', fontWeight: 800, fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              {v === 'film' ? '🎬 Film' : '📄 Post'}
+            </button>
+          ))}
         </div>
+        <button onClick={load} disabled={loading} title="Refresh" style={{ ...btn, padding: '7px 9px', color: 'var(--text-muted)' }}>
+          <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : undefined} />
+        </button>
       </div>
 
-      {/* Filters — account + purpose */}
-      {allLines.length > 0 && (
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', padding: '10px 14px 0' }}>
-          {acctOptions.length > 1 && (
-            <select value={acctFilter} onChange={e => setAcctFilter(e.target.value)}
-              style={{ padding: '6px 9px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-              <option value="all">All accounts</option>
-              {acctOptions.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-            </select>
-          )}
-          {(['all', 'follower', 'engage', 'trust', 'conversion'] as const).map(pk => {
-            const on = purposeFilter === pk
-            const meta = pk === 'all' ? { label: 'All', emoji: '', color: 'var(--purple)', bg: 'var(--purple-light)' } : PURPOSE_META[pk]
-            const count = pk === 'all' ? allLines.length : (purposeCounts[pk] ?? 0)
-            if (pk !== 'all' && count === 0) return null
+      {/* Character rail: batch size per outfit */}
+      {rail.length > 0 && (
+        <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', padding: '11px 14px', borderBottom: '1px solid var(--border)' }}>
+          {rail.map(([c, n]) => {
+            const on = c === character
+            const child = isChildCharacter(c)
+            const tone = child ? '#D0397A' : 'var(--purple)'
             return (
-              <button key={pk} onClick={() => setPurposeFilter(pk)}
-                style={{ padding: '5px 11px', borderRadius: '20px', border: `2px solid ${on ? meta.color : 'var(--border)'}`, background: on ? meta.bg : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: on ? meta.color : 'var(--text-muted)', fontFamily: 'inherit' }}>
-                {'emoji' in meta && meta.emoji ? `${meta.emoji} ` : ''}{meta.label} · {count}
+              <button key={c} onClick={() => pick(c)} aria-pressed={on}
+                style={{ flexShrink: 0, padding: '7px 13px', borderRadius: '99px', border: `2px solid ${on ? tone : 'var(--border)'}`, background: on ? (child ? 'rgba(232,68,138,0.12)' : 'var(--purple-light)') : 'transparent', color: on ? tone : 'var(--text-muted)', fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                {charName(c)} ({n})
               </button>
             )
           })}
         </div>
       )}
 
-      {/* Filter — the 3 film-yourself formats (only when there's a mix) */}
-      {allLines.length > 0 && FORMATS.filter(f => formatCounts[f]).length > 1 && (
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', padding: '8px 14px 0' }}>
-          <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginRight: '2px' }}>Format</span>
-          {(['all', 'talking_head', 'role_play', 'multi_scene'] as const).map(fk => {
-            const count = fk === 'all' ? allLines.length : (formatCounts[fk] ?? 0)
-            if (fk !== 'all' && count === 0) return null
-            const on = formatFilter === fk
-            const m = fk === 'all' ? { label: 'All', emoji: '', color: 'var(--purple)' } : FORMAT_META[fk]
-            return (
-              <button key={`f-${fk}`} onClick={() => setFormatFilter(fk)}
-                style={{ padding: '5px 11px', borderRadius: '20px', border: `2px solid ${on ? m.color : 'var(--border)'}`, background: on ? `${m.color}1a` : 'transparent', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: on ? m.color : 'var(--text-muted)', fontFamily: 'inherit' }}>
-                {m.emoji ? `${m.emoji} ` : ''}{m.label} · {count}
-              </button>
-            )
-          })}
-        </div>
-      )}
-
-      {footageIn.length > 0 && (
-        <div style={{ padding: '12px 12px 0' }}>
-          <p style={{ ...labelStyle, color: '#7C4DDB', margin: '2px 2px 8px' }}>🎬 Footage in, with Cap · {footageIn.length}</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {footageIn.map(p => {
-              const a = acct(p.account_id)
-              return (
-                <div key={`fi-${p.id}`} style={{ border: '1px solid rgba(124,77,219,.3)', borderRadius: '12px', background: 'var(--surface)', padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'baseline', flexWrap: 'wrap' }}>
-                    {a && <span style={{ fontSize: '11px', fontWeight: 700, color: a.color || 'var(--text-subtle)' }}>{a.emoji} {a.handle}</span>}
-                    <span style={{ ...metaStyle }}>Card #{p.id}</span>
-                  </div>
-                  <p style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.4, margin: '4px 0 0' }}>{p.onscreen_text || p.title}</p>
-                  <CardMedia contentId={p.id} onChanged={load} />
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      <div style={{ padding: '12px' }}>
-        {loading && <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '14px', textAlign: 'center' }}>Compiling your shoot list…</p>}
-        {!loading && lines.length === 0 && (
-          <p style={{ fontSize: '12.5px', color: 'var(--text-subtle)', padding: '24px 14px', textAlign: 'center', lineHeight: 1.6 }}>Nothing to film right now. 🌊<br />When the Commander drafts posts that need footage, your shoot list builds itself here.</p>
+      <div style={{ padding: '14px' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        {loading && !posts.length && <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '14px', textAlign: 'center' }}>Setting up the chair…</p>}
+        {!loading && !shoot.length && (
+          <p style={{ fontSize: '13px', color: 'var(--text-subtle)', padding: '28px 14px', textAlign: 'center', lineHeight: 1.6 }}>Nothing left to film. 🎬<br />Cards with a script and no video show up here.</p>
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {lines.map(l => {
-            const isDone = !!done[l.key]
-            const plan = l.broll ? undefined : plans[l.postId]
-            const bs = l.broll || plan ? [] : beats(l.script)
-            const hook = l.broll ? l.script : (plan?.title || bs[0] || l.script)
-            const rest = l.broll || plan ? [] : bs.slice(1)
-            // FILMED — celebrate, and hand off to Rex for the caption + trial-reel variants.
-            if (isDone) {
-              return (
-                <div key={l.key} style={{ border: '1px solid #BFE3CE', borderRadius: '12px', background: 'linear-gradient(120deg, rgba(46,139,96,0.12), transparent)', padding: '14px 15px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '11px' }}>
-                    <button onClick={() => toggle(l.key)} aria-label="Mark not filmed" title="Undo — not filmed yet"
-                      style={{ flexShrink: 0, marginTop: '1px', width: '22px', height: '22px', borderRadius: '7px', border: '2px solid #2E8B60', background: '#2E8B60', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '13px', fontWeight: 900, cursor: 'pointer' }}>✓</button>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '5px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 900, color: '#2E8B60' }}>🎉 Filmed!</span>
-                        {l.account && <span style={{ fontSize: '11px', fontWeight: 700, color: l.color || 'var(--text-subtle)' }}>{l.account}</span>}
-                      </div>
-                      <p style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.4, letterSpacing: '-0.01em', marginBottom: '10px' }}>{hook}</p>
-                      <button onClick={() => handoffToDir(l)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 14px', borderRadius: '10px', border: 0, background: 'var(--purple)', color: '#fff', fontWeight: 800, fontSize: '12.5px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                        <Sparkles size={13} /> Caption + trial reels with Rex
-                      </button>
-                      <p style={{ fontSize: '10.5px', color: 'var(--text-subtle)', marginTop: '7px', lineHeight: 1.5 }}>Rex writes 1 caption + 6 hook variations + 6 CTAs to run this clip as 4&ndash;8 trial reels.</p>
-                      <CardMedia contentId={l.postId} showPlatforms={false} onChanged={load} />
-                    </div>
-                  </div>
-                </div>
-              )
-            }
-            return (
-              <div key={l.key} style={{ border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--surface)', padding: '14px 15px', transition: 'opacity .15s' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '11px' }}>
-                  <button onClick={() => toggle(l.key)} aria-label={isDone ? 'Mark not filmed' : 'Mark filmed'}
-                    style={{ flexShrink: 0, marginTop: '1px', width: '22px', height: '22px', borderRadius: '7px', border: `2px solid ${isDone ? '#2E8B60' : 'var(--border)'}`, background: isDone ? '#2E8B60' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '13px', fontWeight: 900, cursor: 'pointer' }}>{isDone ? '✓' : ''}</button>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        {FORMATS.map(f => {
-                          const on = l.format === f
-                          const m = FORMAT_META[f]
-                          return (
-                            <button key={f} onClick={() => setFormat(l.postId, f)} title={`Mark as ${m.label}`}
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '3px 8px', borderRadius: '99px', border: `1px solid ${on ? m.color : 'var(--border)'}`, background: on ? `${m.color}1a` : 'transparent', color: on ? m.color : 'var(--text-subtle)', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                              {m.emoji}{on ? ` ${m.label}` : ''}
-                            </button>
-                          )
-                        })}
-                      </div>
-                      {l.account && <span style={{ fontSize: '11px', fontWeight: 700, color: l.color || 'var(--text-subtle)' }}>{l.account}</span>}
-                      <button onClick={() => deletePost(l.postId, hook)} title="Delete this content card (removes it from RISE)"
-                        style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', padding: '2px', display: 'flex' }}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                    <p style={{ ...metaStyle, marginBottom: '7px' }}>{plan ? (plan.mode === 'dialogue' ? `${l.kind} · ${plan.sections?.length ?? 0} roles to film` : `${l.kind} · retention plan`) : `${l.kind} · ${l.length}${rest.length ? ` · ${bs.length} beats` : ''}`}</p>
-                    <p style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.4, letterSpacing: '-0.01em', textDecoration: isDone ? 'line-through' : 'none' }}>{hook}</p>
+        {err && <p style={{ fontSize: '12px', color: '#C0392B', marginBottom: '8px' }}>{err}</p>}
 
-                    <button onClick={() => setFootageOpen(f => ({ ...f, [l.postId]: !f[l.postId] }))}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '9px', marginRight: '6px', padding: '7px 12px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 800, fontSize: '11.5px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                      <Upload size={12} /> {footageOpen[l.postId] ? 'Hide footage' : 'Add footage'}
-                    </button>
-                    {footageOpen[l.postId] && <CardMedia contentId={l.postId} showPlatforms={false} onChanged={load} />}
-                    {/* Plan this shoot — dialogue → by role, solo → retention beats */}
-                    {!l.broll && !plan && (
-                      <div style={{ marginTop: '9px' }}>
-                        <button onClick={() => buildPlan(l.postId, l.script, l.accountId)} disabled={!!planning[l.postId]}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', borderRadius: '9px', border: '1px solid var(--purple)', background: 'var(--surface)', color: 'var(--purple)', fontWeight: 800, fontSize: '11.5px', cursor: planning[l.postId] ? 'default' : 'pointer' }}>
-                          {planning[l.postId] ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Directing the shoot…</> : <><Clapperboard size={12} /> Plan this shoot</>}
-                        </button>
-                        {planErr[l.postId] && <p style={{ fontSize: '11px', color: '#C0392B', marginTop: '5px' }}>{planErr[l.postId]}</p>}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Fallback beats (before a plan is built) */}
-                {rest.length > 0 && (
-                  <div style={{ marginTop: '11px', paddingTop: '11px', borderTop: '1px dashed var(--border)', paddingLeft: '33px' }}>
-                    <p style={{ ...labelStyle, marginBottom: '7px' }}>Beats</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-                      {rest.map((b, i) => (
-                        <div key={i} style={{ display: 'flex', gap: '11px', alignItems: 'baseline' }}>
-                          <span style={{ fontFamily: MONO, fontSize: '11px', color: 'var(--text-subtle)', fontVariantNumeric: 'tabular-nums', minWidth: '18px', flexShrink: 0 }}>{String(i + 2).padStart(2, '0')}</span>
-                          <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.5 }}>{b}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* The generated shoot plan (by role, or retention beats) */}
-                {plan && <PlanBlock plan={plan} />}
-                {plan && (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
-                    <button onClick={() => buildPlan(l.postId, l.script, l.accountId)} disabled={!!planning[l.postId]}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
-                      {planning[l.postId] ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={11} />} Re-plan
-                    </button>
-                    <button onClick={() => clearPlan(l.postId)} title="Undo the directing — clear this shoot plan"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-subtle)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>
-                      <RotateCcw size={11} /> Undo direction
-                    </button>
-                  </div>
-                )}
+        {cur && (
+          <>
+            {/* Deck nav: same character, next shot */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <button onClick={() => go(-1)} disabled={deck.length < 2} aria-label="Previous card" style={{ ...btn, padding: '7px' }}><ChevronLeft size={16} /></button>
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+                <p style={{ fontFamily: MONO, fontSize: '11.5px', color: 'var(--text-subtle)', fontVariantNumeric: 'tabular-nums' }}>
+                  {Math.min(idx, deck.length - 1) + 1} of {deck.length} · {charName(character)} · {left} left to film
+                </p>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: acct(cur.account_id)?.color || 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {acct(cur.account_id) ? `${acct(cur.account_id)!.emoji ?? ''} ${acct(cur.account_id)!.handle}`.trim() : ''}{dates[cur.id] ? ` · ${dates[cur.id]}` : ''}{cur.characters && cur.characters.length > 1 ? ` · with ${cur.characters.filter(c => c !== character).join(', ')}` : ''}
+                </p>
               </div>
-            )
-          })}
-        </div>
+              <button onClick={() => go(1)} disabled={deck.length < 2} aria-label="Next card" style={{ ...btn, padding: '7px' }}><ChevronRight size={16} /></button>
+            </div>
+
+            <div style={{ opacity: cur.filmed_at ? 0.5 : 1, transition: 'opacity .2s' }}>
+              {view === 'film' ? (
+                <div className="cd-film">
+                  <div>{ScriptBlock({ p: cur })}</div>
+                  {DirectorStrip({ p: cur })}
+                </div>
+              ) : PostView({ p: cur })}
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button onClick={() => markFilmed(cur)}
+                style={{ ...btn, padding: '11px 18px', fontSize: '14px', border: 0, background: cur.filmed_at ? '#2E8B60' : 'var(--purple)', color: '#fff' }}>
+                <Check size={15} /> {cur.filmed_at ? 'Filmed ✓ (tap to undo)' : 'Filmed ✓'}
+              </button>
+              {cur.filmed_at && <span style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>Moved to the bottom. It leaves Content Day next time you open it.</span>}
+            </div>
+          </>
+        )}
       </div>
-      <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
+      <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+.cd-film { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 860px) { .cd-film { grid-template-columns: minmax(0, 1.7fr) minmax(240px, 1fr); align-items: start; } }`}</style>
     </div>
   )
 }

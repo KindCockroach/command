@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { stripBannedHashtags } from './hashtags'
+import { tagCharacters, setCardCharacters } from './characters'
 
 // DB_PATH env var lets Railway Volume override the default local path
 const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'db.json')
@@ -64,7 +65,15 @@ export type ContentPiece = {
   platform_posts?: PlatformPost[]  // one caption + status per platform this card goes to
   cover_note?: string | null       // Phase 4: Cap's note for the cover (the frame + the words on it)
   cap_needs?: string[]             // Phase 4: what Cap still needs from Mandi, said plainly
+  // Content Day (Phase 4 addition): who she plays on camera, so she can film in batches by outfit.
+  characters?: string[]            // roster names (db.characters), open and extensible; a dialogue card has several
+  characters_by?: 'auto' | 'cap' | 'mandi' | null  // 'mandi' = she set them by hand; auto-tagging never overwrites hers
+  filmed_at?: string | null        // she tapped Filmed ✓ in Content Day (it leaves the shoot list, like an uploaded video)
 }
+
+// A character Mandi plays on camera. The roster is open: Cap (or she) mints a new one the
+// moment it appears in a script. 'brewing' = named but not filmed yet.
+export type Character = { name: string; aliases?: string[]; status: 'active' | 'brewing'; created_by: 'seed' | 'cap' | 'mandi'; created_at: string }
 
 // An upload into a card that hasn't finished. 'uploading' that stops updating for a few
 // minutes (tab closed, connection gone) reads as incomplete. key/upload_id let it resume.
@@ -91,8 +100,11 @@ export type PlatformPost = {
   scheduled_at?: string | null      // 'YYYY-MM-DDTHH:MM' (local) when Scheduled
   posted_url?: string | null        // the live post link when Posted
   posted_at?: string | null
-  written_by?: 'cap' | 'mandi' | null   // who wrote the caption as it stands
-  ed?: EdVerdict | null             // Ed's check of the draft (cleared when Mandi edits it)
+  written_by?: 'cap' | 'ed' | 'pod' | 'mandi' | null   // who wrote the caption as it stands ('cap' = before the Nov 22 reversal)
+  // Cap's review of the writer's draft (cleared when Mandi edits it). The field is still named
+  // `ed` because before Nov 22 Ed was the checker. INTENTIONAL REVERSAL: Ed and Pod now WRITE and
+  // Cap REVIEWS (confirms + schedules, or sends back). Don't "fix" this back.
+  ed?: EdVerdict | null
   updated_at: string
 }
 
@@ -103,9 +115,14 @@ export type PlatformPost = {
 export type HandoffMissing = 'script' | 'caption' | 'cover'
 export type HandoffAgent = 'mandi' | 'her' | 'commander' | 'cap' | 'ed' | 'rex' | 'pod' | 'biz' | 'notes' | 'build_log' | 'posted'
 export type HandoffKind =
-  | 'footage_in'      // Mandi uploaded footage → Cap writes the platform captions
-  | 'ed_check'        // a writer finished drafts → Ed checks them
-  | 'rewrite'         // Ed sent a draft back → the writer fixes the one thing
+  // The chain (Nov 22): Idea → Her → Man (Commander) → Cap → Ed (short-form) / Pod (long-form)
+  // → back to Cap, who confirms + schedules or sends it back. Writers only talk to Cap.
+  | 'footage_in'      // Mandi uploaded footage → Cap briefs the writers
+  | 'write'           // Cap → Ed (short-form) or Pod (long-form): write the captions
+  | 'review'          // Ed / Pod → Cap: drafts are in, confirm + schedule or send back
+  | 'rewrite'         // Cap sent a draft back → the writer fixes exactly what Cap named
+  | 'ed_check'        // OLD (before Nov 22, when Ed checked Cap's drafts); runs as a Cap review now
+  | 'film_now'        // Her let Mandi film an idea right now → Cap puts it on Content Day and adjusts the plan
   | 'her_note'        // Her took what Mandi said → Commander (or Cap / the build log)
   | 'piece'           // Commander shredded a note → one piece for Cap or Biz
   | 'winners_in'      // Mandi dropped a Meta export → Cap weighs it
@@ -841,6 +858,8 @@ export type Db = {
   calendar_items?: CalendarItem[]
   handoffs?: Handoff[]
   her_threads?: HerThread[]
+  characters?: Character[]
+  characters_backfilled_at?: string | null   // existing cards were tagged once (a backup was made first)
   winner_reviews?: WinnerReview[]
   next_plan_id?: number
   next_calendar_id?: number
@@ -1793,6 +1812,10 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     shoot_format: data.shoot_format,
     shoot_plan: data.shoot_plan,
   }
+  // Characters are tagged at creation (Content Day batches the shoot by them).
+  if (data.characters?.length) setCardCharacters(db, piece, data.characters)
+  if (data.characters_by && data.characters_by !== 'mandi' && piece.characters_by === 'mandi') piece.characters_by = data.characters_by
+  if (!piece.characters?.length) tagCharacters(db, piece)
   // Never-use hashtags are stripped on every save, whatever wrote the post.
   piece.description = stripBannedHashtags(piece.description, piece.account_id)
   piece.hashtags = stripBannedHashtags(piece.hashtags ?? '', piece.account_id)
@@ -1815,6 +1838,9 @@ export function updateContent(id: number, updates: Partial<ContentPiece>): Conte
   if (updates.status === 'published' && !db.content[idx].published_at) {
     updated.published_at = now
   }
+  // Characters: her own pick sticks; otherwise re-tag when the script or shoot plan changes.
+  if (Array.isArray(updates.characters)) setCardCharacters(db, updated, updates.characters)
+  else if ('script' in updates || 'shoot_plan' in updates || !updated.characters?.length) tagCharacters(db, updated)
   db.content[idx] = updated
   writeDb(db)
   return updated
