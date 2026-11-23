@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readDb, writeDb, backupDb } from '@/lib/db'
-import { ensureRoster, tagCharacters, mintCharacter } from '@/lib/characters'
+import { ensureRoster, tagCharacters, mintCharacter, hasStaleTags } from '@/lib/characters'
 
 // The character roster for Content Day. GET also tags any existing card that has a script but no
 // characters yet (once, after a backup), so the rail is right from the first open.
 export async function GET() {
   let db = readDb()
-  const untagged = db.content.filter(c => (c.script ?? '').trim() && !(c.characters ?? []).length && !['published', 'archived'].includes(c.status))
+  ensureRoster(db)
+  const needs = (c: (typeof db.content)[number]) => (c.script ?? '').trim() && (!(c.characters ?? []).length || hasStaleTags(db, c)) && !['published', 'archived'].includes(c.status)
+  const untagged = db.content.filter(needs)
   let backup: string | null = null
   if (untagged.length) {
-    if (!db.characters_backfilled_at) { backup = backupDb('characters_backfill'); db = readDb() }
+    if (!db.characters_backfilled_at) { backup = backupDb('characters_backfill'); db = readDb(); ensureRoster(db) }
     let n = 0
-    for (const c of db.content) if ((c.script ?? '').trim() && !(c.characters ?? []).length && !['published', 'archived'].includes(c.status) && tagCharacters(db, c)) n++
+    for (const c of db.content) if (needs(c) && tagCharacters(db, c)) n++
     db.characters_backfilled_at ??= new Date().toISOString()
     ensureRoster(db)
     writeDb(db)

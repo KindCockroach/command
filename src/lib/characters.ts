@@ -27,10 +27,15 @@ const NOT_A_CHARACTER = new Set(['visual', 'visuals', 'alt visual', 'notes', 'no
 
 const key = (s: string) => s.toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
 
+// Lettered or numbered options ("A:", "Option B:", "Take 2:") are not people.
+const isJunkLabel = (s: string) => { const k = key(s); return k.length < 2 || NOT_A_CHARACTER.has(k) || /^(option|version|variant|v|take|part|step|line|hook|alt|scene|shot|beat)( [a-z0-9])?$/.test(k) || /^[a-z0-9]$/.test(k) }
+
 export function ensureRoster(db: Db): Character[] {
   db.characters ??= []
   const now = nowIso()
   for (const c of SEED) if (!db.characters.some(x => key(x.name) === key(c.name))) db.characters.push({ ...c, created_at: now })
+  // Drop junk Cap minted before the option-label rule existed (Mandi's own names always stay).
+  db.characters = db.characters.filter(c => c.created_by !== 'cap' || !isJunkLabel(c.name))
   return db.characters
 }
 
@@ -45,7 +50,7 @@ export function matchCharacter(db: Db, label: string): Character | undefined {
 // once a card uses it.
 export function mintCharacter(db: Db, name: string, by: 'cap' | 'mandi'): Character | null {
   const clean = name.replace(/\s+/g, ' ').trim().slice(0, 40)
-  if (!clean || NOT_A_CHARACTER.has(key(clean))) return null
+  if (!clean || isJunkLabel(clean)) return null
   const found = matchCharacter(db, clean)
   if (found) return found
   const c: Character = { name: clean, status: 'active', created_by: by, created_at: nowIso() }
@@ -71,7 +76,7 @@ export function parseScript(db: Db, script: string): { lines: ScriptLine[]; labe
     if (m) {
       const label = m[1].trim()
       const k = key(label)
-      if (NOT_A_CHARACTER.has(k)) { lines.push({ speaker: null, text: m[2].trim(), direction: label }); continue }
+      if (isJunkLabel(label) && !matchCharacter(db, label)) { lines.push({ speaker: null, text: m[2].trim(), direction: label }); continue }
       if (label.split(' ').length <= 3) {
         const c = matchCharacter(db, label)
         speaker = c ? c.name : label
@@ -135,6 +140,11 @@ export function setCardCharacters(db: Db, c: ContentPiece, names: string[]): str
   c.characters = out
   c.characters_by = 'mandi'
   return out
+}
+
+// Cards tagged with a name that is no longer on the roster (junk that was pruned) need a retag.
+export function hasStaleTags(db: Db, c: ContentPiece): boolean {
+  return c.characters_by !== 'mandi' && (c.characters ?? []).some(n => !matchCharacter(db, n))
 }
 
 // For writers: how to label lines so the card lands in the right batch on Content Day.
