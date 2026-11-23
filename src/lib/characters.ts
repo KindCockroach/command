@@ -85,6 +85,9 @@ export function parseScript(db: Db, script: string): { lines: ScriptLine[]; labe
         continue
       }
     }
+    // Bullets right under a direction ("Notes:\n• Keep it calm") are part of that direction.
+    const prev = lines[lines.length - 1]
+    if (prev?.direction && /^[•\-–*]\s/.test(t)) { lines.push({ speaker: null, text: t.replace(/^[•\-–*]\s*/, ''), direction: prev.direction }); continue }
     lines.push({ speaker, text: t })
   }
   return { lines, labels }
