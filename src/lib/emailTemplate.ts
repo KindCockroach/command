@@ -76,10 +76,22 @@ const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const SERIF = "Georgia,'Times New Roman',serif"
 const SANS = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 
+// Links inside the text: [the words](https://…) becomes those words as a link; a bare https://…
+// address becomes a link to itself. Runs on already-escaped text, so nothing else can inject HTML.
+export function linkify(escaped: string, color: string): string {
+  const a = (url: string, label: string) => `<a href="${url}" style="color:${color};text-decoration:underline">${label}</a>`
+  return escaped.replace(/\[([^\]\n]{1,200})\]\((https?:\/\/[^\s()<>"]+)\)|(https?:\/\/[^\s<>"]+[^\s<>".,;:!?)\]])/g,
+    (_m, label?: string, url?: string, bare?: string) => (url ? a(url, label!) : a(bare!, bare!)))
+}
+// The plain-text copy of an email: [words](url) → "words (url)".
+export function unlinkify(text: string): string {
+  return (text ?? '').replace(/\[([^\]\n]{1,200})\]\((https?:\/\/[^\s()<>"]+)\)/g, '$1 ($2)')
+}
+
 // Blank-line-separated text → email-safe paragraphs. Single newlines become <br>.
-function paragraphs(text: string, ink: string): string {
+function paragraphs(text: string, ink: string, link: string = ink): string {
   return text.trim().split(/\n{2,}/).map(p => p.trim()).filter(Boolean)
-    .map(p => `<p style="margin:0 0 16px;font-family:${SERIF};font-size:16px;line-height:1.65;color:${ink}">${esc(p).replace(/\n/g, '<br>')}</p>`)
+    .map(p => `<p style="margin:0 0 16px;font-family:${SERIF};font-size:16px;line-height:1.65;color:${ink}">${linkify(esc(p), link).replace(/\n/g, '<br>')}</p>`)
     .join('')
 }
 
@@ -106,7 +118,7 @@ export function renderBrandEmail(brand: EmailBrand, content: EmailContent, opts:
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 8px"><tr><td style="background:${b.accent};border-radius:999px"><a href="${esc(content.cta_url.trim())}" style="display:inline-block;padding:14px 30px;font-family:${SANS};font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none">${esc(content.cta_label.trim())}</a></td></tr></table>`
     : ''
   const ps = content.ps?.trim()
-    ? `<p style="margin:20px 0 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${b.ink}"><strong>P.S.</strong> ${esc(content.ps.trim())}</p>`
+    ? `<p style="margin:20px 0 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${b.ink}"><strong>P.S.</strong> ${linkify(esc(content.ps.trim()), b.accent)}</p>`
     : ''
   const links = b.links
     .map(l => `<a href="${esc(l.url)}" style="color:${b.accent};text-decoration:none">${esc(l.label)}</a>`)
@@ -129,7 +141,7 @@ ${preheader}
 ${image}
 <tr><td style="padding:32px 32px 8px">
 ${heading}
-${paragraphs(content.body, b.ink)}
+${paragraphs(content.body, b.ink, b.accent)}
 ${quote}
 ${button}
 ${ps}

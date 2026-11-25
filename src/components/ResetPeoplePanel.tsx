@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Upload, Check, RotateCcw, Eye, Send, Pencil, X } from 'lucide-react'
+import { TalkToCapButton, TalkToCapThread } from './TalkToCap'
 
 // PHASE 5 — People → "Reset · Luma import" (part="people") and Campaigns → Reset emails (part="emails").
 // 1) Import a Luma guest export (preview first: new / merged / skipped and why).
@@ -251,6 +252,7 @@ function SettingsCard({ settings, onSaved }: { settings: Settings; onSaved: (s: 
 
 function EmailCard({ e, onChange, onMsg }: { e: Email; onChange: () => void; onMsg: (m: string) => void }) {
   const [editing, setEditing] = useState(false)
+  const [talk, setTalk] = useState(false)
   const [f, setF] = useState(e)
   const [seg, setSeg] = useState(e.branch === 'wfh' || e.key.startsWith('welcome') ? 'list' : 'returning')
   useEffect(() => { if (!editing) setF(e) }, [e, editing])
@@ -291,6 +293,7 @@ function EmailCard({ e, onChange, onMsg }: { e: Email; onChange: () => void; onM
           </select>
         )}
         {e.body && <a style={btn()} href={`/api/reset-sequence?preview=${e.key}&segment=${seg}`} target="_blank" rel="noreferrer"><Eye size={13} /> Preview</a>}
+        {e.body && !editing && <TalkToCapButton id={`email:${e.key}`} open={talk} onToggle={() => setTalk(x => !x)} />}
         {e.body && !editing && <button style={btn()} onClick={() => setEditing(true)}><Pencil size={13} /> Edit</button>}
         {editing && <button style={btn(true)} onClick={async () => { await post('/api/reset-sequence', { action: 'edit', key: e.key, subject: f.subject, preheader: f.preheader, body: f.body, cta_label: f.cta_label, ps: f.ps, extras: f.extras }); setEditing(false); onChange() }}>Save my edit</button>}
         {editing && <button style={btn()} onClick={() => setEditing(false)}>Cancel</button>}
@@ -303,6 +306,8 @@ function EmailCard({ e, onChange, onMsg }: { e: Email; onChange: () => void; onM
           onMsg(r.ok ? `Test sent to ${r.to}.` : `Not sent: ${r.error}`)
         }}><Send size={13} /> Test to me</button>}
       </div>
+      {talk && <TalkToCapThread id={`email:${e.key}`} onChanged={() => onChange()} />}
+      {e.body && !editing && <p style={{ fontSize: 11.5, color: 'var(--text-subtle)', margin: '6px 0 0' }}>Adding a link yourself: in Edit, write <code>[the words to click](https://the-address)</code>, or paste the address on its own. Both come out clickable.</p>}
     </div>
   )
 }

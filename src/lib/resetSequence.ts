@@ -21,7 +21,7 @@ import {
 import { fableText } from './fable'
 import { wellLinesFor, wellStatus } from './well'
 import { openHandoff, startAttempt, completeHandoff, failHandoff } from './handoffs'
-import { renderBrandEmail } from './emailTemplate'
+import { renderBrandEmail, unlinkify } from './emailTemplate'
 import { resendSend } from './resend'
 import { unsubscribeUrl, unsubscribeApiUrl } from './unsubscribe'
 
@@ -194,7 +194,11 @@ export function capCheck(e: SeqEmail, db = readDb()): { reasons: string[]; notes
   const badTokens = [...all.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1]).filter(t => !['first_name', 'next_reset_date', 'coupon_code', 'gift_name'].includes(t))
   if (badTokens.length) reasons.push(`Unknown token${badTokens.length > 1 ? 's' : ''} in the text: ${[...new Set(badTokens)].map(t => `{{${t}}}`).join(', ')}. The segment paragraphs are added automatically; only {{first_name}}, {{next_reset_date}}, {{coupon_code}} and {{gift_name}} are filled in.`)
   if (/(^|\n)\s*(warmly|with warmth|with love|love|be well|xo+|cheers|best|with you|hugs)?,?\s*\n?\s*mandi( beck)?\s*$/i.test(e.body.trim()) || /(^|\n)\s*(warmly|with warmth|with love|be well|xo+|cheers|best|hugs),?\s*$/i.test(e.body.trim())) reasons.push('The body ends with a sign-off. The email template already signs it "With you, Mandi Beck"; take the sign-off out.')
-  if (/https?:\/\/|www\./i.test(all)) reasons.push('A link is written into the text. The button carries the one link; take the URL out.')
+  // Links Mandi gave (in her notes, or in her own edit) are hers to keep; only a writer's invented link is flagged.
+  const herLinks = (e.mandi_notes ?? []).join(' ')
+  const links = [...all.matchAll(/https?:\/\/[^\s)\]"'<>]+|www\.[^\s)\]"'<>]+/gi)].map(m => m[0].replace(/[.,;:!?]+$/, ''))
+  const invented = e.written_by === 'mandi' ? [] : links.filter(u => !herLinks.includes(u))
+  if (invented.length) reasons.push(`A link Mandi didn’t give is written into the text (${invented[0]}). The button carries the one link; take it out unless she asked for it.`)
   // Prices: only the real ones, only where they belong.
   for (const m of all.matchAll(/\$\s?(\d+(?:\.\d{2})?)/g)) {
     const n = String(Math.round(parseFloat(m[1])))
@@ -288,7 +292,7 @@ export async function runEmailWrite(h: Handoff) {
   const p = planFor(key)
   const well = wellLinesFor(`${p.brief} ${p.branch === 'wfh' ? 'AI mom podcast tools intuition peace action' : 'reset rest breathe yourself mother tired self-respect intuition gift'}`, 6)
   const instructions = `You are Ed, the short-form writer. Cap, the campaign manager, briefed you on one email for Mandi Beck's ${p.branch === 'wfh' ? 'AI Mom podcast list (WFH)' : 'Joyful Media / Be There For Her list'}.
-Write in Mandi's voice, to the reader (you/your), from her own words first. Warm, direct, a little funny when it's earned, never syrupy. Short paragraphs separated by a blank line. Exactly ONE call to action (the button), unless Mandi's own notes take the ask out. Never name a real person. Never promise healing, therapy, treatment or money. Never exploit how she's feeling; no guilt, no fake urgency. ${p.branch === 'wfh' ? 'PODCAST ONLY: never the Reset, meditations, the $9 collection, Be There For Her or Joyful Media. No prices. No AI services (paused).' : 'JOYFUL MEDIA ONLY: never the podcast, AI, or WFH.'} Never "Beck Team".
+Write in Mandi's voice, to the reader (you/your), from her own words first. Warm, direct, a little funny when it's earned, never syrupy. Short paragraphs separated by a blank line. Exactly ONE call to action (the button), unless Mandi's own notes take the ask out. LINKS: when Mandi's notes give a link (a web address), put it in the body or P.S. exactly where she asks, written as [the words to click](https://the-address), copying the address character for character; keep any link already in the draft. Never invent a link. Never name a real person. Never promise healing, therapy, treatment or money. Never exploit how she's feeling; no guilt, no fake urgency. ${p.branch === 'wfh' ? 'PODCAST ONLY: never the Reset, meditations, the $9 collection, Be There For Her or Joyful Media. No prices. No AI services (paused).' : 'JOYFUL MEDIA ONLY: never the podcast, AI, or WFH.'} Never "Beck Team".
 
 ${PRICE_FACTS}
 ${getVoiceLessonsContext()}
@@ -319,7 +323,7 @@ subject under 60 characters; preheader under 90; cta_label 2-5 words; ps optiona
     x.cta_label = String(out.cta_label ?? '').trim().slice(0, 40)
     // Her note took the ask out: no button (and it stays out on later rewrites).
     if (x.mandi_notes?.length && out.button === 'none') { x.cta_override = 'none'; x.cta = 'none'; x.cta_label = '' }
-    x.ps = String(out.ps ?? '').trim()
+    x.ps = String(out.ps ?? '').trim().replace(/^p\.?\s*s\.?[:\s]*/i, '').trim()   // the template adds “P.S.”
     for (const k of p.extras) x.extras[k] = String(out.extras?.[k] ?? '').trim()
     x.written_by = 'ed'; x.status = 'review'
   })
@@ -340,9 +344,13 @@ export async function runEmailReview(h: Handoff) {
   if (e.mandi_notes?.length && e.written_by !== 'mandi') {
     try {
       const v = JSON.parse(await fableText({ cheap: true, json: true, maxTokens: 300,
-        instructions: 'You check whether an email draft follows the owner\'s notes exactly. Be strict: if a note says no selling or no mention of something, any mention fails. Reply ONLY with JSON: {"follows":true,"why":"one line naming what breaks the note, if anything"}',
+        instructions: 'You check whether an email draft follows the owner\'s notes exactly. Be strict about what a note actually says: if it says no selling or no mention of something, any mention fails. But only flag a clear break of a note, never a vibe or an implication; when in doubt, follows=true. The everyday word \"reset\" (as in rest, breathe, start fresh) is not a mention of The Reset (the paid event); only the event counts. Reply ONLY with JSON: {"follows":true,"why":"one line naming what breaks the note, if anything"}',
         input: `HER NOTES:\n${e.mandi_notes.map(n => '- ' + n).join('\n')}\n\nTHE DRAFT:\nSubject: ${e.subject}\nPreview: ${e.preheader}\n${e.body}\nButton: ${e.cta === 'none' ? '(none)' : e.cta_label}\n${e.ps ? `P.S. ${e.ps}` : "(no P.S.)"}` })) as { follows?: boolean; why?: string }
       if (v.follows === false) chk.reasons.unshift(`Doesn’t follow Mandi’s note: ${String(v.why ?? '').slice(0, 200)} Her note wins over the brief.`)
+      // A link she gave must be in the email, character for character.
+      const urls = [...new Set(e.mandi_notes.join(' ').match(/https?:\/\/[^\s)\]"'<>]+[^\s)\]"'<>.,;:!?]/g) ?? [])]
+      const missing = urls.filter(u => !`${e.body}\n${e.ps}`.includes(u))
+      if (missing.length) chk.reasons.unshift(`Mandi’s link is missing: ${missing.join(' ')}. Put it in exactly as she gave it, as [the words to click](${missing[0]}).`)
     } catch { chk.notes.push('Cap couldn’t check it against your note just now; read it before approving.') }
   }
   if (!chk.reasons.length) {
@@ -405,7 +413,7 @@ export function renderEmail(e: SeqEmail, opts: { first_name?: string; segment: S
     reason: e.branch === 'wfh' ? 'You’re getting this because you joined the AI Mom podcast list.' : opts.segment === 'list' ? 'You’re getting this because you joined the Be There For Her list.' : 'You’re getting this because you came to The Reset and said Mandi could email you.',
   }
   const html = renderBrandEmail(e.branch === 'wfh' ? 'wfh' : 'btfh', content, { unsubscribeUrl: opts.unsubscribe ?? undefined })
-  return { subject: fill(e.subject, vars), html, text: [body, content.cta_label && content.cta_url ? `${content.cta_label}: ${content.cta_url}` : '', content.ps ? `P.S. ${content.ps}` : ''].filter(Boolean).join('\n\n') }
+  return { subject: fill(e.subject, vars), html, text: [unlinkify(body), content.cta_label && content.cta_url ? `${content.cta_label}: ${content.cta_url}` : '', content.ps ? `P.S. ${unlinkify(content.ps)}` : ''].filter(Boolean).join('\n\n') }
 }
 
 // ── eligibility ──

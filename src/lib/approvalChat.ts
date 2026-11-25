@@ -27,13 +27,26 @@ function push(itemId: string, turn: ChatTurn) {
   writeDb(db)
 }
 
+// Campaigns: any written Reset email can be talked about, approved or not (Approve only lists confirmed ones).
+function emailItem(itemId: string): (ReturnType<typeof getApprovals>['items'][number] & { busy?: boolean }) | null {
+  if (!itemId.startsWith('email:')) return null
+  const e = readDb().reset_sequence?.emails.find(x => x.key === itemId.slice('email:'.length))
+  if (!e?.body) return null
+  return { id: itemId, source: 'email', from: 'Ed', view: 'campaigns', at: e.updated_at, actions: [], title: `Reset email · ${e.title}`, detail: `Subject: ${e.subject}`,
+    busy: ['writing', 'review', 'sent_back'].includes(e.status),
+    body: [e.preheader && `INBOX PREVIEW LINE (not in the email itself): ${e.preheader}`, '— THE EMAIL —', e.body, e.cta_label && `[ Button: ${e.cta_label} ]`, e.ps && `P.S. ${e.ps}`].filter(Boolean).join('\n\n') }
+}
+
+const LINK_NOTE = 'Links: Mandi can add a link anywhere in an email. Written as [the words to click](https://address) it shows as those words, clickable; a bare https:// address is clickable too. If she asks to add a link, that is a change: put the exact address and where it goes into "fix".'
+
 const PREHEADER_NOTE = 'In an email, the line shown first in parentheses in the Approve window is the inbox preview line (the grey text next to the subject in Gmail). It is not part of the body.'
 
 export async function talkToCap(itemId: string, text: string): Promise<{ turns: ChatTurn[]; rewriting?: string | null } | { error: string }> {
   const said = (text ?? '').trim()
   if (!said) return { error: 'Say something to Cap first.' }
-  const item = getApprovals().items.find(i => i.id === itemId)
+  const item = getApprovals().items.find(i => i.id === itemId) ?? emailItem(itemId)
   if (!item) return { error: 'That item isn’t waiting on you any more.' }
+  if ('busy' in item && item.busy) return { error: 'Ed is rewriting this one right now. Give it a minute, then talk to Cap again.' }
   push(itemId, { role: 'mandi', text: cut(said, 2000), at: nowIso() })
 
   // Plans already have Cap's own Q&A.
@@ -49,7 +62,7 @@ export async function talkToCap(itemId: string, text: string): Promise<{ turns: 
   let out: { reply?: string; change?: boolean; fix?: string }
   try {
     out = JSON.parse(extractJsonObject(await fableText({ json: true, maxTokens: 600,
-      instructions: `You are Cap, Mandi's campaign boss. She is looking at one item waiting for her approval and talking to you about it. Answer plainly and briefly (1–3 sentences), from the item itself; never invent. ${PREHEADER_NOTE}
+      instructions: `You are Cap, Mandi's campaign boss. She is looking at one item waiting for her approval and talking to you about it. Answer plainly and briefly (1–3 sentences), from the item itself; never invent. ${PREHEADER_NOTE} ${LINK_NOTE}
 ${canChange ? 'If she is asking for a change to the draft, set change=true and write "fix" as HER instruction, in her words, for the writer (Ed for emails, Pod for long-form). Say in your reply that you are handing it to the writer and it will come back to Approve. You never rewrite it yourself.' : 'This item has no draft to rewrite; just answer (change=false).'}
 Reply ONLY with JSON: {"reply":"","change":false,"fix":""}`,
       input: `THE ITEM: ${item.title}\nFrom: ${item.from}\n${item.detail ?? ''}\n\n${item.body ? `THE DRAFT:\n${cut(item.body, 6000)}` : ''}\n\nTHE CONVERSATION SO FAR:\n${history}` })))
