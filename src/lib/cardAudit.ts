@@ -88,7 +88,8 @@ ${c.onscreen_text ? `On-screen: ${c.onscreen_text}\n` : ''}${c.script ? `Script:
   const filled: string[] = []
   const t = (x?: string) => (x ?? '').trim()
   if (needTitle && t(out.title)) { patch.title = cut(t(out.title), 120); filled.push('title') }
-  if (needHook && t(out.hook)) { patch.onscreen_text = cut(t(out.hook).replace(/^["“]|["”]$/g, ''), 200); filled.push('on-screen hook') }
+  // Strip quotes only when they wrap the whole line (a hook can start with a quoted phrase).
+  if (needHook && t(out.hook)) { patch.onscreen_text = cut(t(out.hook).replace(/^["“]([^"“”]*)["”]$/, '$1'), 200); filled.push('on-screen hook') }
   if (needJob && JOBS.includes(t(out.job) as typeof JOBS[number])) { patch.post_job = t(out.job); filled.push('job') }
   if (needCaption && t(out.caption)) { patch.description = cut(t(out.caption), 2200); filled.push('caption') }
   if (needFilm && t(out.film)) { patch.notes = `${(c.notes ?? '').trim()}\nWhat to film: ${cut(t(out.film), 300)}`.trim(); filled.push('what to film') }
