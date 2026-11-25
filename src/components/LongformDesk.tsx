@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import CoraInterview from './CoraInterview'
 
 // Story tab, top: the long-form desks (Phase 6b).
 //   Story desk (Loop 11): Cap sends a story to Cora → Owl + Ten → Cora outlines → Pod → Ed → Cap dates → you approve.
@@ -66,6 +67,8 @@ export default function LongformDesk() {
 
       {tab === 'story' && (
         <>
+          <CoraInterview />
+          <div className="lf-row"><button type="button" disabled={busy === 'find'} onClick={() => act('find', '/api/stories', { action: 'find' }, 'POST', 'Cora is reading your captions (a few minutes). Her story ideas will land in Approve.')}>{busy === 'find' ? <Loader2 size={12} className="spin" /> : null} Cora: find stories in my captions</button><span className="lf-d">She reads all your captions in the Well and pitches 6–8 stories with clickable headlines.</span></div>
           <p className="lf-s">Cap sends a story to Cora with the goal it serves. Cora untangles it, checks facts with Owl and the open angle with Ten, and outlines it. Pod writes it (Medium for Joyful Media, teleprompter for either), Ed checks it, Cap dates it, you approve.</p>
           <div className="lf-form">
             <textarea rows={4} placeholder="The story, as you'd tell it (several tangled together is fine)" value={form.text} onChange={e => setForm({ ...form, text: e.target.value })} />

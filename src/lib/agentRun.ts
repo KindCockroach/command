@@ -8,7 +8,7 @@ import { runCommanderPickup } from './her'
 import { runWeighWinners } from './capWinners'
 import { runEmailWrite, runEmailReview } from './resetSequence'
 import { runSweep } from './sweep'
-import { runStory } from './storyDesk'
+import { runStory, runFindStories } from './storyDesk'
 import { runLongformWrite, runLongformCheck } from './longform'
 import { runSeries, runOutline } from './substack'
 
@@ -34,6 +34,9 @@ export async function runHandoff(id: string): Promise<{ ok: boolean; error?: str
       case 'email_review': await runEmailReview(h); break
       case 'sweep': await runSweep(h); break
       case 'story': await runStory(h); break
+      case 'story_find': await runFindStories(h); break
+      case 'interview_prep': await (await import('./coraInterview')).runInterviewPrep(h); break
+      case 'interview_shape': await (await import('./coraInterview')).runInterviewShape(h); break
       case 'longform_write': await runLongformWrite(h); break
       case 'longform_check': await runLongformCheck(h); break
       case 'substack_series': await runSeries(h); break

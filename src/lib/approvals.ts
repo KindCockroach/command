@@ -12,6 +12,7 @@ export type ApprovalAction =
   | { label: string; kind: 'open'; view: string }
 
 export type Approval = {
+  chat?: number           // turns in the Talk-to-Cap thread
   id: string
   source: 'plan' | 'email' | 'story' | 'substack' | 'send' | 'idea' | 'question' | 'health'
   from: string            // who it's from ("Cap", "Ed", "Cora"...)
@@ -43,7 +44,7 @@ export function getApprovals(): { items: Approval[]; counts: Record<string, numb
   for (const e of (db.reset_sequence?.emails ?? []).filter(e => e.status === 'confirmed')) {
     items.push({ id: `email:${e.key}`, source: 'email', from: e.written_by === 'mandi' ? 'You' : 'Ed (Cap checked)', view: 'campaigns', at: e.updated_at,
       title: `Reset email · ${e.title}`, detail: `Subject: ${e.subject}${e.cap_notes?.length ? ` · Cap noticed: ${e.cap_notes.join('; ')}` : ''}`,
-      body: [e.preheader && `(${e.preheader})`, e.body, e.cta_label && `[ ${e.cta_label} ]`, e.ps && `P.S. ${e.ps}`].filter(Boolean).join('\n\n'),
+      body: [e.preheader && `INBOX PREVIEW LINE (the grey text next to the subject in Gmail; not in the email itself): ${e.preheader}`, '— THE EMAIL —', e.body, e.cta_label && `[ Button: ${e.cta_label} ]`, e.ps && `P.S. ${e.ps}`].filter(Boolean).join('\n\n'),
       actions: [{ label: 'Approve', kind: 'post', url: '/api/reset-sequence', body: { action: 'approve', key: e.key, on: true }, primary: true }, { label: 'Edit in Campaigns', kind: 'open', view: 'campaigns' }] })
   }
 
@@ -99,6 +100,17 @@ export function getApprovals(): { items: Approval[]; counts: Record<string, numb
     items.push({ id: `health:${f.key}`, source: 'health', from: 'Man (health check)', view: 'activity', at: h!.ran_at,
       title: f.title, detail: `${f.detail ? f.detail + ' · ' : ''}Next: ${f.fix}`, actions: [{ label: 'See it in Activity', kind: 'open', view: 'activity' }] })
   }
+
+  // Cora's story ideas from the Well (pick one → the Story desk; pass → Notes with the reason).
+  for (const p of (db.story_pitches ?? []).filter(p => p.status === 'proposed')) {
+    items.push({ id: `pitch:${p.id}`, source: 'story', from: 'Cora (from your captions)', view: 'story', at: p.created_at,
+      title: p.headlines[0] ?? p.title, detail: `${p.take} · ${p.form === 'medium' ? 'Medium' : 'Teleprompter'} · ${p.branch === 'wfh' ? 'WFH' : 'Joyful Media'}${p.risks.length ? ` · Careful: ${p.risks.join('; ')}` : ''}`,
+      body: `HEADLINE OPTIONS\n${p.headlines.map((h, k) => `${k + 1}. ${h}`).join('\n')}\n\nTHE STORY: ${p.take}\nWHY NOW: ${p.why_now}\nIT HOLDS BECAUSE: ${p.holds_because}\n\nYOUR OWN WORDS IT'S BUILT FROM\n${p.her_lines.map(l => `“${l.line}” (${l.date})`).join('\n')}`,
+      actions: [{ label: 'Write this one', kind: 'post', url: '/api/stories', method: 'PATCH', body: { id: p.id, action: 'pick' }, primary: true }, { label: 'Pass…', kind: 'post', url: '/api/stories', method: 'PATCH', body: { id: p.id, action: 'pass' }, reason: 'Why not this one? (goes to Notes with it)' }] })
+  }
+
+  const chats = db.approval_chats ?? {}
+  for (const i of items) if (chats[i.id]?.length) i.chat = chats[i.id].length
 
   const counts: Record<string, number> = {}
   for (const i of items) counts[i.source] = (counts[i.source] ?? 0) + 1

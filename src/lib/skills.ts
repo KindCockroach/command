@@ -160,6 +160,15 @@ export const SKILL_SEED: Seed[] = [
     'Pod has an outline with its emphasis, or the story is in Notes with the reason.', ['Write the piece.', 'Present a guess as a finding.'],
     ['lib/storyDesk.ts runStory', 'Owl + Ten (story_check)'], true, 'Phase 6b: Owl and Ten use live web search when the Anthropic key is set, and say so when they can’t.'),
 
+  S('cora-find-stories', 'cora', 'Cora · Well', 'Find the stories in her captions', 'Mandi asks Cora to read the Well (her 697 captions) for stories.',
+    ['Read every caption, year by year, and pull story seeds with her exact words and dates.', 'Against who she is now and what she is building, pick the 6–8 strongest stories (threads can run across years).', 'For each: the take, why now, the branch and form, 3 clickable headlines, and the lines of hers it is built from.', 'Run Ed’s guardrail check on each pitch; flag generic headlines.', 'Put them in Approve. Her pick goes through the Story desk; a pass goes to Notes with her reason.'],
+    'Mandi has 6–8 specific stories with headlines she would click.', ['Use a child’s or a real person’s name.', 'Write generic inspiration headlines.', 'Write the piece (Pod does).'],
+    ['lib/storyDesk.ts runFindStories', 'POST /api/stories {action:"find"}'], true, 'Built Nov 24 at Mandi’s request.'),
+  S('cora-interview', 'cora', 'Cora · Interview', 'Interview Mandi for Medium stories', 'Mandi starts an interview on the Story desk (Medium, lived experience for people struggling with loss, depression, anxiety).',
+    ['Read every caption like a journalist: where she touches loss, depression, anxiety. Note the question a good interviewer would ask, with the captions that raised it.', 'Order the notebook gentle to deep; ask ONE question at a time.', 'Listen for the charge (a specific detail, a turn, a contradiction, a line she has never said out loud) and follow it, two follow-ups at most; mark it as a charged point in her words.', 'She can skip anything or mark it off limits; never push.', 'When she says shape it: turn the charged points into 3–5 Medium story shapes (reader, take, headlines, opening from her words, beats), Ed checks each, they wait in Approve.', 'File the interview transcript in Notes.'],
+    'Mandi has Medium stories built from what she actually said, aimed at one struggling reader each.', ['Act as her therapist, diagnose, or promise healing or treatment.', 'Name a real person or a child.', 'Invent a detail she did not say or write.', 'Write the piece (Pod does).'],
+    ['lib/coraInterview.ts', '/api/interview'], true, 'Built Nov 24 at Mandi’s request.'),
+
   // ── Ed ──
   S('ed-check-draft', 'ed', 'Ed 1', 'Check a draft', 'A writer finishes, or Mandi’s finished writing comes in.',
     ['Check it against the brief.', 'Check it against the voice lessons.', 'Check the rules: real people protected, one call to action, two different hooks, her words kept.', 'Pass it on for Mandi’s review, or send it back with the one thing to fix.'],
@@ -287,6 +296,9 @@ export const SKILL_FOR_KIND: Partial<Record<HandoffKind, string>> = {
   longform_check: 'ed-check-draft',
   substack_series: 'cap-substack-series',
   substack_outline: 'biz-substack-outline',
+  story_find: 'cora-find-stories',
+  interview_prep: 'cora-interview',
+  interview_shape: 'cora-interview',
 }
 
 // Count a run and return the line a receipt carries: "Skill: Cap 4 · Weigh the winners".

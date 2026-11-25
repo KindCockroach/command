@@ -137,7 +137,10 @@ export type HandoffKind =
   | 'longform_check'  // Pod → Ed: check it; pass → Cap dates it; Mandi approves
   | 'substack_series' // Cap mines the build history and proposes the backlog series
   | 'substack_outline'// Biz + Cap outline one issue
-export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log' | 'email' | 'story' | 'substack' | 'reuse'; id: string | number; label?: string }
+  | 'story_find'      // Cora reads the Well (her captions) and pitches stories with headlines
+  | 'interview_prep'  // Cora reads the Well like a journalist (loss, depression, anxiety) → her notebook of questions
+  | 'interview_shape' // Cora turns the charged points from the interview into Medium story shapes
+export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log' | 'email' | 'story' | 'substack' | 'reuse' | 'interview'; id: string | number; label?: string }
 export type Handoff = {
   id: string
   kind: HandoffKind
@@ -545,6 +548,8 @@ export type SeqEmail = {
   written_by: 'ed' | 'mandi' | null
   approved_at: string | null
   updated_at: string
+  mandi_notes?: string[]            // her own notes (from Talk to Cap): they override Cap's brief, the button included
+  cta_override?: SeqEmail['cta'] | null   // set when her note removed or changed the button
 }
 export type SeqSettings = {
   coupon_code: string               // the $8 returning coupon on Luma ($33 → $25). Needed by touch 1 + 4.
@@ -845,6 +850,49 @@ export type Story = {
   approved_at?: string | null
   created_at: string; updated_at: string
 }
+// Cora's pitch of a story she found in Mandi's own captions (the Well). Mandi picks one (it goes
+// through the Story desk) or passes (it goes to Notes with her reason).
+export type StoryPitch = {
+  id: string; title: string; take: string; why_now: string
+  branch: BranchId; form: 'medium' | 'teleprompter'
+  headlines: string[]                 // 3 clickable options
+  her_lines: { date: string; line: string }[]   // her own words it's built from
+  holds_because: string
+  risks: string[]                     // real people, kids, anything Ed flagged
+  status: 'proposed' | 'picked' | 'passed'
+  picked_headline?: string | null; story_id?: string | null; reason?: string | null; note_id?: number | null
+  handoff_id?: string | null
+  // From Cora's interview (Medium, lived experience):
+  interview_id?: string | null
+  reader?: string | null              // who it's for ("the woman three weeks after a loss who…")
+  opening?: string | null             // a first line built from her own words
+  beats?: string[]
+  interview_lines?: string[]          // what she said in the interview it's built from
+  created_at: string; updated_at: string
+}
+
+// Cora interviews Mandi (Medium, lived experience for people struggling with loss, depression,
+// anxiety). Cora reads the Well like a journalist → a notebook of questions with the captions that
+// raised them → asks one at a time, follows where it's charged → shapes the stories.
+export type InterviewTheme = 'loss' | 'depression' | 'anxiety' | 'other'
+export type InterviewNote = { id: string; theme: InterviewTheme; question: string; why: string; quotes: { date: string; line: string }[]; status: 'open' | 'asked' | 'answered' | 'skipped' | 'off_limits' }
+export type InterviewTurn = { role: 'cora' | 'mandi'; text: string; at: string; note_id?: string | null; followup?: boolean }
+export type ChargedPoint = { id: string; note_id?: string | null; theme: InterviewTheme; point: string; her_words: string; why: string; at: string }
+export type StoryInterview = {
+  id: string
+  status: 'reading' | 'ready' | 'shaping' | 'shaped' | 'failed'
+  notebook: InterviewNote[]
+  turns: InterviewTurn[]
+  charged: ChargedPoint[]
+  current_note_id?: string | null
+  followups: Record<string, number>   // follow-ups asked per notebook question (max 2)
+  pitch_ids: string[]
+  transcript_note_id?: number | null
+  handoff_id?: string | null
+  error?: string | null
+  created_at: string; updated_at: string
+}
+
 // Loop 13: ONE Substack, WFH branch. Cap proposes the backlog series; Biz + Cap outline; Pod
 // writes; Ed checks; Mandi approves and publishes it herself. No API, no auto-publish.
 export type SubstackIssue = {
@@ -1087,6 +1135,10 @@ export type Db = {
   agent_ideas?: AgentIdea[]                                                              // Phase 6: Loop 14
   reuse?: ReuseProposal[]                                                                // Phase 6b: Loop 15
   stories?: Story[]                                                                      // Phase 6b: Loop 11
+  story_pitches?: StoryPitch[]                                                           // Cora's story ideas from the Well
+  story_seeds?: { at: string; count: number; seeds: string[] }                           // Cora's last read of the Well (pass 1)
+  story_interviews?: StoryInterview[]                                                    // Cora interviews Mandi for Medium stories
+  approval_chats?: Record<string, { role: 'mandi' | 'cap'; text: string; at: string; handoff_id?: string | null }[]>   // Talk to Cap, per Approve item
   substack?: SubstackStore                                                               // Phase 6b: Loop 13
   memories: Memory[]
   projects: Project[]

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server'
-import { getStories, sendStory, approveStory, killStory } from '@/lib/storyDesk'
+import { getStories, sendStory, approveStory, killStory, getPitches, openFindStories, pickPitch, passPitch } from '@/lib/storyDesk'
 import { runHandoff } from '@/lib/agentRun'
 import type { BranchId } from '@/lib/db'
 
@@ -10,10 +10,11 @@ export const maxDuration = 300
 // POST {text, goal, campaign?, branch, title?} → Cap sends it to Cora (Owl, Ten, Pod, Ed follow)
 // PATCH {id, action:'approve'} | {id, action:'kill', reason}
 export async function GET() {
-  return NextResponse.json({ stories: getStories() })
+  return NextResponse.json({ stories: getStories(), pitches: getPitches() })
 }
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => ({}))
+  if (b.action === 'find') { const h = openFindStories(); after(async () => { await runHandoff(h.id) }); return NextResponse.json({ handoff: h }) }
   const branch: BranchId = b.branch === 'wfh' ? 'wfh' : 'joyful_media'
   const r = sendStory({ text: String(b.text ?? ''), goal: String(b.goal ?? ''), campaign: b.campaign ? String(b.campaign) : undefined, branch, title: b.title ? String(b.title) : undefined })
   if ('error' in r) return NextResponse.json(r, { status: 400 })
@@ -23,6 +24,8 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const b = await req.json().catch(() => ({}))
   if (!b.id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  if (b.action === 'pick') { const r = pickPitch(String(b.id), b.headline ? String(b.headline) : undefined, b.goal ? String(b.goal) : undefined); if ('error' in r) return NextResponse.json(r, { status: 400 }); after(async () => { await runHandoff(r.handoff.id) }); return NextResponse.json(r) }
+  if (b.action === 'pass') { const r = passPitch(String(b.id), String(b.reason ?? '')); return 'error' in r ? NextResponse.json(r, { status: 400 }) : NextResponse.json({ pitch: r }) }
   const r = b.action === 'approve' ? approveStory(String(b.id)) : b.action === 'kill' ? killStory(String(b.id), String(b.reason ?? '')) : { error: 'action must be approve or kill' }
   return 'error' in r ? NextResponse.json(r, { status: 400 }) : NextResponse.json({ story: r })
 }

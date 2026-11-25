@@ -11,7 +11,7 @@
 // Owl and Ten are the smallest version that does the job: one research call each, with live
 // web search when the Anthropic key is set, and saying plainly when they had no live sources.
 
-import { readDb, writeDb, createNote, type BranchId, type Handoff, type Story } from './db'
+import { readDb, writeDb, createNote, type BranchId, type Handoff, type Story, type StoryPitch } from './db'
 import { openHandoff, startAttempt, completeHandoff, failHandoff } from './handoffs'
 import { fableText, researchWithWeb } from './fable'
 import { skillPrompt } from './skills'
@@ -146,4 +146,125 @@ export function killStory(id: string, reason: string): Story | { error: string }
   const why = (reason ?? '').trim() || '(no reason given)'
   const n = createNote({ title: cut(`Story parked: ${s.title}`, 120), body: `${s.raw}\n\n— Mandi parked it: ${why}`, category: 'idea', source: 'rise', tags: ['story', 'killed'], pinned: false })
   return patchStory(id, { status: 'killed', kill_reason: why, note_id: n.id })!
+}
+
+// ── Cora finds stories in the Well (her 697 captions) ────────────────────────
+// Mandi asked: "look at my captions and find a story: what's compelling, based on everything
+// I've done, who I am and what I'm working on". Two passes so every caption is actually read:
+//   1. Seeds, year by year: moments, turns and recurring truths, with her exact words + dates.
+//   2. Cora picks the 6–8 strongest stories against who she is now and what she's building,
+//      with 3 clickable headlines each. Ed's guardrail check runs on each pitch.
+// Pitches wait in Approve. "Write this one" sends it through the Story desk; "Pass" → Notes.
+
+export const HEADLINE_RULES = `HEADLINES: clickable, specific, and hers. A stranger stops scrolling. Each one carries a concrete detail or a tension only her story has (a place, an object, a number she lived, a line someone said, a contradiction). Never generic: no "journey", "unlock", "embrace", "navigating", "the power of", "lessons I learned", "how I found", "a guide to", "transform your", "secret", no colon-plus-subtitle filler, no questions that a yes/no answers. Under 14 words. No colons. Every detail in a headline must come from HER lines; never invent a place, age, job or event she didn't write. Never a real person's name, never a child's name.
+GOOD (the bar): "I Sat in a Costco Parking Lot for Eleven Minutes Because I Couldn't Walk In" · "My Son Has Four Moms and None of Us Are Competing" · "I Quit the Party Scene at 27 and Spent a Decade Finding Out Who Was Left". BAD: "Finding Peace Through Mindfulness" · "Redefining My Narrative" · anything that could top a stranger's blog.`
+export const BANNED_HEAD = /\b(journey|unlock|embrac|navigat|the power of|lessons i learned|how i found|a guide to|transform your|game[- ]?changer|secret to|finding (myself|peace|deeper|lightness|my)|redefin|beyond|paradox|authenticity|self-discovery|transformation)\b|:/i
+
+export function getPitches() { return (readDb().story_pitches ?? []).slice().reverse() }
+
+export function openFindStories(): Handoff {
+  return openHandoff({ kind: 'story_find', from: 'mandi', to: 'cora', what: 'Read my captions (the Well) and pitch me the stories in them' })
+}
+
+export async function runFindStories(h: Handoff) {
+  startAttempt(h.id)
+  const { readWell } = await import('./well')
+  const well = readWell()
+  if (well.length < 50) return failHandoff(h.id, 'The Well isn’t loaded here, so Cora has no captions to read.')
+  const year = (d: string) => (d.match(/\b(20\d\d)\b/) ?? [])[1] ?? 'undated'
+  const byYear = new Map<string, typeof well>()
+  for (const l of well) byYear.set(year(l.date), [...(byYear.get(year(l.date)) ?? []), l])
+  // Group into chunks of roughly 120 captions, keeping years together.
+  const chunks: { label: string; lines: typeof well }[] = []
+  for (const [y, lines] of [...byYear.entries()].sort()) {
+    for (let i = 0; i < lines.length; i += 120) chunks.push({ label: `${y}${lines.length > 120 ? ` (${i / 120 + 1})` : ''}`, lines: lines.slice(i, i + 120) })
+  }
+
+  // Pass 1: seeds (saved, so a rerun within 7 days skips straight to pass 2).
+  const cached = readDb().story_seeds
+  const seeds: string[] = cached && Date.now() - Date.parse(cached.at) < 7 * 86400000 && cached.count === well.length ? [...cached.seeds] : []
+  for (const c of seeds.length ? [] : chunks) {
+    try {
+      const out = JSON.parse(extractJsonObject(await fableText({ json: true, maxTokens: 1800,
+        instructions: `You are Cora, the journalist on Mandi's Story desk, reading her own Instagram captions from ${c.label}. Find the story seeds: real moments, turns, confessions, recurring truths, contradictions, things she did that most people wouldn't. For each, quote HER exact words (short) with the date. Skip generic inspiration. Never use a child's name or a real person's name in your summary. Up to 8. Reply ONLY with JSON: {"seeds":[{"seed":"one plain line","quote":"her exact words","date":""}]}`,
+        input: c.lines.map(l => `[${l.date}] ${cut(l.cap, 600)}`).join('\n\n') })) ) as { seeds?: { seed: string; quote: string; date: string }[] }
+      for (const s of (out.seeds ?? []).slice(0, 8)) if (s?.seed) seeds.push(`(${s.date}) ${cut(s.seed, 200)} | “${cut(s.quote ?? '', 220)}”`)
+    } catch { /* one chunk failing doesn't stop the read */ }
+  }
+  if (seeds.length < 6) return failHandoff(h.id, `Cora only found ${seeds.length} seeds; retry.`)
+  if (!cached || cached.seeds.join() !== seeds.join()) { const dz = readDb(); dz.story_seeds = { at: nowIso(), count: well.length, seeds }; writeDb(dz) }
+
+  // Who she is now and what she's building (from the Brain and the map), for pass 2.
+  const db = readDb()
+  const { RETIRED } = await import('./health')
+  const who = db.memories.filter(m => m.category !== 'voice_archive' && /(intuition|thesis|mission|purpose|identity|backstory|persona|who)/i.test(`${m.title} ${m.body}`) && !RETIRED.some(r => r.re.test(`${m.title} ${m.body}`))).slice(-6).map(m => `- ${cut(m.title, 80)}: ${cut(m.body, 240)}`).join('\n')
+  const goals = (db.goals ?? []).filter(g => g.active).slice(0, 8).map(g => `- ${g.title}`).join('\n')
+
+  let out: { stories?: { title: string; take: string; why_now: string; branch: string; form: string; headlines: string[]; her_lines: { date: string; line: string }[]; holds_because: string }[] }
+  try {
+    out = JSON.parse(extractJsonObject(await fableText({ json: true, useClaude: true, maxTokens: 6000,
+      instructions: `You are Cora, the journalist on Mandi's Story desk. You've read every caption she has posted since 2015 (the seeds below). Find the 6 to 8 most compelling stories in her life and work: the takes ONLY she has, given who she is now and what she's building. Some can braid seeds across years (a thread that runs from 2016 to now). A story holds when there's a turn, a stranger would care, and it's hers to tell (not a child's or a family member's private moment).
+For each: title (plain working name); take (one sentence: what the story IS); why_now (why it matters given what she's building now); branch ("joyful_media" for mindfulness/inner life/motherhood; "wfh" only if it's about AI or building with AI; Medium belongs to Joyful Media); form ("medium" or "teleprompter"); headlines (exactly 3); her_lines (2–4 of her exact quotes with dates, from the seeds); holds_because (one line).
+${HEADLINE_RULES}
+Reply ONLY with JSON: {"stories":[{"title":"","take":"","why_now":"","branch":"","form":"","headlines":["","",""],"her_lines":[{"date":"","line":""}],"holds_because":""}]}`,
+      input: `(Background only, NOT her words: never quote it as her_lines; her_lines come ONLY from the seeds.)\nWHO SHE IS AND WHAT SHE'S BUILDING:\n${who || '(see the seeds)'}\n\nGOALS ON THE MAP:\n${goals || '(none listed)'}\n\nSTORY SEEDS FROM ${well.length} CAPTIONS:\n${seeds.join('\n')}` })))
+  } catch (e) { return failHandoff(h.id, `Cora couldn’t pick the stories: ${e instanceof Error ? e.message : 'no answer'}`) }
+
+  const { edCheck } = await import('./longform')
+  const now = nowIso()
+  const made: StoryPitch[] = []
+  const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
+  const corpus = norm(well.map(l => l.cap).join(' \n '))
+  const isHers = (line: string) => { const n = norm(line); return n.length >= 12 && corpus.includes(n.slice(0, Math.min(60, n.length))) }
+  for (const s of (out.stories ?? []).slice(0, 8)) {
+    // Her lines must really be hers (in a caption), not a RISE note or Cora's paraphrase.
+    s.her_lines = (s.her_lines ?? []).filter(l => isHers(String(l.line ?? '')))
+    if (!s.her_lines.length) continue
+    let headlines = asLines(s.headlines, 3, 160)
+    // One punch-up pass when the headlines lean generic.
+    if (headlines.filter(x => BANNED_HEAD.test(x)).length >= 2) {
+      try {
+        const fix = JSON.parse(extractJsonObject(await fableText({ json: true, useClaude: true, maxTokens: 600, instructions: `You are Cora. Rewrite these headlines so a stranger stops scrolling. Use a concrete detail from HER lines.\n${HEADLINE_RULES}\nReply ONLY with JSON: {"headlines":["","",""]}`, input: `THE STORY: ${s.take}\nHER LINES:\n${s.her_lines.map(l => `"${l.line}" (${l.date})`).join('\n')}\nTOO GENERIC:\n${headlines.join('\n')}` })))
+        const better = asLines(fix.headlines, 3, 160)
+        if (better.length >= 2) headlines = better
+      } catch { /* keep the first set, flagged */ }
+    }
+    if (!s?.take || headlines.length < 2) continue
+    const branch: BranchId = s.branch === 'wfh' ? 'wfh' : 'joyful_media'
+    const risks: string[] = []
+    const generic = headlines.filter(x => BANNED_HEAD.test(x))
+    if (generic.length) risks.push(`${generic.length} headline${generic.length > 1 ? 's' : ''} lean generic (“${cut(generic[0], 60)}”)`)
+    const v = await edCheck(`${headlines.join('\n')}\n${s.take}\n${(s.her_lines ?? []).map(l => l.line).join('\n')}`, { branch, kind: 'medium', mandiText: (s.her_lines ?? []).map(l => l.line).join('\n'), round: 1 })
+    risks.push(...v.reasons.filter(r => !/^Money or result numbers/.test(r)).slice(0, 3))
+    made.push({ id: `sp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, title: cut(s.title || headlines[0], 120), take: cut(s.take, 400), why_now: cut(s.why_now ?? '', 300), branch, form: s.form === 'teleprompter' || branch === 'wfh' ? 'teleprompter' : 'medium', headlines, her_lines: (s.her_lines ?? []).slice(0, 4).map(l => ({ date: cut(String(l.date ?? ''), 40), line: cut(String(l.line ?? ''), 300) })), holds_because: cut(s.holds_because ?? '', 300), risks, status: 'proposed', handoff_id: h.id, created_at: now, updated_at: now })
+  }
+  if (!made.length) return failHandoff(h.id, 'Cora came back without usable stories. Retry.')
+  const d = readDb(); d.story_pitches = [...(d.story_pitches ?? []), ...made]; writeDb(d)
+  return completeHandoff(h.id, 'cora', `Read ${well.length} captions (${chunks.length} passes, ${seeds.length} seeds) and pitched ${made.length} stories: ${made.map(m => `“${m.headlines[0]}”`).join(' · ')}. They wait in Approve.`)
+}
+
+// Mandi picks a pitch → it goes through the Story desk (Owl, Ten, Cora's outline, Pod, Ed).
+export function pickPitch(id: string, headline?: string, goal?: string): { story: Story; handoff: Handoff } | { error: string } {
+  const db = readDb()
+  const p = (db.story_pitches ?? []).find(x => x.id === id)
+  if (!p) return { error: 'No such pitch.' }
+  if (p.status !== 'proposed') return { error: 'You already answered this one.' }
+  const head = headline?.trim() || p.headlines[0]
+  const text = `${p.take}\n\nHer own words:\n${p.her_lines.map(l => `“${l.line}” (${l.date})`).join('\n')}${p.interview_lines?.length ? `\n\nWhat she said in Cora’s interview:\n${p.interview_lines.map(l => `“${l}”`).join('\n')}` : ''}${p.reader ? `\n\nThe reader: ${p.reader}` : ''}${p.opening ? `\nOpening line (her words): ${p.opening}` : ''}${p.beats?.length ? `\nBeats: ${p.beats.join(' → ')}` : ''}\n\nWhy now: ${p.why_now}\nThe headline she picked: ${head}\nThis is lived experience for a reader who is struggling, not advice or treatment.`
+  const r = sendStory({ text, title: head, goal: goal?.trim() || (p.branch === 'wfh' ? 'The AI Mom podcast' : 'Medium: Joyful Media long-form'), campaign: 'Cora’s pick from the Well', branch: p.branch, parent_id: 'pitch' })
+  if ('error' in r) return r
+  const d2 = readDb(); const x = d2.story_pitches!.find(y => y.id === id)!
+  Object.assign(x, { status: 'picked', picked_headline: head, story_id: r.story.id, updated_at: nowIso() }); writeDb(d2)
+  return r
+}
+
+export function passPitch(id: string, reason: string): StoryPitch | { error: string } {
+  const db = readDb()
+  const p = (db.story_pitches ?? []).find(x => x.id === id)
+  if (!p) return { error: 'No such pitch.' }
+  const why = (reason ?? '').trim() || '(no reason given)'
+  const n = createNote({ title: cut(`Passed: Cora’s story · ${p.headlines[0]}`, 120), body: `${p.take}\nHeadlines: ${p.headlines.join(' | ')}\nMandi passed: ${why}`, category: 'idea', source: 'rise', tags: ['story', 'killed', 'cora'], pinned: false })
+  const d2 = readDb(); const x = d2.story_pitches!.find(y => y.id === id)!
+  Object.assign(x, { status: 'passed', reason: why, note_id: n.id, updated_at: nowIso() }); writeDb(d2)
+  return x
 }

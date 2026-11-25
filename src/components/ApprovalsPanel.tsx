@@ -6,7 +6,8 @@ import { Loader2, RefreshCw, ChevronDown } from 'lucide-react'
 // this gathers them, lets you read the draft right here, and approve (or say no with a reason).
 
 type Action = { label: string; kind: 'post'; url: string; method?: 'POST' | 'PATCH'; body: Record<string, unknown>; reason?: string; primary?: boolean } | { label: string; kind: 'open'; view: string }
-type Item = { id: string; source: string; from: string; title: string; detail?: string; body?: string; at: string; view: string; actions: Action[] }
+type Item = { id: string; source: string; from: string; title: string; detail?: string; body?: string; at: string; view: string; actions: Action[]; chat?: number }
+type Turn = { role: 'mandi' | 'cap'; text: string; at: string; handoff_id?: string | null }
 type Data = { items: Item[]; counts: Record<string, number>; total: number; labels: Record<string, string> }
 
 const ORDER = ['plan', 'email', 'story', 'substack', 'send', 'idea', 'question', 'health']
@@ -19,6 +20,25 @@ export default function ApprovalsPanel() {
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [ask, setAsk] = useState<{ item: string; action: number; text: string } | null>(null)
   const [showHealth, setShowHealth] = useState(false)
+  // Talk to Cap about one item: the thread per item, and what she's typing.
+  const [chatOpen, setChatOpen] = useState<string | null>(null)
+  const [turns, setTurns] = useState<Turn[]>([])
+  const [said, setSaid] = useState('')
+  const openChat = async (id: string) => {
+    if (chatOpen === id) { setChatOpen(null); return }
+    setChatOpen(id); setSaid(''); setTurns([])
+    const r = await fetch(`/api/approvals?chat=${encodeURIComponent(id)}`).then(x => x.json()).catch(() => null)
+    setTurns(r?.turns ?? [])
+  }
+  const sendChat = async (it: Item) => {
+    const text = said.trim(); if (!text) return
+    setBusy('chat' + it.id); setTurns(t => [...t, { role: 'mandi', text, at: new Date().toISOString() }]); setSaid('')
+    const r = await fetch('/api/approvals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: it.id, text }) }).then(x => x.json()).catch(() => ({ error: 'Connection hiccup. Try again.' }))
+    setBusy('')
+    if (r?.turns) setTurns(r.turns); else setMsg(r?.error ?? 'Cap didn’t answer.')
+    if (r?.rewriting) setMsg('Cap handed your note to the writer. It comes back here when it’s rewritten and checked.')
+    load()
+  }
 
   const load = useCallback(async () => { const r = await fetch('/api/approvals').then(x => x.json()).catch(() => null); if (r?.items) setD(r) }, [])
   useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t) }, [load])
@@ -72,6 +92,7 @@ export default function ApprovalsPanel() {
           {open[it.id] && <div className="ap-body">{it.body}</div>}
         </>}
         <div className="ap-row">
+          <button type="button" className="ap-ghost" onClick={() => openChat(it.id)}>💬 Talk to Cap{it.chat ? ` · ${it.chat}` : ''}</button>
           {it.actions.map((a, k) => (
             <button key={k} type="button" className={a.kind === 'post' && a.primary ? 'ap-p' : 'ap-ghost'} disabled={busy === it.id + a.label}
               onClick={() => a.kind === 'post' && a.reason ? setAsk({ item: it.id, action: k, text: '' }) : run(it, a)}>
@@ -79,6 +100,16 @@ export default function ApprovalsPanel() {
             </button>
           ))}
         </div>
+        {chatOpen === it.id && (
+          <div className="ap-chat">
+            {turns.length === 0 && <p className="ap-d">Ask Cap anything about this, or tell him what to change. A change goes to the writer and comes back here.</p>}
+            {turns.map((t, k) => <p key={k} className={`ap-t ${t.role}`}><b>{t.role === 'mandi' ? 'You' : 'Cap'}:</b> {t.text}</p>)}
+            <div className="ap-row">
+              <input placeholder="e.g. Does the part in parentheses go out? / Make it a plain hello and thank-you, no selling." value={said} onChange={e => setSaid(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendChat(it) }} />
+              <button type="button" className="ap-p" disabled={!said.trim() || busy === 'chat' + it.id} onClick={() => sendChat(it)}>{busy === 'chat' + it.id ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : null}Send</button>
+            </div>
+          </div>
+        )}
         {ask?.item === it.id && (() => { const a = it.actions[ask.action] as Extract<Action, { kind: 'post' }>; return (
           <div className="ap-row">
             <input autoFocus placeholder={a.reason} value={ask.text} onChange={e => setAsk({ ...ask, text: e.target.value })} />
@@ -113,4 +144,7 @@ button.ap-gh{cursor:pointer}
 .ap-p{border:0;background:#5A4FCF;color:#fff}
 .ap-ghost{border:1px solid var(--border);background:var(--surface);color:var(--text)}
 .ap-p:disabled,.ap-ghost:disabled{opacity:.5}
+.ap-chat{display:flex;flex-direction:column;gap:5px;margin-top:6px;padding:9px 11px;border:1px dashed var(--border);border-radius:11px}
+.ap-t{margin:0;font-size:12.5px;line-height:1.5}
+.ap-t.cap b{color:#5A4FCF}
 `

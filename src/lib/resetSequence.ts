@@ -104,7 +104,7 @@ function ensure(db: ReturnType<typeof readDb>): ResetSequenceStore {
     let e = s.emails.find(x => x.key === p.key)
     if (!e) { e = blankEmail(p); s.emails.push(e) }
     // Cap owns the brief and timing; keep them current with the plan.
-    e.brief = p.brief; e.day_offset = p.day_offset; e.title = p.title; e.cta = p.cta; e.branch = p.branch
+    e.brief = p.brief; e.day_offset = p.day_offset; e.title = p.title; e.cta = e.cta_override ?? p.cta; e.branch = p.branch
     for (const x of p.extras) if (e.extras[x] === undefined) e.extras[x] = ''
   }
   s.emails.sort((a, b) => CAP_PLAN.findIndex(p => p.key === a.key) - CAP_PLAN.findIndex(p => p.key === b.key))
@@ -288,22 +288,23 @@ export async function runEmailWrite(h: Handoff) {
   const p = planFor(key)
   const well = wellLinesFor(`${p.brief} ${p.branch === 'wfh' ? 'AI mom podcast tools intuition peace action' : 'reset rest breathe yourself mother tired self-respect intuition gift'}`, 6)
   const instructions = `You are Ed, the short-form writer. Cap, the campaign manager, briefed you on one email for Mandi Beck's ${p.branch === 'wfh' ? 'AI Mom podcast list (WFH)' : 'Joyful Media / Be There For Her list'}.
-Write in Mandi's voice, to the reader (you/your), from her own words first. Warm, direct, a little funny when it's earned, never syrupy. Short paragraphs separated by a blank line. Exactly ONE call to action (the button). Never name a real person. Never promise healing, therapy, treatment or money. Never exploit how she's feeling; no guilt, no fake urgency. ${p.branch === 'wfh' ? 'PODCAST ONLY: never the Reset, meditations, the $9 collection, Be There For Her or Joyful Media. No prices. No AI services (paused).' : 'JOYFUL MEDIA ONLY: never the podcast, AI, or WFH.'} Never "Beck Team".
+Write in Mandi's voice, to the reader (you/your), from her own words first. Warm, direct, a little funny when it's earned, never syrupy. Short paragraphs separated by a blank line. Exactly ONE call to action (the button), unless Mandi's own notes take the ask out. Never name a real person. Never promise healing, therapy, treatment or money. Never exploit how she's feeling; no guilt, no fake urgency. ${p.branch === 'wfh' ? 'PODCAST ONLY: never the Reset, meditations, the $9 collection, Be There For Her or Joyful Media. No prices. No AI services (paused).' : 'JOYFUL MEDIA ONLY: never the podcast, AI, or WFH.'} Never "Beck Team".
 
 ${PRICE_FACTS}
 ${getVoiceLessonsContext()}
 
-Reply ONLY with JSON: {"subject": "...", "preheader": "...", "body": "...", "cta_label": "...", "ps": ""${p.extras.length ? `, "extras": {${p.extras.map(x => `"${x}": "..."`).join(', ')}}` : ''}}
+${e0.mandi_notes?.length ? 'MANDI HAS GIVEN HER OWN NOTES ON THIS EMAIL (below). They override Cap\'s brief, the call to action included. If her notes say no selling or no ask, set "button" to "none" and leave cta_label empty.\n' : ''}Reply ONLY with JSON: {"subject": "...", "preheader": "...", "body": "...", "cta_label": "...", "button": "keep", "ps": ""${p.extras.length ? `, "extras": {${p.extras.map(x => `"${x}": "..."`).join(', ')}}` : ''}}
 subject under 60 characters; preheader under 90; cta_label 2-5 words; ps optional (empty string if none).`
   const input = [
-    `CAP'S BRIEF — ${p.title}${p.day_offset !== null ? ` (goes out ${p.day_offset} day${p.day_offset === 1 ? '' : 's'} after the Reset)` : ' (sent right after she joins)'}:\n${p.brief}`,
+    e0.mandi_notes?.length && `MANDI'S OWN NOTES COME FIRST. Where they differ from Cap's brief below, her notes win (the subject, the content and the button):\n${e0.mandi_notes.map(n => '- ' + n).join('\n')}`,
+    `CAP'S BRIEF${e0.mandi_notes?.length ? ' (superseded wherever Mandi’s notes differ)' : ''} — ${p.title}${p.day_offset !== null ? ` (goes out ${p.day_offset} day${p.day_offset === 1 ? '' : 's'} after the Reset)` : ' (sent right after she joins)'}:\n${p.brief}`,
     well.length ? `HER WORDS FROM THE WELL (her own past captions; pull and sharpen her phrasing first, never invent a voice):\n${well.map(w => `- ${Array.from(w.cap).slice(0, 400).join("")}`).join('\n')}` : 'The Well isn’t loaded here: stay plain and honest, and keep it short.',
     rewrite && `CAP SENT YOUR LAST DRAFT BACK. Fix exactly this and keep the rest:\n${e0.cap_reasons.map(r => '- ' + r).join('\n')}\n\nYour last draft:\n${JSON.stringify({ subject: e0.subject, preheader: e0.preheader, body: e0.body, cta_label: e0.cta_label, ps: e0.ps, extras: e0.extras })}`,
   ].filter(Boolean).join('\n\n')
     // drop half-emoji (lone surrogates) so the AI request body is always valid JSON
     .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
 
-  let out: { subject?: string; preheader?: string; body?: string; cta_label?: string; ps?: string; extras?: Record<string, string> } = {}
+  let out: { subject?: string; preheader?: string; body?: string; cta_label?: string; button?: string; ps?: string; extras?: Record<string, string> } = {}
   try {
     out = JSON.parse(await fableText({ instructions, input, json: true, maxTokens: 1400 }))
   } catch (err) {
@@ -316,6 +317,8 @@ subject under 60 characters; preheader under 90; cta_label 2-5 words; ps optiona
     x.preheader = String(out.preheader ?? '').trim().slice(0, 160)
     x.body = String(out.body ?? '').trim()
     x.cta_label = String(out.cta_label ?? '').trim().slice(0, 40)
+    // Her note took the ask out: no button (and it stays out on later rewrites).
+    if (x.mandi_notes?.length && out.button === 'none') { x.cta_override = 'none'; x.cta = 'none'; x.cta_label = '' }
     x.ps = String(out.ps ?? '').trim()
     for (const k of p.extras) x.extras[k] = String(out.extras?.[k] ?? '').trim()
     x.written_by = 'ed'; x.status = 'review'
@@ -333,6 +336,15 @@ export async function runEmailReview(h: Handoff) {
   if (!e) return failHandoff(h.id, 'That email isn’t in the sequence any more.')
   const round = (e.round ?? 0) + 1
   const chk = capCheck(e, db)
+  // Mandi's own notes win: Cap checks the draft actually follows them, and sends it back if not.
+  if (e.mandi_notes?.length && e.written_by !== 'mandi') {
+    try {
+      const v = JSON.parse(await fableText({ cheap: true, json: true, maxTokens: 300,
+        instructions: 'You check whether an email draft follows the owner\'s notes exactly. Be strict: if a note says no selling or no mention of something, any mention fails. Reply ONLY with JSON: {"follows":true,"why":"one line naming what breaks the note, if anything"}',
+        input: `HER NOTES:\n${e.mandi_notes.map(n => '- ' + n).join('\n')}\n\nTHE DRAFT:\nSubject: ${e.subject}\nPreview: ${e.preheader}\n${e.body}\nButton: ${e.cta === 'none' ? '(none)' : e.cta_label}\n${e.ps ? `P.S. ${e.ps}` : "(no P.S.)"}` })) as { follows?: boolean; why?: string }
+      if (v.follows === false) chk.reasons.unshift(`Doesn’t follow Mandi’s note: ${String(v.why ?? '').slice(0, 200)} Her note wins over the brief.`)
+    } catch { chk.notes.push('Cap couldn’t check it against your note just now; read it before approving.') }
+  }
   if (!chk.reasons.length) {
     setEmail(key, x => { x.round = round; x.status = 'confirmed'; x.cap_reasons = []; x.cap_notes = chk.notes })
     return completeHandoff(h.id, 'cap', `Cap confirmed it on review ${round}. It waits for your approval; nothing sends until you approve it and switch it live.`, [{ type: 'email', id: key, label: e.title }])
