@@ -97,18 +97,49 @@ ${c.onscreen_text ? `On-screen: ${c.onscreen_text}\n` : ''}${c.script ? `Script:
 }
 
 // The bulk fix: back up, then Ed fills every card that can be filled (Cap's handoff).
-export function openCardFix(): { handoff: Handoff; backup: string; count: number } | { error: string } {
+// Cards that only need Cap's job pick: one cheap call per 25 cards (no full writer needed).
+export async function pickJobs(ids: number[]): Promise<number> {
+  const db = readDb()
+  const cards = ids.map(id => db.content.find(c => c.id === id)).filter((c): c is ContentPiece => !!c && !c.post_job)
+  let done = 0
+  for (let i = 0; i < cards.length; i += 25) {
+    const batch = cards.slice(i, i + 25)
+    try {
+      const raw = await fableText({ json: true, cheap: true, maxTokens: 1500,
+        instructions: `You are Cap. For each post, pick its ONE job: "reach" (get in front of new women who don't follow yet), "authority" (stop being seen as a peer; the one to learn from), or "dms" (turn the ones already watching into DMs). Use each post's number (after #) as its id, one entry per post, in the same order. Reply ONLY with JSON: {"jobs":[{"id":${batch[0].id},"job":"reach"}]}`,
+        input: batch.map(c => `#${c.id} [${c.type}] ${cut(c.title, 80)} | ${cut(c.onscreen_text || c.script || c.description || '', 200)}`).join('\n') })
+      const out = JSON.parse(extractJsonObject(raw)) as { jobs?: { id: number | string; job: string }[] }
+      const answers = out.jobs ?? []
+      for (const [k, j] of answers.entries()) {
+        let id = Number(String(j.id ?? '').replace(/\D/g, ''))
+        // A wrong id but the right count: match by order.
+        if (!batch.some(c => c.id === id) && answers.length === batch.length) id = batch[k].id
+        const job = String(j.job ?? '').toLowerCase().trim()
+        if (!batch.some(c => c.id === id) || !JOBS.includes(job as typeof JOBS[number])) continue
+        updateContent(id, { post_job: job }); done++
+      }
+    } catch (e) { console.error('[pickJobs]', e instanceof Error ? e.message : e) }
+  }
+  return done
+}
+
+export function openCardFix(limit?: number): { handoff: Handoff; backup: string; count: number } | { error: string } {
   const a = auditCards()
-  const todo = a.cards.filter(c => c.auto)
+  const todo = a.cards.filter(c => c.auto).slice(0, limit && limit > 0 ? limit : undefined)
   if (!todo.length) return { error: 'Every card already has what it needs (or only needs an account from you).' }
   const backup = backupDb('card-fix')
-  const handoff = openHandoff({ kind: 'card_fix', from: 'cap', to: 'ed', what: `Fill what ${todo.length} cards are missing (titles, on-screen hooks, Cap’s job pick, captions, what to film)` })
+  const handoff = openHandoff({ kind: 'card_fix', from: 'cap', to: 'ed', what: `Fill what ${todo.length} cards are missing (titles, on-screen hooks, Cap’s job pick, captions, what to film)`, note: limit ? `limit:${limit}` : undefined })
   return { handoff, backup, count: todo.length }
 }
 
 export async function runCardFix(h: Handoff) {
   startAttempt(h.id)
-  const todo = auditCards().cards.filter(c => c.auto)
+  const lim = Number((h.note ?? '').match(/limit:(\d+)/)?.[1] ?? 0)
+  const all = auditCards().cards.filter(c => c.auto).slice(0, lim || undefined)
+  // Job-only cards: Cap's cheap batch pick. The rest: Ed writes what's missing.
+  const jobOnly = all.filter(c => c.missing.every(m => m === 'job' || m === 'account')).map(c => c.id)
+  const jobs = await pickJobs(jobOnly)
+  const todo = all.filter(c => !jobOnly.includes(c.id))
   let ok = 0
   const tally: Record<string, number> = {}
   const errors: string[] = []
@@ -118,6 +149,6 @@ export async function runCardFix(h: Handoff) {
     if (r.filled.length) ok++
     for (const f of r.filled) tally[f] = (tally[f] ?? 0) + 1
   }
-  if (!ok && errors.length) return failHandoff(h.id, `Ed couldn’t fill the cards: ${errors.join(' · ')}`)
-  return completeHandoff(h.id, 'ed', `Filled ${ok} of ${todo.length} cards: ${Object.entries(tally).map(([k, v]) => `${v} ${k}`).join(', ')}.${errors.length ? ` Didn’t finish: ${errors.join(' · ')}` : ''}`)
+  if (!ok && !jobs && errors.length) return failHandoff(h.id, `Ed couldn’t fill the cards: ${errors.join(' · ')}`)
+  return completeHandoff(h.id, 'ed', `Cap picked the job on ${jobs} of ${jobOnly.length} job-only cards. Ed filled ${ok} of ${todo.length} cards: ${Object.entries(tally).map(([k, v]) => `${v} ${k}`).join(', ')}.${errors.length ? ` Didn’t finish: ${errors.join(' · ')}` : ''}`)
 }

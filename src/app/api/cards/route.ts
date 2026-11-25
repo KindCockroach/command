@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => ({}))
   if (b.action === 'fix') {
-    const r = openCardFix()
+    const r = openCardFix(b.limit ? Number(b.limit) : undefined)
     if ('error' in r) return NextResponse.json(r, { status: 400 })
     const id = r.handoff.id; after(async () => { await runHandoff(id) })
     return NextResponse.json({ ok: true, count: r.count, handoff: r.handoff })
