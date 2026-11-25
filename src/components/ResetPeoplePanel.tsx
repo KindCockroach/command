@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Upload, Check, RotateCcw, Eye, Send, Pencil, X } from 'lucide-react'
 
-// PHASE 5 — People → "Reset · Luma + emails".
+// PHASE 5 — People → "Reset · Luma import" (part="people") and Campaigns → Reset emails (part="emails").
 // 1) Import a Luma guest export (preview first: new / merged / skipped and why).
 // 2) The two branch lists, side by side (they never mix).
 // 3) Cap's welcome + six-touch sequence: Cap briefs → Ed writes → Cap confirms → you approve.
@@ -46,7 +46,9 @@ async function post(url: string, body: unknown) {
   return r.json().catch(() => ({ error: 'No answer.' }))
 }
 
-export default function ResetPeoplePanel({ onImported }: { onImported?: () => void }) {
+// part: 'people' (People tab: Luma import + lists) · 'emails' (Campaigns: the sequence, settings,
+// dry run, welcomes). Emails live in Campaigns; who's on which list lives in People.
+export default function ResetPeoplePanel({ onImported, part = 'people' }: { onImported?: () => void; part?: 'people' | 'emails' }) {
   const [events, setEvents] = useState<ResetEvent[]>([])
   const [emails, setEmails] = useState<Email[]>([])
   const [settings, setSettings] = useState<Settings | null>(null)
@@ -75,6 +77,7 @@ export default function ResetPeoplePanel({ onImported }: { onImported?: () => vo
   return (
     <div>
       {msg && <div style={{ ...card, background: 'rgba(90,79,207,0.06)', fontSize: '12.5px' }}>{msg} <button onClick={() => setMsg('')} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)' }}><X size={12} /></button></div>}
+      {part === 'people' && <>
       <LumaImport onDone={() => { load(); onImported?.() }} />
 
       <div style={card}>
@@ -88,7 +91,10 @@ export default function ResetPeoplePanel({ onImported }: { onImported?: () => vo
           Joyful Media = subscribed to Be There For Her / Joyful Media, a Wellspring member, a pass holder, or Luma consent = yes. WFH = subscribed to the podcast. A podcast listener never gets Reset email unless she&rsquo;s on the Joyful Media list too. Being a guest or a Reset attendee alone isn&rsquo;t a list.
         </p>
       </div>
+      <p style={{ fontSize: '12px', color: 'var(--text-subtle)', margin: '4px 2px 12px' }}>The Reset emails (drafts, settings, dry run, welcomes) live in Campaigns → Reset emails.</p>
+      </>}
 
+      {part === 'emails' && <>
       {settings && <SettingsCard settings={settings} onSaved={s => setSettings(s)} />}
 
       <div style={card}>
@@ -104,6 +110,7 @@ export default function ResetPeoplePanel({ onImported }: { onImported?: () => vo
 
       <DryRunCard events={events} live={!!settings?.sequence_live} onMsg={setMsg} />
       <WelcomeCard onMsg={setMsg} />
+      </>}
     </div>
   )
 }

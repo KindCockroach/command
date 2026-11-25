@@ -8,6 +8,7 @@ import NotesPanel from './NotesPanel'
 import WorkflowsPanel from './WorkflowsPanel'
 import AssistantsPanel from './AssistantsPanel'
 import SkillsPanel from './SkillsPanel'
+import ApprovalsPanel from './ApprovalsPanel'
 import LongformDesk from './LongformDesk'
 import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
@@ -37,7 +38,7 @@ import Link from 'next/link'
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 // Props are still passed by the page; the old Kanban pipeline view that used them is gone.
 interface Props { initialContent: unknown[]; stats: Stats }
-type View = 'lines' | 'command' | 'activity' | 'contentday' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'sites' | 'audience' | 'media' | 'podcast' | 'people' | 'campaigns' | 'story' | 'pitch' | 'audit' | 'goals' | 'research' | 'winners' | 'plan'
+type View = 'approve' | 'lines' | 'command' | 'activity' | 'contentday' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'sites' | 'audience' | 'media' | 'podcast' | 'people' | 'campaigns' | 'story' | 'pitch' | 'audit' | 'goals' | 'research' | 'winners' | 'plan'
 
 // Renders children on first activation and KEEPS them mounted after — hidden with
 // display:none when inactive — so long-running work (podcast generation) and state
@@ -53,6 +54,12 @@ export default function Dashboard(_props: Props) {
   const [view, setView] = useState<View>('lines')
   const [dark, setDark] = useState(false)
   const [navOrder, setNavOrder] = useState<View[]>([])
+  // How many things wait on her yes (the Approve tab's badge). Checked every minute.
+  const [approveCount, setApproveCount] = useState(0)
+  useEffect(() => {
+    const tick = () => fetch('/api/approvals').then(r => r.json()).then(d => setApproveCount(d?.total ?? 0)).catch(() => {})
+    tick(); const t = setInterval(tick, 60000); return () => clearInterval(t)
+  }, [])
   const [dragId, setDragId] = useState<View | null>(null)
 
   useEffect(() => {
@@ -76,6 +83,7 @@ export default function Dashboard(_props: Props) {
   }
 
   const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode; accent?: boolean }[] = [
+    { id: 'approve',    label: approveCount ? `Approve · ${approveCount}` : 'Approve', icon: <CheckSquare size={12} />, accent: true },
     { id: 'lines',      label: 'Quick Post',    icon: <PenLine size={12} />, accent: true },
     { id: 'command',    label: 'Daily Command', icon: <Zap size={12} />, accent: true },
     { id: 'activity',   label: 'Activity',      icon: <Radar size={12} /> },
@@ -121,8 +129,10 @@ export default function Dashboard(_props: Props) {
       if (saved) {
         const parsed = JSON.parse(saved) as View[]
         const known = parsed.filter(id => NAV_IDS.includes(id))
-        // append any tabs added since she last saved, drop any that no longer exist
-        setNavOrder([...known, ...NAV_IDS.filter(id => !known.includes(id))])
+        // append any tabs added since she last saved, drop any that no longer exist.
+        // Approve (everything waiting on her) goes FIRST the first time it appears.
+        const added = NAV_IDS.filter(id => !known.includes(id))
+        setNavOrder(added.includes('approve') ? ['approve', ...known, ...added.filter(id => id !== 'approve')] : [...known, ...added])
         return
       }
     } catch { /* fall back to default order */ }
@@ -201,6 +211,7 @@ export default function Dashboard(_props: Props) {
       <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
         {/* Home stays alive so the Commander chat + Daily Command survive navigation */}
+        {view === 'approve' && <ApprovalsPanel />}
         <KeepAlive active={view === 'lines'}><LinesPanel /></KeepAlive>
         <KeepAlive active={view === 'command'}><HomeScreen /></KeepAlive>
         <KeepAlive active={view === 'activity'}><ActivityStation /></KeepAlive>

@@ -1,4 +1,5 @@
 'use client'
+import ResetPeoplePanel from './ResetPeoplePanel'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Loader2, X, Save, Plus, Trash2, ExternalLink, Sparkles, Send, Eye, ChevronDown } from 'lucide-react'
 
@@ -43,6 +44,8 @@ function cadenceText(p: Product): { text: string; color: string } {
 }
 
 export default function CampaignsPanel() {
+  const [resetOpen, setResetOpen] = useState(() => { try { return localStorage.getItem('rise-campaigns-reset-open') !== '0' } catch { return true } })
+  useEffect(() => { try { localStorage.setItem('rise-campaigns-reset-open', resetOpen ? '1' : '0') } catch { /* private mode */ } }, [resetOpen])
   const [products, setProducts] = useState<Product[]>([])
   const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
@@ -122,6 +125,12 @@ export default function CampaignsPanel() {
         </button>
       </div>
       <p style={{ fontSize: '12.5px', color: 'var(--text-subtle)', margin: '0 0 16px' }}>Pick what you&rsquo;re sending, Cap drafts it, you choose who gets it, send.</p>
+
+      {/* The Reset emails live here (moved from People): Cap briefs → Ed writes → Cap checks → you approve. */}
+      <details open={resetOpen} onToggle={e => setResetOpen((e.target as HTMLDetailsElement).open)} style={{ marginBottom: '18px', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px 12px' }}>
+        <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 800, color: 'var(--text)' }}>💌 Reset emails · the 6-touch sequence + welcomes</summary>
+        <div style={{ marginTop: '10px' }}><ResetPeoplePanel part="emails" /></div>
+      </details>
 
       {/* Overdue nudge — quiet, taps straight into composing */}
       {overdue.length > 0 && (

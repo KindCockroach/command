@@ -136,6 +136,9 @@ export default function PlanPanel() {
       <p style={{ fontSize: 12.5, color: 'var(--text-subtle)', margin: '2px 0 4px' }}>Cap drafts, you approve. Month first, then each account&rsquo;s week, then the days appear. Joyful Media wins every tie.</p>
       {msg && <p style={{ fontSize: 13, color: msg.toLowerCase().includes('hiccup') || msg.toLowerCase().includes('no approved') ? '#B23A48' : '#2F7D5B' }}>{msg}</p>}
 
+      {/* Cap's calendar comes first (Mandi, Nov 24); the plans that feed it sit below. */}
+      <div style={{ margin: '10px 0 18px' }}><PlanCalendar refreshKey={calKey} /></div>
+
       <p style={lbl}>1 · Monthly plan, per branch</p>
       {!monthly.length && <button style={primary} disabled={!!busy} onClick={() => run('m', { action: 'propose_monthly' }, () => 'Cap drafted both monthly plans.')}>{busy === 'm' ? 'Drafting…' : 'Ask Cap for the monthly plans'}</button>}
       {monthly.map(p => (
@@ -195,7 +198,7 @@ export default function PlanPanel() {
 
       <p style={lbl}>3 · The calendar</p>
       <button style={btn} disabled={!!busy || !weeklyApproved && !monthlyApproved} onClick={() => run('c', { action: 'generate_calendar' }, d => `Added ${d.created} new items and reused ${d.reused} existing cards.${(d.dropped as string[]).length ? ` ${(d.dropped as string[]).length} didn’t fit.` : ''}`)}>{busy === 'c' ? 'Building…' : 'Fill the calendar from approved plans'}</button>
-      <div style={{ marginTop: 14 }}><PlanCalendar refreshKey={calKey} /></div>
+
     </div>
   )
 }

@@ -212,7 +212,7 @@ const direction: Check = async ({ db, today, full }, f, ok) => {
 // ── The Reset sequence (Phase 5) ─────────────────────────────────────────────
 const reset: Check = ({ db, today }, f, ok) => {
   const seq = db.reset_sequence
-  if (!seq) { f.push({ key: 'reset:none', area: 'reset', level: 'agents', title: 'The Reset sequence has no drafts yet', fix: 'In People → Reset · Luma + emails, press “Cap: brief Ed on the drafts”.' }); return }
+  if (!seq) { f.push({ key: 'reset:none', area: 'reset', level: 'agents', title: 'The Reset sequence has no drafts yet', fix: 'In Campaigns → Reset emails, press “Cap: brief Ed on the drafts”.' }); return }
   const s = seq.settings
   const blank = [
     !s.coupon_code && 'the $8 coupon code (touches 1, 4, 5)',
@@ -220,9 +220,9 @@ const reset: Check = ({ db, today }, f, ok) => {
     !s.pass_url && 'the $44/month pass link (the pass paragraph)',
     (!s.gift_name || !s.gift_url) && 'touch 6’s free gift',
   ].filter(Boolean) as string[]
-  if (blank.length) f.push({ key: 'reset:settings', area: 'reset', level: 'needs_you', count: blank.length, title: `Reset sequence settings still blank: ${blank.length}`, detail: blank.join(' · '), fix: 'Fill them in People → Reset · Luma + emails → Settings. Until then those touches hold and say why.' })
+  if (blank.length) f.push({ key: 'reset:settings', area: 'reset', level: 'needs_you', count: blank.length, title: `Reset sequence settings still blank: ${blank.length}`, detail: blank.join(' · '), fix: 'Fill them in Campaigns → Reset emails → Settings. Until then those touches hold and say why.' })
   const waiting = seq.emails.filter(e => e.status === 'confirmed')
-  if (waiting.length) f.push({ key: 'reset:approve', area: 'reset', level: 'needs_you', count: waiting.length, title: `${waiting.length} email draft${waiting.length > 1 ? 's' : ''} Cap confirmed, waiting for your Approve`, detail: waiting.map(e => e.title).join(' · '), fix: 'Read each one in People → Reset · Luma + emails and press Approve (or edit it first).' })
+  if (waiting.length) f.push({ key: 'reset:approve', area: 'reset', level: 'needs_you', count: waiting.length, title: `${waiting.length} email draft${waiting.length > 1 ? 's' : ''} Cap confirmed, waiting for your Approve`, detail: waiting.map(e => e.title).join(' · '), fix: 'Read each one in Approve (or Campaigns → Reset emails) and press Approve (or edit it first).' })
   else if (seq.emails.length) ok.push('No email drafts waiting on approval')
 
   // The next Reset: every 14 days from the anchor. Is its Luma list in RISE?
@@ -230,7 +230,7 @@ const reset: Check = ({ db, today }, f, ok) => {
   let next = cfg.reset_anchor
   while (next < today) next = addDays(next, 14)
   const events = db.reset_events ?? []
-  if (!events.some(e => e.date === next)) f.push({ key: `reset:next:${next}`, area: 'reset', level: 'needs_you', title: `The next Reset (${next}) isn’t imported yet`, fix: 'Export its guest list from Luma (even with nobody registered) and drop it in People → Reset · Luma + emails, so touches 4 and 5 have the date and can see who registered.' })
+  if (!events.some(e => e.date === next)) f.push({ key: `reset:next:${next}`, area: 'reset', level: 'needs_you', title: `The next Reset (${next}) isn’t imported yet`, fix: 'Export its guest list from Luma (even with nobody registered) and drop it in People → Reset · Luma import, so touches 4 and 5 have the date and can see who registered.' })
   else ok.push(`Next Reset ${next} is imported`)
 
   // Touches due on the latest past Reset that are blocked.

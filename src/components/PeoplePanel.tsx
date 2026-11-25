@@ -116,13 +116,13 @@ export default function PeoplePanel() {
             <button key={m} onClick={() => setMode(m)} style={{
               border: 0, borderRadius: '8px', padding: '6px 14px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
               background: mode === m ? 'var(--accent, #5A4FCF)' : 'transparent', color: mode === m ? '#fff' : 'var(--text-subtle)',
-            }}>{m === 'people' ? 'All people' : m === 'reset' ? 'Reset · Luma + emails' : 'Guest workspace'}</button>
+            }}>{m === 'people' ? 'All people' : m === 'reset' ? 'Reset · Luma import' : 'Guest workspace'}</button>
           ))}
         </div>
         {mode === 'people' && <span style={{ ...label, marginLeft: 'auto' }}>{people.length} contacts</span>}
       </div>
 
-      {mode === 'guests' ? <GuestsPanel /> : mode === 'reset' ? <ResetPeoplePanel onImported={load} /> : (
+      {mode === 'guests' ? <GuestsPanel /> : mode === 'reset' ? <ResetPeoplePanel onImported={load} part="people" /> : (
         <>
           {/* Search + add */}
           <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
