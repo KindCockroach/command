@@ -40,9 +40,9 @@ const CTAS: [string, RegExp][] = [
   ['download', /\bdownload\b|\bget (the|your) free\b/i],
 ]
 
-const JOYFUL_BAD = /\bpodcast\b|\bepisode\b|\bai mom\b|\baiworksforher\b|\bworks for her\b|\bai (tools?|services?)\b|\bchatgpt\b/i
-const WFH_BAD = /\bthe reset\b|\breset (on|this|sunday)\b|\bmeditations?\b|\$9\b|\bwellspring\b|\bbethereforher\b|\bjoyful media\b|\bbe there for her\b/i
-const WFH_SERVICES = /\bcheat code\b|\bai (assessment|setup|onboarding)\b|\bwork with me on ai\b|\blocal support\b|\b\/assessment\b/i
+export const JOYFUL_BAD = /\bpodcast\b|\bepisode\b|\bai mom\b|\baiworksforher\b|\bworks for her\b|\bai (tools?|services?)\b|\bchatgpt\b/i
+export const WFH_BAD = /\bthe reset\b|\breset (on|this|sunday)\b|\bmeditations?\b|\$9\b|\bwellspring\b|\bbethereforher\b|\bjoyful media\b|\bbe there for her\b/i
+export const WFH_SERVICES = /\bcheat code\b|\bai (assessment|setup|onboarding)\b|\bwork with me on ai\b|\blocal support\b|\b\/assessment\b/i
 
 // A voice lesson Ed can check consistently: one that quotes a phrase to avoid.
 function avoidPhrases(): { phrase: string; rule: string }[] {

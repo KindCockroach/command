@@ -104,7 +104,7 @@ export const SKILL_SEED: Seed[] = [
   S('cap-sweep-notes', 'cap', 'Cap 8', 'Sweep Notes against the map', 'The map changes, and once a week.',
     ['Read each goal on the map.', 'Search Notes for drafts, scripts and pitches that already serve it.', 'Propose what fits: which goal, who it is for, and by when.', 'Send finished writing to review.', 'Put it in the daily report, marked “ready to send” when it is outreach Mandi sends herself.'],
     'Nothing new is briefed while finished work that fits is sitting in Notes.', ['Send it himself.', 'Read the killed pile, which is Her’s.', 'Put it on the plan himself without the plan tool.'],
-    [], false, 'Not wired yet (Phase 6 step 5 / 6b).'),
+    ['lib/sweep.ts', '/api/sweep'], true, 'Phase 6b: Cap proposes; Ed checks; Her shows “ready for you to send”; you mark it sent. It never touches the plan.'),
   S('cap-tend-people', 'cap', 'Cap 9', 'Tend the People list', 'A campaign is planned, before any send, and when replies or unsubscribes come back.',
     ['Choose the audience by its labels.', 'Check what those people already received.', 'Skip anyone who unsubscribed or bounced.', 'Put follow-up with guests and clients on the map as its own campaign.', 'Read the replies; send up through Commander any that need Mandi.', 'Keep the labels current.'],
     'Every send goes only to people who should get it, with the reason logged for each skip.', ['Send without Mandi’s approval.', 'Send personal outreach, which is Mandi’s to send.'],
@@ -144,7 +144,7 @@ export const SKILL_SEED: Seed[] = [
   S('pod-write-from-outline', 'pod', 'Pod 4', 'Write from an outline', 'Cora hands over a story outline, or Biz and Cap hand over a Substack outline.',
     ['Read the outline and its emphasis.', 'Pull her words from banked transcripts, the Well and Notes.', 'Write it in the form asked for: teleprompter script, Medium article or Substack piece.', 'Save it.', 'Hand to Ed.'],
     'The piece is saved and with Ed.', ['Change the point of the outline.'],
-    [], false, 'Not wired yet (Phase 6 steps 6–7 / 6b).'),
+    ['lib/longform.ts runLongformWrite'], true, 'Phase 6b: Medium, teleprompter and Substack, from Cora’s or Biz + Cap’s outline.'),
   S('pod-meditation-script', 'pod', 'Pod 5', 'Meditation script', 'Cap briefs a meditation.',
     ['Read the brief.', 'Write it in her meditation voice, following her saved meditation voice rules.', 'Save it.', 'Hand to Ed.'],
     'The script is saved and with Ed.', ['Promise treatment or results.'],
@@ -154,11 +154,11 @@ export const SKILL_SEED: Seed[] = [
   S('cora-untangle', 'cora', 'Cora 1', 'Untangle the stories', 'Several stories arrive tangled together.',
     ['Separate them and name each.', 'File each as its own note.'],
     'Each story has its own name and note.', ['Merge stories that are separate.'],
-    [], false, 'Not wired yet (Phase 6 step 6 / 6b). Cora is still the old Anchor persona.'),
+    ['lib/storyDesk.ts runStory'], true, 'Phase 6b: runs first on every story Cap sends.'),
   S('cora-form-story', 'cora', 'Cora 2', 'Form a story', 'Cap sends her a story with the goal and campaign it serves.',
     ['Ask Owl for the facts and sources.', 'Ask Ten what headlines already exist and what take is open.', 'Determine the story: the take only Mandi has.', 'Outline it.', 'Mark the emphasis: the line or moment that carries it.', 'Hand the outline to Pod, saying teleprompter or Medium.', 'Tell Cap so it gets a date.', 'If it does not hold up, store it in Notes with the reason.'],
     'Pod has an outline with its emphasis, or the story is in Notes with the reason.', ['Write the piece.', 'Present a guess as a finding.'],
-    [], false, 'Not wired yet (Phase 6 step 6 / 6b).'),
+    ['lib/storyDesk.ts runStory', 'Owl + Ten (story_check)'], true, 'Phase 6b: Owl and Ten use live web search when the Anthropic key is set, and say so when they can’t.'),
 
   // ── Ed ──
   S('ed-check-draft', 'ed', 'Ed 1', 'Check a draft', 'A writer finishes, or Mandi’s finished writing comes in.',
@@ -174,6 +174,11 @@ export const SKILL_SEED: Seed[] = [
     'The lesson is in the Brain and the writers read it next time.', ['Save generic advice.'],
     ['lib/learn.ts', '/api/content/learn'], true, 'Runs on edits in Accounts and on Commander chat edits.'),
 
+  S('cap-substack-series', 'cap', 'Cap · Substack', 'Propose the Substack backlog series', 'Once, before the first issue (and when the build history grows).',
+    ['Read the build history (RISE_*.md, the audit, the build log, git history, the Brain).', 'Find the arc: the pivots, what broke, what worked, what it cost in time.', 'Propose 6–10 issues in order: one turn of the story, one lesson a mom can use, the parenting moment only if Mandi has one.', 'Wait for Mandi’s yes before any issue is outlined.'],
+    'Mandi has a 6–10 issue series to approve or edit.', ['Invent a parenting moment.', 'Promise or imply income.', 'Name a real person.', 'Invent a cadence.'],
+    ['lib/substack.ts runSeries'], true, 'Phase 6b.'),
+
   // ── Biz / Fin ──
   S('biz-shape-offer', 'biz', 'Biz 1', 'Shape an offer', 'A new offer or business is proposed.',
     ['Who it is for and the problem in her words.', 'What she gets and by when.', 'Price and the one next step.', 'Ask Owl what the market already has.', 'Ask Fin to pressure-test the numbers.', 'Propose it to Cap and Commander.'],
@@ -182,7 +187,7 @@ export const SKILL_SEED: Seed[] = [
   S('biz-substack-outline', 'biz', 'Biz 2', 'Outline a Substack piece (with Cap)', 'The map calls for a Substack issue.',
     ['Work it out with Cap: Biz brings the business angle, Cap brings the campaign and the date.', 'Outline it together.', 'Hand the outline to Pod.'],
     'Pod has an outline with one turn of the story and one lesson a mom can use.', ['Write the piece.', 'Promise or imply income.'],
-    [], false, 'Not wired yet (Phase 6 step 7 / 6b).'),
+    ['lib/substack.ts runOutline'], true, 'Phase 6b: Biz brings the angle, Cap the beats; Pod writes.'),
   S('biz-build-brief', 'biz', 'Biz 3', 'Build brief', 'An idea needs a site, a page or a product stood up.',
     ['Check it is feasible: room on the map with Cap, demand with Ten, what exists with Owl, the numbers with Fin.', 'Write the brief: what it is, who for, the offer and price, the pages, the copy needed, the look, how people sign up and pay, what “live” means.', 'Hand the brief to Mandi for a build session.'],
     'Mandi can take the brief straight into a build session.', ['Build it himself.', 'Start before Mandi approves the initiative.'],
@@ -200,7 +205,7 @@ export const SKILL_SEED: Seed[] = [
   S('ten-story-check', 'ten', 'Ten 2', 'Answer a story check', 'Cora asks about a story.',
     ['Find the headlines already out on it.', 'Say what angle is taken and what is open.', 'Cite sources.'],
     'Cora knows what is taken and what is open, with sources.', ['Present a guess as a finding.'],
-    [], false, 'Not wired yet (Phase 6 step 6 / 6b).'),
+    ['lib/storyDesk.ts research'], true, 'Phase 6b: one research call per story.'),
   S('owl-dig', 'owl', 'Owl 1', 'Dig', 'Any agent or Mandi needs research.',
     ['Research the question with sources.', 'Save findings to Notes.', 'Say what is solid and what is uncertain.'],
     'The findings are saved with sources and a solid / uncertain split.', ['Present a guess as a finding.'],
@@ -275,6 +280,13 @@ export const SKILL_FOR_KIND: Partial<Record<HandoffKind, string>> = {
   film_now: 'cap-assign-create',
   email_write: 'rex-campaign-emails', email_rewrite: 'rex-campaign-emails',
   email_review: 'ed-check-draft',
+  sweep: 'cap-sweep-notes',
+  story: 'cora-form-story',
+  story_check: 'owl-dig',
+  longform_write: 'pod-write-from-outline',
+  longform_check: 'ed-check-draft',
+  substack_series: 'cap-substack-series',
+  substack_outline: 'biz-substack-outline',
 }
 
 // Count a run and return the line a receipt carries: "Skill: Cap 4 · Weigh the winners".

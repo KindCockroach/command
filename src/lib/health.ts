@@ -29,7 +29,7 @@ const days = (ms: number) => Math.floor(ms / DAY)
 
 // Words that mark a Brain rule as written for something RISE has retired (memory: avatars dead,
 // off GHL, Caption Writer + Journal killed, no-CTA growth phase retired, Room30 gone).
-const RETIRED = [
+export const RETIRED = [
   { re: /\b(go\s?high\s?level|GHL)\b/i, what: 'GoHighLevel (RISE is off GHL; People is the CRM)' },
   { re: /\b(heygen|avatar video|sage avatar|gator|luna)\b/i, what: 'the AI avatars (dead since the video pivot)' },
   { re: /\broom\s?30\b/i, what: 'Room30 (no longer an offer)' },

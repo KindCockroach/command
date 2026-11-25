@@ -129,7 +129,15 @@ export type HandoffKind =
   | 'email_write'     // Phase 5: Cap briefed an email (Reset sequence / welcome) → Ed writes it
   | 'email_review'    // Ed → Cap: the email draft is in; Cap confirms (it waits for Mandi) or sends it back
   | 'email_rewrite'   // Cap sent an email back → Ed fixes exactly what Cap named
-export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log' | 'email'; id: string | number; label?: string }
+  // Phase 6b: Loop 15 sweep, the Story desk, Substack
+  | 'sweep'           // Cap sweeps Notes against the goals on the map → proposals
+  | 'story'           // Cap → Cora: form this story (untangle first if several)
+  | 'story_check'     // Cora → Owl (facts) / Ten (open angle): receipts only
+  | 'longform_write'  // Cora's outline / Biz + Cap's outline → Pod writes it long-form
+  | 'longform_check'  // Pod → Ed: check it; pass → Cap dates it; Mandi approves
+  | 'substack_series' // Cap mines the build history and proposes the backlog series
+  | 'substack_outline'// Biz + Cap outline one issue
+export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log' | 'email' | 'story' | 'substack' | 'reuse'; id: string | number; label?: string }
 export type Handoff = {
   id: string
   kind: HandoffKind
@@ -801,6 +809,62 @@ export type AgentIdea = {
   updated_at: string
 }
 
+// ─── PHASE 6b: use what exists, the Story desk, Substack ─────────────────────
+// Ed's check of a long-form piece or a finished piece of outreach.
+export type EdLongVerdict = { verdict: 'pass' | 'sent_back' | 'let_through'; reasons: string[]; notes: string[]; round: number; checked_at: string }
+// Loop 15: Cap found finished work in Notes that already serves a goal. Cap proposes; Ed checks;
+// Her says "ready for you to send"; Mandi sends it herself and marks it sent.
+export type ReuseProposal = {
+  id: string; note_id: number; note_title: string
+  goal: string; goal_id?: number | null
+  who_for: string; by_when: string | null
+  kind: 'outreach' | 'post' | 'longform' | 'email' | 'other'
+  why: string
+  status: 'with_ed' | 'ready' | 'sent' | 'dismissed'
+  ed?: EdLongVerdict | null
+  handoff_id?: string | null
+  sent_at?: string | null; replies?: { at: string; text: string }[]
+  created_at: string; updated_at: string
+}
+export type LongDraft = { title: string; subtitle?: string; body: string; written_by: 'pod' | 'mandi'; written_at: string }
+export type StoryOutline = { take: string; beats: string[]; emphasis: string; form: 'teleprompter' | 'medium'; headline: string }
+// Loop 11: one story through the desk.
+export type Story = {
+  id: string; title: string; raw: string
+  goal: string; campaign: string; branch: BranchId
+  status: 'forming' | 'outlined' | 'writing' | 'checking' | 'ready' | 'approved' | 'killed' | 'split' | 'failed'
+  parent_id?: string | null            // set when Cora split it out of a tangle
+  facts?: { solid: string[]; uncertain: string[]; sources: string[]; live: boolean } | null   // Owl
+  angle?: { taken: string[]; open: string; shareable: string; sources: string[]; live: boolean } | null  // Ten
+  outline?: StoryOutline | null        // Cora
+  draft?: LongDraft | null             // Pod
+  ed?: EdLongVerdict | null
+  date?: string | null                 // Cap's date
+  date_note?: string | null
+  kill_reason?: string | null; note_id?: number | null
+  approved_at?: string | null
+  created_at: string; updated_at: string
+}
+// Loop 13: ONE Substack, WFH branch. Cap proposes the backlog series; Biz + Cap outline; Pod
+// writes; Ed checks; Mandi approves and publishes it herself. No API, no auto-publish.
+export type SubstackIssue = {
+  n: number; title: string; turn: string; lesson: string; parenting: string | null; sources: string[]
+  status: 'proposed' | 'outlining' | 'writing' | 'checking' | 'ready' | 'approved' | 'published'
+  biz_angle?: string | null; outline?: { beats: string[]; cta: string; date_note: string } | null
+  draft?: LongDraft | null; ed?: EdLongVerdict | null
+  published_url?: string | null; published_at?: string | null
+  replies?: { at: string; kind: 'reply' | 'signup'; text: string }[]
+}
+export type SubstackStore = {
+  account_id: string
+  cadence: string | null               // Mandi's call; null until she says. Never invented.
+  history_note_ids: number[]           // the build history Cap mined (notes tagged build-history)
+  series_status: 'none' | 'proposed' | 'approved'
+  series_summary?: string
+  issues: SubstackIssue[]
+  updated_at: string
+}
+
 export type BuildLogEntry = { id: string; date: string; title: string; status: 'done' | 'doing' | 'todo'; detail?: string; source: 'claude' | 'rise'; created_at: string }
 
 // The station's SPINE — one running log of everything that happens (a file dropped,
@@ -1021,6 +1085,9 @@ export type Db = {
   health?: { last_quick?: HealthReportRecord | null; last_full?: HealthReportRecord | null }   // Phase 6: Loop 9
   skills?: Skill[]                                                                       // Phase 6: Loop 10
   agent_ideas?: AgentIdea[]                                                              // Phase 6: Loop 14
+  reuse?: ReuseProposal[]                                                                // Phase 6b: Loop 15
+  stories?: Story[]                                                                      // Phase 6b: Loop 11
+  substack?: SubstackStore                                                               // Phase 6b: Loop 13
   memories: Memory[]
   projects: Project[]
   tasks: Task[]

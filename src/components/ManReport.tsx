@@ -22,11 +22,19 @@ export default function ManReport() {
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
 
+  const [ready, setReady] = useState<{ id: string; note_title: string; goal: string; who_for: string }[]>([])
+  const [drafts, setDrafts] = useState(0)
   const load = useCallback(async () => {
     const d = await fetch('/api/health?for=her').then(x => x.json()).catch(() => null)
     if (!d || d.error) { setErr('Man couldn’t run the check just now.'); return }
     setErr(''); setR(d)
+    // Cap's report, carried by Man: existing work ready to send, and long-form drafts waiting on her.
+    const [sw, st, sb] = await Promise.all([fetch('/api/sweep').then(x => x.json()).catch(() => null), fetch('/api/stories').then(x => x.json()).catch(() => null), fetch('/api/substack').then(x => x.json()).catch(() => null)])
+    setReady((sw?.proposals ?? []).filter((p: { status: string }) => p.status === 'ready'))
+    setDrafts((st?.stories ?? []).filter((s: { status: string }) => s.status === 'ready').length + (sb?.issues ?? []).filter((i: { status: string }) => i.status === 'ready').length)
   }, [])
+  const mark = async (id: string, action: 'sent' | 'dismiss') => { await fetch('/api/sweep', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action }) }).catch(() => null); load() }
+  const toStory = () => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'story' } }))
   useEffect(() => { load() }, [load])
 
   const answer = async (id: string, a: 'yes' | 'no') => {
@@ -55,6 +63,20 @@ export default function ManReport() {
         </div>
       ))}
       {r.needs_you.length > 4 && <button type="button" className="mr-link" onClick={() => setAll(x => !x)}>{all ? 'Show fewer' : `Show all ${r.needs_you.length}`}</button>}
+
+      {ready.length > 0 && (
+        <div className="mr-ideas">
+          <p className="mr-h">Ready for you to send (Cap found it in Notes)</p>
+          {ready.slice(0, 3).map(p => (
+            <div key={p.id} className="mr-i">
+              <b>{p.note_title}</b>
+              <span className="mr-d">For: {p.goal} · To: {p.who_for}</span>
+              <div className="mr-row"><button type="button" onClick={() => mark(p.id, 'sent')}>I sent it</button><button type="button" className="mr-ghost" onClick={() => mark(p.id, 'dismiss')}>Not now</button><button type="button" className="mr-ghost" onClick={toStory}>Read it</button></div>
+            </div>
+          ))}
+        </div>
+      )}
+      {drafts > 0 && <p className="mr-s">{drafts} long-form draft{drafts > 1 ? 's' : ''} Ed checked, waiting for your approval. <button type="button" className="mr-link" onClick={toStory}>Open the Story desk</button></p>}
 
       {ideas.ideas.length > 0 && !showIdeas && (
         <p className="mr-s">{ideas.waiting} idea{ideas.waiting > 1 ? 's' : ''} from the agents, held for a lighter day ({ideas.due_today} of {ideas.capacity} slots on today). <button type="button" className="mr-link" onClick={() => setForce(true)}>Show anyway</button></p>

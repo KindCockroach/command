@@ -8,6 +8,7 @@ import NotesPanel from './NotesPanel'
 import WorkflowsPanel from './WorkflowsPanel'
 import AssistantsPanel from './AssistantsPanel'
 import SkillsPanel from './SkillsPanel'
+import LongformDesk from './LongformDesk'
 import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
 import ResearchPanel from './ResearchPanel'
@@ -231,6 +232,7 @@ export default function Dashboard(_props: Props) {
         {view === 'campaigns'  && <CampaignsPanel />}
         {view === 'story'      && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <LongformDesk />
             <StoryStudio />
             <InstantCompose />
             <StoryProcessor />

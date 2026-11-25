@@ -10,7 +10,7 @@ export type AgentMeta = { name: string; label: string; emoji: string; desc: stri
 
 export const AGENT_META: Record<GPTRole, AgentMeta> = {
   // ── Personas (you talk to them) ──
-  anchor:           { name: 'Anc', label: 'Anchor',           emoji: '🎙️', desc: 'Your news editor. Headlines, story separation, which desk each story belongs to.', route_when: 'I have stories tangled in my head and need to know what leads', group: 'persona', hands: 'Files clean stories into Story Studio.' },
+  anchor:           { name: 'Cora', label: 'Cora (Story desk)', emoji: '🗞️', desc: 'Your journalist. Untangles stories, checks facts with Owl and the open angle with Ten, decides the story and outlines it for Pod.', route_when: 'I have a story (or five tangled together) and want to know what it is', group: 'persona', hands: 'Outlines go to Pod through the Story desk (Story tab).' },
   strategist:       { name: 'Str', label: 'Strategist',       emoji: '🗺️', desc: 'Big picture & sequencing', route_when: "I don't know what to do next", group: 'persona', hands: 'Reads goals + pipeline to propose the next move (advises).' },
   cfo:              { name: 'Fin', label: 'CFO',              emoji: '💰', desc: 'Money, ROI, cash flow', route_when: "About to spend or need to know if it's worth it", group: 'persona', hands: 'Reads revenue + goals to pressure-test spend (advises).' },
   operator:         { name: 'Ops', label: 'Operator',         emoji: '⚙️', desc: 'Tasks, timelines, execution', route_when: 'Have a plan and need steps', group: 'persona', hands: 'Breaks plans into tasks and timelines (advises).' },

@@ -40,3 +40,10 @@ export async function parseKit(raw: string): Promise<Record<string, unknown> | n
 export function cut(s: string | null | undefined, n: number): string {
   return Array.from(s ?? '').slice(0, n).join('')
 }
+
+// Models sometimes return list items as objects ({beat:"…"}) instead of strings. Flatten to text.
+export function asLines(v: unknown, max = 10, each = 300): string[] {
+  if (!Array.isArray(v)) return []
+  return v.map(x => typeof x === 'string' ? x : x && typeof x === 'object' ? Object.values(x as Record<string, unknown>).filter(y => typeof y === 'string' || typeof y === 'number').join(': ') : String(x ?? ''))
+    .map(x => cut(x.trim(), each)).filter(Boolean).slice(0, max)
+}
