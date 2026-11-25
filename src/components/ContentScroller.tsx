@@ -4,6 +4,7 @@ import { X, ChevronLeft, ChevronRight, CheckCircle2, Copy, RefreshCw, ExternalLi
 import type { ContentPiece, BrandAccount } from '@/lib/db'
 import { effectiveStatus } from '@/lib/contentStatus'
 import { PlatformPreviewModal } from './AccountsPanel'
+import { ink } from '@/lib/ink'
 
 // One-by-one review scroller for a pipeline lane — arrows, full content view.
 export default function ContentScroller({ status, label, onClose }: { status: string; label: string; onClose: () => void }) {
@@ -184,7 +185,7 @@ export default function ContentScroller({ status, label, onClose }: { status: st
               <div>
                 <p style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.3 }}>{p.title}</p>
                 <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-                  {acct && <span style={{ fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '12px', background: `${acct.color}16`, color: acct.color }}>{acct.emoji} {acct.handle}</span>}
+                  {acct && <span style={{ fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '12px', background: `${acct.color}16`, color: ink(acct.color) }}>{acct.emoji} {acct.handle}</span>}
                   <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '12px', background: 'var(--bg)', color: 'var(--text-subtle)', textTransform: 'uppercase' }}>{p.type.replace(/_/g, ' ')}</span>
                   {media.length > 0 && <span style={{ fontSize: '10px', fontWeight: 700, color: '#3DAA7C' }}>📎 {media.length > 1 ? `${media.length} slides` : 'media'}</span>}
                 </div>

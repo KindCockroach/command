@@ -90,7 +90,7 @@ const WORKFLOWS: Workflow[] = [
     emoji: '🌙',
     title: 'Monthly Reset',
     description: 'End-of-month reflection and next month intention setting',
-    color: '#5a4fcf',
+    color: 'var(--link)',
     agent: 'future_her',
     prompt: 'Walk me through a monthly reset. Speak from a place of calm and perspective. Ask me about the month that just ended, what I\'m most proud of, what I\'m ready to leave behind, and what I want the next month to feel like. Go slow. One question at a time.',
   },

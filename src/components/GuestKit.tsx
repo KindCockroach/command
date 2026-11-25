@@ -229,8 +229,8 @@ const css = `
 .gk-progress{height:6px;background:rgba(90,79,207,.12);border-radius:99px;overflow:hidden}
 .gk-progress i{display:block;height:100%;background:linear-gradient(90deg,#5A4FCF,#E2508A);border-radius:99px;transition:width .3s}
 .gk-sub{font-size:12px;color:var(--text-subtle,#6B6E85);margin:6px 0 0}
-.gk-ok{font-size:14px;color:#2F7D5B;margin:8px 0 0;font-weight:600}
-.gk-err{font-size:14px;color:#B23A48;margin:8px 0 0}
+.gk-ok{font-size:14px;color:var(--done);margin:8px 0 0;font-weight:600}
+.gk-err{font-size:14px;color:var(--bad);margin:8px 0 0}
 .gk-handles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px}
 .gk-handle{display:flex;align-items:center;gap:6px;border:1px solid var(--border,#E7E1D6);border-radius:10px;padding:4px 8px}
 .gk-handle span{font-size:12px;font-weight:600;color:var(--link);width:20px;text-align:center}
@@ -243,12 +243,12 @@ const css = `
 .gk-box{flex:none;width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border,#CFC8BA);background:var(--bg,#fff);display:grid;place-items:center;cursor:pointer;color:#fff;padding:0}
 .gk-steps li.done .gk-box{background:#2F7D5B;border-color:#2F7D5B}
 .gk-steps li.done .gk-steptxt{color:var(--text-subtle,#6B6E85);text-decoration:line-through}
-.gk-steps li.late .gk-due{color:#B23A48;font-weight:600}
+.gk-steps li.late .gk-due{color:var(--bad);font-weight:600}
 .gk-steptxt{flex:1}
 .gk-due{font-size:12px;color:var(--text-subtle,#6B6E85);white-space:nowrap}
 .gk-pill{font-style:normal;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:rgba(138,140,163,.15);color:#6B6E85}
 .gk-pill.sent{background:rgba(217,140,43,.15);color:#A56A14}
-.gk-pill.answered{background:rgba(47,125,91,.14);color:#2F7D5B}
+.gk-pill.answered{background:rgba(47,125,91,.14);color:var(--done)}
 .gk-answers{margin:0 0 10px;display:flex;flex-direction:column;gap:8px}
 .gk-answers dt{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-subtle,#6B6E85)}
 .gk-answers dd{margin:2px 0 0;font-size:14px;line-height:1.5}
@@ -272,7 +272,7 @@ const css = `
 .gk-comms li{display:flex;gap:10px;align-items:center}
 .gk-comms span{color:var(--text-subtle,#6B6E85);width:46px;flex:none}
 .gk-comms em{margin-left:auto;font-style:normal;font-size:12px;font-weight:600;color:var(--text-subtle,#6B6E85)}
-.gk-comms li.failed em{color:#B23A48}
+.gk-comms li.failed em{color:var(--bad)}
 .gk-seg{display:inline-flex;border:1px solid var(--border,#E7E1D6);border-radius:999px;padding:3px;margin-bottom:12px}
 .gk-seg button{border:0;background:none;font:inherit;font-size:14px;font-weight:600;padding:7px 14px;border-radius:999px;cursor:pointer;color:var(--text-subtle,#6B6E85)}
 .gk-seg button.on{background:#5A4FCF;color:#fff}

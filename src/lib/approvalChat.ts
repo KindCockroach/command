@@ -13,6 +13,8 @@ import { openHandoff } from './handoffs'
 import { askAboutPlan } from './plan'
 import { getApprovals } from './approvals'
 import { cut, extractJsonObject } from './jsonkit'
+import { AGENTS } from './agentRoster'
+import { getSkills } from './skills'
 
 export type ChatTurn = { role: 'mandi' | 'cap'; text: string; at: string; handoff_id?: string | null }
 const nowIso = () => new Date().toISOString()
@@ -45,6 +47,7 @@ export async function talkToCap(itemId: string, text: string): Promise<{ turns: 
   const said = (text ?? '').trim()
   if (!said) return { error: 'Say something to Cap first.' }
   if (itemId === CAP_GENERAL) return talkToCapGeneral(said)
+  if (itemId.startsWith('agent:')) return talkToAgent(itemId.slice('agent:'.length), said)
   const item =getApprovals().items.find(i => i.id === itemId) ?? emailItem(itemId)
   if (!item) return { error: 'That item isn’t waiting on you any more.' }
   if ('busy' in item && item.busy) return { error: 'Ed is rewriting this one right now. Give it a minute, then talk to Cap again.' }
@@ -136,4 +139,35 @@ async function talkToCapGeneral(said: string): Promise<{ turns: ChatTurn[] } | {
   }
   push(CAP_GENERAL, { role: 'cap', text: cut(reply || 'Got it.', 1500), at: nowIso() })
   return { turns: getChat(CAP_GENERAL) }
+}
+
+// ── Check in with any agent (Agents tab: "Chat" on each card) ─────────────────────────────
+// Mandi drops by to chat, ask how they're doing, whether they need anything. Each agent answers
+// as itself, from its real work: what's waiting on it, what's stuck, what it finished lately, and
+// its skills. If it needs something from her (a key, a file, a decision) it says exactly what.
+// It changes nothing from here.
+async function talkToAgent(key: string, said: string): Promise<{ turns: ChatTurn[] } | { error: string }> {
+  const a = AGENTS.find(x => x.key === key)
+  if (!a) return { error: 'I don’t know that agent.' }
+  const id = `agent:${key}`
+  push(id, { role: 'mandi', text: cut(said, 2000), at: nowIso() })
+  const db = readDb()
+  const mine = (db.handoffs ?? []).filter(h => h.to === key || h.from === key)
+  const line = (h: Handoff) => `- ${h.status} · ${h.from}→${h.to} · ${cut(h.what ?? h.kind, 140)}${h.note ? ` (note: ${cut(h.note, 120)})` : ''} · ${h.updated_at.slice(0, 10)}`
+  const open = mine.filter(h => h.status === 'open' && h.to === key).slice(-12).map(line)
+  const failed = mine.filter(h => h.status === 'failed').slice(-6).map(line)
+  const done = mine.filter(h => h.status === 'done').slice(-8).map(line)
+  const skills = getSkills().filter(s => s.owner === key).map(s => `- ${s.name}${s.wired ? '' : ' (written, not wired into code yet)'}`)
+  const history = getChat(id).slice(-12).map(t => `${t.role === 'mandi' ? 'MANDI' : a.name.toUpperCase()}: ${t.text}`).join('\n')
+  let reply = ''
+  try {
+    reply = (await fableText({ maxTokens: 500,
+      instructions: `You are ${a.name}, ${a.role} in RISE, Mandi's business. What you do: ${a.does} You answer to ${a.answers}. Mandi has dropped by just to chat with you: check in, see how you're doing, ask if you need anything. Talk like a teammate she likes: warm, real, a little personality, brief (1–4 sentences, no lists unless she asks). When she asks how you're doing, answer from YOUR WORK below (what's waiting on you, what's stuck or failed, what you finished). If you genuinely need something from her to do your job (a key, a file, a decision, footage), say exactly what; if you don't, say so. Never invent work, numbers or dates. You don't change anything from this chat.`,
+      input: `TODAY: ${nowIso().slice(0, 10)}\n\nWAITING ON YOU:\n${open.join('\n') || '(nothing)'}\n\nSTUCK / FAILED LATELY:\n${failed.join('\n') || '(nothing)'}\n\nFINISHED LATELY:\n${done.join('\n') || '(nothing recorded)'}\n\nYOUR SKILLS:\n${skills.join('\n') || '(none written yet)'}\n\nTHE CONVERSATION SO FAR:\n${history}` })).trim()
+  } catch (e) {
+    reply = `I couldn’t answer just now (${e instanceof Error ? e.message : 'no answer'}). Your note is saved here.`
+  }
+  reply = reply.replace(new RegExp(`^\\s*\\**${a.name}\\**\\s*:\\s*`, 'i'), '')   // the thread already shows the name
+  push(id, { role: 'cap', text: cut(reply || 'Doing fine. Thanks for checking in.', 1500), at: nowIso() })
+  return { turns: getChat(id) }
 }

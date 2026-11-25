@@ -82,7 +82,7 @@ export default function PlanPanel() {
             {notes.filter(n => n.kind !== 'reopen').map((n, i) => (
               <div key={i} style={{ fontSize: 12.5, margin: '6px 0', color: 'var(--text)' }}>
                 <div><strong>{n.kind === 'decline' ? 'You declined:' : 'You asked:'}</strong> {n.text}</div>
-                {n.kind === 'question' && <div style={{ marginTop: 3, color: 'var(--text-subtle)' }}><strong style={{ color: '#5A4FCF' }}>Cap:</strong> {n.answer ?? 'Thinking…'}</div>}
+                {n.kind === 'question' && <div style={{ marginTop: 3, color: 'var(--text-subtle)' }}><strong style={{ color: 'var(--link)' }}>Cap:</strong> {n.answer ?? 'Thinking…'}</div>}
               </div>
             ))}
           </div>
@@ -91,10 +91,10 @@ export default function PlanPanel() {
           {p.status !== 'approved' && <button style={primary} disabled={!!busy} onClick={() => approve(p)}>{busy === 'a' + p.id ? 'Approving…' : p.weekly && isDirty(p) ? 'Approve with these counts' : 'Approve'}</button>}
           {p.weekly && isDirty(p) && <button style={btn} disabled={!!busy} onClick={() => saveDraft(p)}>Save counts</button>}
           {p.weekly && isDirty(p) && <button style={{ ...btn, border: '1px solid transparent', color: 'var(--text-subtle)' }} onClick={() => clearDraft(p.id)}>Undo</button>}
-          <button style={{ ...btn, ...(isOpen && open!.mode === 'ask' ? { borderColor: '#5A4FCF', color: '#5A4FCF' } : {}) }} disabled={!!busy} onClick={() => openBox(p.id, 'ask')}>Ask Cap</button>
+          <button style={{ ...btn, ...(isOpen && open!.mode === 'ask' ? { borderColor: '#5A4FCF', color: 'var(--link)' } : {}) }} disabled={!!busy} onClick={() => openBox(p.id, 'ask')}>Ask Cap</button>
           {p.status === 'declined'
             ? <button style={btn} disabled={!!busy} onClick={() => run('o' + p.id, { action: 'reopen', id: p.id })}>Reopen</button>
-            : <button style={{ ...btn, ...(isOpen && open!.mode === 'decline' ? { borderColor: '#B23A48', color: '#B23A48' } : {}) }} disabled={!!busy} onClick={() => openBox(p.id, 'decline')}>Decline…</button>}
+            : <button style={{ ...btn, ...(isOpen && open!.mode === 'decline' ? { borderColor: '#B23A48', color: 'var(--bad)' } : {}) }} disabled={!!busy} onClick={() => openBox(p.id, 'decline')}>Decline…</button>}
         </div>
         {isOpen && (
           <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 10, padding: 10 }}>

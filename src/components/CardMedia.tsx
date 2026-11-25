@@ -287,9 +287,9 @@ const css = `
 .cm-thumb a{color:#fff;font-size:12px;padding:6px;word-break:break-all}
 .cm-rm{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;cursor:pointer}
 .cm-box{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:12px;border:1px solid var(--border,#E7E1D6);background:var(--surface,#fff);font-size:12px}
-.cm-box.ok{flex-direction:row;align-items:center;gap:6px;color:#2F7D5B;border-color:rgba(47,125,91,.35);background:rgba(47,125,91,.07);font-weight:600}
+.cm-box.ok{flex-direction:row;align-items:center;gap:6px;color:var(--done);border-color:rgba(47,125,91,.35);background:rgba(47,125,91,.07);font-weight:600}
 .cm-box.bad{border-color:rgba(178,58,72,.45);background:rgba(178,58,72,.06)}
-.cm-box.bad b{color:#B23A48;font-size:14px}
+.cm-box.bad b{color:var(--bad);font-size:14px}
 .cm-why{color:var(--text-subtle);font-size:12px}
 .cm-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .cm-row.between{justify-content:space-between}
@@ -308,10 +308,10 @@ const css = `
 .cm-ed{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}
 .cm-by{color:var(--text-subtle);font-weight:600}
 .cm-v{font-weight:600;padding:2px 8px;border-radius:999px}
-.cm-v.pass{background:rgba(47,125,91,.12);color:#2F7D5B}
-.cm-v.back{background:rgba(178,58,72,.1);color:#B23A48}
-.cm-why-list{margin:0;padding-left:18px;font-size:12px;color:#B23A48}
-.cm-err{font-size:12px;color:#B23A48;margin:0}
+.cm-v.pass{background:rgba(47,125,91,.12);color:var(--done)}
+.cm-v.back{background:rgba(178,58,72,.1);color:var(--bad)}
+.cm-why-list{margin:0;padding-left:18px;font-size:12px;color:var(--bad)}
+.cm-err{font-size:12px;color:var(--bad);margin:0}
 .cm-note{font-size:12px;color:var(--text-subtle)}
 .cm-plats{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--border,#E7E1D6);padding-top:10px}
 .cm-h{margin:0;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-subtle)}

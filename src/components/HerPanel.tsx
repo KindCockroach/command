@@ -160,5 +160,5 @@ const css = `
 .her-row{display:flex;gap:6px;justify-content:space-between;align-items:center;flex-wrap:wrap}
 .her-send{display:inline-flex;align-items:center;gap:6px;border:0;background:#7C4DDB;color:#fff;border-radius:999px;padding:8px 16px;font-size:14px;font-weight:600;cursor:pointer}
 .her-send:disabled{opacity:.45;cursor:default}
-.her-err{margin:0;font-size:12px;color:#B23A48}
+.her-err{margin:0;font-size:12px;color:var(--bad)}
 `

@@ -4,6 +4,7 @@ import type { ContentPiece, BrandAccount, Character, Db } from '@/lib/db'
 import { parseScript, isChildCharacter, type ScriptLine } from '@/lib/characters'
 import { RefreshCw, Camera, Clapperboard, Loader2, ChevronLeft, ChevronRight, Check, X, Plus } from 'lucide-react'
 import CardMedia from './CardMedia'
+import { ink } from '@/lib/ink'
 
 // CONTENT DAY is EXCLUSIVELY for filming: the director's chair. The script, the emotion to hit,
 // the context that sells the acting. Not a place to plan or coordinate content (that's Cap's
@@ -270,7 +271,7 @@ export default function ContentDay() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'baseline' }}>
-          {a && <span style={{ fontSize: '13px', fontWeight: 800, color: a.color || 'var(--text)' }}>{a.emoji ? `${a.emoji} ` : ''}{a.handle}</span>}
+          {a && <span style={{ fontSize: '13px', fontWeight: 800, color: ink(a.color) || 'var(--text)' }}>{a.emoji ? `${a.emoji} ` : ''}{a.handle}</span>}
           <span style={{ fontFamily: MONO, fontSize: '11px', color: 'var(--text-subtle)' }}>{p.status}{dates[p.id] ? ` · ${dates[p.id]}` : ' · not on the calendar'}</span>
         </div>
         {p.onscreen_text && <div><p style={label}>On-screen</p><p style={{ fontSize: '16px', fontWeight: 800 }}>{p.onscreen_text}</p></div>}

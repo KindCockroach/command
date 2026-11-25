@@ -7,7 +7,7 @@ type Desk = 'processing' | 'growth' | 'relatable' | 'lead'
 const DESK_META: Record<Desk, { label: string; emoji: string; color: string; blurb: string }> = {
   lead:       { label: 'Lead story',   emoji: '🔴', color: '#E05252', blurb: 'Drop-everything. Only you can tell this — shape it and broadcast.' },
   relatable:  { label: 'Broadcast',    emoji: '📖', color: '#3DAA7C', blurb: 'A stranger would feel this and take something home. Worth sharing.' },
-  growth:     { label: 'For your growth', emoji: '🌱', color: '#5A4FCF', blurb: 'This one is a mirror, not a megaphone. Explore it privately.' },
+  growth:     { label: 'For your growth', emoji: '🌱', color: 'var(--link)', blurb: 'This one is a mirror, not a megaphone. Explore it privately.' },
   processing: { label: 'Just processing', emoji: '🫧', color: '#9B8FA6', blurb: 'You wrote it to metabolize it. That IS the point. No audience needed.' },
 }
 const deskMeta = (d?: string) => DESK_META[(d as Desk) ?? 'relatable'] ?? DESK_META.relatable
@@ -134,7 +134,7 @@ function StoryCard({ initial }: { initial: Story }) {
           )}
           {story.journal_prompt && (story.desk === 'processing' || story.desk === 'growth') && (
             <div style={{ padding: '10px 14px', background: 'rgba(90,79,207,0.06)', borderRadius: '10px', borderLeft: '3px solid #5A4FCF' }}>
-              <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: '#5A4FCF', marginBottom: '3px' }}>Take it deeper — for you, not the feed</p>
+              <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--link)', marginBottom: '3px' }}>Take it deeper — for you, not the feed</p>
               <p style={{ fontSize: '13px', color: 'var(--text)', fontStyle: 'italic', lineHeight: 1.5 }}>{story.journal_prompt}</p>
             </div>
           )}

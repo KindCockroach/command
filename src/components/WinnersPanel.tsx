@@ -253,7 +253,7 @@ const css = `
 .wl textarea{width:100%;font:13px ui-monospace,Menlo,monospace;border:1px solid #E2D8C8;border-radius:8px;padding:10px;box-sizing:border-box}
 .wl .go{margin-top:10px;background:#5A4FCF;color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;font-weight:600;cursor:pointer}
 .wl .go:disabled{opacity:.5;cursor:default}
-.wl .msg{font-size:14px;color:#2F7D5B}
+.wl .msg{font-size:14px;color:var(--done)}
 .wl .empty{color:#5C5F78}
 .wl .grp{margin-top:28px}
 .wl .grp h2{font-size:20px;margin:0 0 2px;display:flex;gap:8px;align-items:center}

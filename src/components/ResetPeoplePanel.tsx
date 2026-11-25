@@ -173,7 +173,7 @@ function LumaImport({ onDone }: { onDone: () => void }) {
             <strong style={{ color: ACTION_COLOR.new }}>{pv.counts.new} new</strong> · <strong style={{ color: ACTION_COLOR.merged }}>{pv.counts.merged} merged</strong> · <strong style={{ color: ACTION_COLOR.skipped }}>{pv.counts.skipped} skipped</strong>
             <span style={{ color: 'var(--text-subtle)' }}> &nbsp;|&nbsp; {pv.counts.registered} registered · {pv.counts.attended} attended · {pv.counts.invited} invited only · consent yes {pv.counts.consent_yes} / no {pv.counts.consent_no} / unknown {pv.counts.consent_unknown}</span>
           </p>
-          {pv.warnings.map((w, i) => <p key={i} style={{ fontSize: '12px', color: '#92400E', background: 'rgba(217,119,6,0.08)', borderRadius: 8, padding: '7px 10px', margin: '6px 0' }}>⚠︎ {w}</p>)}
+          {pv.warnings.map((w, i) => <p key={i} style={{ fontSize: '12px', color: 'var(--gold)', background: 'rgba(217,119,6,0.08)', borderRadius: 8, padding: '7px 10px', margin: '6px 0' }}>⚠︎ {w}</p>)}
           <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 9, marginTop: 8 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <tbody>
@@ -285,7 +285,7 @@ function EmailCard({ e, onChange, onMsg }: { e: Email; onChange: () => void; onM
         </div>
       )}
       {e.cap_reasons.length > 0 && <ul style={{ fontSize: 12, color: '#b23b3b', margin: '6px 0', paddingLeft: 18 }}>{e.cap_reasons.map((r, i) => <li key={i}>↩ {r}</li>)}</ul>}
-      {e.cap_notes.length > 0 && <ul style={{ fontSize: 12, color: '#92400E', margin: '6px 0', paddingLeft: 18 }}>{e.cap_notes.map((r, i) => <li key={i}>Cap noticed: {r}</li>)}</ul>}
+      {e.cap_notes.length > 0 && <ul style={{ fontSize: 12, color: 'var(--gold)', margin: '6px 0', paddingLeft: 18 }}>{e.cap_notes.map((r, i) => <li key={i}>Cap noticed: {r}</li>)}</ul>}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
         {e.body && segs.length > 1 && (
           <select value={seg} onChange={ev => setSeg(ev.target.value)} style={{ ...input, width: 'auto' }}>
@@ -348,9 +348,9 @@ function DryRunCard({ events, live, onMsg }: { events: ResetEvent[]; live: boole
           {dry.touches.map(t => (
             <details key={t.key} style={{ borderTop: '1px solid var(--border)', padding: '8px 0' }} open={t.send.length > 0}>
               <summary style={{ cursor: 'pointer', fontSize: 13 }}>
-                <strong>{t.title}</strong> · {t.send_on}{t.due ? ' (due)' : ''} · <span style={{ color: '#2D6E3E' }}>{t.send.length} would get it</span> · <span style={{ color: 'var(--text-subtle)' }}>{t.skip.length} skipped</span>{t.blockers.length ? <span style={{ color: '#92400E' }}> · held</span> : null}
+                <strong>{t.title}</strong> · {t.send_on}{t.due ? ' (due)' : ''} · <span style={{ color: '#2D6E3E' }}>{t.send.length} would get it</span> · <span style={{ color: 'var(--text-subtle)' }}>{t.skip.length} skipped</span>{t.blockers.length ? <span style={{ color: 'var(--gold)' }}> · held</span> : null}
               </summary>
-              {t.blockers.map((b, i) => <p key={i} style={{ fontSize: 12, color: '#92400E', margin: '4px 0' }}>⏸ {b}</p>)}
+              {t.blockers.map((b, i) => <p key={i} style={{ fontSize: 12, color: 'var(--gold)', margin: '4px 0' }}>⏸ {b}</p>)}
               {t.send.map(d => <p key={d.email} style={{ fontSize: 12, margin: '3px 0' }}>✓ {d.name || d.email} <span style={{ color: 'var(--text-subtle)' }}>{d.email} · {d.reason}</span></p>)}
               {t.skip.map(d => <p key={d.email} style={{ fontSize: 12, margin: '3px 0', color: 'var(--text-subtle)' }}>– {d.name || d.email} · {d.reason}</p>)}
             </details>
@@ -376,7 +376,7 @@ function WelcomeCard({ onMsg }: { onMsg: (m: string) => void }) {
       {r.map(w => (
         <div key={w.branch} style={{ marginTop: 10, fontSize: 12.5 }}>
           <strong>{w.title}</strong> · {w.live ? 'LIVE' : 'off'} · {w.send.length} on the list{w.skip.length ? `, ${w.skip.length} skipped` : ''}
-          {w.blockers.map((b, i) => <p key={i} style={{ fontSize: 12, color: '#92400E', margin: '3px 0' }}>⏸ {b}</p>)}
+          {w.blockers.map((b, i) => <p key={i} style={{ fontSize: 12, color: 'var(--gold)', margin: '3px 0' }}>⏸ {b}</p>)}
           {w.skip.map(d => <p key={d.email} style={{ fontSize: 12, margin: '2px 0', color: 'var(--text-subtle)' }}>– {d.email} · {d.reason}</p>)}
         </div>
       ))}

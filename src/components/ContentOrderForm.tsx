@@ -53,7 +53,7 @@ const CONTENT_TYPES = [
     id: 'email',
     label: 'Email',
     icon: '📧',
-    color: '#5A4FCF',
+    color: 'var(--link)',
     components: ['Subject line', 'Preview text', 'Full body', 'CTA button text'],
   },
   {

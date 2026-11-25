@@ -5,6 +5,7 @@ import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, 
 import { postPurpose, PURPOSE_META, type Purpose } from '@/lib/contentStatus'
 import type { BrandAccount, ContentPiece } from '@/lib/db'
 import InstantCompose from './InstantCompose'
+import { ink } from '@/lib/ink'
 
 // ── Platform theming: the flip side wears the platform's colors ───────────────
 const PLATFORM_THEMES: Record<string, { color: string; gradient: string; fg: string }> = {
@@ -403,7 +404,7 @@ function PodcastAudioDrop({ accountId, accentColor, onDone }: { accountId: strin
           onChange={e => { const f = e.target.files?.[0]; if (f) run(f); e.currentTarget.value = '' }} />
         <span style={{ fontSize: '20px' }}>🎙</span>
         <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.35 }}>
-          {state === 'idle' && <>Drop your voice recording → <span style={{ color: accentColor }}>AI Mom Mandi video in your exact voice</span></>}
+          {state === 'idle' && <>Drop your voice recording → <span style={{ color: ink(accentColor) }}>AI Mom Mandi video in your exact voice</span></>}
           {state === 'uploading' && <>Uploading {msg}…</>}
           {state === 'rendering' && <>🎬 {msg}</>}
           {state === 'done' && <>✅ {msg}</>}
@@ -458,7 +459,7 @@ function VoiceAllButton({ posts, accentColor, onDone }: { posts: ContentPiece[];
   }
   if (!todo.length) return null
   return (
-    <button onClick={run} disabled={running} style={{ padding: '6px 12px', borderRadius: '20px', border: `2px solid ${accentColor}`, background: `${accentColor}12`, color: accentColor, fontSize: '11px', fontWeight: 700, cursor: running ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+    <button onClick={run} disabled={running} style={{ padding: '6px 12px', borderRadius: '20px', border: `2px solid ${accentColor}`, background: `${accentColor}12`, color: ink(accentColor), fontSize: '11px', fontWeight: 700, cursor: running ? 'default' : 'pointer', fontFamily: 'inherit' }}>
       {running ? `🔊 Voicing… ${done}/${todo.length}${err ? ` · ${err} failed` : ''}` : `🔊 Voice ${todo.length} in Mandi’s clone (burn credits)`}
     </button>
   )
@@ -529,7 +530,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
     else { setPinErr(d.error || 'Could not make pins'); setPinState('error') }
   }
   const SHOT_META: Record<string, { icon: string; label: string; color: string }> = {
-    capture: { icon: '🎥', label: 'Capture now', color: '#5A4FCF' },
+    capture: { icon: '🎥', label: 'Capture now', color: 'var(--link)' },
     camera_roll: { icon: '📸', label: 'In your camera roll', color: '#E8448A' },
     talking_head: { icon: '🗣️', label: 'Talking head', color: '#3DAA7C' },
     compilation: { icon: '🎞️', label: 'Compilation', color: '#F2A65A' },
@@ -1017,11 +1018,11 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
           <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.4, wordBreak: 'break-word' }}><span style={{ color: 'var(--text-subtle)', marginRight: '5px' }}>#{post.id}</span>{post.title}</p>
           <div style={{ display: 'flex', gap: '6px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
             {(() => { const pm = PURPOSE_META[postPurpose(post)]; return <span title={`${pm.label}-purpose post`} style={{ fontSize: '9px', fontWeight: 800, padding: '3px 8px', borderRadius: '10px', background: pm.bg, color: pm.color }}>{pm.emoji} {pm.label}</span> })()}
-            <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: accentColor }}>{post.type.replace(/_/g, ' ')}</span>
+            <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: ink(accentColor) }}>{post.type.replace(/_/g, ' ')}</span>
             <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 8px', borderRadius: '10px', background: statusChip.bg, color: statusChip.color }}>{statusChip.label}</span>
             {gallery.length > 0 ? <span style={{ fontSize: '9px', color: '#3DAA7C', fontWeight: 700 }}>📎 {gallery.length > 1 ? `${gallery.length} slides` : 'media'}</span>
               : post.image_prompt ? <span style={{ fontSize: '9px', color: 'var(--text-subtle)' }}>🎨 prompt ready</span> : null}
-            {post.note_id ? <button onClick={e => { e.stopPropagation(); openLinkedNote(post.note_id!) }} title="Open the linked draft in Notes" style={{ fontSize: '9px', fontWeight: 800, padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: accentColor, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>📄 Draft note →</button> : null}
+            {post.note_id ? <button onClick={e => { e.stopPropagation(); openLinkedNote(post.note_id!) }} title="Open the linked draft in Notes" style={{ fontSize: '9px', fontWeight: 800, padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: ink(accentColor), border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>📄 Draft note →</button> : null}
           </div>
         </div>
 
@@ -1221,7 +1222,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
                     </button>
                     <button onClick={polish} disabled={polishing}
                       title="Reshape the FORMAT — proper spacing, a real hook, and a true arc (open → turn → land). Keeps your meaning; makes it flow."
-                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 13px', borderRadius: '9px', border: `1px solid ${accentColor}`, background: 'transparent', color: accentColor, fontWeight: 800, fontSize: '12px', cursor: polishing ? 'default' : 'pointer' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 13px', borderRadius: '9px', border: `1px solid ${accentColor}`, background: 'transparent', color: ink(accentColor), fontWeight: 800, fontSize: '12px', cursor: polishing ? 'default' : 'pointer' }}>
                       {polishing ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : '🪄'} Reshape &amp; give it arc
                     </button>
                   </div>
@@ -1616,7 +1617,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
                 : !post.image_prompt ? <>🖥️ Send to Supercomputer (needs an image prompt ↑)</>
                 : <>🖥️ Send to Supercomputer</>}
             </button>
-            {scState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {scErr} <button onClick={sendToSupercomputer} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
+            {scState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {scErr} <button onClick={sendToSupercomputer} style={{ border: 'none', background: 'none', color: 'var(--link)', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
           </div>
 
           {/* 🎨 Canva Autofill — fill the brand template with this post's slides */}
@@ -1643,7 +1644,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
               ))}
             </div>
             <button onClick={writeScript} disabled={writingScript}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid rgba(90,79,207,0.4)', background: 'rgba(90,79,207,0.05)', color: '#5a4fcf', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: writingScript ? 0.7 : 1 }}>
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid rgba(90,79,207,0.4)', background: 'rgba(90,79,207,0.05)', color: 'var(--link)', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: writingScript ? 0.7 : 1 }}>
               {writingScript ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Writing a {scriptSecs}s script…</> : <>✍️ {post.script ? `Rewrite the ${scriptSecs}s script` : `Write me a ${scriptSecs}s script`}</>}
             </button>
           </div>
@@ -1658,7 +1659,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
                 : !post.script ? <>🎬 Make avatar video (write a script first ↑)</>
                 : <>🎬 Make avatar video from the script</>}
             </button>
-            {videoState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {videoErr} <button onClick={makeVideo} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
+            {videoState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {videoErr} <button onClick={makeVideo} style={{ border: 'none', background: 'none', color: 'var(--link)', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
           </div>
 
           </>)}
@@ -2183,7 +2184,7 @@ export default function AccountsPanel() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: s.color }}>
+                  <div className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: ink(s.color) }}>
                     {s.icon} {s.label}
                   </div>
                   <button onClick={e => { e.stopPropagation(); setEditing(acct) }} title="Edit purpose & brand DNA"
@@ -2228,7 +2229,7 @@ export default function AccountsPanel() {
                   { label: 'Posted', n: posted.length, color: '#3DAA7C' },
                 ].map(st => (
                   <div key={st.label} className="rounded-lg px-1 py-1.5 text-center" style={{ background: 'var(--surface-raised, var(--nebula-light))' }}>
-                    <p className="text-[14px] font-extrabold leading-none" style={{ color: st.color }}>{st.n}</p>
+                    <p className="text-[14px] font-extrabold leading-none" style={{ color: ink(st.color) }}>{st.n}</p>
                     <p className="text-[8px] font-bold uppercase tracking-wide mt-0.5" style={{ color: 'var(--text-subtle)' }}>{st.label}</p>
                   </div>
                 ))}
@@ -2238,7 +2239,7 @@ export default function AccountsPanel() {
               <button onClick={e => { e.stopPropagation(); setComposeFor(acct) }}
                 title={`Compose a post for ${acct.handle} from a photo or video`}
                 className="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-bold w-full"
-                style={{ background: acct.color + '15', color: acct.color, border: 'none', cursor: 'pointer' }}>
+                style={{ background: acct.color + '15', color: ink(acct.color), border: 'none', cursor: 'pointer' }}>
                 <Plus size={12} /> Add Post
               </button>
 

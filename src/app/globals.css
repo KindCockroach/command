@@ -249,9 +249,11 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
   --done: #0F6E4C;  --done-bg: #E3F6EE;
 
   /* depth + glow */
-  --banner: linear-gradient(125deg, #4A2FC0 0%, #7A4FE0 60%, #A45BD8 100%);
+  --banner: linear-gradient(125deg, #34209A 0%, #5A36CC 35%, #7A4FE0 65%, #A45BD8 100%);
   --banner-ink: #FFFFFF; --banner-sub: #F1ECFF;
-  --banner-glow: 0 14px 34px rgba(91,63,214,0.34), inset 0 0 0 1px rgba(255,255,255,0.35);
+  --banner-glow: 0 14px 34px rgba(91,63,214,0.30), 0 0 0 1px rgba(138,90,30,0.35), 0 0 16px rgba(240,196,100,0.45);
+  /* the thin gold tube wrapping the banner: metal light/dark bands so it reads round, not flat */
+  --banner-tube: linear-gradient(135deg, #B07A22 0%, #FFE08A 14%, #D19A2E 30%, #FFF4C9 46%, #C08A2A 62%, #FFD873 80%, #A8701C 100%);
   --glow-act: 0 8px 24px rgba(91,63,214,0.45);
   --glow-act-hover: 0 12px 30px rgba(91,63,214,0.55);
   --lift: 0 6px 16px rgba(74,47,192,0.14);
@@ -279,6 +281,7 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
   --banner: linear-gradient(120deg, #1C1840 0%, #4C2A8C 100%);
   --banner-ink: #FFFFFF; --banner-sub: #DCD6FA;
   --banner-glow: 0 0 34px rgba(150,120,255,0.40), inset 0 0 0 1px rgba(255,255,255,0.08);
+  --banner-tube: none;
   --glow-act: 0 6px 22px rgba(183,156,255,0.55);
   --glow-act-hover: 0 10px 30px rgba(183,156,255,0.70);
   --lift: 0 4px 14px rgba(0,0,0,0.5);
@@ -287,7 +290,7 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
 }
 
 /* ── One typeface everywhere she reads (code stays monospace) ── */
-.rise-app *:not(code):not(pre):not(kbd):not([style*="monospace"]):not([class*="mono"]) { font-family: var(--font-ui) !important; }
+.rise-app *:not(code):not(pre):not(kbd):not(.sk-mono) { font-family: var(--font-ui) !important; }
 
 /* ── The type scale, enforced on the old inline sizes (34 sizes → 5). Panels keep their
    code; this maps every inline size to the nearest step, and nothing she reads is <12px. ── */
@@ -398,3 +401,53 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
 .rp-banner .rp-pill.rp-primary, .rp-banner .rp-pill[aria-pressed="true"] { background: #FFFFFF; color: #3B2A99; box-shadow: 0 6px 20px rgba(20,16,47,0.28), 0 0 18px rgba(255,255,255,0.45); }
 .rp-banner .rp-pill.rp-secondary { background: rgba(255,255,255,0.14); color: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.32); }
 .rp-banner .rp-pill.rp-secondary:hover { background: rgba(255,255,255,0.24); }
+
+/* ── Phase 7 step 5: facelift ── */
+/* A panel's own title that repeats the banner (Approve under Approve) is hidden; its actions stay. */
+.rise-app .rp-dup-title { display: none !important; }
+/* Narrower screens: tabs tighten instead of clipping All tools */
+@media (max-width: 1180px) { .rise-app .rp-tab { padding-left: 9px !important; padding-right: 9px !important; } }
+
+/* step 5: more hard-coded text colors that missed 4.5:1 */
+.rise-app [style*="; color: rgb(46, 139, 96)"], .rise-app [style^="color: rgb(46, 139, 96)"] { color: var(--done) !important; }
+.rise-app [style*="; color: rgb(224, 145, 47)"], .rise-app [style^="color: rgb(224, 145, 47)"],
+.rise-app [style*="; color: rgb(185, 106, 30)"], .rise-app [style^="color: rgb(185, 106, 30)"],
+.rise-app [style*="; color: rgb(194, 105, 63)"], .rise-app [style^="color: rgb(194, 105, 63)"],
+.rise-app [style*="; color: rgb(201, 123, 44)"], .rise-app [style^="color: rgb(201, 123, 44)"] { color: var(--gold) !important; }
+.rise-app [style*="; color: rgb(148, 163, 184)"], .rise-app [style^="color: rgb(148, 163, 184)"] { color: var(--text-subtle) !important; }
+.rise-app [style*="; color: rgb(255, 107, 53)"], .rise-app [style^="color: rgb(255, 107, 53)"] { color: #B5441A !important; }
+[data-theme="dark"] .rise-app [style*="; color: rgb(255, 107, 53)"], [data-theme="dark"] .rise-app [style^="color: rgb(255, 107, 53)"] { color: #FF9B73 !important; }
+.rise-app [style*="background: rgb(46, 139, 96)"] { background: #0F6E4C !important; }
+/* white text on a pale disabled button reads as nothing; give it the muted text color */
+.rise-app [style*="background: var(--border)"][style*="color: rgb(255, 255, 255)"] { color: var(--text-muted) !important; }
+
+/* step 5: a red for problems that reads in both themes */
+.rise-app { --bad: #B42323; }
+[data-theme="dark"] .rise-app { --bad: #FF8A8A; }
+/* Night: inline text colors picked for white pages, lifted so they read on dark */
+[data-theme="dark"] .rise-app [style*="; color: rgb(178, 58, 72)"], [data-theme="dark"] .rise-app [style^="color: rgb(178, 58, 72)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(220, 38, 38)"], [data-theme="dark"] .rise-app [style^="color: rgb(220, 38, 38)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(192, 57, 43)"], [data-theme="dark"] .rise-app [style^="color: rgb(192, 57, 43)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(224, 82, 82)"], [data-theme="dark"] .rise-app [style^="color: rgb(224, 82, 82)"] { color: #FF8A8A !important; }
+[data-theme="dark"] .rise-app [style*="; color: rgb(47, 125, 91)"], [data-theme="dark"] .rise-app [style^="color: rgb(47, 125, 91)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(46, 139, 96)"], [data-theme="dark"] .rise-app [style^="color: rgb(46, 139, 96)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(15, 110, 76)"], [data-theme="dark"] .rise-app [style^="color: rgb(15, 110, 76)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(61, 170, 124)"], [data-theme="dark"] .rise-app [style^="color: rgb(61, 170, 124)"] { color: #5EE0B0 !important; }
+[data-theme="dark"] .rise-app [style*="; color: rgb(90, 79, 207)"], [data-theme="dark"] .rise-app [style^="color: rgb(90, 79, 207)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(124, 77, 219)"], [data-theme="dark"] .rise-app [style^="color: rgb(124, 77, 219)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(91, 63, 214)"], [data-theme="dark"] .rise-app [style^="color: rgb(91, 63, 214)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(124, 58, 237)"], [data-theme="dark"] .rise-app [style^="color: rgb(124, 58, 237)"] { color: #B79CFF !important; }
+[data-theme="dark"] .rise-app [style*="; color: rgb(107, 114, 128)"], [data-theme="dark"] .rise-app [style^="color: rgb(107, 114, 128)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(75, 85, 99)"], [data-theme="dark"] .rise-app [style^="color: rgb(75, 85, 99)"] { color: #A3A8CC !important; }
+[data-theme="dark"] .rise-app [style*="; color: rgb(146, 64, 14)"], [data-theme="dark"] .rise-app [style^="color: rgb(146, 64, 14)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(194, 65, 12)"], [data-theme="dark"] .rise-app [style^="color: rgb(194, 65, 12)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(180, 83, 9)"], [data-theme="dark"] .rise-app [style^="color: rgb(180, 83, 9)"],
+[data-theme="dark"] .rise-app [style*="; color: rgb(185, 106, 30)"], [data-theme="dark"] .rise-app [style^="color: rgb(185, 106, 30)"] { color: #E2B48A !important; }
+
+/* Day: Orchid banner wrapped in a thin gold tube (Mandi 11-25) */
+.rise-app .rp-banner { border: 3px solid transparent; background: var(--banner) padding-box, var(--banner-tube, var(--banner)) border-box; }
+[data-theme="dark"] .rise-app .rp-banner { border-color: transparent; background: var(--banner); border-width: 0; }
+/* Night: pale chip backgrounds become dark tints so their text reads */
+[data-theme="dark"] .rise-app [style*="background: rgb(254, 243, 199)"], [data-theme="dark"] .rise-app [style*="background: rgb(254, 243, 236)"] { background: rgba(226,180,138,0.14) !important; }
+[data-theme="dark"] .rise-app [style*="background: var(--pink)"][style*="color: rgb(255, 255, 255)"] { color: #2A0F1E !important; }
+[data-theme="dark"] .rise-app [style*="background: var(--hot-pink)"] { color: #2A0F1E !important; }

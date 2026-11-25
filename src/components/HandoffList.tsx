@@ -50,7 +50,7 @@ export function HandoffItem({ h, onChanged }: { h: HandoffRow; onChanged?: () =>
       </div>
       <span style={{ color: 'var(--text)', overflowWrap: 'anywhere' }}>{h.what || h.kind}{h.content_id ? <span style={{ color: 'var(--text-subtle)' }}> · card #{h.content_id}{h.title ? ` “${h.title.slice(0, 40)}”` : ''}</span> : null}</span>
       {h.receipt && <span style={{ color: 'var(--text-muted,#5F6178)', overflowWrap: 'anywhere' }}>✓ {h.receipt}</span>}
-      {h.state === 'failed' && h.error && <span style={{ color: '#B23A48', overflowWrap: 'anywhere' }}>⚠ {h.error}</span>}
+      {h.state === 'failed' && h.error && <span style={{ color: 'var(--bad)', overflowWrap: 'anywhere' }}>⚠ {h.error}</span>}
       {h.state === 'stuck' && <span style={{ color: '#A3610F' }}>⚠ This stopped partway (no word back in over 10 minutes).</span>}
       {h.state === 'waiting' && <span style={{ color: 'var(--text-subtle)', fontSize: 11.5 }}>{NAME[h.to] ?? h.to} picks this up in planning.</span>}
       {h.can_retry && (
@@ -58,7 +58,7 @@ export function HandoffItem({ h, onChanged }: { h: HandoffRow; onChanged?: () =>
           {busy ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <RotateCcw size={12} />} Retry
         </button>
       )}
-      {err && <span style={{ color: '#B23A48', fontSize: 12 }}>{err}</span>}
+      {err && <span style={{ color: 'var(--bad)', fontSize: 12 }}>{err}</span>}
     </div>
   )
 }

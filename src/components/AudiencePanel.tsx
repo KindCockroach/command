@@ -28,7 +28,7 @@ const ARRAY_FIELDS: { key: keyof Audience; label: string; color: string }[] = [
   { key: 'exact_language', label: 'Her exact language — mirror these', color: '#E8448A' },
   { key: 'trending_phrases', label: 'Trending phrases', color: '#4CC9F0' },
   { key: 'objections', label: 'Objections', color: '#9B8FA6' },
-  { key: 'buying_triggers', label: 'Buying triggers', color: '#5A4FCF' },
+  { key: 'buying_triggers', label: 'Buying triggers', color: 'var(--link)' },
   { key: 'watering_holes', label: 'Where she scrolls', color: '#748CAB' },
   { key: 'tried_already', label: 'Already tried (failed her)', color: '#64748b' },
 ]

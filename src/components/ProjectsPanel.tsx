@@ -5,7 +5,7 @@ import type { Project, ProjectStatus, ProjectPriority, ProjectLabel, ContentPiec
 import ContentOrderForm from './ContentOrderForm'
 
 const LABEL_META: Record<ProjectLabel, { name: string; color: string }> = {
-  series: { name: 'Series', color: '#5a4fcf' },
+  series: { name: 'Series', color: 'var(--link)' },
   biz_dev: { name: 'Biz Dev', color: '#3daa7c' },
   new_account: { name: 'New Account', color: '#e8448a' },
   launch: { name: 'Launch', color: '#f2a65a' },

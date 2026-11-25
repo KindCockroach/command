@@ -4,6 +4,7 @@ import type { ContentPiece, BrandAccount } from '@/lib/db'
 import { priorityScore } from '@/lib/priority'
 import { PURPOSE_META, postPurpose } from '@/lib/contentStatus'
 import { Rocket, RefreshCw, ArrowRight, Loader2 } from 'lucide-react'
+import { ink } from '@/lib/ink'
 
 // SHIP THIS NEXT — the priority brain. Scores every actionable post (goal-fit ·
 // impact · ease of filming · readiness · cash) and shows the top few to work on
@@ -79,7 +80,7 @@ export default function ShipThisNext() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap', marginBottom: '3px' }}>
                   <span style={{ fontFamily: MONO, fontSize: '11px', fontWeight: 700, color: scoreColor(score) }}>{score}</span>
-                  {a && <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 7px', borderRadius: '10px', background: `${a.color}18`, color: a.color }}>{a.emoji} {a.handle}</span>}
+                  {a && <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 7px', borderRadius: '10px', background: `${a.color}18`, color: ink(a.color) }}>{a.emoji} {a.handle}</span>}
                   <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 7px', borderRadius: '10px', background: pm.bg, color: pm.color }}>{pm.emoji} {pm.label}</span>
                 </div>
                 <p style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.3 }}>{p.title}</p>

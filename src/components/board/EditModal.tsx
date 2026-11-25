@@ -528,7 +528,7 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
     else { setFootErr(d.error || 'Could not suggest footage'); setFootState('error') }
   }
   const SHOT_META: Record<string, { icon: string; label: string; color: string }> = {
-    capture: { icon: '🎥', label: 'Capture now', color: '#5A4FCF' },
+    capture: { icon: '🎥', label: 'Capture now', color: 'var(--link)' },
     camera_roll: { icon: '📸', label: 'In your camera roll', color: '#E8448A' },
     talking_head: { icon: '🗣️', label: 'Talking head', color: '#3DAA7C' },
     compilation: { icon: '🎞️', label: 'Compilation', color: '#F2A65A' },

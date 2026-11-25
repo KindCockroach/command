@@ -22,13 +22,13 @@ type Filter = 'all' | 'joyful_media' | 'wfh'
 
 const BRANCH = {
   joyful_media: { name: 'Joyful Media', color: '#C2693F', soft: 'rgba(194,105,63,0.12)' },
-  wfh: { name: 'WFH', color: '#5A4FCF', soft: 'rgba(90,79,207,0.12)' },
+  wfh: { name: 'WFH', color: 'var(--link)', soft: 'rgba(90,79,207,0.12)' },
 } as const
 const STATUS: Record<string, { text: string; color: string }> = {
   idea: { text: 'To make', color: '#8A8CA3' }, in_progress: { text: 'In progress', color: '#D98C2B' },
   ready: { text: 'Ready', color: '#2F6FD9' }, approved: { text: 'Approved', color: '#2F6FD9' },
-  scheduled: { text: 'Scheduled', color: '#7C4DDB' }, published: { text: 'Posted', color: '#2F7D5B' },
-  held: { text: 'Held', color: '#8A8CA3' }, archived: { text: 'Archived', color: '#8A8CA3' }, missing: { text: 'Card missing', color: '#B23A48' },
+  scheduled: { text: 'Scheduled', color: 'var(--link)' }, published: { text: 'Posted', color: 'var(--done)' },
+  held: { text: 'Held', color: '#8A8CA3' }, archived: { text: 'Archived', color: '#8A8CA3' }, missing: { text: 'Card missing', color: 'var(--bad)' },
 }
 const HOUR_FIRST = 6, HOUR_LAST = 23, HOUR_PX = 52
 
@@ -376,7 +376,7 @@ const css = `
 .pc-chip.dragging{opacity:.35}
 .pc-chip.fileover{box-shadow:0 0 0 2px #E2508A;background:rgba(226,80,138,.12)}
 .pc-flag{font-size:12px}
-.pc-flag.bad{color:#B23A48}
+.pc-flag.bad{color:var(--bad)}
 .pc-chip.done .pc-chip-txt{text-decoration:line-through;opacity:.6}
 .pc-dot{flex:none;width:7px;height:7px;border-radius:50%;margin-top:4px;display:inline-block}
 .pc-chip-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

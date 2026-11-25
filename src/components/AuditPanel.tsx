@@ -204,7 +204,7 @@ export default function AuditPanel() {
             { icon: <Users size={13} />, label: 'Tracked', value: String(watched.length), color: 'var(--hot-pink)' },
             { icon: <TrendingUp size={13} />, label: 'Combined reach', value: fmtFollowers(totalReach) ?? '—', color: '#3DAA7C' },
             { icon: <MessageSquareQuote size={13} />, label: 'Buzzwords', value: String(allBuzz.length), color: '#E8448A' },
-            { icon: <KeyRound size={13} />, label: 'Keywords', value: String(allKeys.length), color: '#5A4FCF' },
+            { icon: <KeyRound size={13} />, label: 'Keywords', value: String(allKeys.length), color: 'var(--link)' },
             { icon: <LayoutTemplate size={13} />, label: 'Formats', value: String(allFormats.length), color: '#F2A65A' },
           ].map(s => (
             <div key={s.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
@@ -281,10 +281,10 @@ export default function AuditPanel() {
           </div>
 
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#5A4FCF', marginBottom: '10px' }}>🔑 Keyword cloud — discovery terms across the niche</p>
+            <p style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--link)', marginBottom: '10px' }}>🔑 Keyword cloud — discovery terms across the niche</p>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
               {allKeys.map(({ term, count }) => (
-                <span key={term} style={{ fontSize: `${Math.min(10 + count * 3, 19)}px`, fontWeight: 700, padding: '4px 12px', borderRadius: '20px', background: `rgba(90,79,207,${Math.min(0.06 + count * 0.06, 0.3)})`, color: '#5A4FCF' }}>
+                <span key={term} style={{ fontSize: `${Math.min(10 + count * 3, 19)}px`, fontWeight: 700, padding: '4px 12px', borderRadius: '20px', background: `rgba(90,79,207,${Math.min(0.06 + count * 0.06, 0.3)})`, color: 'var(--link)' }}>
                   {term}{count > 1 && <sup style={{ fontSize: '9px', marginLeft: '2px' }}>×{count}</sup>}
                 </span>
               ))}

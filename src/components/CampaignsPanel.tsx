@@ -24,7 +24,7 @@ const ORDER: Brand[] = ['btfh', 'wfh', 'joyful']   // brand houses, still used b
 // Two branches, Joyful Media first (it is the primary business). The podcast lives under WFH.
 const BRANCHES: { id: 'joyful_media' | 'wfh'; name: string; emoji: string; color: string; note: string }[] = [
   { id: 'joyful_media', name: 'Joyful Media', emoji: '🌙', color: '#C2693F', note: 'Mindfulness · primary' },
-  { id: 'wfh', name: 'WFH (Works For Her)', emoji: '🎙', color: '#5A4FCF', note: 'AI · podcast only for now, marketing paused' },
+  { id: 'wfh', name: 'WFH (Works For Her)', emoji: '🎙', color: 'var(--link)', note: 'AI · podcast only for now, marketing paused' },
 ]
 const STATUS_BADGE: Record<string, string> = { soon: 'SOON', deferred: 'DEFERRED', paused: 'PAUSED' }
 const AUDIENCE: { id: string; text: string }[] = [
@@ -39,7 +39,7 @@ const input = { width: '100%', border: '1px solid var(--border)', borderRadius: 
 
 function cadenceText(p: Product): { text: string; color: string } {
   if (p.cadence_days === 0) return { text: 'no cadence', color: 'var(--text-subtle)' }
-  if (p.overdue) return { text: p.days_since === null ? 'never reached out' : `${p.days_since}d — reach out`, color: '#C2410C' }
+  if (p.overdue) return { text: p.days_since === null ? 'never reached out' : `${p.days_since}d — reach out`, color: 'var(--gold)' }
   return { text: p.days_since === 0 ? 'reached today' : `reached ${p.days_since}d ago`, color: '#15803D' }
 }
 
@@ -135,7 +135,7 @@ export default function CampaignsPanel() {
       {/* Overdue nudge — quiet, taps straight into composing */}
       {overdue.length > 0 && (
         <div style={{ marginBottom: '18px' }}>
-          <button onClick={() => setShowOverdue(s => !s)} style={{ display: 'flex', alignItems: 'center', gap: '7px', border: '1px solid #F0C2A0', background: '#FEF3EC', borderRadius: '10px', padding: '8px 13px', fontSize: '12.5px', fontWeight: 700, color: '#C2410C', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={() => setShowOverdue(s => !s)} style={{ display: 'flex', alignItems: 'center', gap: '7px', border: '1px solid #F0C2A0', background: '#FEF3EC', borderRadius: '10px', padding: '8px 13px', fontSize: '12.5px', fontWeight: 700, color: 'var(--gold)', cursor: 'pointer', fontFamily: 'inherit' }}>
             🔴 {overdue.length} overdue to reach out
             <ChevronDown size={14} style={{ transform: showOverdue ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
           </button>

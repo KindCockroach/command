@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Send, Loader2 } from 'lucide-react'
 import type { ContentPiece, BrandAccount } from '@/lib/db'
+import { ink } from '@/lib/ink'
 
 type Msg = { role: 'user' | 'ai'; text: string }
 
@@ -70,7 +71,7 @@ export default function PostChat({ post, account, onClose, onChanged }: {
             <span style={{ fontSize: '15px' }}>⚡</span>
             <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Finish: {current.title}</p>
-              {account && <p style={{ fontSize: '10px', fontWeight: 700, color: account.color }}>{account.emoji} {account.handle}</p>}
+              {account && <p style={{ fontSize: '10px', fontWeight: 700, color: ink(account.color) }}>{account.emoji} {account.handle}</p>}
             </div>
           </div>
           <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', display: 'flex' }}><X size={17} /></button>

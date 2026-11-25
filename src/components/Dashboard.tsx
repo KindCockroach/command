@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AccountsPanel from './AccountsPanel'
 import ProjectsPanel from './ProjectsPanel'
 import VisionPanel from './VisionPanel'
@@ -205,6 +205,27 @@ export default function Dashboard(_props: Props) {
   const order: TabId[] = navOrder.length ? navOrder : TAB_IDS
   const cur = TABS.find(t => t.id === tab)!
   const curSub = subOf(tab)
+  const mainRef = useRef<HTMLElement>(null)
+
+  // A panel's own big title that repeats the banner ("Approve" under Approve, "Your Accounts"
+  // under Accounts) is hidden, so each screen has one heading. Its buttons and description stay.
+  useEffect(() => {
+    const el = mainRef.current
+    if (!el) return
+    const norm = (x: string) => x.toLowerCase().replace(/^your\s+/, '').replace(/[^a-z ]/g, '').trim()
+    const sub = cur.subs.find(s => s.id === curSub)
+    const names = new Set([cur.label, sub?.label, sub?.old].filter(Boolean).map(x => norm(x as string)))
+    let raf = 0
+    const mark = () => {
+      raf = 0
+      const heads = [...el.querySelectorAll<HTMLElement>('h1, h2')].filter(h => !h.closest('.rp-banner, [aria-label="All tools"]') && h.offsetParent !== null)
+      for (const h of heads.slice(0, 2)) if (names.has(norm(h.textContent ?? ''))) h.classList.add('rp-dup-title')
+    }
+    mark()
+    const mo = new MutationObserver(() => { if (!raf) raf = requestAnimationFrame(mark) })
+    mo.observe(el, { childList: true, subtree: true })
+    return () => { mo.disconnect(); if (raf) cancelAnimationFrame(raf) }
+  }, [tab, curSub, cur])
 
   return (
     <div className="rise-app" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -242,7 +263,7 @@ export default function Dashboard(_props: Props) {
         </div>
       </header>
 
-      <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <main ref={mainRef} style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
         {allTools && (
           <section className="rp-card" aria-label="All tools">

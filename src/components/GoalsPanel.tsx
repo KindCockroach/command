@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Target, Plus, Loader2, Trash2, Pause, Play, Pencil, X, Save, Flame, ChevronLeft, ChevronRight, Clock, Sparkles, CalendarPlus, Lightbulb } from 'lucide-react'
 import type { BrandAccount, ContentPiece, CalendarEvent, EventKind } from '@/lib/db'
+import { ink } from '@/lib/ink'
 
 type GoalRow = {
   id: number
@@ -34,7 +35,7 @@ const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padS
 const EVENT_KINDS: { kind: EventKind; label: string; emoji: string; color: string }[] = [
   { kind: 'launch',   label: 'Launch',   emoji: '🚀', color: '#E8448A' },
   { kind: 'promo',    label: 'Promo',    emoji: '📣', color: '#F2A65A' },
-  { kind: 'holiday',  label: 'Holiday',  emoji: '🎉', color: '#5A4FCF' },
+  { kind: 'holiday',  label: 'Holiday',  emoji: '🎉', color: 'var(--link)' },
   { kind: 'personal', label: 'Personal', emoji: '💛', color: '#3DAA7C' },
   { kind: 'trend',    label: 'Trend',    emoji: '📈', color: '#4CC9F0' },
   { kind: 'other',    label: 'Other',    emoji: '📌', color: '#9B8FA6' },
@@ -180,7 +181,7 @@ function ScheduleCalendar({ goals, accounts }: { goals: GoalRow[]; accounts: Bra
           <div>
             <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>
               {now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-              <span style={{ color: '#5a4fcf', marginLeft: '8px', fontVariantNumeric: 'tabular-nums' }}>{now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</span>
+              <span style={{ color: 'var(--link)', marginLeft: '8px', fontVariantNumeric: 'tabular-nums' }}>{now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</span>
             </p>
             <p style={{ fontSize: '10px', color: 'var(--text-subtle)', marginTop: '1px' }}>
               Day {(now.getDay() + 6) % 7 + 1} of 7 this week — pace targets pro-rate against this
@@ -309,7 +310,7 @@ function ScheduleCalendar({ goals, accounts }: { goals: GoalRow[]; accounts: Bra
                 <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>
                   {km.emoji} {e.title}
                   {e.time && <span style={{ color: km.color, marginLeft: '6px' }}>{e.time}</span>}
-                  {a && <span style={{ color: a.color, marginLeft: '6px' }}>· {a.handle}</span>}
+                  {a && <span style={{ color: ink(a.color), marginLeft: '6px' }}>· {a.handle}</span>}
                   {e.notes && <span style={{ color: 'var(--text-subtle)', fontWeight: 400, marginLeft: '6px' }}>{e.notes}</span>}
                 </p>
                 <button onClick={() => removeEvent(e.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', padding: '2px', flexShrink: 0 }}><Trash2 size={11} /></button>
@@ -325,11 +326,11 @@ function ScheduleCalendar({ goals, accounts }: { goals: GoalRow[]; accounts: Bra
           )}
           {sel?.scheduled.map(c => {
             const a = acctFor(c.account_id)
-            return <p key={`s${c.id}`} style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}><span style={{ color: '#4CC9F0', fontWeight: 800 }}>◷</span> {c.title} {a && <span style={{ color: a.color, fontWeight: 700 }}>· {a.handle}</span>}</p>
+            return <p key={`s${c.id}`} style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}><span style={{ color: '#4CC9F0', fontWeight: 800 }}>◷</span> {c.title} {a && <span style={{ color: ink(a.color), fontWeight: 700 }}>· {a.handle}</span>}</p>
           })}
           {sel?.posted.map(c => {
             const a = acctFor(c.account_id)
-            return <p key={`p${c.id}`} style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}><span style={{ color: '#3daa7c', fontWeight: 800 }}>✓</span> {c.title} {a && <span style={{ color: a.color, fontWeight: 700 }}>· {a.handle}</span>}</p>
+            return <p key={`p${c.id}`} style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}><span style={{ color: '#3daa7c', fontWeight: 800 }}>✓</span> {c.title} {a && <span style={{ color: ink(a.color), fontWeight: 700 }}>· {a.handle}</span>}</p>
           })}
         </div>
       )}
@@ -359,7 +360,7 @@ function ScheduleCalendar({ goals, accounts }: { goals: GoalRow[]; accounts: Bra
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
                     <span style={{ fontSize: '9px', fontWeight: 800, color: urgencyColor, textTransform: 'uppercase' }}>{s.urgency}</span>
                     <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)' }}>post {new Date(s.post_on + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                    {a && <span style={{ fontSize: '10px', fontWeight: 700, color: a.color }}>{a.emoji} {a.handle}</span>}
+                    {a && <span style={{ fontSize: '10px', fontWeight: 700, color: ink(a.color) }}>{a.emoji} {a.handle}</span>}
                     <span style={{ fontSize: '10px', color: 'var(--text-subtle)' }}>· rides: {s.event}</span>
                   </div>
                   <p style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.35 }}>{s.headline}</p>
@@ -524,7 +525,7 @@ export default function GoalsPanel() {
               {!g.active && <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px', background: 'var(--border)', color: 'var(--text-muted)' }}>PAUSED</span>}
             </div>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
-              {acct ? <span style={{ color: acct.color, fontWeight: 700 }}>{acct.emoji} {acct.handle}</span> : '🌐 Station-wide'}
+              {acct ? <span style={{ color: ink(acct.color), fontWeight: 700 }}>{acct.emoji} {acct.handle}</span> : '🌐 Station-wide'}
               {g.deadline && <> · deadline {new Date(g.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</>}
               {g.notes && <> · {g.notes}</>}
             </p>
@@ -606,7 +607,7 @@ export default function GoalsPanel() {
             { label: 'Behind', n: behindCount, color: behindCount ? '#e05' : 'var(--text-subtle)' },
           ].map(s => (
             <div key={s.label} className="rise-float" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-              <p style={{ fontSize: '24px', fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.n}</p>
+              <p style={{ fontSize: '24px', fontWeight: 900, color: ink(s.color), lineHeight: 1 }}>{s.n}</p>
               <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-subtle)', marginTop: '4px' }}>{s.label}</p>
             </div>
           ))}

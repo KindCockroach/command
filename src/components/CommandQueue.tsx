@@ -5,6 +5,7 @@ import { hasMedia } from '@/lib/contentStatus'
 import { CheckCircle2, RefreshCw, Camera, Video, ArrowRight, Sparkles, MessageCircleQuestion, MessageCircle, X, ExternalLink, SkipForward, Send, ChevronDown, ChevronUp } from 'lucide-react'
 import PostChat from './PostChat'
 import { PostCard } from './AccountsPanel'
+import { ink } from '@/lib/ink'
 
 // THE ONE NEXT THING. Instead of stacking 6 approvals + 5 finishes, the home shows
 // ONE prioritized action at a time — ship what's ready first (marketing = money),
@@ -31,9 +32,9 @@ function reachScore(p: ContentPiece, isHers: boolean): number {
   return Math.max(5, Math.min(98, s))
 }
 function reachRead(score: number): { label: string; color: string; bg: string } {
-  if (score >= 74) return { label: '🔥 High potential', color: '#C2410C', bg: '#FFF1E8' }
+  if (score >= 74) return { label: '🔥 High potential', color: 'var(--gold)', bg: '#FFF1E8' }
   if (score >= 58) return { label: '📈 Strong', color: '#2E8B60', bg: '#E8F7F1' }
-  if (score >= 46) return { label: 'Solid', color: '#6B7280', bg: '#F3F4F6' }
+  if (score >= 46) return { label: 'Solid', color: 'var(--text-subtle)', bg: '#F3F4F6' }
   return { label: '✏️ Sharpen the hook', color: '#9333EA', bg: 'var(--purple-light)' }
 }
 
@@ -152,7 +153,7 @@ export default function CommandQueue() {
   const AccChip = ({ p }: { p: ContentPiece }) => {
     const a = acct(p.account_id)
     if (!a) return <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)' }}>· no account</span>
-    return <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', background: `${a.color}18`, color: a.color }}>{a.emoji} {a.handle}{p.account_id && behindAccts.has(p.account_id) ? ' · behind' : ''}</span>
+    return <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', background: `${a.color}18`, color: ink(a.color) }}>{a.emoji} {a.handle}{p.account_id && behindAccts.has(p.account_id) ? ' · behind' : ''}</span>
   }
 
   const btn = (bg: string, color = '#fff'): React.CSSProperties => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px 14px', borderRadius: '11px', border: 'none', background: bg, color, fontWeight: 800, fontSize: '13px', cursor: 'pointer' })

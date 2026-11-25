@@ -10,10 +10,10 @@ type Finding = { key: string; area: string; level: 'needs_you' | 'agents' | 'bui
 type Report = { mode: 'quick' | 'full'; ran_at: string; ok: string[]; findings: Finding[]; ms: number; build_logged?: string[] }
 
 const LEVEL: Record<Finding['level'], { label: string; color: string }> = {
-  needs_you: { label: 'Needs you', color: '#B23A48' },
-  agents: { label: 'Agents pick it up', color: '#5A4FCF' },
+  needs_you: { label: 'Needs you', color: 'var(--bad)' },
+  agents: { label: 'Agents pick it up', color: 'var(--link)' },
   build: { label: 'Needs a build (logged)', color: '#B0662E' },
-  fyi: { label: 'Just so you know', color: '#6B7280' },
+  fyi: { label: 'Just so you know', color: 'var(--text-subtle)' },
 }
 
 export default function HealthPanel() {
@@ -55,7 +55,7 @@ export default function HealthPanel() {
       {!r && <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '10px' }}>No check has run yet. Opening Her on Home runs the quick one.</p>}
       {r && (
         <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {note && <p style={{ fontSize: '12px', fontWeight: 700, color: '#5A4FCF', margin: 0 }}>{note}</p>}
+          {note && <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--link)', margin: 0 }}>{note}</p>}
           <p style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{r.mode === 'full' ? 'Full' : 'Quick'} check · {new Date(r.ran_at).toLocaleString()} · {r.findings.length} problem{r.findings.length === 1 ? '' : 's'} · {r.ok.length} fine{r.build_logged?.length ? ` · ${r.build_logged.length} new on the build log` : ''}</p>
           {groups.map(g => (
             <div key={g.l}>
@@ -64,7 +64,7 @@ export default function HealthPanel() {
                 <div key={f.key} style={{ padding: '7px 0', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text)' }}>{f.title}</span>
                   {f.detail && <span style={{ fontSize: '11.5px', color: 'var(--text-subtle)' }}>{f.detail}</span>}
-                  <span style={{ fontSize: '12px', color: '#5A4FCF' }}>Next: {f.fix}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--link)' }}>Next: {f.fix}</span>
                   {healthActions(f.key).length > 0 && (
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px', alignItems: 'center' }}>
                       {healthActions(f.key).map(a => (
