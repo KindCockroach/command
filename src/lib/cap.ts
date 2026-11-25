@@ -230,6 +230,8 @@ export async function runReview(h: Handoff) {
   if (!h.content_id) return failHandoff(h.id, 'This note isn’t tied to a card.')
   startAttempt(h.id)
   const round = h.round ?? 1
+  // Every post has a title, an on-screen hook and Cap's job pick before Cap confirms anything.
+  await (await import('./cardAudit')).fillCardBasics(h.content_id).catch(() => null)
   const c = readDb().content.find(x => x.id === h.content_id)
   if (!c) return failHandoff(h.id, 'That card isn’t in RISE any more.')
   // Which writer's drafts: the one who handed it over (an old ed_check or Mandi's "review again" = all).

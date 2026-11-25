@@ -386,6 +386,9 @@ export function generateCalendar(from = todayStr(), days = 14): { created: numbe
   const now = new Date().toISOString()
   for (const o of out) db.calendar_items.push({ ...o, id: `cal_${db.next_calendar_id++}`, created_at: now })
   writeDb(db)
+  // New slots get a real title, a hook, Cap's job pick and what to film (Ed, one at a time, in the background).
+  const fresh = out.map(o => o.content_id)
+  if (fresh.length) void import('./cardAudit').then(async m => { for (const id of fresh) await m.fillCardBasics(id).catch(() => null) }).catch(() => null)
   return { created, reused, moved, dropped, window: [from, to] }
 }
 

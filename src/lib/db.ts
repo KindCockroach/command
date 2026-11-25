@@ -140,6 +140,7 @@ export type HandoffKind =
   | 'story_find'      // Cora reads the Well (her captions) and pitches stories with headlines
   | 'interview_prep'  // Cora reads the Well like a journalist (loss, depression, anxiety) → her notebook of questions
   | 'interview_shape' // Cora turns the charged points from the interview into Medium story shapes
+  | 'card_fix'        // Cap → Ed: fill what cards are missing (title, on-screen hook, job, caption, what to film)
 export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log' | 'email' | 'story' | 'substack' | 'reuse' | 'interview'; id: string | number; label?: string }
 export type Handoff = {
   id: string

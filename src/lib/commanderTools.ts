@@ -138,6 +138,8 @@ const cardTools: CommanderTool[] = [
         media_url: ctx.media?.url ?? '',
         media_urls: ctx.media?.url ? [ctx.media.url] : [],
       })
+      // Every post needs a title and an on-screen hook: Ed fills what's missing in the background.
+      if (!has(i, 'onscreen_text') && piece.account_id) void import('./cardAudit').then(m => m.fillCardBasics(piece.id)).catch(() => null)
       // Read it back so the receipt reflects what is actually on disk.
       const saved = findCard(piece.id)
       if (!saved) return fail('the card was written but could not be read back — treat it as NOT saved.')

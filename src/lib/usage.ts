@@ -9,6 +9,7 @@
 // the frequently-written content DB isn't bloated by usage rows. On Railway it
 // lands on the same volume as the DB (DB_PATH's dir), so it survives restarts.
 import fs from 'fs'
+import { cleanJsonBody } from './jsonkit'
 import OpenAI from 'openai'
 import path from 'path'
 
@@ -134,6 +135,8 @@ export function logCost(model: string, kind: string, costUsd: number, provider: 
 // Audio transcription is priced by duration when OpenAI reports it.
 export function trackedOpenAI(kind: string): OpenAI {
   const tracked: typeof fetch = async (input, init) => {
+    // Half-emoji in a prompt would make OpenAI reject the whole request; take them out.
+    if (init && typeof init.body === 'string') init = { ...init, body: cleanJsonBody(init.body) }
     const res = await fetch(input as RequestInfo, init)
     try {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url

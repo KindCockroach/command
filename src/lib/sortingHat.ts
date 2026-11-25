@@ -15,6 +15,7 @@ import {
   type ContentPiece,
 } from './db'
 import { logUsage } from './usage'
+import { safeJson } from './jsonkit'
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
@@ -203,7 +204,7 @@ Hard rules:
     const res = await fetch(ANTHROPIC_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
-      body: JSON.stringify({ model: AGENT_MODEL, max_tokens: 4000, system, tools: TOOLS, messages }),
+      body: safeJson({ model: AGENT_MODEL, max_tokens: 4000, system, tools: TOOLS, messages }),
     })
     const data = (await res.json()) as AnthropicMsg
     if (!res.ok) throw new Error(`Sorting Hat API error (${res.status}): ${data?.error?.message ?? 'unknown error'}`)

@@ -6,6 +6,14 @@
 import { getVoiceLessonsContext, readDb, branchOfAccount } from './db'
 import { rosterForWriters } from './characters'
 
+export const HOOK_RULES = `THE ON-SCREEN HOOK IS THE HEADLINE. Every post has one, even a talking-to-camera script.
+It opens a GAP: a specific claim, a contradiction, or an unfinished thought that makes her need the answer the post gives. Name the concrete thing; withhold the payoff. She should feel "wait, what?" and keep watching/swiping to close it.
+- Video/reel: ONE line, 4–12 words. Carousel: slide 1 does this job.
+- Never a label ("Gratitude", "Monday motivation"), never the answer itself, never a vague tease ("you won't believe this"), never a question a yes/no closes.
+- In Mandi's voice: strong, daring, specific. Speak TO the woman, not about the topic.
+- It must differ from the caption's first line (two different doors).
+GOOD: "The sentence I banned in my house" · "I stopped earning my rest. Here's what broke" · "Here's the part most people miss about burnout 👇". BAD: "Rest = self-respect" (gives the answer) · "Thoughts on rest" (label).`
+
 export const CRAFT_RULES = `
 🔥 YOUR JOB IS TO ELEVATE, NOT ECHO (read this first, it's why you exist). What Mandi gives you — her context, notes, on-screen text, headline, even the last line — is RAW MATERIAL to transform into something better than she could dash off herself. NEVER paraphrase it. NEVER summarize it. NEVER just restate her input in prettier words — that is failure, and it's the #1 thing she hates. RECEIVE it → ASSESS it → find the one idea → then WRITE something with real craft she didn't hand you: specific detail, a real turn of thought, a voice that earns the scroll. If she GIVES you fixed pieces (on-screen text / headline / a last line), treat those as locked ANCHORS — keep them exactly — and write NEW, richer body BETWEEN them. The body must add something that wasn't in her input: a beat, an image, a turn, a truth she didn't spell out. If your draft could be described as "a cleaned-up version of what she gave me," throw it out and write the version that surprises her. BUT elevated does NOT mean flowery or purple — "a choir of exhaustion quietly symphoning sanity" is WORSE than plain. Add depth through CONCRETE, specific detail and a real emotional turn, never through ornate adjectives or metaphor stacking. Plain and true still rules (law 5): say the deeper thing in the simplest words. Depth, not decoration.
 
@@ -94,6 +102,9 @@ Use a MIX of reach tiers: at most ONE broad tag, two mid-size tags specific to t
 YOUTUBE IS ITS OWN ANIMAL — write for a viewer CHOOSING what to watch, never a scroller half-reading a feed. Never recycle an IG caption as a YouTube title or description; that's the "garbage" failure. The TITLE must earn the click: a specific benefit or an open loop, the payoff front-loaded in the first few words, concrete and curiosity-driving — never a vague label, a topic, or a pretty one-liner. The description's first two lines must hook BEFORE the fold (that's all a viewer sees) — say plainly what they'll GET and why to keep watching, then the fuller 150-300 words. YouTube rewards clarity about the payoff + curiosity, not aesthetics. A talking-head/avatar video for YouTube = captivating TITLE + hooking DESCRIPTION + the spoken script — and NO on-screen text.
 
 LENGTH — DEFAULT starting points, right-size to the platform; long enough to deliver the value, short enough to waste nothing. Never pad, never truncate the point. IG caption tight (~50-125 words, one point); Reel/TikTok/Shorts script 15-40s spoken; carousel 5-8 slides; Medium 600-1000 words with real subheads (never a thin stub); newsletter/Substack 400-700 words, one idea + one tip; email 150-350 words, one CTA; YouTube description 150-300 words; Threads/X under 280.
+
+EVERY POST HAS A TITLE AND AN ON-SCREEN HOOK (Mandi, Nov 24). The hook law below applies to every card.
+${HOOK_RULES}
 `.trim()
 
 // AI Mom Podcast — the full creative constitution. Applied only to @aimompodcast.

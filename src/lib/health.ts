@@ -110,7 +110,7 @@ const stuck: Check = ({ db, today }, f) => {
     const label = `${AGENT_LABEL[h.from] ?? h.from} → ${AGENT_LABEL[h.to] ?? h.to}: ${h.what ?? h.kind}`
     const ref = { type: 'handoff', id: h.id }
     if (h.status === 'failed') {
-      f.push({ key: `stuck:failed:${h.id}`, area: 'stuck', level: 'needs_you', ref, title: `Failed: ${label}`, detail: h.error ?? undefined, fix: 'Open Activity → handoffs and press Retry. If it fails the same way twice, it needs a build: tell Her.' })
+      f.push({ key: `stuck:failed:${h.id}`, area: 'stuck', level: 'needs_you', ref, title: `Failed: ${label}`, detail: h.error ?? undefined, fix: 'Press Retry. If it fails the same way twice, it needs a build: tell Her.' })
     } else if (h.status === 'open') {
       const auto = AUTO_KINDS.includes(h.kind)
       const age = ago(h.updated_at)
@@ -163,7 +163,16 @@ const stuck: Check = ({ db, today }, f) => {
 const direction: Check = async ({ db, today, full }, f, ok) => {
   for (const g of db.goals ?? []) {
     if (g.active && g.deadline && g.deadline.slice(0, 10) < today)
-      f.push({ key: `dir:goal:${g.id}`, area: 'direction', level: 'needs_you', ref: { type: 'goal', id: g.id }, title: `Goal past its deadline but still on: “${cut(g.title, 70)}” (${g.deadline.slice(0, 10)})`, fix: 'Cap proposes turning it off (Keep the map honest). Say yes to retire it, or give it a new date.' })
+      f.push({ key: `dir:goal:${g.id}`, area: 'direction', level: 'needs_you', ref: { type: 'goal', id: g.id }, title: `Goal past its deadline but still on: “${cut(g.title, 70)}” (${g.deadline.slice(0, 10)})`, fix: 'Cap proposes turning it off (Keep the map honest). Press “Yes, retire it”, or “New date…” to keep it.' })
+  }
+  // Cards missing what they need (title, on-screen hook, Cap's job pick, caption, account).
+  {
+    const { auditCards } = await import('./cardAudit')
+    const a = auditCards()
+    const auto = a.cards.filter(c => c.auto).length
+    if (auto) f.push({ key: 'cards:gaps', area: 'direction', level: 'needs_you', count: auto, title: `${auto} card${auto > 1 ? 's are' : ' is'} missing basics (${Object.entries(a.counts).filter(([k]) => k !== 'account').map(([k, v]) => `${v} ${k}`).join(', ')})`, detail: a.cards.filter(c => c.auto).slice(0, 4).map(c => `#${c.id} ${cut(c.title, 40)}`).join(' · '), fix: 'Press “Fix them”: Ed writes only what’s missing (a backup is made first).' })
+    const noAcct = a.cards.filter(c => c.missing.includes('account'))
+    if (noAcct.length) f.push({ key: 'cards:no-account', area: 'direction', level: 'needs_you', count: noAcct.length, title: `${noAcct.length} card${noAcct.length > 1 ? 's have' : ' has'} no account`, detail: noAcct.slice(0, 6).map(c => `#${c.id} ${cut(c.title, 40)}`).join(' · '), fix: 'Open each card and pick its account (or archive it).' })
   }
   // A promotion that ended while cards about it are still waiting to go out.
   for (const ev of (db.events ?? []).filter(e => (e.kind === 'promo' || e.kind === 'launch') && e.date < today && ago(`${e.date}T00:00:00Z`) < 45 * DAY)) {
@@ -296,4 +305,20 @@ export async function healthForHer(): Promise<{ needs_you: HealthFinding[]; agen
     ran_at: r.ran_at, mode: r.mode, full_ran_at: full?.ran_at ?? null,
     ideas: ideasForHer(),
   }
+}
+
+// Mandi acted on a finding (retired the goal, retried the handoff): take it off the saved reports
+// so it stops showing until a later check finds it again.
+export function resolveFinding(key: string): boolean {
+  const d = readDb()
+  if (!d.health) return false
+  let hit = false
+  for (const r of [d.health.last_quick, d.health.last_full]) {
+    if (!r) continue
+    const before = r.findings.length
+    r.findings = r.findings.filter(f => f.key !== key)
+    if (r.findings.length !== before) hit = true
+  }
+  if (hit) writeDb(d)
+  return hit
 }

@@ -22,6 +22,7 @@ import { fableText } from './fable'
 import { wellLinesFor, wellStatus } from './well'
 import { openHandoff, startAttempt, completeHandoff, failHandoff } from './handoffs'
 import { renderBrandEmail, unlinkify } from './emailTemplate'
+import { cut } from './jsonkit'
 import { resendSend } from './resend'
 import { unsubscribeUrl, unsubscribeApiUrl } from './unsubscribe'
 
@@ -317,10 +318,10 @@ subject under 60 characters; preheader under 90; cta_label 2-5 words; ps optiona
   }
   if (!String(out.body ?? '').trim()) { setEmail(key, x => { x.status = 'brief' }); return failHandoff(h.id, 'Ed came back empty. Retry.') }
   setEmail(key, x => {
-    x.subject = String(out.subject ?? '').trim().slice(0, 120)
-    x.preheader = String(out.preheader ?? '').trim().slice(0, 160)
+    x.subject = cut(String(out.subject ?? '').trim(), 120)
+    x.preheader = cut(String(out.preheader ?? '').trim(), 160)
     x.body = String(out.body ?? '').trim()
-    x.cta_label = String(out.cta_label ?? '').trim().slice(0, 40)
+    x.cta_label = cut(String(out.cta_label ?? '').trim(), 40)
     // Her note took the ask out: no button (and it stays out on later rewrites).
     if (x.mandi_notes?.length && out.button === 'none') { x.cta_override = 'none'; x.cta = 'none'; x.cta_label = '' }
     x.ps = String(out.ps ?? '').trim().replace(/^p\.?\s*s\.?[:\s]*/i, '').trim()   // the template adds “P.S.”

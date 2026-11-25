@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllContent, updateContent, getBrandAccount, getAudienceContext } from '@/lib/db'
-import { craftFor } from '@/lib/craft'
+import { craftFor, HOOK_RULES } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
 import { learnFromFeedback } from '@/lib/learn'
 
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       : 'This is a single image: the on-screen text is the hook that renders ON the image — one to two short lines, no more.'
 
   const prompt = `${voice}
+${HOOK_RULES}
 
 ${craftFor(piece.account_id)}
 

@@ -6,9 +6,10 @@
 import { readDb, getAllBrandAccounts } from './db'
 import { AGENT_LABEL } from './handoffs'
 import { cut } from './jsonkit'
+import { healthActions } from './healthActions'
 
 export type ApprovalAction =
-  | { label: string; kind: 'post'; url: string; method?: 'POST' | 'PATCH'; body: Record<string, unknown>; reason?: string; primary?: boolean }
+  | { label: string; kind: 'post'; url: string; method?: 'POST' | 'PATCH'; body: Record<string, unknown>; reason?: string; reasonField?: string; primary?: boolean; resolve?: string }
   | { label: string; kind: 'open'; view: string }
 
 export type Approval = {
@@ -98,7 +99,7 @@ export function getApprovals(): { items: Approval[]; counts: Record<string, numb
   const h = db.health?.last_quick ?? db.health?.last_full
   for (const f of (h?.findings ?? []).filter(f => f.level === 'needs_you' && !['reset:approve'].includes(f.key))) {
     items.push({ id: `health:${f.key}`, source: 'health', from: 'Man (health check)', view: 'activity', at: h!.ran_at,
-      title: f.title, detail: `${f.detail ? f.detail + ' · ' : ''}Next: ${f.fix}`, actions: [{ label: 'See it in Activity', kind: 'open', view: 'activity' }] })
+      title: f.title, detail: `${f.detail ? f.detail + ' · ' : ''}Next: ${f.fix}`, actions: [...healthActions(f.key).map(a => ({ label: a.label, kind: 'post' as const, url: a.url, method: a.method, body: a.body, reason: a.ask, reasonField: a.askField, primary: a.primary, resolve: f.key })), { label: 'See it in Activity', kind: 'open', view: 'activity' }] })
   }
 
   // Cora's story ideas from the Well (pick one → the Story desk; pass → Notes with the reason).

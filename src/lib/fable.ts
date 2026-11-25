@@ -8,6 +8,7 @@
 // Needs OPENAI_API_KEY (Railway). The live-web Researcher below stays on Opus 4.8
 // because it needs the server-side web_search tool 4o doesn't carry here.
 import OpenAI from 'openai'
+import { safeJson } from './jsonkit'
 import { logUsage, trackedOpenAI } from './usage'
 
 export const WRITER_MODEL = 'gpt-4o'
@@ -104,7 +105,7 @@ export async function commanderChat(system: string, messages: { role: 'user' | '
   const res = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
-    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages, stream: true }),
+    body: safeJson({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages, stream: true }),
   })
   if (!res.ok || !res.body) {
     let msg = 'unknown error'
@@ -173,7 +174,7 @@ const callCommanderModel: AgentModelCall = async ({ system, messages, tools, max
   const res = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
-    body: JSON.stringify({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, tools, messages, stream: true }),
+    body: safeJson({ model: COMMANDER_MODEL, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, tools, messages, stream: true }),
   })
   if (!res.ok || !res.body) {
     let msg = 'unknown error'
@@ -309,7 +310,7 @@ export async function fableHooks(system: string, input: string, maxTokens = 3000
   const res = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
-    body: JSON.stringify({ model: WRITER_CLAUDE, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages: [{ role: 'user', content: input }], stream: true }),
+    body: safeJson({ model: WRITER_CLAUDE, max_tokens: maxTokens, thinking: { type: 'adaptive' }, system, messages: [{ role: 'user', content: input }], stream: true }),
   })
   if (!res.ok || !res.body) {
     let msg = 'unknown error'
@@ -377,7 +378,7 @@ export async function researchWithWeb(opts: {
     const res = await fetch(ANTHROPIC_URL, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
+      body: safeJson({
         model: 'claude-opus-4-8',
         max_tokens: opts.maxTokens ?? 8000,
         system: opts.instructions,

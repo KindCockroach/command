@@ -47,3 +47,14 @@ export function asLines(v: unknown, max = 10, each = 300): string[] {
   return v.map(x => typeof x === 'string' ? x : x && typeof x === 'object' ? Object.values(x as Record<string, unknown>).filter(y => typeof y === 'string' || typeof y === 'number').join(': ') : String(x ?? ''))
     .map(x => cut(x.trim(), each)).filter(Boolean).slice(0, max)
 }
+
+// A JSON request body with any half-emoji (a lone UTF-16 surrogate, left when a string was cut
+// mid-character somewhere) taken out. JSON.stringify writes those as \udXXX escapes, and the
+// OpenAI and Anthropic APIs reject the whole request ("400 Invalid body: failed to parse JSON").
+export function cleanJsonBody(body: string): string {
+  if (!/\\ud[89a-f]/i.test(body)) return body
+  return body
+    .replace(/(?<!\\)\\ud[89ab][0-9a-f]{2}(?!\\ud[c-f][0-9a-f]{2})/gi, '')
+    .replace(/(?<!\\ud[89ab][0-9a-f]{2})(?<!\\)\\ud[c-f][0-9a-f]{2}/gi, '')
+}
+export const safeJson = (v: unknown) => cleanJsonBody(JSON.stringify(v))

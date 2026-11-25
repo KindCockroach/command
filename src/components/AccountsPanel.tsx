@@ -473,12 +473,8 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
     { id: 'authority', label: 'STOP BEING SEEN AS A PEER', hint: 'shift from peer to the one to learn from', color: '#7C3AED' },
     { id: 'dms', label: 'TURN WATCHERS INTO DMs', hint: 'convert the ones already watching', color: '#E8448A' },
   ]
-  const [showJob, setShowJob] = useState(false)
-  const [jobSaving, setJobSaving] = useState(false)
-  const setJob = async (job: string) => {
-    setJobSaving(true); setShowJob(false)
-    try { await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, post_job: job }) }); onChanged?.() } finally { setJobSaving(false) }
-  }
+  const [showTools, setShowTools] = useState(false)
+  // The job is Cap's pick (lib/cardAudit.ts fills it); the card only shows it.
   const curJob = POST_JOBS.find(j => j.id === post.post_job)
   const [copied, setCopied] = useState(false)
   const [answers, setAnswers] = useState<string[]>([])
@@ -1047,42 +1043,19 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
 
       {open && (
         <div style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {/* ⭐ THE ONE JOB — big & bold, first thing on every card (rule #4) */}
-          <div style={{ borderRadius: '12px', border: `2px solid ${curJob ? curJob.color : 'var(--border)'}`, background: curJob ? `${curJob.color}12` : 'var(--surface)', padding: '11px 13px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-              <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: '8.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>This post&apos;s job</p>
-                {curJob
-                  ? <p style={{ fontSize: '16px', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: 1.15, color: curJob.color }}>{curJob.label}</p>
-                  : <p style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-muted)' }}>⚠ Pick this post&apos;s job</p>}
-              </div>
-              <button onClick={() => setShowJob(v => !v)} disabled={jobSaving}
-                style={{ flexShrink: 0, padding: '6px 11px', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontWeight: 800, fontSize: '11px', cursor: 'pointer' }}>
-                {jobSaving ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : curJob ? 'Change' : 'Set job'}
-              </button>
+          {/* THE HOOK FIRST: every post has a title and an on-screen hook (the line that opens the gap). */}
+          <div style={{ borderRadius: '12px', border: `2px solid ${(post.onscreen_text ?? '').trim() ? accentColor : '#E05252'}`, background: (post.onscreen_text ?? '').trim() ? `${accentColor}0d` : 'rgba(224,82,82,0.06)', padding: '11px 13px' }}>
+            <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>On-screen hook{post.type === 'carousel' ? ' · slide 1' : ''}</p>
+            {(post.onscreen_text ?? '').trim()
+              ? <p style={{ fontSize: '16px', fontWeight: 900, lineHeight: 1.3, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{post.type === 'carousel' ? (post.onscreen_text ?? '').split('\n')[0] : post.onscreen_text}</p>
+              : <p style={{ fontSize: '13px', fontWeight: 800, color: '#E05252' }}>⚠ No on-screen hook yet. Every post needs one.</p>}
+            <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              {!(post.onscreen_text ?? '').trim() && <button onClick={() => reworkOnscreen()} disabled={reworkingOnscreen} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '999px', border: 'none', background: (post.onscreen_text ?? '').trim() ? 'var(--surface)' : '#E05252', color: (post.onscreen_text ?? '').trim() ? 'var(--text-muted)' : '#fff', fontWeight: 800, fontSize: '11px', cursor: 'pointer', boxShadow: (post.onscreen_text ?? '').trim() ? 'inset 0 0 0 1px var(--border)' : 'none' }}>
+                {reworkingOnscreen ? <RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> : null}{(post.onscreen_text ?? '').trim() ? 'Another hook' : 'Write the hook'}
+              </button>}
+              {curJob && <span title="Cap picks each post's job" style={{ fontSize: '10px', fontWeight: 800, color: curJob.color }}>Cap’s pick: {curJob.label.toLowerCase()}</span>}
             </div>
-            {showJob && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '9px' }}>
-                {POST_JOBS.map(j => (
-                  <button key={j.id} onClick={() => setJob(j.id)}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '9px 11px', borderRadius: '9px', border: `1.5px solid ${post.post_job === j.id ? j.color : 'var(--border)'}`, background: post.post_job === j.id ? `${j.color}12` : 'var(--surface)', cursor: 'pointer' }}>
-                    <span style={{ fontSize: '12.5px', fontWeight: 900, color: j.color }}>{j.label}</span>
-                    <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>{j.hint}</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
-          {/* Undo regeneration — restore the version from before the last regenerate */}
-          {undoAvail && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px 12px', background: 'rgba(242,166,90,0.1)', border: '1px solid rgba(242,166,90,0.35)', borderRadius: '8px' }}>
-              <span style={{ fontSize: '11px', color: '#C47A1A', fontWeight: 600 }}>Regenerated. Prefer the previous version?</span>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button onClick={undoRegen} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 12px', borderRadius: '7px', border: 'none', background: '#F2A65A', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>↩ Undo</button>
-                <button onClick={() => { localStorage.removeItem(`undo-${post.id}`); setUndoAvail(false) }} style={{ padding: '5px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>Keep new</button>
-              </div>
-            </div>
-          )}
           {/* Open questions — answer here, river finishes the post */}
           {hasQuestions && (
             <div style={{ padding: '12px', background: 'rgba(224,82,82,0.05)', borderRadius: '10px', border: '1px solid rgba(224,82,82,0.25)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1101,215 +1074,6 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
               </button>
             </div>
           )}
-
-          {/* Visual: carousel gallery or prompt */}
-          {gallery.length > 0 ? (
-            <div>
-              {gallery.length > 1 && (
-                <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)', marginBottom: '6px' }}>Carousel · {gallery.length} slides (drag order with ◀ ▶)</p>
-              )}
-              <div style={{ display: 'grid', gridTemplateColumns: gallery.length > 1 ? 'repeat(auto-fill, minmax(90px, 1fr))' : '1fr', gap: '8px' }}>
-                {gallery.map((url, i) => {
-                  const isVid = /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url)
-                  return (
-                    <div key={url} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: gallery.length > 1 ? '1px solid var(--border)' : 'none' }}>
-                      {gallery.length > 1 && (
-                        <span style={{ position: 'absolute', top: '4px', left: '4px', zIndex: 2, background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '10px' }}>{i + 1}</span>
-                      )}
-                      {isVid
-                        ? <video src={url} controls style={{ width: '100%', height: gallery.length > 1 ? '90px' : '160px', objectFit: 'cover', background: '#000', display: 'block' }} />
-                        : <img src={url} alt={`slide ${i + 1}`} onClick={() => window.open(url, '_blank')} title="Click to view full size"
-                            style={{ width: '100%', height: gallery.length > 1 ? '90px' : '160px', objectFit: 'cover', display: 'block', cursor: 'zoom-in' }} />}
-                      {/* Slide controls */}
-                      <div style={{ position: 'absolute', bottom: '3px', right: '3px', display: 'flex', gap: '2px', zIndex: 2 }}>
-                        {gallery.length > 1 && (
-                          <>
-                            <button onClick={() => moveSlide(i, -1)} disabled={i === 0} title="Move left" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: i === 0 ? 'default' : 'pointer', fontSize: '10px', opacity: i === 0 ? 0.3 : 1 }}>◀</button>
-                            <button onClick={() => moveSlide(i, 1)} disabled={i === gallery.length - 1} title="Move right" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: i === gallery.length - 1 ? 'default' : 'pointer', fontSize: '10px', opacity: i === gallery.length - 1 ? 0.3 : 1 }}>▶</button>
-                          </>
-                        )}
-                        <a href={url} download target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} title="Download this file" style={{ width: '18px', height: '18px', borderRadius: '4px', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>⬇</a>
-                        <button onClick={() => removeSlide(url)} title="Remove slide" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(224,82,82,0.85)', color: '#fff', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: uploading ? 'default' : 'pointer' }}>
-                  {uploading ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Uploading {uploadPct}%…</> : <>➕ Add slide(s)</>}
-                  <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
-                </label>
-                <button onClick={() => openPicker('add')} style={{ border: 'none', background: 'none', padding: 0, fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: 'pointer' }}>📁 From Media</button>
-                <button onClick={() => openPicker('swap')} style={{ border: 'none', background: 'none', padding: 0, fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: 'pointer' }}>🔄 Swap</button>
-              </div>
-              {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
-            </div>
-          ) : (
-            <>
-              {post.image_prompt && <Section label={isVideoPost ? '🎬 Video Prompt (motion & scene · no text on frame)' : '🎨 Image Prompt (1:1 · hook on image)'} text={post.image_prompt} />}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {post.image_prompt && (
-                  <button onClick={generateImage} disabled={genImg}
-                    style={{ flex: 1, minWidth: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: genImg ? 0.7 : 1 }}>
-                    {genImg ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Painting…</> : <>🎨 Generate image</>}
-                  </button>
-                )}
-                <label style={{ flex: 1, minWidth: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: uploading ? 'default' : 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
-                  {uploading ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Uploading {uploadPct}%…</> : <>📎 Attach your own</>}
-                  <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
-                </label>
-                <button onClick={() => openPicker('add')} style={{ flex: 1, minWidth: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
-                  📁 Attach from Media
-                </button>
-              </div>
-              {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
-            </>
-          )}
-
-          {/* Attach-from-Media picker */}
-          {pickerOpen && (
-            <div onClick={() => setPickerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: '16px', padding: '18px', maxWidth: '620px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{pickerOpen === 'swap' ? 'Swap in a file from Media' : 'Attach from Media'}</p>
-                  <button onClick={() => setPickerOpen(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '16px' }}>✕</button>
-                </div>
-                {mediaLoading ? (
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '30px' }}><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading your Media…</p>
-                ) : mediaList.length === 0 ? (
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '30px' }}>No images or videos in Media yet.</p>
-                ) : (
-                  <div style={{ overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px' }}>
-                    {mediaList.map(f => (
-                      <button key={f.url} onClick={() => attachFromMedia(f.url)} title={f.name}
-                        style={{ border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', background: 'var(--surface-raised)', padding: 0, display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ height: '90px', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {f.type === 'video'
-                            ? <video src={f.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : <img src={f.url} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                        </div>
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', padding: '5px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{f.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ⬇ Canva Bulk Create export — on EVERY post: slide rows for carousels, one row for single posts */}
-          {(() => {
-            const slideLines = (post.onscreen_text ?? '').split('\n').map(l => l.replace(/^\s*Slide\s*\d+\s*[:.\-–]\s*/i, '').trim()).filter(Boolean)
-            const isCarousel = slideLines.length >= 2
-            const imgs = (post.media_urls?.length ? post.media_urls : (post.media_url ? [post.media_url] : []))
-              .filter(u => !/\.(mp4|mov|webm|m4v)(\?|$)/i.test(u))
-            const exportCsv = async () => {
-              const base = post.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40) || 'post'
-              const esc = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`
-              // Carousel → one row per slide (text + matching image if there is one).
-              // Single post → one row with the post's fields, ready to map to a template.
-              const csv = isCarousel
-                ? ['slide,text,image_url', ...slideLines.map((l, idx) => `${idx + 1},${esc(l)},${esc(imgs[idx] ?? '')}`)].join('\n')
-                : ['on_screen_text,caption,hashtags,image_url', [esc(post.onscreen_text ?? ''), esc(post.description ?? ''), esc(post.hashtags ?? ''), esc(imgs[0] ?? '')].join(',')].join('\n')
-              const a = document.createElement('a')
-              a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-              a.download = `${base}-canva.csv`
-              a.click()
-              URL.revokeObjectURL(a.href)
-              // Also pull down the generated image(s) as JPG so she has the art in hand
-              for (let i = 0; i < imgs.length; i++) {
-                try {
-                  const blob = await (await fetch(imgs[i])).blob()
-                  const link = document.createElement('a')
-                  link.href = URL.createObjectURL(blob)
-                  link.download = imgs.length > 1 ? `${base}-${i + 1}.jpg` : `${base}.jpg`
-                  link.click()
-                  URL.revokeObjectURL(link.href)
-                } catch { /* skip an image that won't fetch */ }
-              }
-            }
-            return (
-              <button onClick={exportCsv} title="Download a Canva Bulk Create CSV (+ any generated images) for this post"
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
-                ⬇ Export for Canva ({isCarousel ? `${slideLines.length} slides` : '1 row'}{imgs.length ? ` + ${imgs.length > 1 ? imgs.length + ' images' : 'image'}` : ''})
-              </button>
-            )
-          })()}
-
-          {/* 🎞 Frame plan: trend-aware, frame-by-frame production direction */}
-          {post.frame_plan ? (
-            <div style={{ background: 'rgba(76,201,240,0.06)', border: '1px solid rgba(76,201,240,0.3)', borderRadius: '10px', padding: '10px 12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#2B9CC4' }}>🎞 Frame plan — what it looks like, frame by frame</p>
-                <button onClick={framePlan} disabled={framing} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '10px', fontWeight: 700, textDecoration: 'underline' }}>{framing ? 'reframing…' : 'refresh'}</button>
-              </div>
-              <p style={{ fontSize: '11px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{post.frame_plan}</p>
-            </div>
-          ) : (
-            <button onClick={framePlan} disabled={framing}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid rgba(76,201,240,0.5)', background: 'rgba(76,201,240,0.05)', color: '#2B9CC4', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: framing ? 0.7 : 1 }}>
-              {framing ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Reading the trends…</> : <>🎞 Frame plan — trend-check what this should look like</>}
-            </button>
-          )}
-
-          {/* ✍️ Write a spoken script for the avatar — turns this post into words to say to camera */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)' }}>Length:</span>
-              {[10, 20, 30].map(sec => (
-                <button key={sec} onClick={() => setScriptSecs(sec)}
-                  style={{ fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', border: `1px solid ${scriptSecs === sec ? '#5a4fcf' : 'var(--border)'}`, background: scriptSecs === sec ? 'rgba(90,79,207,0.1)' : 'var(--surface)', color: scriptSecs === sec ? '#5a4fcf' : 'var(--text-muted)' }}>
-                  {sec}s
-                </button>
-              ))}
-            </div>
-            <button onClick={writeScript} disabled={writingScript}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid rgba(90,79,207,0.4)', background: 'rgba(90,79,207,0.05)', color: '#5a4fcf', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: writingScript ? 0.7 : 1 }}>
-              {writingScript ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Writing a {scriptSecs}s script…</> : <>✍️ {post.script ? `Rewrite the ${scriptSecs}s script` : `Write me a ${scriptSecs}s script`}</>}
-            </button>
-          </div>
-
-          {/* 🎬 Avatar video: needs a script first, then HeyGen render → MP4 lands back on this card */}
-          <div>
-            <button onClick={makeVideo} disabled={videoState === 'starting' || videoState === 'rendering' || !post.script}
-              title={!post.script ? 'Write a spoken script first' : undefined}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: videoState === 'rendering' ? 'rgba(90,79,207,0.08)' : 'var(--surface)', color: videoState === 'rendering' ? '#5a4fcf' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: post.script ? 'pointer' : 'not-allowed', opacity: post.script ? 1 : 0.5 }}>
-              {videoState === 'starting' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Launching render…</>
-                : videoState === 'rendering' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Avatar is filming… (2-6 min, video attaches here automatically)</>
-                : !post.script ? <>🎬 Make avatar video (write a script first ↑)</>
-                : <>🎬 Make avatar video from the script</>}
-            </button>
-            {videoState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {videoErr} <button onClick={makeVideo} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
-          </div>
-
-          {/* 🔊 Mandi-clone voiceover for this card */}
-          <CardVoicer post={post} onChanged={onChanged} />
-
-          {/* 🖥️ Higgsfield Supercomputer: cinematic frame from the image prompt → lands back on this card */}
-          <div>
-            <button onClick={sendToSupercomputer} disabled={scState === 'starting' || scState === 'rendering' || !post.image_prompt}
-              title={!post.image_prompt ? 'This post has no image prompt to render' : undefined}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: scState === 'rendering' ? 'rgba(90,79,207,0.08)' : 'var(--surface)', color: scState === 'rendering' ? '#5a4fcf' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: post.image_prompt ? 'pointer' : 'not-allowed', opacity: post.image_prompt ? 1 : 0.5 }}>
-              {scState === 'starting' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Sending to Supercomputer…</>
-                : scState === 'rendering' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Supercomputer is rendering… (attaches here automatically)</>
-                : !post.image_prompt ? <>🖥️ Send to Supercomputer (needs an image prompt ↑)</>
-                : <>🖥️ Send to Supercomputer</>}
-            </button>
-            {scState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {scErr} <button onClick={sendToSupercomputer} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
-          </div>
-
-          {/* 🎨 Canva Autofill — fill the brand template with this post's slides */}
-          <div>
-            <button onClick={post.canva_design_url ? undefined : sendToCanva} disabled={canvaState === 'working'}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: post.canva_design_url ? 'rgba(61,170,124,0.08)' : 'var(--surface)', color: post.canva_design_url ? '#2E8B60' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: canvaState === 'working' ? 'default' : 'pointer' }}>
-              {canvaState === 'working' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Filling Canva template…</>
-                : post.canva_design_url ? <>✓ Canva design ready</>
-                : <>🎨 Send to Canva template</>}
-            </button>
-            {post.canva_design_url && <a href={post.canva_design_url} target="_blank" rel="noreferrer" style={{ display: 'block', textAlign: 'center', fontSize: '11px', color: 'var(--purple)', fontWeight: 700, marginTop: '5px' }}>Open in Canva →</a>}
-            {canvaState === 'error' && canvaMsg && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px', lineHeight: 1.4 }}>⚠ {canvaMsg}</p>}
-          </div>
 
           {editing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: 'var(--bg)', borderRadius: '10px', border: `1px solid ${accentColor}` }}>
@@ -1362,7 +1126,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
                 </div>
               )}
               {post.script && <Section label="🎬 Script (spoken — build, does not post)" text={post.script} bold />}
-              {post.onscreen_text && <Section label="📱 On-Screen Text / Slides (build, does not post)" text={post.onscreen_text} bold />}
+              {post.type === 'carousel' && post.onscreen_text && <Section label="📱 Slides (build, does not post)" text={post.onscreen_text} bold />}
 
               {/* 🎬 Shoot plan — saved from Content Day's "Plan this shoot", collapsed so the card stays short */}
               {shootPlan && (
@@ -1481,6 +1245,224 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
                 </div>
               )}
             </>
+          )}
+
+          {/* Visual: carousel gallery or prompt */}
+          {gallery.length > 0 ? (
+            <div>
+              {gallery.length > 1 && (
+                <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-subtle)', marginBottom: '6px' }}>Carousel · {gallery.length} slides (drag order with ◀ ▶)</p>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: gallery.length > 1 ? 'repeat(auto-fill, minmax(90px, 1fr))' : '1fr', gap: '8px' }}>
+                {gallery.map((url, i) => {
+                  const isVid = /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url)
+                  return (
+                    <div key={url} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: gallery.length > 1 ? '1px solid var(--border)' : 'none' }}>
+                      {gallery.length > 1 && (
+                        <span style={{ position: 'absolute', top: '4px', left: '4px', zIndex: 2, background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '10px' }}>{i + 1}</span>
+                      )}
+                      {isVid
+                        ? <video src={url} controls style={{ width: '100%', height: gallery.length > 1 ? '90px' : '160px', objectFit: 'cover', background: '#000', display: 'block' }} />
+                        : <img src={url} alt={`slide ${i + 1}`} onClick={() => window.open(url, '_blank')} title="Click to view full size"
+                            style={{ width: '100%', height: gallery.length > 1 ? '90px' : '160px', objectFit: 'cover', display: 'block', cursor: 'zoom-in' }} />}
+                      {/* Slide controls */}
+                      <div style={{ position: 'absolute', bottom: '3px', right: '3px', display: 'flex', gap: '2px', zIndex: 2 }}>
+                        {gallery.length > 1 && (
+                          <>
+                            <button onClick={() => moveSlide(i, -1)} disabled={i === 0} title="Move left" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: i === 0 ? 'default' : 'pointer', fontSize: '10px', opacity: i === 0 ? 0.3 : 1 }}>◀</button>
+                            <button onClick={() => moveSlide(i, 1)} disabled={i === gallery.length - 1} title="Move right" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: i === gallery.length - 1 ? 'default' : 'pointer', fontSize: '10px', opacity: i === gallery.length - 1 ? 0.3 : 1 }}>▶</button>
+                          </>
+                        )}
+                        <a href={url} download target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} title="Download this file" style={{ width: '18px', height: '18px', borderRadius: '4px', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>⬇</a>
+                        <button onClick={() => removeSlide(url)} title="Remove slide" style={{ width: '18px', height: '18px', borderRadius: '4px', border: 'none', background: 'rgba(224,82,82,0.85)', color: '#fff', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '8px', alignItems: 'center' }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: uploading ? 'default' : 'pointer' }}>
+                  {uploading ? <><RefreshCw size={11} style={{ animation: 'spin 1s linear infinite' }} /> Uploading {uploadPct}%…</> : <>➕ Add slide(s)</>}
+                  <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
+                </label>
+                <button onClick={() => openPicker('add')} style={{ border: 'none', background: 'none', padding: 0, fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: 'pointer' }}>📁 From Media</button>
+                <button onClick={() => openPicker('swap')} style={{ border: 'none', background: 'none', padding: 0, fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)', cursor: 'pointer' }}>🔄 Swap</button>
+              </div>
+              {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
+            </div>
+          ) : (
+            <>
+              {post.image_prompt && <Section label={isVideoPost ? '🎬 Video Prompt (motion & scene · no text on frame)' : '🎨 Image Prompt (1:1 · hook on image)'} text={post.image_prompt} />}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {post.image_prompt && (
+                  <button onClick={generateImage} disabled={genImg}
+                    style={{ flex: 1, minWidth: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: 'var(--purple)', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: genImg ? 0.7 : 1 }}>
+                    {genImg ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Painting…</> : <>🎨 Generate image</>}
+                  </button>
+                )}
+                <label style={{ flex: 1, minWidth: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: uploading ? 'default' : 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
+                  {uploading ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Uploading {uploadPct}%…</> : <>📎 Attach your own</>}
+                  <input type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} disabled={uploading} onChange={e => { if (e.target.files?.length) attachMedia(e.target.files); e.target.value = '' }} />
+                </label>
+                <button onClick={() => openPicker('add')} style={{ flex: 1, minWidth: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '2px dashed var(--border)', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)' }}>
+                  📁 Attach from Media
+                </button>
+              </div>
+              {uploadErr && <p style={{ fontSize: '10px', color: '#E05252' }}>⚠ {uploadErr}</p>}
+            </>
+          )}
+
+          {/* Attach-from-Media picker */}
+          {pickerOpen && (
+            <div onClick={() => setPickerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: '16px', padding: '18px', maxWidth: '620px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>{pickerOpen === 'swap' ? 'Swap in a file from Media' : 'Attach from Media'}</p>
+                  <button onClick={() => setPickerOpen(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '16px' }}>✕</button>
+                </div>
+                {mediaLoading ? (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '30px' }}><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading your Media…</p>
+                ) : mediaList.length === 0 ? (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '30px' }}>No images or videos in Media yet.</p>
+                ) : (
+                  <div style={{ overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px' }}>
+                    {mediaList.map(f => (
+                      <button key={f.url} onClick={() => attachFromMedia(f.url)} title={f.name}
+                        style={{ border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', background: 'var(--surface-raised)', padding: 0, display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ height: '90px', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {f.type === 'video'
+                            ? <video src={f.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : <img src={f.url} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                        </div>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', padding: '5px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{f.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Action bar — approve / posted (I did it natively) / decline */}
+          {isPending && !hasQuestions && (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => onApprove(post)} disabled={approving || marking}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: approving ? 0.7 : 1 }}>
+                {approving ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Approving…</> : <><CheckCircle2 size={14} /> Approve</>}
+              </button>
+              <button onClick={markPosted} disabled={marking || approving}
+                title="I already posted this natively — mark it posted and clear it from the queue"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid #3DAA7C', background: 'transparent', color: '#3DAA7C', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: marking ? 0.7 : 1 }}>
+                {marking ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : '📤'} Posted
+              </button>
+              <button onClick={() => setShowDecline(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid #E05252', background: showDecline ? 'rgba(224,82,82,0.08)' : 'transparent', color: '#E05252', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
+                <X size={14} /> Decline
+              </button>
+            </div>
+          )}
+          {approveNote && (
+            <p style={{ fontSize: '11px', fontWeight: 600, lineHeight: 1.45, padding: '9px 11px', borderRadius: '9px', background: approveNote.startsWith('✓') ? 'rgba(61,170,124,0.1)' : 'rgba(242,166,90,0.12)', color: approveNote.startsWith('✓') ? '#2E8B60' : '#C47A1A' }}>{approveNote}</p>
+          )}
+          {showDecline && (
+            <div style={{ padding: '12px', background: 'rgba(224,82,82,0.05)', border: '1px solid rgba(224,82,82,0.25)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#E05252' }}>Why isn&apos;t this a fit? (teaches this account)</p>
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                {DECLINE_CHIPS.map(c => (
+                  <button key={c} onClick={() => setDeclineReason(r => r ? `${r}; ${c}` : c)}
+                    style={{ padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '10px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-muted)' }}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+              <textarea value={declineReason} onChange={e => setDeclineReason(e.target.value)} rows={2}
+                placeholder="Tap a reason above or write your own — this becomes a rule for this account…"
+                style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+              <button onClick={decline} disabled={declining || !declineReason.trim()}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '9px', borderRadius: '8px', border: 'none', background: '#E05252', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: declining || !declineReason.trim() ? 0.6 : 1 }}>
+                {declining ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Teaching the account…</> : <>Decline &amp; teach this account</>}
+              </button>
+            </div>
+          )}
+          {(isApproved || isScheduled) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {isApproved && (
+                <p style={{ fontSize: '11px', color: '#C47A1A', background: 'rgba(242,166,90,0.1)', padding: '8px 10px', borderRadius: '8px', lineHeight: 1.5 }}>
+                  Approved. Copy the post above, publish it on the platform yourself, then mark it posted below.
+                </p>
+              )}
+              <button onClick={markPosted} disabled={marking}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: '#3DAA7C', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: marking ? 0.7 : 1 }}>
+                {marking ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Archiving…</> : <>📤 I posted this — archive it</>}
+              </button>
+            </div>
+          )}
+          {/* Everything else, folded so the card stays about the post. */}
+          <button onClick={() => setShowTools(v => !v)} style={{ alignSelf: 'flex-start', border: 'none', background: 'transparent', color: 'var(--text-subtle)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', padding: '2px 0' }}>{showTools ? '▲ Fewer tools' : '▼ More tools'} (Canva, frame plan, footage ideas, pins, variations, move)</button>
+          {showTools && (<>
+          {/* Undo regeneration — restore the version from before the last regenerate */}
+          {undoAvail && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px 12px', background: 'rgba(242,166,90,0.1)', border: '1px solid rgba(242,166,90,0.35)', borderRadius: '8px' }}>
+              <span style={{ fontSize: '11px', color: '#C47A1A', fontWeight: 600 }}>Regenerated. Prefer the previous version?</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button onClick={undoRegen} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 12px', borderRadius: '7px', border: 'none', background: '#F2A65A', color: '#fff', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>↩ Undo</button>
+                <button onClick={() => { localStorage.removeItem(`undo-${post.id}`); setUndoAvail(false) }} style={{ padding: '5px 10px', borderRadius: '7px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}>Keep new</button>
+              </div>
+            </div>
+          )}
+          {/* ⬇ Canva Bulk Create export — on EVERY post: slide rows for carousels, one row for single posts */}
+          {(() => {
+            const slideLines = (post.onscreen_text ?? '').split('\n').map(l => l.replace(/^\s*Slide\s*\d+\s*[:.\-–]\s*/i, '').trim()).filter(Boolean)
+            const isCarousel = slideLines.length >= 2
+            const imgs = (post.media_urls?.length ? post.media_urls : (post.media_url ? [post.media_url] : []))
+              .filter(u => !/\.(mp4|mov|webm|m4v)(\?|$)/i.test(u))
+            const exportCsv = async () => {
+              const base = post.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40) || 'post'
+              const esc = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`
+              // Carousel → one row per slide (text + matching image if there is one).
+              // Single post → one row with the post's fields, ready to map to a template.
+              const csv = isCarousel
+                ? ['slide,text,image_url', ...slideLines.map((l, idx) => `${idx + 1},${esc(l)},${esc(imgs[idx] ?? '')}`)].join('\n')
+                : ['on_screen_text,caption,hashtags,image_url', [esc(post.onscreen_text ?? ''), esc(post.description ?? ''), esc(post.hashtags ?? ''), esc(imgs[0] ?? '')].join(',')].join('\n')
+              const a = document.createElement('a')
+              a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+              a.download = `${base}-canva.csv`
+              a.click()
+              URL.revokeObjectURL(a.href)
+              // Also pull down the generated image(s) as JPG so she has the art in hand
+              for (let i = 0; i < imgs.length; i++) {
+                try {
+                  const blob = await (await fetch(imgs[i])).blob()
+                  const link = document.createElement('a')
+                  link.href = URL.createObjectURL(blob)
+                  link.download = imgs.length > 1 ? `${base}-${i + 1}.jpg` : `${base}.jpg`
+                  link.click()
+                  URL.revokeObjectURL(link.href)
+                } catch { /* skip an image that won't fetch */ }
+              }
+            }
+            return (
+              <button onClick={exportCsv} title="Download a Canva Bulk Create CSV (+ any generated images) for this post"
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--purple)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                ⬇ Export for Canva ({isCarousel ? `${slideLines.length} slides` : '1 row'}{imgs.length ? ` + ${imgs.length > 1 ? imgs.length + ' images' : 'image'}` : ''})
+              </button>
+            )
+          })()}
+
+          {/* 🎞 Frame plan: trend-aware, frame-by-frame production direction */}
+          {post.frame_plan ? (
+            <div style={{ background: 'rgba(76,201,240,0.06)', border: '1px solid rgba(76,201,240,0.3)', borderRadius: '10px', padding: '10px 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#2B9CC4' }}>🎞 Frame plan — what it looks like, frame by frame</p>
+                <button onClick={framePlan} disabled={framing} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '10px', fontWeight: 700, textDecoration: 'underline' }}>{framing ? 'reframing…' : 'refresh'}</button>
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{post.frame_plan}</p>
+            </div>
+          ) : (
+            <button onClick={framePlan} disabled={framing}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid rgba(76,201,240,0.5)', background: 'rgba(76,201,240,0.05)', color: '#2B9CC4', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: framing ? 0.7 : 1 }}>
+              {framing ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Reading the trends…</> : <>🎞 Frame plan — trend-check what this should look like</>}
+            </button>
           )}
 
           {/* 🎥 Suggested Footage — real capturable b-roll (faceless ≠ AI) */}
@@ -1621,60 +1603,65 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
             </div>
           )}
 
-          {/* Action bar — approve / posted (I did it natively) / decline */}
-          {isPending && !hasQuestions && (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => onApprove(post)} disabled={approving || marking}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: approving ? 0.7 : 1 }}>
-                {approving ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Approving…</> : <><CheckCircle2 size={14} /> Approve</>}
-              </button>
-              <button onClick={markPosted} disabled={marking || approving}
-                title="I already posted this natively — mark it posted and clear it from the queue"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid #3DAA7C', background: 'transparent', color: '#3DAA7C', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: marking ? 0.7 : 1 }}>
-                {marking ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : '📤'} Posted
-              </button>
-              <button onClick={() => setShowDecline(v => !v)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '11px 14px', borderRadius: '10px', border: '1px solid #E05252', background: showDecline ? 'rgba(224,82,82,0.08)' : 'transparent', color: '#E05252', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
-                <X size={14} /> Decline
-              </button>
+          {/* 🔊 Mandi-clone voiceover for this card */}
+          <CardVoicer post={post} onChanged={onChanged} />
+
+          {/* 🖥️ Higgsfield Supercomputer: cinematic frame from the image prompt → lands back on this card */}
+          <div>
+            <button onClick={sendToSupercomputer} disabled={scState === 'starting' || scState === 'rendering' || !post.image_prompt}
+              title={!post.image_prompt ? 'This post has no image prompt to render' : undefined}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: scState === 'rendering' ? 'rgba(90,79,207,0.08)' : 'var(--surface)', color: scState === 'rendering' ? '#5a4fcf' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: post.image_prompt ? 'pointer' : 'not-allowed', opacity: post.image_prompt ? 1 : 0.5 }}>
+              {scState === 'starting' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Sending to Supercomputer…</>
+                : scState === 'rendering' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Supercomputer is rendering… (attaches here automatically)</>
+                : !post.image_prompt ? <>🖥️ Send to Supercomputer (needs an image prompt ↑)</>
+                : <>🖥️ Send to Supercomputer</>}
+            </button>
+            {scState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {scErr} <button onClick={sendToSupercomputer} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
+          </div>
+
+          {/* 🎨 Canva Autofill — fill the brand template with this post's slides */}
+          <div>
+            <button onClick={post.canva_design_url ? undefined : sendToCanva} disabled={canvaState === 'working'}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: post.canva_design_url ? 'rgba(61,170,124,0.08)' : 'var(--surface)', color: post.canva_design_url ? '#2E8B60' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: canvaState === 'working' ? 'default' : 'pointer' }}>
+              {canvaState === 'working' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Filling Canva template…</>
+                : post.canva_design_url ? <>✓ Canva design ready</>
+                : <>🎨 Send to Canva template</>}
+            </button>
+            {post.canva_design_url && <a href={post.canva_design_url} target="_blank" rel="noreferrer" style={{ display: 'block', textAlign: 'center', fontSize: '11px', color: 'var(--purple)', fontWeight: 700, marginTop: '5px' }}>Open in Canva →</a>}
+            {canvaState === 'error' && canvaMsg && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px', lineHeight: 1.4 }}>⚠ {canvaMsg}</p>}
+          </div>
+
+          {/* ✍️ Write a spoken script for the avatar — turns this post into words to say to camera */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-subtle)' }}>Length:</span>
+              {[10, 20, 30].map(sec => (
+                <button key={sec} onClick={() => setScriptSecs(sec)}
+                  style={{ fontSize: '11px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', border: `1px solid ${scriptSecs === sec ? '#5a4fcf' : 'var(--border)'}`, background: scriptSecs === sec ? 'rgba(90,79,207,0.1)' : 'var(--surface)', color: scriptSecs === sec ? '#5a4fcf' : 'var(--text-muted)' }}>
+                  {sec}s
+                </button>
+              ))}
             </div>
-          )}
-          {approveNote && (
-            <p style={{ fontSize: '11px', fontWeight: 600, lineHeight: 1.45, padding: '9px 11px', borderRadius: '9px', background: approveNote.startsWith('✓') ? 'rgba(61,170,124,0.1)' : 'rgba(242,166,90,0.12)', color: approveNote.startsWith('✓') ? '#2E8B60' : '#C47A1A' }}>{approveNote}</p>
-          )}
-          {showDecline && (
-            <div style={{ padding: '12px', background: 'rgba(224,82,82,0.05)', border: '1px solid rgba(224,82,82,0.25)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#E05252' }}>Why isn&apos;t this a fit? (teaches this account)</p>
-              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                {DECLINE_CHIPS.map(c => (
-                  <button key={c} onClick={() => setDeclineReason(r => r ? `${r}; ${c}` : c)}
-                    style={{ padding: '4px 10px', borderRadius: '20px', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '10px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-muted)' }}>
-                    {c}
-                  </button>
-                ))}
-              </div>
-              <textarea value={declineReason} onChange={e => setDeclineReason(e.target.value)} rows={2}
-                placeholder="Tap a reason above or write your own — this becomes a rule for this account…"
-                style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
-              <button onClick={decline} disabled={declining || !declineReason.trim()}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '9px', borderRadius: '8px', border: 'none', background: '#E05252', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer', opacity: declining || !declineReason.trim() ? 0.6 : 1 }}>
-                {declining ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Teaching the account…</> : <>Decline &amp; teach this account</>}
-              </button>
-            </div>
-          )}
-          {(isApproved || isScheduled) && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {isApproved && (
-                <p style={{ fontSize: '11px', color: '#C47A1A', background: 'rgba(242,166,90,0.1)', padding: '8px 10px', borderRadius: '8px', lineHeight: 1.5 }}>
-                  Approved. Copy the post above, publish it on the platform yourself, then mark it posted below.
-                </p>
-              )}
-              <button onClick={markPosted} disabled={marking}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', background: '#3DAA7C', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: marking ? 0.7 : 1 }}>
-                {marking ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Archiving…</> : <>📤 I posted this — archive it</>}
-              </button>
-            </div>
-          )}
+            <button onClick={writeScript} disabled={writingScript}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: '1px solid rgba(90,79,207,0.4)', background: 'rgba(90,79,207,0.05)', color: '#5a4fcf', fontWeight: 700, fontSize: '12px', cursor: 'pointer', opacity: writingScript ? 0.7 : 1 }}>
+              {writingScript ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Writing a {scriptSecs}s script…</> : <>✍️ {post.script ? `Rewrite the ${scriptSecs}s script` : `Write me a ${scriptSecs}s script`}</>}
+            </button>
+          </div>
+
+          {/* 🎬 Avatar video: needs a script first, then HeyGen render → MP4 lands back on this card */}
+          <div>
+            <button onClick={makeVideo} disabled={videoState === 'starting' || videoState === 'rendering' || !post.script}
+              title={!post.script ? 'Write a spoken script first' : undefined}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: videoState === 'rendering' ? 'rgba(90,79,207,0.08)' : 'var(--surface)', color: videoState === 'rendering' ? '#5a4fcf' : 'var(--text-muted)', fontWeight: 700, fontSize: '12px', cursor: post.script ? 'pointer' : 'not-allowed', opacity: post.script ? 1 : 0.5 }}>
+              {videoState === 'starting' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Launching render…</>
+                : videoState === 'rendering' ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Avatar is filming… (2-6 min, video attaches here automatically)</>
+                : !post.script ? <>🎬 Make avatar video (write a script first ↑)</>
+                : <>🎬 Make avatar video from the script</>}
+            </button>
+            {videoState === 'error' && <p style={{ fontSize: '10px', color: '#E05252', marginTop: '4px' }}>⚠ {videoErr} <button onClick={makeVideo} style={{ border: 'none', background: 'none', color: '#5a4fcf', fontWeight: 700, cursor: 'pointer', fontSize: '10px', textDecoration: 'underline' }}>Retry</button></p>}
+          </div>
+
+          </>)}
         </div>
       )}
     </div>
@@ -1959,9 +1946,10 @@ export default function AccountsPanel() {
                 </div>
               </div>
 
-              {acct.id && <PodcastAudioDrop accountId={acct.id} accentColor={theme.color} onDone={loadContent} />}
+              {/* Avatar video + voice-clone tools: avatars are retired (real video only), so they stay off the queue. Code kept. */}
+              {acct.id === 'aimompodcast' && <PodcastAudioDrop accountId={acct.id} accentColor={theme.color} onDone={loadContent} />}
 
-              {reviewable.length > 0 && (
+              {false && reviewable.length > 0 && (
                 <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
                   <VoiceAllButton posts={reviewable} accentColor={theme.color} onDone={loadContent} />
                 </div>

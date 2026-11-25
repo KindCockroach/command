@@ -164,6 +164,10 @@ export const SKILL_SEED: Seed[] = [
     ['Read every caption, year by year, and pull story seeds with her exact words and dates.', 'Against who she is now and what she is building, pick the 6–8 strongest stories (threads can run across years).', 'For each: the take, why now, the branch and form, 3 clickable headlines, and the lines of hers it is built from.', 'Run Ed’s guardrail check on each pitch; flag generic headlines.', 'Put them in Approve. Her pick goes through the Story desk; a pass goes to Notes with her reason.'],
     'Mandi has 6–8 specific stories with headlines she would click.', ['Use a child’s or a real person’s name.', 'Write generic inspiration headlines.', 'Write the piece (Pod does).'],
     ['lib/storyDesk.ts runFindStories', 'POST /api/stories {action:"find"}'], true, 'Built Nov 24 at Mandi’s request.'),
+  S('ed-card-basics', 'ed', 'Ed · Card basics', 'Fill what a card is missing', 'A card is created without its basics, Cap reviews one, or Mandi presses “Fix them” in Activity.',
+    ['Find what the card is missing: a real title, the on-screen hook, the post’s job, a caption once it’s ready, what to film for an empty slot.', 'Write ONLY the missing pieces, built from what’s on the card; never over her words.', 'The hook is the headline: it opens a gap the post answers.', 'Cap picks the job (reach / authority / dms).', 'A card with no account goes to Mandi.'],
+    'Every card on the board, Content Day and the calendar has a title, a hook, a job, and what it needs next.', ['Overwrite her words.', 'Invent a topic that contradicts the card.', 'Pick an account for her.'],
+    ['lib/cardAudit.ts', '/api/cards'], true, 'Built Nov 24 at Mandi’s request.'),
   S('cora-interview', 'cora', 'Cora · Interview', 'Interview Mandi for Medium stories', 'Mandi starts an interview on the Story desk (Medium, lived experience for people struggling with loss, depression, anxiety).',
     ['Read every caption like a journalist: where she touches loss, depression, anxiety. Note the question a good interviewer would ask, with the captions that raised it.', 'Order the notebook gentle to deep; ask ONE question at a time.', 'Listen for the charge (a specific detail, a turn, a contradiction, a line she has never said out loud) and follow it, two follow-ups at most; mark it as a charged point in her words.', 'She can skip anything or mark it off limits; never push.', 'When she says shape it: turn the charged points into 3–5 Medium story shapes (reader, take, headlines, opening from her words, beats), Ed checks each, they wait in Approve.', 'File the interview transcript in Notes.'],
     'Mandi has Medium stories built from what she actually said, aimed at one struggling reader each.', ['Act as her therapist, diagnose, or promise healing or treatment.', 'Name a real person or a child.', 'Invent a detail she did not say or write.', 'Write the piece (Pod does).'],
@@ -299,6 +303,7 @@ export const SKILL_FOR_KIND: Partial<Record<HandoffKind, string>> = {
   story_find: 'cora-find-stories',
   interview_prep: 'cora-interview',
   interview_shape: 'cora-interview',
+  card_fix: 'ed-card-basics',
 }
 
 // Count a run and return the line a receipt carries: "Skill: Cap 4 · Weigh the winners".

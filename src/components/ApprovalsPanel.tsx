@@ -6,7 +6,7 @@ import { TalkToCapButton, TalkToCapThread } from './TalkToCap'
 // Approve: everything waiting on your yes, in one window. Each thing still lives in its own tab;
 // this gathers them, lets you read the draft right here, and approve (or say no with a reason).
 
-type Action = { label: string; kind: 'post'; url: string; method?: 'POST' | 'PATCH'; body: Record<string, unknown>; reason?: string; primary?: boolean } | { label: string; kind: 'open'; view: string }
+type Action = { label: string; kind: 'post'; url: string; method?: 'POST' | 'PATCH'; body: Record<string, unknown>; reason?: string; reasonField?: string; primary?: boolean; resolve?: string } | { label: string; kind: 'open'; view: string }
 type Item = { id: string; source: string; from: string; title: string; detail?: string; body?: string; at: string; view: string; actions: Action[]; chat?: number }
 type Data = { items: Item[]; counts: Record<string, number>; total: number; labels: Record<string, string> }
 
@@ -29,7 +29,8 @@ export default function ApprovalsPanel() {
   const run = async (it: Item, a: Action, reason?: string) => {
     if (a.kind === 'open') return go(a.view)
     setBusy(it.id + a.label); setMsg('')
-    const r = await fetch(a.url, { method: a.method ?? 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reason !== undefined ? { ...a.body, reason } : a.body) }).then(x => x.json()).catch(() => ({ error: 'Connection hiccup. Try again.' }))
+    const r = await fetch(a.url, { method: a.method ?? 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reason !== undefined ? { ...a.body, [a.reasonField ?? 'reason']: reason } : a.body) }).then(x => x.json()).catch(() => ({ error: 'Connection hiccup. Try again.' }))
+    if (!r?.error && a.resolve) await fetch('/api/health', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'resolve', key: a.resolve }) }).catch(() => null)
     setBusy(''); setAsk(null)
     setMsg(r?.error ? `“${it.title.slice(0, 50)}”: ${r.error}` : `Done: ${a.label.replace('…', '')} · ${it.title.slice(0, 60)}`)
     load()
