@@ -10,7 +10,7 @@ export function TalkToCapButton({ id, count, open, onToggle }: { id: string; cou
   return <button type="button" className="ttc-b" onClick={() => onToggle(id)} aria-expanded={open}>💬 Talk to Cap{count ? ` · ${count}` : ''}<style>{btnCss}</style></button>
 }
 
-export function TalkToCapThread({ id, onChanged, placeholder }: { id: string; onChanged?: (rewriting: boolean) => void; placeholder?: string }) {
+export function TalkToCapThread({ id, onChanged, placeholder, intro }: { id: string; onChanged?: (rewriting: boolean) => void; placeholder?: string; intro?: string }) {
   const [turns, setTurns] = useState<Turn[] | null>(null)
   const [said, setSaid] = useState('')
   const [busy, setBusy] = useState(false)
@@ -32,7 +32,7 @@ export function TalkToCapThread({ id, onChanged, placeholder }: { id: string; on
   return (
     <div className="ttc">
       <style>{css}</style>
-      {(turns ?? []).length === 0 && <p className="ttc-d">Ask Cap anything about this, or tell him what to change. To add a link, paste the address and say where it goes (e.g. “add a link to https://… on the words ‘the free meditation’”).</p>}
+      {(turns ?? []).length === 0 && <p className="ttc-d">{intro ?? <>Ask Cap anything about this, or tell him what to change. To add a link, paste the address and say where it goes (e.g. “add a link to https://… on the words ‘the free meditation’”).</>}</p>}
       {(turns ?? []).map((t, k) => <p key={k} className={`ttc-t ${t.role}`}><b>{t.role === 'mandi' ? 'You' : 'Cap'}:</b> {t.text}</p>)}
       {msg && <p className="ttc-m">{msg}</p>}
       <div className="ttc-row">
@@ -43,15 +43,15 @@ export function TalkToCapThread({ id, onChanged, placeholder }: { id: string; on
   )
 }
 
-const btnCss = `.ttc-b{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;border:1px solid var(--border);background:var(--surface);color:var(--text)}`
+const btnCss = `.ttc-b{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid var(--border);background:var(--surface);color:var(--text)}`
 const css = `
 .ttc{display:flex;flex-direction:column;gap:5px;margin-top:6px;padding:9px 11px;border:1px dashed var(--border);border-radius:11px}
 .ttc-d{margin:0;font-size:12px;color:var(--text-subtle);line-height:1.5}
-.ttc-m{margin:0;font-size:12px;font-weight:700;color:#5A4FCF}
-.ttc-t{margin:0;font-size:12.5px;line-height:1.5;white-space:pre-wrap}
-.ttc-t.cap b{color:#5A4FCF}
+.ttc-m{margin:0;font-size:12px;font-weight:600;color:var(--link)}
+.ttc-t{margin:0;font-size:12px;line-height:1.5;white-space:pre-wrap}
+.ttc-t.cap b{color:var(--link)}
 .ttc-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;align-items:center}
-.ttc-row input{flex:1;min-width:200px;font:inherit;font-size:12.5px;border:1px solid var(--border);border-radius:9px;padding:6px 9px;background:var(--bg);color:var(--text)}
-.ttc-p{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;border:0;background:#5A4FCF;color:#fff}
+.ttc-row input{flex:1;min-width:200px;font:inherit;font-size:12px;border:1px solid var(--border);border-radius:9px;padding:6px 9px;background:var(--bg);color:var(--text)}
+.ttc-p{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:0;background:#5A4FCF;color:#fff}
 .ttc-p:disabled{opacity:.5}
 `

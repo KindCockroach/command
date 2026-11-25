@@ -44,7 +44,8 @@ const PREHEADER_NOTE = 'In an email, the line shown first in parentheses in the 
 export async function talkToCap(itemId: string, text: string): Promise<{ turns: ChatTurn[]; rewriting?: string | null } | { error: string }> {
   const said = (text ?? '').trim()
   if (!said) return { error: 'Say something to Cap first.' }
-  const item = getApprovals().items.find(i => i.id === itemId) ?? emailItem(itemId)
+  if (itemId === CAP_GENERAL) return talkToCapGeneral(said)
+  const item =getApprovals().items.find(i => i.id === itemId) ?? emailItem(itemId)
   if (!item) return { error: 'That item isn’t waiting on you any more.' }
   if ('busy' in item && item.busy) return { error: 'Ed is rewriting this one right now. Give it a minute, then talk to Cap again.' }
   push(itemId, { role: 'mandi', text: cut(said, 2000), at: nowIso() })
@@ -104,4 +105,35 @@ function startRewrite(itemId: string, fix: string): string | null {
     h = openHandoff({ kind: 'longform_write', from: 'cap', to: 'pod', what: cut(`Rewrite Substack issue ${n} (Mandi’s note)`, 280), ref: { type: 'substack', id: n, label: i.title }, note: fix })
   }
   return h?.id ?? null
+}
+
+// ── Cap, in general (Home's Her / Man / Cap chat) ─────────────────────────────────────────
+// One running thread with Cap about anything: his plans, the calendar, what's waiting on her,
+// what to post where. He answers from what's really in RISE and never invents. He doesn't
+// change plans from here (approving and redrafting stay on the plan itself): when she wants a
+// change he says where to do it, or that she can tell him on the plan in Approve.
+export const CAP_GENERAL = 'cap:general'
+
+async function talkToCapGeneral(said: string): Promise<{ turns: ChatTurn[] } | { error: string }> {
+  push(CAP_GENERAL, { role: 'mandi', text: cut(said, 2000), at: nowIso() })
+  const db = readDb()
+  const today = nowIso().slice(0, 10)
+  const in14 = new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10)
+  const plans = (db.plans ?? []).filter(p => p.status !== 'superseded' && p.period_end >= today)
+    .map(p => `- ${p.level} plan · ${p.branch_id} · ${p.period_start}→${p.period_end} · ${p.status}: ${cut(p.summary ?? '', 300)}`).slice(0, 12)
+  const content = new Map((db.content ?? []).map(c => [c.id, c]))
+  const cal = (db.calendar_items ?? []).filter(c => c.date >= today && c.date <= in14).sort((a, b) => a.date.localeCompare(b.date))
+    .map(c => { const p = content.get(c.content_id); return `- ${c.date}${c.time ? ' ' + c.time : ''} · ${c.account_id ?? c.branch_id} · ${p ? cut(p.title ?? '', 90) : '(card missing)'} · ${p?.status ?? ''}` }).slice(0, 40)
+  const waiting = getApprovals().items.map(i => `- ${i.title} (from ${i.from})`).slice(0, 25)
+  const history = getChat(CAP_GENERAL).slice(-12).map(t => `${t.role === 'mandi' ? 'MANDI' : 'CAP'}: ${t.text}`).join('\n')
+  let reply = ''
+  try {
+    reply = (await fableText({ maxTokens: 700,
+      instructions: `You are Cap, Mandi's campaign boss: you own the map (every account's plan, the calendar, campaigns). Mandi is talking to you from her Home screen. Answer plainly and briefly (1–4 sentences, no lists unless she asks), from the facts below only; never invent numbers, dates or posts. If she wants a plan or calendar change, say exactly where (the plan in Approve, or Plan › Calendar) or that she can tell you on that plan; you don't change plans from this chat. Speak to her, warm and direct.`,
+      input: `TODAY: ${today}\n\nYOUR PLANS:\n${plans.join('\n') || '(none active)'}\n\nCALENDAR, NEXT 14 DAYS:\n${cal.join('\n') || '(empty)'}\n\nWAITING ON HER YES:\n${waiting.join('\n') || '(nothing)'}\n\nTHE CONVERSATION SO FAR:\n${history}` })).trim()
+  } catch (e) {
+    reply = `I couldn’t answer just now (${e instanceof Error ? e.message : 'no answer'}). Your note is saved here.`
+  }
+  push(CAP_GENERAL, { role: 'cap', text: cut(reply || 'Got it.', 1500), at: nowIso() })
+  return { turns: getChat(CAP_GENERAL) }
 }

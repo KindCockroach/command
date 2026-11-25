@@ -114,19 +114,19 @@ export default function ManReport() {
 const css = `
 .mr{display:flex;flex-direction:column;gap:6px;border:1px dashed var(--border,#E7E1D6);border-radius:12px;padding:10px 11px}
 .mr button{font-family:inherit}
-.mr-h{margin:0;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-subtle)}
+.mr-h{margin:0;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-subtle)}
 .mr-s{margin:0;font-size:12px;color:var(--text-subtle)}
-.mr-t{margin:2px 0 0;font-size:10.5px;color:var(--text-subtle)}
-.mr-f,.mr-i{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--text);padding:6px 0;border-top:1px solid var(--border,#E7E1D6)}
+.mr-t{margin:2px 0 0;font-size:12px;color:var(--text-subtle)}
+.mr-f,.mr-i{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--text);padding:6px 0;border-top:1px solid var(--border,#E7E1D6)}
 .mr-f:first-of-type{border-top:0}
-.mr-d{font-size:11.5px;color:var(--text-subtle)}
-.mr-fix{font-size:12px;color:#5A4FCF}
-.mr-who{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#B0662E}
-.mr-link{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:#7C4DDB}
+.mr-d{font-size:12px;color:var(--text-subtle)}
+.mr-fix{font-size:12px;color:var(--link)}
+.mr-who{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gold)}
+.mr-link{all:unset;cursor:pointer;font-size:12px;font-weight:600;color:var(--link)}
 .mr-ideas{display:flex;flex-direction:column;gap:4px;margin-top:4px}
 .mr-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.mr-row button{border:0;background:#7C4DDB;color:#fff;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:800;cursor:pointer}
+.mr-row button{border:0;background:#7C4DDB;color:#fff;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
 .mr-row button.mr-ghost{background:none;color:var(--text);border:1px solid var(--border,#E7E1D6)}
 .mr-row button:disabled{opacity:.5}
-.mr-row input{flex:1;min-width:160px;font:inherit;font-size:12.5px;border:1px solid var(--border,#E7E1D6);border-radius:9px;padding:5px 9px;background:var(--bg,#fff);color:var(--text)}
+.mr-row input{flex:1;min-width:160px;font:inherit;font-size:12px;border:1px solid var(--border,#E7E1D6);border-radius:9px;padding:5px 9px;background:var(--bg,#fff);color:var(--text)}
 `

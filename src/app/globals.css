@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@400;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -216,3 +216,185 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
 .pulse-pink { animation: pulse-pink 2s infinite; }
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PHASE 7 · "GLOW" — the RISE design system (Nov 25, Mandi's picks)
+   Typeface: Inter Tight. Day = Orchid Dawn. Night = Midnight Orchid.
+   Scoped to .rise-app (the station), so the public sites are untouched.
+   Every text color below is measured at WCAG AA (4.5:1) or better.
+   Type scale: 12 / 14 / 16 / 20 / 28. Two weights: 400 and 600.
+   ════════════════════════════════════════════════════════════════════════════ */
+.rise-app {
+  /* the five sizes */
+  --fs-xs: 12px; --fs-sm: 14px; --fs-md: 16px; --fs-lg: 20px; --fs-xl: 28px;
+  --fw-regular: 400; --fw-bold: 600;
+  --font-ui: 'Inter Tight', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* Day · Orchid Dawn — the old names now point at the new palette */
+  --cream: #F6F4FD; --cream-deep: #EEEAFF;
+  --ink: #14122B; --ink-muted: #4B4870; --ink-subtle: #5C5880;
+  --purple: #5B3FD6; --purple-dark: #4A2FC0; --purple-mid: #7A4FE0; --purple-light: #EEEAFF; --purple-glow: rgba(91,63,214,0.18);
+  --pink: #C2185B; --pink-light: #FFE6F0; --hot-pink-dark: #9E1450;
+  --gold: #8A5A2E; --idea-color: #8A5A2E; --idea-bg: #FBF1E6;
+  --ready-color: #0F6E4C; --ready-bg: #E3F6EE; --progress-color: #5B3FD6; --progress-bg: #EEEAFF;
+  --bg: #F6F4FD; --surface: #FFFFFF; --surface-raised: #EEEAFF; --border: #E2DCF5;
+  --text: var(--ink); --text-muted: var(--ink-muted); --text-subtle: var(--ink-subtle);
+  --accent: var(--purple); --accent-hover: var(--purple-dark); --accent-light: var(--purple-light);
+  --hot-pink: var(--pink); --hot-pink-light: var(--pink-light);
+  --navy: #1C1840; --navy-mid: #2E1F66; --header-bg: #1C1840;
+
+  /* the three signal colors */
+  --act: #5B3FD6; --act-2: #7A4FE0; --on-act: #FFFFFF;
+  --needs: #B3125A; --needs-bg: #FFE6F0;
+  --done: #0F6E4C;  --done-bg: #E3F6EE;
+
+  /* depth + glow */
+  --banner: linear-gradient(125deg, #4A2FC0 0%, #7A4FE0 60%, #A45BD8 100%);
+  --banner-ink: #FFFFFF; --banner-sub: #F1ECFF;
+  --banner-glow: 0 14px 34px rgba(91,63,214,0.34), inset 0 0 0 1px rgba(255,255,255,0.35);
+  --glow-act: 0 8px 24px rgba(91,63,214,0.45);
+  --glow-act-hover: 0 12px 30px rgba(91,63,214,0.55);
+  --lift: 0 6px 16px rgba(74,47,192,0.14);
+  --card-shadow: 0 10px 28px rgba(74,47,192,0.10);
+  --wash: radial-gradient(circle at 0% 0%, #DCD2FF 0, transparent 45%), radial-gradient(circle at 100% 100%, #FBD7EA 0, transparent 45%);
+
+  background: var(--wash), var(--bg);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+[data-theme="dark"] .rise-app {
+  /* Night · Midnight Orchid */
+  --cream: #0B0D1A; --cream-deep: #1D2040;
+  --ink: #EEF0FA; --ink-muted: #B9BEDA; --ink-subtle: #A3A8CC;
+  --purple: #6A4BE0; --purple-dark: #5B3FD6; --purple-mid: #8B6CF5; --purple-light: rgba(150,120,255,0.16); --purple-glow: rgba(150,120,255,0.25);
+  --pink: #FF8CC0; --pink-light: rgba(255,140,192,0.14); --hot-pink-dark: #FFB3D6;
+  --gold: #E2B48A; --idea-color: #E2B48A; --idea-bg: rgba(226,180,138,0.12);
+  --ready-color: #5EE0B0; --ready-bg: rgba(94,224,176,0.12); --progress-color: #B79CFF; --progress-bg: rgba(150,120,255,0.16);
+  --bg: #0B0D1A; --surface: #151833; --surface-raised: #1D2040; --border: #2A2E55;
+  --navy: #0E0F24; --navy-mid: #1C1840; --header-bg: #0E0F24;
+  --act: #B79CFF; --act-2: #C9B6FF; --on-act: #160F33;
+  --needs: #FF8CC0; --needs-bg: rgba(255,140,192,0.14);
+  --done: #5EE0B0;  --done-bg: rgba(94,224,176,0.12);
+  --banner: linear-gradient(120deg, #1C1840 0%, #4C2A8C 100%);
+  --banner-ink: #FFFFFF; --banner-sub: #DCD6FA;
+  --banner-glow: 0 0 34px rgba(150,120,255,0.40), inset 0 0 0 1px rgba(255,255,255,0.08);
+  --glow-act: 0 6px 22px rgba(183,156,255,0.55);
+  --glow-act-hover: 0 10px 30px rgba(183,156,255,0.70);
+  --lift: 0 4px 14px rgba(0,0,0,0.5);
+  --card-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  --wash: radial-gradient(circle at 0% 0%, #1E1A4A 0, transparent 50%), radial-gradient(circle at 100% 100%, #2A1236 0, transparent 50%);
+}
+
+/* ── One typeface everywhere she reads (code stays monospace) ── */
+.rise-app *:not(code):not(pre):not(kbd):not([style*="monospace"]):not([class*="mono"]) { font-family: var(--font-ui) !important; }
+
+/* ── The type scale, enforced on the old inline sizes (34 sizes → 5). Panels keep their
+   code; this maps every inline size to the nearest step, and nothing she reads is <12px. ── */
+.rise-app [style*="font-size: 8px"], .rise-app [style*="font-size: 8.5px"], .rise-app [style*="font-size: 9px"], .rise-app [style*="font-size: 9.5px"],
+.rise-app [style*="font-size: 10px"], .rise-app [style*="font-size: 10.5px"], .rise-app [style*="font-size: 11px"], .rise-app [style*="font-size: 11.5px"],
+.rise-app [style*="font-size: 12px"], .rise-app [style*="font-size: 12.5px"] { font-size: var(--fs-xs) !important; }
+.rise-app [style*="font-size: 13px"], .rise-app [style*="font-size: 13.5px"], .rise-app [style*="font-size: 14px"], .rise-app [style*="font-size: 14.5px"] { font-size: var(--fs-sm) !important; }
+.rise-app [style*="font-size: 15px"], .rise-app [style*="font-size: 15.5px"], .rise-app [style*="font-size: 16px"], .rise-app [style*="font-size: 16.5px"], .rise-app [style*="font-size: 17px"], .rise-app [style*="font-size: 17.5px"] { font-size: var(--fs-md) !important; }
+.rise-app [style*="font-size: 18px"], .rise-app [style*="font-size: 18.5px"], .rise-app [style*="font-size: 19px"], .rise-app [style*="font-size: 20px"], .rise-app [style*="font-size: 21px"], .rise-app [style*="font-size: 22px"], .rise-app [style*="font-size: 23px"] { font-size: var(--fs-lg) !important; }
+.rise-app [style*="font-size: 24px"], .rise-app [style*="font-size: 26px"], .rise-app [style*="font-size: 28px"], .rise-app [style*="font-size: 30px"], .rise-app [style*="font-size: 32px"], .rise-app [style*="font-size: 34px"], .rise-app [style*="font-size: 40px"] { font-size: var(--fs-xl) !important; }
+/* two weights */
+.rise-app [style*="font-weight: 500"] { font-weight: var(--fw-regular) !important; }
+.rise-app [style*="font-weight: 700"], .rise-app [style*="font-weight: 800"], .rise-app [style*="font-weight: 900"], .rise-app b, .rise-app strong { font-weight: var(--fw-bold) !important; }
+.rise-app h1, .rise-app h2, .rise-app h3, .rise-app h4 { font-weight: var(--fw-bold); letter-spacing: -0.015em; }
+/* no faded text: opacity on words drops contrast below AA */
+.rise-app p[style*="opacity: 0.5"], .rise-app span[style*="opacity: 0.5"], .rise-app p[style*="opacity: 0.6"], .rise-app span[style*="opacity: 0.6"] { opacity: 1 !important; color: var(--text-muted) !important; }
+
+/* Night: accent words that were tuned for a light page get their bright twin. */
+[data-theme="dark"] .rise-app [style^="color: var(--purple)"], [data-theme="dark"] .rise-app [style*=" color: var(--purple)"],
+[data-theme="dark"] .rise-app [style^="color: var(--accent)"], [data-theme="dark"] .rise-app [style*=" color: var(--accent)"] { color: #B79CFF !important; }
+
+/* ── Banner: one per tab, same everywhere ── */
+.rp-banner { position: relative; border-radius: 20px; padding: 22px 24px; background: var(--banner); box-shadow: var(--banner-glow); color: var(--banner-ink); overflow: hidden; }
+.rp-banner::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 85% -20%, rgba(255,255,255,0.28), transparent 45%); pointer-events: none; }
+.rp-banner h1 { margin: 0; font-size: var(--fs-xl); font-weight: var(--fw-bold); line-height: 1.15; color: var(--banner-ink); letter-spacing: -0.02em; }
+.rp-banner p { margin: 6px 0 0; font-size: var(--fs-sm); color: var(--banner-sub); line-height: 1.5; max-width: 60ch; }
+@media (max-width: 480px) { .rp-banner { padding: 18px; border-radius: 16px; } }
+
+/* ── Pills: primary · secondary · quiet. One size, one padding. ── */
+.rp-pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 9px 18px; border-radius: 999px; border: 0;
+  font: inherit; font-size: var(--fs-sm); font-weight: var(--fw-bold); line-height: 1.2; cursor: pointer; white-space: nowrap; text-decoration: none;
+  transition: transform .16s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease, background .2s ease; }
+.rp-pill:hover:not(:disabled) { transform: translateY(-1px); }
+.rp-pill:active:not(:disabled) { transform: translateY(1px); }
+.rp-pill:disabled { opacity: .55; cursor: default; }
+.rp-primary { background: linear-gradient(135deg, var(--act), var(--act-2)); color: var(--on-act); box-shadow: var(--glow-act); }
+.rp-primary:hover:not(:disabled) { box-shadow: var(--glow-act-hover); }
+.rp-secondary { background: var(--surface); color: var(--text); box-shadow: var(--lift), inset 0 0 0 1px var(--border); }
+.rp-quiet { background: transparent; color: var(--text-muted); padding-left: 12px; padding-right: 12px; }
+.rp-quiet:hover:not(:disabled) { background: var(--surface-raised); color: var(--text); }
+.rp-pill[aria-pressed="true"], .rp-pill.on { background: linear-gradient(135deg, var(--act), var(--act-2)); color: var(--on-act); box-shadow: var(--glow-act); }
+.rp-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-bold); background: var(--needs-bg); color: var(--needs); }
+.rp-pill.on .rp-count, .rp-pill[aria-pressed="true"] .rp-count, .rp-primary .rp-count { background: rgba(255,255,255,0.9); color: #4A2FC0; }
+
+/* ── Sub-tabs: a row of pills under the banner ── */
+.rp-subtabs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* ── Cards: fewer borders, more air, one level ── */
+.rp-card { background: var(--surface); border-radius: 18px; padding: 18px 20px; box-shadow: var(--card-shadow); }
+[data-theme="dark"] .rise-app .rp-card { box-shadow: var(--card-shadow), inset 0 0 0 1px var(--border); }
+
+/* ── The top bar ── */
+.rp-top { position: sticky; top: 0; z-index: 40; background: linear-gradient(90deg, #14102F, #1C1840 50%, #2E1F66); box-shadow: 0 6px 24px rgba(20,16,47,0.35); }
+.rp-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; border: 0; background: transparent; cursor: pointer; padding: 4px 6px; border-radius: 12px; color: #fff; font: inherit; }
+.rp-brand:hover { background: rgba(255,255,255,0.08); }
+.rp-brand span { font-size: var(--fs-lg); font-weight: var(--fw-bold); letter-spacing: 0.02em; white-space: nowrap; }
+.rp-tab { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; min-height: 36px; padding: 7px 14px; border-radius: 999px; border: 0; background: transparent; color: #C9C6E8; font: inherit; font-size: var(--fs-sm); font-weight: var(--fw-bold); cursor: pointer; text-decoration: none; transition: background .2s, box-shadow .2s, color .2s; }
+.rp-tab:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.rp-tab.on { background: linear-gradient(135deg, #6A4BE0, #8B6CF5); color: #fff; box-shadow: 0 0 22px rgba(150,120,255,0.55); }
+.rp-tab .rp-count { background: #FF8CC0; color: #2A0A1C; }
+
+/* ── The chat glow (Her / Man / Cap input) ── */
+.rp-glow-input { border-radius: 18px; box-shadow: 0 0 0 1px var(--border), 0 0 26px var(--purple-glow); }
+
+@media (prefers-reduced-motion: reduce) { .rp-pill, .rp-tab { transition: none; } .rp-pill:hover:not(:disabled) { transform: none; } }
+
+/* Old color names some panels still use (never defined before, so they fell back to inherited
+   color). They now map onto the glow palette in both Day and Night. */
+.rise-app {
+  --cosmic-midnight: #1C1840; --midnight: #1C1840; --soft-light: #F6F4FD;
+  --electric-nebula: #5B3FD6; --nebula: #5B3FD6; --nebula-light: #EEEAFF;
+  --aurora-pink: #C2185B; --aurora-light: #FFE6F0;
+  --copper: #8A5A2E; --ember: #A8431A; --solar-ember: #A8431A; --ember-light: #FBEDE6;
+  --muted: #4B4870; --bg-subtle: #EEEAFF;
+}
+[data-theme="dark"] .rise-app {
+  --cosmic-midnight: #EEF0FA; --midnight: #EEF0FA; --soft-light: #14122B;
+  --electric-nebula: #B79CFF; --nebula: #B79CFF; --nebula-light: rgba(150,120,255,0.16);
+  --aurora-pink: #FF8CC0; --aurora-light: rgba(255,140,192,0.14);
+  --copper: #E2B48A; --ember: #FF9E73; --solar-ember: #FF9E73; --ember-light: rgba(255,158,115,0.14);
+  --muted: #B9BEDA; --bg-subtle: #1D2040;
+}
+/* Tailwind size classes, onto the same five steps */
+.rise-app .text-\[8px\], .rise-app .text-\[9px\], .rise-app .text-\[10px\], .rise-app .text-\[11px\], .rise-app .text-\[12px\], .rise-app .text-xs { font-size: var(--fs-xs) !important; }
+.rise-app .text-\[13px\], .rise-app .text-\[14px\], .rise-app .text-sm { font-size: var(--fs-sm) !important; }
+.rise-app .text-\[15px\], .rise-app .text-\[16px\], .rise-app .text-\[17px\], .rise-app .text-base { font-size: var(--fs-md) !important; }
+.rise-app .text-\[20px\], .rise-app .text-lg, .rise-app .text-xl { font-size: var(--fs-lg) !important; }
+.rise-app .text-2xl, .rise-app .text-3xl { font-size: var(--fs-xl) !important; }
+.rise-app .font-bold, .rise-app .font-extrabold, .rise-app .font-black { font-weight: var(--fw-bold) !important; }
+.rise-app .font-medium { font-weight: var(--fw-regular) !important; }
+/* Hard-coded text colors that failed AA, onto readable twins (inline styles are kept as written). */
+.rise-app [style*="; color: rgb(61, 170, 124)"], .rise-app [style^="color: rgb(61, 170, 124)"] { color: var(--done) !important; }
+.rise-app [style*="; color: rgb(242, 166, 90)"], .rise-app [style^="color: rgb(242, 166, 90)"],
+.rise-app [style*="; color: rgb(201, 149, 106)"], .rise-app [style^="color: rgb(201, 149, 106)"] { color: var(--gold) !important; }
+.rise-app [style*="; color: rgb(224, 82, 82)"], .rise-app [style^="color: rgb(224, 82, 82)"] { color: #B42323 !important; }
+.rise-app [style*="; color: rgb(225, 48, 108)"], .rise-app [style^="color: rgb(225, 48, 108)"],
+.rise-app [style*="; color: rgb(232, 68, 138)"], .rise-app [style^="color: rgb(232, 68, 138)"] { color: var(--pink) !important; }
+.rise-app [style*="; color: rgb(148, 148, 176)"], .rise-app [style^="color: rgb(148, 148, 176)"],
+.rise-app [style*="; color: rgb(155, 143, 166)"], .rise-app [style^="color: rgb(155, 143, 166)"] { color: var(--text-subtle) !important; }
+[data-theme="dark"] .rise-app [style*="; color: rgb(224, 82, 82)"], [data-theme="dark"] .rise-app [style^="color: rgb(224, 82, 82)"] { color: #FF8A8A !important; }
+/* Links and accent words: one color per theme. Night backgrounds that were hard-coded light. */
+.rise-app { --link: #5B3FD6; }
+[data-theme="dark"] .rise-app { --link: #B79CFF; }
+[data-theme="dark"] .rise-app [style*="background: rgb(232, 247, 241)"] { background: var(--done-bg) !important; }
+[data-theme="dark"] .rise-app [style*="background: rgb(254, 245, 234)"] { background: var(--idea-bg) !important; }
+[data-theme="dark"] .rise-app [style*="background: rgb(254, 242, 242)"] { background: rgba(255,138,138,0.14) !important; }
+/* On the banner the selected sub-tab is the bright white pill; the others are glassy. */
+.rp-banner .rp-pill.rp-primary, .rp-banner .rp-pill[aria-pressed="true"] { background: #FFFFFF; color: #3B2A99; box-shadow: 0 6px 20px rgba(20,16,47,0.28), 0 0 18px rgba(255,255,255,0.45); }
+.rp-banner .rp-pill.rp-secondary { background: rgba(255,255,255,0.14); color: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.32); }
+.rp-banner .rp-pill.rp-secondary:hover { background: rgba(255,255,255,0.24); }

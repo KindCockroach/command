@@ -98,28 +98,28 @@ const css = `
 .sk{display:flex;flex-direction:column;gap:12px;border:1px solid var(--border,#E7E1D6);border-radius:16px;background:var(--surface,#fff);padding:14px 16px}
 .sk button{font-family:inherit}
 .sk-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
-.sk-t{margin:0;font-size:15px;font-weight:900;color:var(--text)}
+.sk-t{margin:0;font-size:16px;font-weight:600;color:var(--text)}
 .sk-s{margin:2px 0 0;font-size:12px;color:var(--text-subtle);max-width:640px}
 .sk-f{display:flex;gap:4px}
-.sk-f button{border:1px solid var(--border,#E7E1D6);background:none;color:var(--text);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer}
+.sk-f button{border:1px solid var(--border,#E7E1D6);background:none;color:var(--text);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer}
 .sk-f button.on{background:#5A4FCF;border-color:#5A4FCF;color:#fff}
-.sk-h{margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-subtle)}
+.sk-h{margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-subtle)}
 .sk-i{border-top:1px solid var(--border,#E7E1D6)}
-.sk-row{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 2px;font-size:13px;color:var(--text)}
-.sk-sop{font-size:11px;color:var(--text-subtle);min-width:84px}
-.sk-w{font-size:10.5px;font-weight:800;border-radius:999px;padding:2px 8px}
+.sk-row{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 2px;font-size:14px;color:var(--text)}
+.sk-sop{font-size:12px;color:var(--text-subtle);min-width:84px}
+.sk-w{font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px}
 .sk-w.y{background:#E3F4EA;color:#2F7A4F}
-.sk-w.n{background:#F4EEE3;color:#8A6A3A}
-.sk-runs{font-size:11px;color:var(--text-subtle)}
-.sk-body{display:flex;flex-direction:column;gap:6px;padding:4px 2px 12px 92px;font-size:12.5px;color:var(--text)}
+.sk-w.n{background:#F4EEE3;color:#6E5226}
+.sk-runs{font-size:12px;color:var(--text-subtle)}
+.sk-body{display:flex;flex-direction:column;gap:6px;padding:4px 2px 12px 92px;font-size:12px;color:var(--text)}
 .sk-body p{margin:0}
 .sk-body ol,.sk-body ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
-.sk-k{display:inline-block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--text-subtle);margin-right:8px}
-.sk-note{font-size:12px;color:#5A4FCF}
-.sk-mono{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--text-subtle)}
-.sk-body label{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:800;color:var(--text-subtle)}
-.sk-body input,.sk-body textarea{font:inherit;font-size:12.5px;font-weight:400;color:var(--text);border:1px solid var(--border,#E7E1D6);border-radius:9px;padding:6px 9px;background:var(--bg,#fff)}
-.sk-btn{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border,#E7E1D6);background:none;color:var(--text);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:800;cursor:pointer}
+.sk-k{display:inline-block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-subtle);margin-right:8px}
+.sk-note{font-size:12px;color:var(--link)}
+.sk-mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--text-subtle)}
+.sk-body label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:600;color:var(--text-subtle)}
+.sk-body input,.sk-body textarea{font:inherit;font-size:12px;font-weight:400;color:var(--text);border:1px solid var(--border,#E7E1D6);border-radius:9px;padding:6px 9px;background:var(--bg,#fff)}
+.sk-btn{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border,#E7E1D6);background:none;color:var(--text);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
 .sk-btn.on{background:#5A4FCF;border-color:#5A4FCF;color:#fff}
 @media (max-width:640px){.sk-body{padding-left:2px}}
 `

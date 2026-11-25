@@ -106,19 +106,19 @@ const css = `
 .ci{display:flex;flex-direction:column;gap:7px;border:1px solid var(--border,#E7E1D6);border-radius:14px;padding:11px 13px;background:var(--surface)}
 .ci button{font-family:inherit}
 .ci-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
-.ci-head b{font-size:13.5px}
+.ci-head b{font-size:14px}
 .ci-d{margin:2px 0 0;font-size:12px;color:var(--text-subtle);line-height:1.5}
-.ci-msg{margin:0;font-size:12.5px;font-weight:700;color:#5A4FCF}
+.ci-msg{margin:0;font-size:12px;font-weight:600;color:var(--link)}
 .ci-thread{display:flex;flex-direction:column;gap:7px;max-height:440px;overflow-y:auto;padding:9px 11px;border-radius:11px;background:var(--surface-raised,#F4F1EC)}
-.ci-t{margin:0;font-size:13px;line-height:1.55;white-space:pre-wrap}
-.ci-t.cora b{color:#5A4FCF}
-.ci-t.mandi b{color:#B0662E}
-.ci textarea{width:100%;box-sizing:border-box;font:inherit;font-size:13px;border:1px solid var(--border,#E7E1D6);border-radius:9px;padding:7px 9px;background:var(--bg,#fff);color:var(--text);resize:vertical}
+.ci-t{margin:0;font-size:14px;line-height:1.55;white-space:pre-wrap}
+.ci-t.cora b{color:var(--link)}
+.ci-t.mandi b{color:var(--gold)}
+.ci textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;border:1px solid var(--border,#E7E1D6);border-radius:9px;padding:7px 9px;background:var(--bg,#fff);color:var(--text);resize:vertical}
 .ci-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .ci-sp{flex:1}
-.ci-p,.ci-g{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:800;cursor:pointer}
+.ci-p,.ci-g{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer}
 .ci-p{border:0;background:#5A4FCF;color:#fff}
 .ci-g{border:1px solid var(--border,#E7E1D6);background:var(--surface);color:var(--text)}
 .ci-p:disabled,.ci-g:disabled{opacity:.5}
-.ci-ch summary{cursor:pointer;font-size:12px;font-weight:800;color:#7C4DDB}
+.ci-ch summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--link)}
 `

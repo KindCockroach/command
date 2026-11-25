@@ -229,48 +229,48 @@ export default function WinnersPanel({ embedded = false }: { embedded?: boolean 
 const css = `
 .wl .capread{margin:18px 0 8px}
 .wl .caphead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.wl .lbl{margin:8px 0 2px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#6B6F8A}
+.wl .lbl{margin:8px 0 2px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#6B6F8A}
 .wl{min-height:100vh;background:#F5EFE6;color:#171C3A;font-family:system-ui,-apple-system,sans-serif;padding:32px 16px 64px}
 .wl .wrap{max-width:760px;margin:0 auto}
 .wl.emb{min-height:0;padding:0;background:transparent}
 .wl.emb .wrap{margin:0}
-.wl .eyebrow{font-size:12px;letter-spacing:.12em;color:#5A4FCF;margin:0 0 6px}
-.wl h1{font-family:Georgia,serif;font-weight:400;font-size:34px;margin:0 0 8px}
+.wl .eyebrow{font-size:12px;letter-spacing:.12em;color:var(--link);margin:0 0 6px}
+.wl h1{font-family:Georgia,serif;font-weight:400;font-size:28px;margin:0 0 8px}
 .wl .sub{color:#5C5F78;margin:0 0 20px;line-height:1.55}
 .wl .bar{display:flex;gap:10px;align-items:center;margin-bottom:14px}
-.wl label{font-size:13px;color:#5C5F78}
+.wl label{font-size:14px;color:#5C5F78}
 .wl select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid #E2D8C8;background:#fff}
 .wl .imp{background:#fff;border:1px solid #E2D8C8;border-radius:10px;padding:12px 14px;margin-bottom:12px}
 .wl .imp summary{cursor:pointer;font-weight:600}
 .wl .drop{background:#fff;border:2px dashed #CFC3AE;border-radius:12px;padding:16px;margin-bottom:12px;transition:border-color .15s,background .15s}
 .wl .drop.on{border-color:#5A4FCF;background:#F1EEFF}
 .wl .dt{font-weight:600;margin:0 0 4px}
-.wl .pick{display:inline-block;cursor:pointer;color:#5A4FCF;font-weight:600;font-size:14px;margin:4px 0 8px}
-.wl .src{font-size:13px;flex:1 1 220px;min-width:0;overflow-wrap:anywhere}
+.wl .pick{display:inline-block;cursor:pointer;color:var(--link);font-weight:600;font-size:14px;margin:4px 0 8px}
+.wl .src{font-size:14px;flex:1 1 220px;min-width:0;overflow-wrap:anywhere}
 .wl .ghost{background:none;border:none;color:#5C5F78;cursor:pointer;font:inherit;margin-left:8px}
 .wl .bar{flex-wrap:wrap}
-.wl .hint{font-size:13px;color:#5C5F78}
+.wl .hint{font-size:14px;color:#5C5F78}
 .wl textarea{width:100%;font:13px ui-monospace,Menlo,monospace;border:1px solid #E2D8C8;border-radius:8px;padding:10px;box-sizing:border-box}
 .wl .go{margin-top:10px;background:#5A4FCF;color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;font-weight:600;cursor:pointer}
 .wl .go:disabled{opacity:.5;cursor:default}
 .wl .msg{font-size:14px;color:#2F7D5B}
 .wl .empty{color:#5C5F78}
 .wl .grp{margin-top:28px}
-.wl .grp h2{font-size:18px;margin:0 0 2px;display:flex;gap:8px;align-items:center}
-.wl .grp h2 span{font-size:12px;background:#E6E2FA;color:#5A4FCF;border-radius:99px;padding:1px 8px}
-.wl .gsub{font-size:13px;color:#5C5F78;margin:0 0 10px}
+.wl .grp h2{font-size:20px;margin:0 0 2px;display:flex;gap:8px;align-items:center}
+.wl .grp h2 span{font-size:12px;background:#E6E2FA;color:var(--link);border-radius:99px;padding:1px 8px}
+.wl .gsub{font-size:14px;color:#5C5F78;margin:0 0 10px}
 .wl .card{background:#fff;border:1px solid #E2D8C8;border-left-width:4px;border-radius:10px;padding:14px 16px;margin-bottom:10px}
 .wl .make_more .card{border-left-color:#2F7D5B}
 .wl .rehook .card{border-left-color:#D98C2B}
 .wl .retire .card,.wl .reupload .card{border-left-color:#B23A48;opacity:.85}
 .wl .txt{font-size:16px;margin:0 0 4px;line-height:1.45}
-.wl .vis{font-size:13px;color:#5C5F78;margin:0 0 10px}
+.wl .vis{font-size:14px;color:#5C5F78;margin:0 0 10px}
 .wl dl{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 8px}
-.wl dt{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5C5F78}
+.wl dt{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5C5F78}
 .wl dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
-.wl .why{margin:0 0 6px;padding-left:18px;font-size:13px}
+.wl .why{margin:0 0 6px;padding-left:18px;font-size:14px}
 .wl .meta{font-size:12px;color:#8A8CA3;margin:0}
-.wl .makemore{margin:4px 0 8px;padding:7px 12px;font-size:13px;font-weight:600;border:0;border-radius:8px;background:#2F7D5B;color:#fff;cursor:pointer}
+.wl .makemore{margin:4px 0 8px;padding:7px 12px;font-size:14px;font-weight:600;border:0;border-radius:8px;background:#2F7D5B;color:#fff;cursor:pointer}
 .wl .makemore:hover{background:#276a4d}
 .wl .makemore:disabled{opacity:.6;cursor:default}
 .wl .rehook .makemore{background:#8A6D1F}

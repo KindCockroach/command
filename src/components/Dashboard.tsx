@@ -14,11 +14,11 @@ import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
 import ResearchPanel from './ResearchPanel'
 import HomeScreen from './HomeScreen'
-import LinesPanel from './LinesPanel'
+// LinesPanel ("Quick Post") retired Nov 25: off the menu, code + data kept; the old view forwards to Home.
 import ContentDay from './ContentDay'
 import ActivityStation from './ActivityStation'
 import InstantCompose from './InstantCompose'
-import StationChat from './StationChat'
+import FloatingChat from './FloatingChat'   // StationChat (old bubble) retired Nov 25, code kept
 import PodcastEngine from './PodcastEngine'
 import PodcastStudio from './PodcastStudio'
 import PeoplePanel from './PeoplePanel'
@@ -32,13 +32,86 @@ import GoalsPanel from './GoalsPanel'
 import SitesPanel from './SitesPanel'
 import WinnersPanel from './WinnersPanel'
 import PlanPanel from './PlanPanel'
-import { Archive, Users, Zap, Brain, Star, CheckSquare, BookOpen, Workflow, Bot, FolderKanban, Sun, Moon, Mic, Globe, PenLine, Radar, Target, Megaphone } from 'lucide-react'
+import { Archive, Brain, Zap, Sun, Moon, LayoutGrid } from 'lucide-react'
+import HomeChat from './HomeChat'
+import AgentsRoster from './AgentsRoster'
+import Banner from './glow/Banner'
+import SubTabs from './glow/SubTabs'
 import Link from 'next/link'
 
 interface Stats { ideas: number; inProgress: number; ready: number; totalActive: number }
 // Props are still passed by the page; the old Kanban pipeline view that used them is gone.
 interface Props { initialContent: unknown[]; stats: Stats }
-type View = 'approve' | 'lines' | 'command' | 'activity' | 'contentday' | 'projects' | 'tasks' | 'assistants' | 'workflows' | 'vision' | 'notes' | 'accounts' | 'sites' | 'audience' | 'media' | 'podcast' | 'people' | 'campaigns' | 'story' | 'pitch' | 'audit' | 'goals' | 'research' | 'winners' | 'plan'
+
+// ── Phase 7: eight tabs, each with sub-tabs (pills). Every old tab name forwards. ──────────
+type TabId = 'home' | 'approve' | 'create' | 'plan' | 'campaigns' | 'library' | 'agents' | 'business'
+type Sub = { id: string; label: string; old?: string; keep?: boolean; render: () => React.ReactNode }
+type Tab = { id: TabId; label: string; sub: string; subs: Sub[]; links?: { href: string; label: string; icon?: React.ReactNode }[] }
+
+const stack = (...n: React.ReactNode[]) => <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>{n}</div>
+
+const TABS: Tab[] = [
+  { id: 'home', label: 'Home', sub: 'Talk to Her, Man or Cap. Start here; RISE AI always brings you back.', subs: [
+    { id: 'chat', label: 'Chat', keep: true, render: () => <HomeChat /> },
+    { id: 'board', label: 'My board', old: 'Daily Command', keep: true, render: () => <HomeScreen /> },
+  ] },
+  { id: 'approve', label: 'Approve', sub: 'Everything waiting on your yes, in one list.', subs: [
+    { id: 'approve', label: 'Approve', render: () => <ApprovalsPanel /> },
+  ] },
+  { id: 'create', label: 'Create', sub: 'Film, write and record. What you make starts here.', links: [{ href: '/repurpose', label: '1→30', icon: <Zap size={14} /> }], subs: [
+    { id: 'contentday', label: 'Content Day', keep: true, render: () => <ContentDay /> },
+    { id: 'story', label: 'Story', render: () => stack(<LongformDesk key="a" />, <StoryStudio key="b" />, <InstantCompose key="c" />, <StoryProcessor key="d" />) },
+    { id: 'podcast', label: 'Podcast', keep: true, render: () => stack(<PodcastStudio key="a" />, <PodcastEngine key="b" />) },
+  ] },
+  { id: 'plan', label: 'Plan', sub: 'Cap’s plans, the calendar, your goals and what’s working.', subs: [
+    { id: 'plan', label: 'Calendar', old: 'Plan', render: () => <PlanPanel /> },
+    { id: 'goals', label: 'Goals', render: () => <GoalsPanel /> },
+    { id: 'winners', label: 'Winners', render: () => <WinnersPanel embedded /> },
+    { id: 'trends', label: 'Trends', render: () => <AuditPanel /> },
+  ] },
+  { id: 'campaigns', label: 'Campaigns', sub: 'Your emails and the people who get them.', subs: [
+    { id: 'campaigns', label: 'Campaigns', render: () => <CampaignsPanel /> },
+    { id: 'people', label: 'People', render: () => <PeoplePanel /> },
+  ] },
+  { id: 'library', label: 'Library', sub: 'Everything you’ve saved: notes, media, research, vision.', links: [{ href: '/brain', label: 'Brain', icon: <Brain size={14} /> }, { href: '/archive', label: 'Archive', icon: <Archive size={14} /> }], subs: [
+    { id: 'notes', label: 'Notes', render: () => <NotesPanel /> },
+    { id: 'media', label: 'Media', keep: true, render: () => stack(<UniversalCapture key="a" />, <MediaLibrary key="b" />) },
+    { id: 'research', label: 'Research', keep: true, render: () => <ResearchPanel /> },
+    { id: 'vision', label: 'Vision', render: () => <VisionPanel /> },
+  ] },
+  { id: 'agents', label: 'Agents', sub: 'Who does what in RISE, what they did, and how RISE is running.', subs: [
+    { id: 'roster', label: 'Agents', old: 'Assistants', render: () => stack(<AgentsRoster key="a" />, <SkillsPanel key="b" />) },
+    { id: 'activity', label: 'Activity', keep: true, render: () => <ActivityStation /> },
+    { id: 'oldchats', label: 'Old chats', render: () => <AssistantsPanel /> },
+  ] },
+  { id: 'business', label: 'Business', sub: 'Your accounts, sites, audience, projects and pitches.', subs: [
+    { id: 'accounts', label: 'Accounts', render: () => <AccountsPanel /> },
+    { id: 'sites', label: 'Sites', render: () => <SitesPanel /> },
+    { id: 'audience', label: 'Audience', render: () => <AudiencePanel /> },
+    { id: 'projects', label: 'Projects', old: 'Projects + Tasks', render: () => stack(<ProjectsPanel key="a" />, <TasksPanel key="b" />) },
+    { id: 'pitch', label: 'Pitch', old: 'Travel Pitch', render: () => <PitchStudio /> },
+  ] },
+]
+const TAB_IDS = TABS.map(t => t.id)
+
+// Every old tab name → its new tab + sub-tab (links, Approve, Commander, her saved menu order).
+// Lines and Workflows are retired: off the menu, code and data kept, names forward here.
+const FORWARD: Record<string, [TabId, string]> = {
+  lines: ['home', 'chat'], command: ['home', 'chat'], pipeline: ['home', 'board'], board: ['home', 'board'],
+  approve: ['approve', 'approve'],
+  contentday: ['create', 'contentday'], story: ['create', 'story'], podcast: ['create', 'podcast'],
+  plan: ['plan', 'plan'], goals: ['plan', 'goals'], winners: ['plan', 'winners'], audit: ['plan', 'trends'], trends: ['plan', 'trends'],
+  campaigns: ['campaigns', 'campaigns'], people: ['campaigns', 'people'],
+  notes: ['library', 'notes'], media: ['library', 'media'], research: ['library', 'research'], vision: ['library', 'vision'],
+  assistants: ['agents', 'roster'], workflows: ['agents', 'roster'], activity: ['agents', 'activity'], skills: ['agents', 'roster'],
+  accounts: ['business', 'accounts'], sites: ['business', 'sites'], audience: ['business', 'audience'], projects: ['business', 'projects'], tasks: ['business', 'projects'], pitch: ['business', 'pitch'],
+}
+function resolve(view: string): [TabId, string | null] | null {
+  if (!view) return null
+  const [a, b] = view.split('/')
+  if ((TAB_IDS as string[]).includes(a)) return [a as TabId, b ?? null]
+  return FORWARD[a] ?? null
+}
 
 // Renders children on first activation and KEEPS them mounted after — hidden with
 // display:none when inactive — so long-running work (podcast generation) and state
@@ -51,28 +124,48 @@ function KeepAlive({ active, children }: { active: boolean; children: React.Reac
 }
 
 export default function Dashboard(_props: Props) {
-  const [view, setView] = useState<View>('lines')
+  const [tab, setTab] = useState<TabId>('home')
+  const [subs, setSubs] = useState<Record<string, string>>({})
   const [dark, setDark] = useState(false)
-  const [navOrder, setNavOrder] = useState<View[]>([])
+  const [navOrder, setNavOrder] = useState<TabId[]>([])
+  const [allTools, setAllTools] = useState(false)
+  const [dragId, setDragId] = useState<TabId | null>(null)
   // How many things wait on her yes (the Approve tab's badge). Checked every minute.
   const [approveCount, setApproveCount] = useState(0)
   useEffect(() => {
     const tick = () => fetch('/api/approvals').then(r => r.json()).then(d => setApproveCount(d?.total ?? 0)).catch(() => {})
     tick(); const t = setInterval(tick, 60000); return () => clearInterval(t)
   }, [])
-  const [dragId, setDragId] = useState<View | null>(null)
+
+  const subOf = (t: TabId) => { const tb = TABS.find(x => x.id === t)!; const s = subs[t]; return tb.subs.some(x => x.id === s) ? s! : tb.subs[0].id }
+  const open = (t: TabId, s?: string | null) => {
+    setTab(t)
+    if (s) setSubs(cur => { const next = { ...cur, [t]: s }; try { localStorage.setItem('rise-subtab-v1', JSON.stringify(next)) } catch { /* fine */ } return next })
+    setAllTools(false)
+    window.scrollTo({ top: 0 })
+  }
+  const goHome = () => open('home', 'chat')
 
   useEffect(() => {
     const saved = localStorage.getItem('cc-theme')
     if (saved === 'dark') { setDark(true); document.documentElement.setAttribute('data-theme', 'dark') }
-    // Cross-tab navigation (e.g. briefing "Publish now" → Accounts approval queue)
+    try { const s = JSON.parse(localStorage.getItem('rise-subtab-v1') ?? '{}'); if (s && typeof s === 'object') setSubs(s) } catch { /* fresh */ }
+    // Cross-tab navigation (old tab names forward to their new home)
     const nav = (e: Event) => {
-      const view = (e as CustomEvent).detail?.view
-      // 'pipeline' was the old Kanban view — it now lives in Daily Command
-      if (view) setView((view === 'pipeline' ? 'command' : view) as View)
+      const view = String((e as CustomEvent).detail?.view ?? '')
+      // The old "open the Commander / an agent" links still open that chat, as before.
+      if (view === 'assistants') { try { if (localStorage.getItem('station-open-agent')) { open('agents', 'oldchats'); return } } catch { /* fine */ } }
+      const r = resolve(view)
+      if (!r) return
+      open(r[0], r[1])
+      if (view === 'command') window.dispatchEvent(new CustomEvent('rise-home-who', { detail: { who: 'her' } }))
     }
     window.addEventListener('station:navigate', nav)
-    return () => window.removeEventListener('station:navigate', nav)
+    // "Send to Instant Compose" from Media → the Story sub-tab (where it lives)
+    const compose = () => open('create', 'story')
+    window.addEventListener('rise-goto-compose', compose)
+    return () => { window.removeEventListener('station:navigate', nav); window.removeEventListener('rise-goto-compose', compose) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const toggleTheme = () => {
@@ -82,189 +175,115 @@ export default function Dashboard(_props: Props) {
     else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('cc-theme', 'light') }
   }
 
-  const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode; accent?: boolean }[] = [
-    { id: 'approve',    label: approveCount ? `Approve · ${approveCount}` : 'Approve', icon: <CheckSquare size={12} />, accent: true },
-    { id: 'lines',      label: 'Quick Post',    icon: <PenLine size={12} />, accent: true },
-    { id: 'command',    label: 'Daily Command', icon: <Zap size={12} />, accent: true },
-    { id: 'activity',   label: 'Activity',      icon: <Radar size={12} /> },
-    { id: 'contentday', label: 'Content Day',   icon: <Mic size={12} /> },
-    { id: 'goals',      label: 'Goals',         icon: <Target size={12} /> },
-    { id: 'plan',        label: 'Plan',          icon: <Target size={12} /> },
-    { id: 'winners',    label: 'Winners',       icon: <Star size={12} /> },
-    { id: 'projects',   label: 'Projects',      icon: <FolderKanban size={12} /> },
-    { id: 'tasks',      label: 'Tasks',         icon: <CheckSquare size={12} /> },
-    { id: 'assistants', label: 'Assistants',    icon: <Bot size={12} /> },
-    { id: 'workflows',  label: 'Workflows',     icon: <Workflow size={12} /> },
-    { id: 'vision',     label: 'Vision',        icon: <Star size={12} /> },
-    { id: 'notes',      label: 'Notes',         icon: <BookOpen size={12} /> },
-    { id: 'accounts',   label: 'Accounts',      icon: <Users size={12} /> },
-    { id: 'sites',      label: 'Sites',         icon: <Globe size={12} /> },
-    { id: 'audience',   label: 'Audience',      icon: <span style={{fontSize:'12px'}}>👤</span> },
-    { id: 'audit',      label: 'Trends',        icon: <Radar size={12} /> },
-    { id: 'research',   label: 'Research',      icon: <span style={{fontSize:'12px'}}>🔬</span> },
-    { id: 'media',      label: 'Media',         icon: <span style={{fontSize:'12px'}}>🎬</span> },
-    { id: 'podcast',    label: 'Podcast',       icon: <Mic size={12} /> },
-    { id: 'people',     label: 'People',        icon: <Users size={12} /> },
-    { id: 'campaigns',  label: 'Campaigns',     icon: <Megaphone size={12} /> },
-    { id: 'story',      label: 'Story',         icon: <PenLine size={12} /> },
-    { id: 'pitch',      label: 'Travel Pitch',  icon: <Globe size={12} /> },
-  ]
-
-  // Draggable, per-device tab order (falls back to the default order until loaded).
-  const NAV_IDS = NAV_ITEMS.map(i => i.id)
-  const navById: Record<string, typeof NAV_ITEMS[number]> = {}
-  for (const it of NAV_ITEMS) navById[it.id] = it
-  const order: View[] = navOrder.length ? navOrder : NAV_IDS
-
-  // "Send to Instant Compose" from Media → jump to the Story tab (where it lives)
-  useEffect(() => {
-    const go = () => setView('story')
-    window.addEventListener('rise-goto-compose', go)
-    return () => window.removeEventListener('rise-goto-compose', go)
-  }, [])
-
+  // Draggable, per-device tab order. Her old order (v1, 25 tabs) carries over: each old tab
+  // maps to its new group, first one wins; Home always leads the first time.
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('rise-nav-order-v1')
-      if (saved) {
-        const parsed = JSON.parse(saved) as View[]
-        const known = parsed.filter(id => NAV_IDS.includes(id))
-        // append any tabs added since she last saved, drop any that no longer exist.
-        // Approve (everything waiting on her) goes FIRST the first time it appears.
-        const added = NAV_IDS.filter(id => !known.includes(id))
-        setNavOrder(added.includes('approve') ? ['approve', ...known, ...added.filter(id => id !== 'approve')] : [...known, ...added])
-        return
+      const v2 = localStorage.getItem('rise-nav-order-v2')
+      if (v2) {
+        const known = (JSON.parse(v2) as string[]).filter((id): id is TabId => (TAB_IDS as string[]).includes(id))
+        setNavOrder([...known, ...TAB_IDS.filter(id => !known.includes(id))]); return
       }
-    } catch { /* fall back to default order */ }
-    setNavOrder(NAV_IDS)
+      const v1 = localStorage.getItem('rise-nav-order-v1')
+      if (v1) {
+        const mapped: TabId[] = ['home']
+        for (const old of JSON.parse(v1) as string[]) { const r = FORWARD[old]; if (r && !mapped.includes(r[0])) mapped.push(r[0]) }
+        setNavOrder([...mapped, ...TAB_IDS.filter(id => !mapped.includes(id))]); return
+      }
+    } catch { /* default order */ }
+    setNavOrder(TAB_IDS)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  useEffect(() => {
-    if (navOrder.length) { try { localStorage.setItem('rise-nav-order-v1', JSON.stringify(navOrder)) } catch { /* non-fatal */ } }
-  }, [navOrder])
-
-  const reorderNav = (fromId: View, toId: View) => setNavOrder(cur => {
-    const base = cur.length ? cur : NAV_IDS
+  useEffect(() => { if (navOrder.length) { try { localStorage.setItem('rise-nav-order-v2', JSON.stringify(navOrder)) } catch { /* non-fatal */ } } }, [navOrder])
+  const reorderNav = (fromId: TabId, toId: TabId) => setNavOrder(cur => {
+    const base = cur.length ? cur : TAB_IDS
     const from = base.indexOf(fromId), to = base.indexOf(toId)
     if (from < 0 || to < 0 || from === to) return base
     const next = [...base]; next.splice(from, 1); next.splice(to, 0, fromId)
     return next
   })
+  const order: TabId[] = navOrder.length ? navOrder : TAB_IDS
+  const cur = TABS.find(t => t.id === tab)!
+  const curSub = subOf(tab)
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+    <div className="rise-app" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'var(--navy)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div style={{ padding: '0 16px', height: '56px', display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+      <header className="rp-top">
+        <div style={{ padding: '0 16px', height: '60px', display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+          {/* RISE AI → Home, always */}
+          <button type="button" className="rp-brand" onClick={goHome} title="Home: talk to Her, Man or Cap">
+            <img src="/balloon-512.png" alt="" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+            <span>RISE AI</span>
+          </button>
 
-          {/* Brand — fixed left, never scrolls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-            <img src="/balloon-512.png" alt="RISE AI" style={{ width: '38px', height: '38px', objectFit: 'contain' }} />
-            <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '19px', fontWeight: 700, color: '#fff', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>RISE AI</span>
-          </div>
-
-          {/* Nav — scrollable on small windows */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '2px', overflowX: 'auto', flex: 1, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            className="hide-scrollbar">
-            <Link href="/brief" title="Your calm morning Brief"
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 700, padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(107,45,110,0.6)', color: 'rgba(180,130,183,1)', textDecoration: 'none', flexShrink: 0 }}>
-              ☀️ Brief
-            </Link>
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '4px', overflowX: 'auto', flex: 1, scrollbarWidth: 'none', msOverflowStyle: 'none' }} className="hide-scrollbar">
             {order.map(id => {
-              const item = navById[id]
-              if (!item) return null
+              const t = TABS.find(x => x.id === id)
+              if (!t) return null
               return (
-              <button key={item.id} onClick={() => setView(item.id)}
-                draggable
-                onDragStart={() => setDragId(item.id)}
-                onDragOver={e => { e.preventDefault(); if (dragId && dragId !== item.id) reorderNav(dragId, item.id) }}
-                onDragEnd={() => setDragId(null)}
-                title="Click to open · drag to reorder"
-                style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', border: item.accent && view !== item.id ? '1px solid rgba(107,45,110,0.6)' : 'none', cursor: dragId === item.id ? 'grabbing' : 'pointer', transition: 'all 0.15s', flexShrink: 0, opacity: dragId === item.id ? 0.4 : 1,
-                  background: view === item.id ? 'var(--purple)' : 'transparent',
-                  color: view === item.id ? '#fff' : item.accent ? 'rgba(180,130,183,1)' : 'rgba(255,255,255,0.55)',
-                }}>
-                {item.icon} {item.label}
-              </button>
+                <button key={t.id} type="button" className={`rp-tab${tab === t.id ? ' on' : ''}`} onClick={() => open(t.id)}
+                  draggable onDragStart={() => setDragId(t.id)}
+                  onDragOver={e => { e.preventDefault(); if (dragId && dragId !== t.id) reorderNav(dragId, t.id) }}
+                  onDragEnd={() => setDragId(null)} title="Click to open · drag to reorder" style={{ opacity: dragId === t.id ? 0.4 : 1 }}>
+                  {t.label}{t.id === 'approve' && approveCount ? <span className="rp-count">{approveCount}</span> : null}
+                </button>
               )
             })}
-            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.12)', margin: '0 4px', flexShrink: 0 }} />
-            <Link href="/archive" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', flexShrink: 0 }}>
-              <Archive size={13} /> Archive
-            </Link>
-            <Link href="/brain" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, padding: '6px 11px', borderRadius: '8px', color: 'rgba(255,255,255,0.4)', textDecoration: 'none', flexShrink: 0 }}>
-              <Brain size={13} /> Brain
-            </Link>
-            <Link href="/repurpose" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 700, padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(107,45,110,0.5)', color: 'rgba(180,130,183,0.9)', textDecoration: 'none', flexShrink: 0 }}>
-              <Zap size={13} /> 1→30
-            </Link>
+            <Link href="/brief" className="rp-tab" title="Your calm morning Brief">☀️ Brief</Link>
+            <button type="button" className={`rp-tab${allTools ? ' on' : ''}`} onClick={() => setAllTools(v => !v)} title="Every tool, including where the old tabs went">
+              <LayoutGrid size={14} /> All tools
+            </button>
           </nav>
 
-          {/* Theme toggle — fixed right, never scrolls */}
-          <button onClick={toggleTheme} title={dark ? 'Switch to light mode' : 'Switch to dark mode'} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', transition: 'all 0.15s' }}>
-            {dark ? <Sun size={14} /> : <Moon size={14} />}
+          <button type="button" onClick={toggleTheme} title={dark ? 'Switch to Day' : 'Switch to Night'} className="rp-tab" style={{ padding: '7px 10px' }}>
+            {dark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
         </div>
       </header>
 
-      <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <main style={{ flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-        {/* Home stays alive so the Commander chat + Daily Command survive navigation */}
-        {view === 'approve' && <ApprovalsPanel />}
-        <KeepAlive active={view === 'lines'}><LinesPanel /></KeepAlive>
-        <KeepAlive active={view === 'command'}><HomeScreen /></KeepAlive>
-        <KeepAlive active={view === 'activity'}><ActivityStation /></KeepAlive>
-        <KeepAlive active={view === 'contentday'}><ContentDay /></KeepAlive>
-
-        {view === 'projects'   && <ProjectsPanel />}
-        {view === 'tasks'      && <TasksPanel />}
-        {view === 'assistants' && <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}><AssistantsPanel /><SkillsPanel /></div>}
-        {view === 'workflows'  && <WorkflowsPanel />}
-        {view === 'vision'     && <VisionPanel />}
-        {view === 'notes'      && <NotesPanel />}
-        {view === 'accounts'   && <AccountsPanel />}
-        {view === 'sites'      && <SitesPanel />}
-        {view === 'audience'   && <AudiencePanel />}
-        {view === 'audit'      && <AuditPanel />}
-        <KeepAlive active={view === 'research'}><ResearchPanel /></KeepAlive>
-        {view === 'goals'      && <GoalsPanel />}
-        {view === 'plan'       && <PlanPanel />}
-        {view === 'winners'    && <WinnersPanel embedded />}
-        {/* Podcast stays mounted once opened, so a running generation survives
-            clicking to another tab and finishes into the still-live component. */}
-        <KeepAlive active={view === 'podcast'}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <PodcastStudio />
-            <PodcastEngine />
-          </div>
-        </KeepAlive>
-        {view === 'people'     && <PeoplePanel />}
-        {view === 'campaigns'  && <CampaignsPanel />}
-        {view === 'story'      && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <LongformDesk />
-            <StoryStudio />
-            <InstantCompose />
-            <StoryProcessor />
-          </div>
+        {allTools && (
+          <section className="rp-card" aria-label="All tools">
+            <h2 style={{ margin: '0 0 4px', fontSize: 'var(--fs-lg)' }}>All tools</h2>
+            <p style={{ margin: '0 0 14px', fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>Every tool and where it lives now. Old names are in brackets. Lines (Quick Post) and Workflows are retired; their data is kept.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px' }}>
+              {TABS.map(t => (
+                <div key={t.id}>
+                  <p style={{ margin: '0 0 6px', fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{t.label}</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {t.subs.map(s => <button key={s.id} type="button" className="rp-pill rp-secondary" onClick={() => open(t.id, s.id)}>{s.label}{s.old ? ` (${s.old})` : ''}</button>)}
+                    {(t.links ?? []).map(l => <Link key={l.href} href={l.href} className="rp-pill rp-quiet">{l.icon}{l.label}</Link>)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
-        {view === 'pitch'      && <PitchStudio />}
-        {/* Media stays alive so a Universal Capture 'You do it' build survives navigation */}
-        <KeepAlive active={view === 'media'}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <UniversalCapture />
-            <MediaLibrary />
-          </div>
-        </KeepAlive>
+
+        <Banner title={cur.label} sub={cur.sub}>
+          {(cur.subs.length > 1 || cur.links) && (
+            <div className="rp-subtabs">
+              <SubTabs tabs={cur.subs.map(s => ({ id: s.id, label: s.label }))} active={curSub} onPick={s => open(tab, s)} />
+              {(cur.links ?? []).map(l => <Link key={l.href} href={l.href} className="rp-pill rp-secondary">{l.icon}{l.label}</Link>)}
+            </div>
+          )}
+        </Banner>
+
+        {TABS.flatMap(t => t.subs.map(s => {
+          const active = tab === t.id && curSub === s.id
+          const key = `${t.id}/${s.id}`
+          return s.keep ? <KeepAlive key={key} active={active}>{s.render()}</KeepAlive> : (active ? <div key={key}>{s.render()}</div> : null)
+        }))}
       </main>
 
-      <footer style={{ background: 'var(--navy)', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '12px 20px', textAlign: 'center' }}>
-        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-          RISE Station · <span style={{ color: 'rgba(201,149,106,0.8)', fontWeight: 700 }}>she said she would and so she did</span>
+      <footer style={{ padding: '14px 20px', textAlign: 'center' }}>
+        <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
+          RISE Station · <span style={{ color: 'var(--act)', fontWeight: 600 }}>she said she would and so she did</span>
         </p>
       </footer>
-      <StationChat />
+      <FloatingChat hidden={tab === 'home' && curSub === 'chat'} />
     </div>
   )
 }
