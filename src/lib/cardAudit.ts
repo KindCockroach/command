@@ -66,7 +66,7 @@ export async function fillCardBasics(id: number): Promise<{ filled: string[]; er
   const isCarousel = c.type === 'carousel'
   let out: { title?: string; hook?: string; job?: string; job_why?: string; caption?: string; film?: string } = {}
   try {
-    out = JSON.parse(extractJsonObject(await fableText({ json: true, useClaude: true, maxTokens: 1200,
+    out = JSON.parse(extractJsonObject(await fableText({ json: true, useClaude: true, maxTokens: 3000,
       instructions: `You are Ed, writing the missing pieces of ONE card for Mandi Beck. Cap picks the post's job. Write ONLY the fields listed as NEEDED; leave the rest empty. Never contradict what's already on the card; build from it.
 ${voice}
 ${craftFor(c.account_id)}
