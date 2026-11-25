@@ -4,6 +4,7 @@
 //   • DAILY DRAFT    — ~11:30 UTC ≈ 6:30 AM Central: her recent notes → ready-to-approve posts.
 //   • DAILY PLAN     — same run: break every active project into small tasks + a live next action.
 //   • WEEKLY TRENDS  — Monday ~13:00 UTC ≈ ~7–8 AM Central: live-web trend check-in → Notes + Activity.
+//   • WEEKLY HEALTH  — same run: the full health check (Loop 9); Her shows what needs Mandi.
 
 let scheduled = false
 
@@ -38,7 +39,7 @@ export async function register() {
     const daysUntilMon = ((1 - next.getUTCDay()) + 7) % 7
     next.setUTCDate(next.getUTCDate() + daysUntilMon)
     if (next <= now) next.setUTCDate(next.getUTCDate() + 7)
-    setTimeout(async () => { await ping('/api/cron/trend-checkin'); runWeekly() }, next.getTime() - now.getTime())
+    setTimeout(async () => { await ping('/api/cron/trend-checkin'); await ping('/api/health?run=full'); runWeekly() }, next.getTime() - now.getTime())
   }
 
   runDaily()

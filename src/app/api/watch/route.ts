@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { trackedOpenAI } from '@/lib/usage'
 import { getAllWatchAccounts, createWatchAccount, updateWatchAccount, deleteWatchAccount, createNote } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const client = trackedOpenAI('watch')
 
 export async function GET() {
   return NextResponse.json(getAllWatchAccounts())

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { trackedOpenAI } from '@/lib/usage'
 import { getAllContent, updateContent, getBrandAccount, getWatchContext, getAudienceContext } from '@/lib/db'
 import { craftFor } from '@/lib/craft'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const client = trackedOpenAI('content-reassign')
 
 // Move a content piece to a different account AND rewrite it in that account's voice,
 // respecting the new account's non-negotiable content rules.

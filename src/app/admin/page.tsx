@@ -9,7 +9,9 @@ import { GPT_URL, TEMPLATE_URL, DEFAULT_CHECKOUT } from '@/lib/funnels'
 
 type ModelRow = { model: string; calls: number; inputTokens: number; outputTokens: number; costUsd: number }
 type KindRow = { kind: string; calls: number; costUsd: number }
-type UsageEntry = { ts: string; provider: string; model: string; kind: string; inputTokens: number; outputTokens: number; costUsd: number }
+type RouteRow = { route: string; calls: number; costUsd: number; models: string[] }
+type DayRow = { day: string; calls: number; costUsd: number }
+type UsageEntry = { ts: string; provider: string; model: string; kind: string; inputTokens: number; outputTokens: number; costUsd: number; route?: string }
 type Summary = {
   totals: { calls: number; inputTokens: number; outputTokens: number; costUsd: number }
   todayCostUsd: number
@@ -17,6 +19,10 @@ type Summary = {
   last30CostUsd: number
   byModel: ModelRow[]
   byKind: KindRow[]
+  byRoute?: RouteRow[]
+  byDay?: DayRow[]
+  unpriced?: string[]
+  untrackedRows?: number
   recent: UsageEntry[]
   pricing: Record<string, { in: number; out: number }>
 }
@@ -162,6 +168,56 @@ export default function AdminPage() {
             <p className="empty">No AI calls tracked yet. Generate a post or chat with the Commander and spend will show up here.</p>
           )}
 
+          {s && (s.unpriced?.length ?? 0) > 0 && (
+            <p className="err">No price set for: <span className="mono">{s.unpriced!.join(', ')}</span>. Their calls count but show $0. Add the price in <span className="mono">PRICING</span> (lib/usage.ts).</p>
+          )}
+          <p className="gnote">Measuring only. No budget caps yet: two weeks of real numbers come first.</p>
+
+          {s && (s.byDay?.length ?? 0) > 0 && (
+            <>
+              <h3>By day (last 30)</h3>
+              <div className="tw">
+                <table>
+                  <thead><tr><th>Day</th><th>Calls</th><th>Cost</th><th></th></tr></thead>
+                  <tbody>
+                    {s.byDay!.map((d) => {
+                      const max = Math.max(...s.byDay!.map(x => x.costUsd), 0.0001)
+                      return (
+                        <tr key={d.day}>
+                          <td className="mono">{d.day}</td>
+                          <td>{num(d.calls)}</td>
+                          <td className="cost">{money(d.costUsd)}</td>
+                          <td style={{ width: '40%' }}><div style={{ height: 8, borderRadius: 4, background: 'var(--ember)', width: `${Math.max(2, (d.costUsd / max) * 100)}%` }} /></td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {s && (s.byRoute?.length ?? 0) > 0 && (
+            <>
+              <h3>By route</h3>
+              <div className="tw">
+                <table>
+                  <thead><tr><th>Route</th><th>Calls</th><th>Models</th><th>Cost</th></tr></thead>
+                  <tbody>
+                    {s.byRoute!.map((r) => (
+                      <tr key={r.route}>
+                        <td className="mono">{r.route}</td>
+                        <td>{num(r.calls)}</td>
+                        <td className="mono">{r.models.join(', ')}</td>
+                        <td className="cost">{money(r.costUsd)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
           {s && s.byModel.length > 0 && (
             <>
               <h3>By model</h3>
@@ -201,11 +257,12 @@ export default function AdminPage() {
               <h3>Recent calls</h3>
               <div className="tw">
                 <table>
-                  <thead><tr><th>When</th><th>Surface</th><th>Model</th><th>Cost</th></tr></thead>
+                  <thead><tr><th>When</th><th>Route</th><th>Surface</th><th>Model</th><th>Cost</th></tr></thead>
                   <tbody>
                     {s.recent.map((e, i) => (
                       <tr key={i}>
                         <td>{new Date(e.ts).toLocaleString()}</td>
+                        <td className="mono">{e.route || '—'}</td>
                         <td className="mono">{e.kind}</td>
                         <td className="mono">{e.model}</td>
                         <td className="cost">{money(e.costUsd)}</td>

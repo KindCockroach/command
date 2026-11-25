@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Loader2, Send, Plus } from 'lucide-react'
 import DictateButton from './DictateButton'
 import { HandoffItem, type HandoffRow } from './HandoffList'
+import ManReport from './ManReport'
 
 // Her, the front door. Say or type it; Her works out what you mean, saves your words to
 // Notes as they are, and hands it to Commander, Cap or the build log with a receipt.
@@ -73,6 +74,9 @@ export default function HerPanel() {
         </div>
         {cur && <button type="button" className="her-new" onClick={fresh}><Plus size={13} /> New</button>}
       </div>
+
+      {/* Phase 6: Man's report — what needs you from the health check, and the agents' ideas. */}
+      {!cur && <ManReport />}
 
       {!cur && threads.length > 0 && (
         <div className="her-threads">

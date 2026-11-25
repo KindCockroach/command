@@ -1,10 +1,11 @@
 import OpenAI from 'openai'
+import { trackedOpenAI } from './usage'
 export type { GPTRole } from './agents'
 export { AGENT_META } from './agents'
 
 let _client: OpenAI | null = null
 function client() {
-  if (!_client) _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  if (!_client) _client = trackedOpenAI('agent-chat')
   return _client
 }
 

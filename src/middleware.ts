@@ -35,7 +35,16 @@ function isPublic(path: string): boolean {
   if (path === '/resetwelcome' || path === '/bethereforher/resetwelcome') return true // Reset registrants' welcome + gift
   if (path === '/guest' || path === '/api/guest-questionnaire') return true // podcast/collab guest questionnaire (private token link)
   if (path === '/api/journal-waitlist') return true // public signup form (podcast page, BTFH opt-in, Wellspring)
+  if (path === '/api/email/resend-webhook') return true // Resend bounce/complaint webhook (the route requires Resend's Svix signature)
   return false
+}
+
+// Stamp the path on the request so AI usage rows can say which route spent them
+// (lib/usage.ts reads x-rise-route). Every pass-through goes via pass().
+function pass(req: NextRequest, path?: string) {
+  const headers = new Headers(req.headers)
+  headers.set('x-rise-route', path ?? req.nextUrl.pathname)
+  return NextResponse.next({ request: { headers } })
 }
 
 export function middleware(req: NextRequest) {
@@ -87,17 +96,23 @@ export function middleware(req: NextRequest) {
   }
 
   // Lock is off until you set a key.
-  if (!KEY) return NextResponse.next()
+  if (!KEY) return pass(req)
 
   const { pathname, searchParams } = req.nextUrl
-  if (isPublic(pathname)) return NextResponse.next()
+  if (isPublic(pathname)) return pass(req)
+
+  // The self-scheduled jobs (instrumentation.ts) call /api/cron/* and the weekly health check
+  // on 127.0.0.1 with ?key=CRON_SECRET and no cookie. Let exactly those through when the
+  // secret is set and matches; nothing else gets in this way.
+  const CRON = process.env.CRON_SECRET || ''
+  if (CRON && searchParams.get('key') === CRON && (pathname.startsWith('/api/cron/') || pathname === '/api/health')) return pass(req)
 
   // Already unlocked via cookie?
-  if (req.cookies.get(COOKIE)?.value === KEY) return NextResponse.next()
+  if (req.cookies.get(COOKIE)?.value === KEY) return pass(req)
 
   // Unlocking now via ?k=KEY — set the cookie and let them in.
   if (searchParams.get('k') === KEY) {
-    const res = NextResponse.next()
+    const res = pass(req)
     res.cookies.set(COOKIE, KEY, {
       httpOnly: true,
       sameSite: 'lax',

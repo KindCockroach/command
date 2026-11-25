@@ -1,4 +1,5 @@
 'use client'
+import HealthPanel from './HealthPanel'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Loader2, RefreshCw, Moon, Send, MessageCircle, Search } from 'lucide-react'
 import CommanderModal from './CommanderModal'
@@ -124,6 +125,9 @@ export default function ActivityStation() {
           <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : undefined} /> Refresh
         </button>
       </div>
+
+      {/* Phase 6: the health check (Loop 9). */}
+      <HealthPanel />
 
       {/* Phase 4: handoffs between agents, with receipts. Failed/stuck ones stay here with Retry. */}
       <div className="rise-float" style={{ borderRadius: '16px', border: '1px solid var(--border)', background: 'var(--surface)', padding: '14px 16px' }}>

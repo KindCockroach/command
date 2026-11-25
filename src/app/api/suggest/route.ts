@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { trackedOpenAI } from '@/lib/usage'
 import { getAllEvents, getAllGoals, getAllBrandAccounts, getWatchContext, audienceLine } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const client = trackedOpenAI('suggest')
 
 // Concept engine: upcoming events + goals + tracked-account trends →
 // headline/hook/concept suggestions, each ready to send through the River

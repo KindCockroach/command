@@ -113,7 +113,7 @@ export type PlatformPost = {
 // is about, a status (open → done, or failed with the reason) and a receipt of what was produced.
 // A failed or stuck one stays visible with a retry; nothing is ever silently "done".
 export type HandoffMissing = 'script' | 'caption' | 'cover'
-export type HandoffAgent = 'mandi' | 'her' | 'commander' | 'cap' | 'ed' | 'rex' | 'pod' | 'biz' | 'notes' | 'build_log' | 'posted'
+export type HandoffAgent = 'mandi' | 'her' | 'commander' | 'cap' | 'ed' | 'rex' | 'pod' | 'biz' | 'cora' | 'owl' | 'ten' | 'fin' | 'notes' | 'build_log' | 'posted'
 export type HandoffKind =
   // The chain (Nov 22): Idea → Her → Man (Commander) → Cap → Ed (short-form) / Pod (long-form)
   // → back to Cap, who confirms + schedules or sends it back. Writers only talk to Cap.
@@ -750,6 +750,57 @@ export type ProductView = Product & { last_sent: string | null; days_since: numb
 // A running record of what Mandi + Claude are building in RISE: shipped, in
 // progress, and still to do. Separate from the station Activity feed (events);
 // this is the project journal, grouped by date in the Brief.
+// ─── PHASE 6: health check, skills, agents' ideas ────────────────────────────
+// Health (Loop 9): plain-code checks. Each problem has ONE next fix. It reports and
+// proposes; it never changes code or data and never blocks Mandi.
+export type HealthArea = 'connections' | 'stuck' | 'direction' | 'reset' | 'store'
+export type HealthLevel = 'needs_you' | 'agents' | 'build' | 'fyi'   // who acts: Mandi, an agent's next run, a build session, nobody
+export type HealthFinding = { key: string; area: HealthArea; level: HealthLevel; title: string; detail?: string; fix: string; ref?: { type: string; id: string | number } | null; count?: number }
+export type HealthReportRecord = { mode: 'quick' | 'full'; ran_at: string; ok: string[]; findings: HealthFinding[]; ms: number; build_logged?: string[] }
+
+// Skills (Loop 10): Notes = material, Brain = rules, Skills = procedures an agent RUNS.
+// Plain English. `wired` is honest: true only when code in the app actually runs it.
+export type SkillOwner = 'her' | 'commander' | 'cap' | 'rex' | 'pod' | 'cora' | 'ed' | 'biz' | 'fin' | 'ten' | 'owl' | 'tool'
+export type Skill = {
+  id: string                 // stable slug, e.g. 'cap-sweep-notes'
+  name: string
+  owner: SkillOwner
+  sop: string                // the SOP number it came from, e.g. 'Cap 8'
+  when: string
+  steps: string[]
+  done: string               // the "done" test
+  never: string[]
+  tools: string[]            // the code it uses (file or route names)
+  wired: boolean             // true = already happens in the app; false = new, not wired yet
+  wired_note?: string        // where it runs, or what's missing
+  runs?: number              // how many times an agent named it in a receipt
+  last_run_at?: string | null
+  edited_by?: 'seed' | 'mandi'
+  created_at: string
+  updated_at: string
+}
+
+// Ideas from the agents (Loop 14). Each carries the agent it came from, never passed off
+// as Mandi's. Up: agent → Commander → Her (Ed's straight to Her). On her yes Commander
+// routes it to Biz or Cap like any note; on no it goes to Notes with the reason.
+// No agent ever acts on its own idea.
+export type AgentIdea = {
+  id: string
+  from: SkillOwner
+  lane: string               // what the agent's lane is ("campaigns and series", ...)
+  text: string
+  why?: string
+  source?: string            // the report / handoff it rode in on
+  status: 'with_commander' | 'with_her' | 'yes' | 'no'
+  routed_to?: 'cap' | 'biz' | null
+  handoff_id?: string | null
+  note_id?: number | null    // the killed-pile note on a no
+  reason?: string | null     // her reason on a no
+  decided_at?: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type BuildLogEntry = { id: string; date: string; title: string; status: 'done' | 'doing' | 'todo'; detail?: string; source: 'claude' | 'rise'; created_at: string }
 
 // The station's SPINE — one running log of everything that happens (a file dropped,
@@ -967,6 +1018,9 @@ export type Db = {
   guest_kit_config?: GuestKitConfig
   wellspring?: WellspringStore
   build_log?: BuildLogEntry[]
+  health?: { last_quick?: HealthReportRecord | null; last_full?: HealthReportRecord | null }   // Phase 6: Loop 9
+  skills?: Skill[]                                                                       // Phase 6: Loop 10
+  agent_ideas?: AgentIdea[]                                                              // Phase 6: Loop 14
   memories: Memory[]
   projects: Project[]
   tasks: Task[]

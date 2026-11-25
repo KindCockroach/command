@@ -7,6 +7,7 @@ import TasksPanel from './TasksPanel'
 import NotesPanel from './NotesPanel'
 import WorkflowsPanel from './WorkflowsPanel'
 import AssistantsPanel from './AssistantsPanel'
+import SkillsPanel from './SkillsPanel'
 import MediaLibrary from './MediaLibrary'
 import UniversalCapture from './UniversalCapture'
 import ResearchPanel from './ResearchPanel'
@@ -206,7 +207,7 @@ export default function Dashboard(_props: Props) {
 
         {view === 'projects'   && <ProjectsPanel />}
         {view === 'tasks'      && <TasksPanel />}
-        {view === 'assistants' && <AssistantsPanel />}
+        {view === 'assistants' && <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}><AssistantsPanel /><SkillsPanel /></div>}
         {view === 'workflows'  && <WorkflowsPanel />}
         {view === 'vision'     && <VisionPanel />}
         {view === 'notes'      && <NotesPanel />}

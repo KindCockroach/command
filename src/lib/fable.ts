@@ -8,7 +8,7 @@
 // Needs OPENAI_API_KEY (Railway). The live-web Researcher below stays on Opus 4.8
 // because it needs the server-side web_search tool 4o doesn't carry here.
 import OpenAI from 'openai'
-import { logUsage } from './usage'
+import { logUsage, trackedOpenAI } from './usage'
 
 export const WRITER_MODEL = 'gpt-4o'
 export const CHEAP_MODEL = 'gpt-4o-mini'
@@ -39,7 +39,7 @@ type AnthropicResponse = {
 
 let _client: OpenAI | null = null
 function openai(): OpenAI {
-  if (!_client) _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  if (!_client) _client = trackedOpenAI('content')
   return _client
 }
 
@@ -86,13 +86,7 @@ export async function fableText(opts: {
     ...(opts.json ? { response_format: { type: 'json_object' as const } } : {}),
   })
 
-  logUsage({
-    provider: 'openai',
-    model: opts.cheap ? CHEAP_MODEL : WRITER_MODEL,
-    kind: 'content',
-    inputTokens: res.usage?.prompt_tokens ?? 0,
-    outputTokens: res.usage?.completion_tokens ?? 0,
-  })
+  // Logged by trackedOpenAI (model, tokens, route).
 
   return (res.choices[0]?.message?.content ?? '').trim()
 }

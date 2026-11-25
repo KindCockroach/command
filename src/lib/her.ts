@@ -15,6 +15,8 @@
 import { readDb, writeDb, createNote, addBuildLogEntry, branchOfAccount, type HerThread, type HerTurn, type Handoff, type HandoffRef } from './db'
 import { fableText } from './fable'
 import { openHandoff, startAttempt, completeHandoff, failHandoff, listHandoffs, AGENT_LABEL } from './handoffs'
+import { skillPrompt, noSkill } from './skills'
+import { addIdeas, ideaAsk } from './ideas'
 
 const nowIso = () => new Date().toISOString()
 const newId = (p: string) => `${p}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
@@ -143,7 +145,7 @@ export async function herSay(input: { text: string; thread_id?: string | null; s
   } else if (route === 'build_log') {
     handoff = openHandoff({ kind: 'piece', from: 'her', to: 'build_log', what, ref, thread_id: threadId, note: text })
     const e = addBuildLogEntry({ title: what, detail: text.slice(0, 1000), status: 'todo', source: 'rise' })
-    handoff = completeHandoff(handoff.id, 'her', `Logged as a to-do for the next build session: “${e.title}”.`, [{ type: 'build_log', id: e.id }])
+    handoff = completeHandoff(handoff.id, 'her', `Logged as a to-do for the next build session: “${e.title}”.`, [{ type: 'build_log', id: e.id }], 'her-build-log')
   }
 
   db = readDb()
@@ -167,7 +169,7 @@ const COMMANDER_RULES = `You are Commander. Her handed you something Mandi said,
 - "her": something only Mandi can answer; write it as one short question to her.
 For each piece give: text (what the piece IS, in one line), why (one line), from_line (the exact words of hers it came from), reading ("said", "between_lines" or "meta"; anything not said outright is YOUR reading, never presented as her words).
 You never write the piece and never decide if or when it runs; that is Cap's or Biz's call. Keep the branches separate: Joyful Media (mindfulness: the Reset, @mandijoybeck) and WFH (the AI Mom podcast; AI services are paused). Never invent a fact.
-Reply ONLY with JSON: {"pieces":[{"to":"","text":"","why":"","from_line":"","reading":""}],"summary":"one line: what the note became"}`
+Reply ONLY with JSON: {"pieces":[{"to":"","text":"","why":"","from_line":"","reading":""}],"summary":"one line: what the note became","ideas":[{"text":"","why":""}]}`
 
 export async function runCommanderPickup(h: Handoff) {
   startAttempt(h.id)
@@ -177,9 +179,9 @@ export async function runCommanderPickup(h: Handoff) {
   const accounts = db.brand_accounts.filter(a => a.status === 'active').map(a => `- ${a.handle} (${branchOfAccount(a) ?? 'no branch'})`).join('\n')
   const goals = (db.goals ?? []).filter(g => g.active).slice(0, 8).map(g => `- ${g.title}`).join('\n')
   const products = (db.products ?? []).slice(0, 12).map(p => `- ${p.name} (${p.status})`).join('\n')
-  let out: { pieces?: Piece[]; summary?: string }
+  let out: { pieces?: Piece[]; summary?: string; ideas?: { text?: string; why?: string }[] }
   try {
-    out = JSON.parse(await fableText({ instructions: COMMANDER_RULES, input: `GOALS:\n${goals}\n\nACCOUNTS:\n${accounts}\n\nPRODUCTS:\n${products}\n\nWHAT MANDI SAID (via Her):\n${words.slice(0, 5000)}`, json: true, maxTokens: 1200 }))
+    out = JSON.parse(await fableText({ instructions: `${COMMANDER_RULES}\n\n${skillPrompt('commander-read-three-ways')}\n\n${ideaAsk('commander')}`, input: `GOALS:\n${goals}\n\nACCOUNTS:\n${accounts}\n\nPRODUCTS:\n${products}\n\nWHAT MANDI SAID (via Her):\n${Array.from(words).slice(0, 5000).join('')}`, json: true, maxTokens: 1200 }))
   } catch (e) {
     return failHandoff(h.id, `Commander couldn’t read it: ${e instanceof Error ? e.message : 'no answer'}`)
   }
@@ -194,6 +196,8 @@ export async function runCommanderPickup(h: Handoff) {
     if (p.to === 'cap' || p.to === 'biz') {
       const child = openHandoff({ kind: 'piece', from: 'commander', to: p.to, what: `${p.text}${label}`, parent_id: h.id, thread_id: h.thread_id, ref: h.ref, note: `Her words: “${p.from_line}”\nWhy: ${p.why}` })
       refs.push({ type: 'note', id: child.id, label: child.what })
+      // Loop 10: an agent with no wired skill for this can't pick it up → the build log says so.
+      if (p.to === 'biz') noSkill('biz', p.text)
     } else if (p.to === 'notes') {
       const n = createNote({ title: `Parked: ${p.text}`.slice(0, 120), body: `Her words: “${p.from_line}”\nWhy parked: ${p.why}\n(Commander, from a note Her handed over.)`, category: 'idea', source: 'rise', tags: ['parked', 'commander'], pinned: false })
       refs.push({ type: 'note', id: n.id, label: n.title })
@@ -202,6 +206,7 @@ export async function runCommanderPickup(h: Handoff) {
       if (t) { t.questions.push({ id: newId('q'), text: p.text, from: 'commander', handoff_id: h.id }); t.updated_at = nowIso(); writeDb(d) }
     }
   }
-  const parts = [counts.cap && `${counts.cap} for Cap`, counts.biz && `${counts.biz} for Biz`, counts.notes && `${counts.notes} parked in Notes`, counts.her && `${counts.her} question${counts.her > 1 ? 's' : ''} for you`].filter(Boolean)
+  const ideas = addIdeas('commander', out.ideas, `Commander’s read of: ${h.what ?? 'a note from Her'}`)
+  const parts = [counts.cap && `${counts.cap} for Cap`, counts.biz && `${counts.biz} for Biz`, counts.notes && `${counts.notes} parked in Notes`, counts.her && `${counts.her} question${counts.her > 1 ? 's' : ''} for you`, ideas.length && `${ideas.length} idea${ideas.length > 1 ? 's' : ''} of his own for Her`].filter(Boolean)
   return completeHandoff(h.id, 'commander', `Became ${pieces.length} piece${pieces.length > 1 ? 's' : ''}: ${parts.join(', ')}. ${out.summary ?? ''}`.trim(), refs)
 }

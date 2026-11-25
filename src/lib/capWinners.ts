@@ -10,6 +10,7 @@ import { readDb, writeDb, createMemory, type Handoff, type WinnerReview } from '
 import { scoreResults, type ScoredResult } from './results'
 import { fableText } from './fable'
 import { startAttempt, completeHandoff, failHandoff } from './handoffs'
+import { addIdeas, ideaAsk } from './ideas'
 
 const nowIso = () => new Date().toISOString()
 
@@ -62,8 +63,9 @@ export async function weighWinners(accountId: string, platform: string): Promise
 - "experiment": ONE test for next week that changes EXACTLY ONE variable (say which) and holds everything else the same: what, how (which posts, how many, against what control), measure (which number, compared with what). Keep it inside her real cadence (1 to 2 posts a day).
 Every list item is a plain string.
 Do not propose copying or reposting a winner. Do not invent data. ${prior ? `Last time you hypothesized: "${prior.hypothesis}". Say in evidence whether this week supports it, contradicts it, or can't tell.` : ''}
-Reply ONLY with JSON: {"evidence":[],"guesses":[],"missing":[],"hypothesis":"","experiment":{"what":"","how":"","measure":""}}`
-  let out: Partial<WinnerReview>
+${ideaAsk('cap')}
+Reply ONLY with JSON: {"evidence":[],"guesses":[],"missing":[],"hypothesis":"","experiment":{"what":"","how":"","measure":""},"ideas":[{"text":"","why":""}]}`
+  let out: Partial<WinnerReview> & { ideas?: { text?: string; why?: string }[] }
   try {
     out = JSON.parse(await fableText({ instructions, input: `${all.length} posts scored, ${period}. ${matched} of the ${sample.length} below matched a RISE card.\n\n${rows}`, json: true, maxTokens: 1400 }))
   } catch (e) {
@@ -84,6 +86,8 @@ Reply ONLY with JSON: {"evidence":[],"guesses":[],"missing":[],"hypothesis":"","
   for (const w of d2.winner_reviews) if (w.account_id === accountId && w.platform === platform && w.status === 'proposed') w.status = 'dismissed'
   d2.winner_reviews.push(review)
   writeDb(d2)
+  // Loop 14: Cap's own ideas (campaigns and series) ride up to Commander with this report.
+  addIdeas('cap', out.ideas, `Cap’s winners review for ${acct?.handle ?? accountId} (${platform})`)
   // Cap's memory: the hypothesis, so the next read can test it.
   createMemory({ category: 'pattern', title: `Cap hypothesis (${acct?.handle ?? accountId}, ${platform}): ${review.hypothesis}`.slice(0, 200), body: `Evidence: ${review.evidence.join(' | ')}\nExperiment: ${review.experiment.what}`, agent_tags: ['cap'] })
   return review

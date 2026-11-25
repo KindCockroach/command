@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { trackedOpenAI } from '@/lib/usage'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const client = trackedOpenAI('pitch')
 
 export async function POST(req: NextRequest) {
   const { country, website, email, angle, familyDetails } = await req.json()

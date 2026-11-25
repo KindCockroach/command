@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { trackedOpenAI } from '@/lib/usage'
 import { getAllNotes, updateNote, createTask, getAllGoals, getAllBrandAccounts } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const client = trackedOpenAI('ceo-review')
 
 // CEO daily review: reads unreviewed raw-capture notes → expands each into a plan,
 // creates tasks, proposes goal updates, and mines extra post hooks.

@@ -6,6 +6,7 @@
 // visible with a retry (acceptance scenario 6); nothing is ever marked done without a receipt.
 
 import { readDb, writeDb, logActivity, type Handoff, type HandoffAgent, type HandoffKind, type HandoffRef } from './db'
+import { SKILL_FOR_KIND, ranSkill } from './skills'
 
 const nowIso = () => new Date().toISOString()
 
@@ -16,6 +17,7 @@ export const STUCK_MS = 10 * 60 * 1000
 
 export const AGENT_LABEL: Record<HandoffAgent, string> = {
   mandi: 'You', her: 'Her', commander: 'Man', cap: 'Cap', ed: 'Ed', rex: 'Rex', pod: 'Pod', biz: 'Biz',
+  cora: 'Cora', owl: 'Owl', ten: 'Ten', fin: 'Fin',
   notes: 'Notes', build_log: 'Build log', posted: 'Posted',
 }
 
@@ -91,8 +93,13 @@ export function startAttempt(id: string): Handoff | null {
   return patch(id, h => { h.status = 'open'; h.error = null; h.attempts = (h.attempts ?? 0) + 1 })
 }
 
-export function completeHandoff(id: string, by: string, receipt: string, refs: HandoffRef[] = []): Handoff | null {
-  const h = patch(id, x => { x.status = 'done'; x.done_at = nowIso(); x.done_by = by; x.receipt = receipt.slice(0, 1200); x.receipt_refs = refs; x.error = null })
+export function completeHandoff(id: string, by: string, receipt: string, refs: HandoffRef[] = [], skillId?: string | null): Handoff | null {
+  // Phase 6 (Loop 10): every receipt names the skill the agent ran, and the run is counted.
+  const kind = (readDb().handoffs ?? []).find(x => x.id === id)?.kind
+  const sid = skillId === null ? null : skillId ?? (kind ? SKILL_FOR_KIND[kind] : undefined)
+  const tag = sid ? ranSkill(sid) : ''
+  const full = tag && !receipt.includes(tag) ? `${receipt} · ${tag}` : receipt
+  const h = patch(id, x => { x.status = 'done'; x.done_at = nowIso(); x.done_by = by; x.receipt = Array.from(full).slice(0, 1200).join(''); x.receipt_refs = refs; x.error = null })
   if (h) logActivity({ type: 'handoff_done', icon: '✓', source: by, account_id: h.account_id, content_id: h.content_id,
     title: `${AGENT_LABEL[h.to]} finished: ${h.what ?? h.kind}`.slice(0, 140), detail: receipt.slice(0, 300) })
   return h

@@ -34,3 +34,9 @@ export async function parseKit(raw: string): Promise<Record<string, unknown> | n
     return JSON.parse(extractJsonObject(fixed))
   } catch { return null }
 }
+
+// Cut text by whole characters (never splits an emoji in half: the Phase 5 half-emoji bug).
+// Use this for any string that goes to an AI or into JSON.
+export function cut(s: string | null | undefined, n: number): string {
+  return Array.from(s ?? '').slice(0, n).join('')
+}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI, { toFile } from 'openai'
+import { toFile } from 'openai'
+import { trackedOpenAI } from '@/lib/usage'
 import { putObject, getPublicUrl, isR2Configured, mediaKey } from '@/lib/r2'
 import { logActivity } from '@/lib/db'
 import { fableText } from '@/lib/fable'
@@ -33,7 +34,7 @@ import path from 'path'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const client = trackedOpenAI('transcribe')
 const LIMIT = 25 * 1024 * 1024 // Whisper's per-file cap
 
 function run(cmd: string, args: string[]): Promise<void> {

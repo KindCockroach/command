@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { trackedOpenAI } from '@/lib/usage'
 import { getAllContent, deleteContent, getBrandAccount, upsertBrandAccount, audienceLine } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const client = trackedOpenAI('content-decline')
 
 // Decline a post idea + teach the account why. The reason becomes a durable
 // rule appended to the account's DNA (which every generator already obeys).
