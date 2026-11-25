@@ -555,6 +555,7 @@ export type SeqEmail = {
 export type SeqSettings = {
   coupon_code: string               // the $8 returning coupon on Luma ($33 → $25). Needed by touch 1 + 4.
   next_reset_url: string            // where "save your seat" goes (Luma via the /reset page)
+  next_reset_date?: string          // YYYY-MM-DD of the next Reset; rolls forward 14 days once it passes (every other Sunday)
   survey_url: string
   nine_url: string                  // the $9 Listen To Your Intuition collection. Blank = touch 2 holds.
   pass_url: string                  // how to get the $44/mo pass. Blank = the pass paragraph is left out.

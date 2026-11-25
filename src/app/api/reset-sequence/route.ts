@@ -1,3 +1,4 @@
+import { proofread } from '@/lib/proofread'
 import { NextRequest, NextResponse, after } from 'next/server'
 import { listHandoffs } from '@/lib/handoffs'
 import { runHandoff } from '@/lib/agentRun'
@@ -70,8 +71,12 @@ export async function POST(req: NextRequest) {
     }
     case 'edit': {
       if (!KEYS.includes(key)) return NextResponse.json({ error: 'No such email.' }, { status: 400 })
-      const e = editEmail(key, b as never)
-      return e ? NextResponse.json({ email: e }) : NextResponse.json({ error: 'No such email.' }, { status: 404 })
+      // Cap's last sweep: spelling + punctuation only, her words kept (lib/proofread.ts)
+      const text: Record<string, string> = {}
+      for (const k of ['subject', 'preheader', 'body', 'cta_label', 'ps']) if (typeof b[k] === 'string') text[k] = b[k] as string
+      const swept = await proofread(text)
+      const e = editEmail(key, { ...(b as object), ...swept.fields } as never)
+      return e ? NextResponse.json({ email: e, fixes: swept.fixes }) : NextResponse.json({ error: 'No such email.' }, { status: 404 })
     }
     case 'approve': {
       if (!KEYS.includes(key)) return NextResponse.json({ error: 'No such email.' }, { status: 400 })

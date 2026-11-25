@@ -578,7 +578,8 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
     const before = { onscreen_text: post.onscreen_text ?? '', script: post.script ?? '', description: post.description ?? '' }
     const after = { onscreen_text: form.onscreen_text, script: form.script, description: form.description }
     try {
-      await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...form }) })
+      const saved = await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: post.id, ...form, proofread: true }) }).then(r => r.json()).catch(() => null)
+      setCapFixes(saved?.fixes?.length ? saved.fixes.join(' · ') : '')
       setEditing(false)
       onChanged?.()
       // Learn from the edit — best-effort, non-blocking; surfaces what RISE picked up
@@ -612,6 +613,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
   }
   const [undoAvail, setUndoAvail] = useState(false)
   const [learnedRule, setLearnedRule] = useState('')
+  const [capFixes, setCapFixes] = useState('')   // what Cap's spelling + punctuation sweep fixed on save
   useEffect(() => { setUndoAvail(typeof window !== 'undefined' && !!localStorage.getItem(`undo-${post.id}`)) }, [post.id, post.description])
 
   // Regenerate — snapshots the current version first so it's always recoverable
@@ -1099,7 +1101,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <button onClick={saveEdit} disabled={savingEdit}
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 16px', borderRadius: '9px', border: 'none', background: accentColor, color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }}>
-                  {savingEdit ? <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={12} />} Save Changes
+                  {savingEdit ? <><RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Cap is checking…</> : <><Save size={12} /> Save Changes</>}
                 </button>
                 <button onClick={revise} disabled={revising}
                   title="Saves your edits, then Fable re-aligns the rest of the post to the Craft Laws around your words — and learns your taste from what you changed"
@@ -1117,6 +1119,12 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
             </div>
           ) : (
             <>
+              {capFixes && (
+                <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.5, color: 'var(--text)' }}>
+                  <strong>Cap’s sweep fixed:</strong> {capFixes}
+                  <button onClick={() => setCapFixes('')} style={{ marginLeft: '8px', border: 'none', background: 'transparent', color: 'var(--text-subtle)', fontSize: '12px', cursor: 'pointer' }}>dismiss</button>
+                </p>
+              )}
               {learnedRule && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '7px', padding: '9px 11px', borderRadius: '9px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.25)', marginBottom: '10px' }}>
                   <span style={{ fontSize: '13px' }}>🧠</span>

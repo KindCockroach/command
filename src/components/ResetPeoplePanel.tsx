@@ -27,7 +27,7 @@ type Email = {
 }
 type Settings = {
   coupon_code: string; next_reset_url: string; survey_url: string; nine_url: string; pass_url: string
-  gift_name: string; gift_url: string; medium_url: string; podcast_url: string
+  gift_name: string; gift_url: string; medium_url: string; podcast_url: string; next_reset_date?: string
   sequence_live: boolean; welcome_live: { joyful_media: boolean; wfh: boolean }
 }
 type Decision = { email: string; name: string; reason: string; segment?: string }
@@ -224,6 +224,11 @@ function SettingsCard({ settings, onSaved }: { settings: Settings; onSaved: (s: 
         {field('medium_url', 'Pass holders: a Medium story link')}
       </div>
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 200px' }}>
+          <p style={{ ...label, margin: '8px 0 4px' }}>Next Reset date</p>
+          <input type="date" style={input} value={String(f.next_reset_date ?? '')} onChange={e => setF({ ...f, next_reset_date: e.target.value })} />
+          <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-subtle)' }}>Fills in the date in every email. Moves ahead two weeks by itself after each Reset.</p>
+        </div>
         {field('next_reset_url', '"Save your seat" link (Luma)')}
         {field('survey_url', 'Survey link')}
         {field('podcast_url', 'WFH welcome: podcast link')}
@@ -251,6 +256,7 @@ function SettingsCard({ settings, onSaved }: { settings: Settings; onSaved: (s: 
 }
 
 function EmailCard({ e, onChange, onMsg }: { e: Email; onChange: () => void; onMsg: (m: string) => void }) {
+  const [sweeping, setSweeping] = useState(false)   // Cap's spelling + punctuation sweep on save
   const [editing, setEditing] = useState(false)
   const [talk, setTalk] = useState(false)
   const [f, setF] = useState(e)
@@ -295,7 +301,7 @@ function EmailCard({ e, onChange, onMsg }: { e: Email; onChange: () => void; onM
         {e.body && <a style={btn()} href={`/api/reset-sequence?preview=${e.key}&segment=${seg}`} target="_blank" rel="noreferrer"><Eye size={13} /> Preview</a>}
         {e.body && !editing && <TalkToCapButton id={`email:${e.key}`} open={talk} onToggle={() => setTalk(x => !x)} />}
         {e.body && !editing && <button style={btn()} onClick={() => setEditing(true)}><Pencil size={13} /> Edit</button>}
-        {editing && <button style={btn(true)} onClick={async () => { await post('/api/reset-sequence', { action: 'edit', key: e.key, subject: f.subject, preheader: f.preheader, body: f.body, cta_label: f.cta_label, ps: f.ps, extras: f.extras }); setEditing(false); onChange() }}>Save my edit</button>}
+        {editing && <button style={btn(true)} disabled={sweeping} onClick={async () => { setSweeping(true); const r = await post('/api/reset-sequence', { action: 'edit', key: e.key, subject: f.subject, preheader: f.preheader, body: f.body, cta_label: f.cta_label, ps: f.ps, extras: f.extras }); setSweeping(false); if (r.error) { onMsg(r.error); return } onMsg(r.fixes?.length ? `Saved. Cap’s sweep fixed: ${r.fixes.join(' · ')}` : 'Saved. Cap’s sweep found nothing to fix.'); setEditing(false); onChange() }}>{sweeping ? 'Cap is checking…' : 'Save my edit'}</button>}
         {editing && <button style={btn()} onClick={() => setEditing(false)}>Cancel</button>}
         {(e.status === 'confirmed') && <button style={btn(true)} onClick={async () => { const r = await post('/api/reset-sequence', { action: 'approve', key: e.key, on: true }); if (r.error) onMsg(r.error); onChange() }}><Check size={13} /> Approve</button>}
         {e.status === 'approved' && <button style={btn()} onClick={async () => { await post('/api/reset-sequence', { action: 'approve', key: e.key, on: false }); onChange() }}>Un-approve</button>}

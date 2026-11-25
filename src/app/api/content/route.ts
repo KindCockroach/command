@@ -1,3 +1,4 @@
+import { proofread } from '@/lib/proofread'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllContent, createContent, updateContent, deleteContent } from '@/lib/db'
 
@@ -31,11 +32,19 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const body = await req.json()
-  const { id, ...updates } = body
+  const { id, proofread: sweep, ...updates } = body
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  // Her own edits (Save on a card): Cap sweeps spelling + punctuation first, her words kept.
+  let fixes: string[] = []
+  if (sweep === true) {
+    const text: Record<string, string> = {}
+    for (const k of ['title', 'description', 'script', 'onscreen_text']) if (typeof updates[k] === 'string') text[k] = updates[k]
+    const swept = await proofread(text)
+    Object.assign(updates, swept.fields); fixes = swept.fixes
+  }
   const updated = updateContent(Number(id), updates)
   if (!updated) return NextResponse.json({ error: 'not found' }, { status: 404 })
-  return NextResponse.json(updated)
+  return NextResponse.json(sweep === true ? { ...updated, fixes } : updated)
 }
 
 export async function DELETE(req: NextRequest) {

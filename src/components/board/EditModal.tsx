@@ -557,8 +557,10 @@ export default function EditModal({ piece, onClose, onSave, onDelete }: Props) {
       rest.media_urls = Array.from(new Set([...cur.media, ...mine]))
       rest.media_url = rest.media_url || rest.media_urls[0] || ''
     }
-    const res = await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...rest, id: piece.id }) })
-    onSave(await res.json())
+    const res = await fetch('/api/content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...rest, id: piece.id, proofread: true }) })
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { fixes, ...saved } = await res.json()   // Cap's sweep notes aren't part of the card
+    onSave(saved)
     setSaving(false)
   }
   const handleDelete = async () => {

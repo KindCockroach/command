@@ -32,6 +32,7 @@ const MAX_ROUNDS = 3   // Cap's reviews before he lets a draft through with note
 export const DEFAULT_SETTINGS: SeqSettings = {
   coupon_code: '',
   next_reset_url: 'https://www.bethereforher.com/reset',
+  next_reset_date: '',
   survey_url: 'https://www.bethereforher.com/reset/survey',
   nine_url: '',
   pass_url: '',
@@ -125,6 +126,7 @@ export function updateSettings(patch: Partial<SeqSettings>): SeqSettings {
   const s = ensure(db)
   const str = ['coupon_code', 'next_reset_url', 'survey_url', 'nine_url', 'pass_url', 'gift_name', 'gift_url', 'medium_url', 'podcast_url'] as const
   for (const k of str) if (typeof patch[k] === 'string') s.settings[k] = (patch[k] as string).trim()
+  if (typeof patch.next_reset_date === 'string') s.settings.next_reset_date = /^\d{4}-\d{2}-\d{2}$/.test(patch.next_reset_date.trim()) ? patch.next_reset_date.trim() : ''
   if (typeof patch.sequence_live === 'boolean') s.settings.sequence_live = patch.sequence_live
   if (patch.welcome_live) for (const b of ['joyful_media', 'wfh'] as BranchId[]) if (typeof patch.welcome_live[b] === 'boolean') s.settings.welcome_live[b] = patch.welcome_live[b]
   writeDb(db)
@@ -423,6 +425,19 @@ export type TouchPlan = { key: SeqEmailKey; title: string; send_on: string | nul
 export type DryRun = { event: ResetEvent; next_event: ResetEvent | null; today: string; touches: TouchPlan[]; totals: { would_send: number; skipped: number }; live: boolean }
 
 const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10)
+
+// The next Reset's date as the emails say it: an imported upcoming Reset if RISE has one, else
+// the date Mandi set in Campaigns, rolled forward two weeks at a time (Resets are every other
+// Sunday) once it has passed. Null when neither is known (the email then says "the next Reset").
+export function nextResetDate(onOrAfter = todayCT()): string | null {
+  const db = readDb()
+  const ev = (db.reset_events ?? []).filter(x => x.date >= onOrAfter).sort((a, b) => a.date.localeCompare(b.date))[0]
+  if (ev) return ev.date
+  let d = db.reset_sequence?.settings?.next_reset_date ?? ''
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null
+  for (let i = 0; d < onOrAfter && i < 200; i++) d = addDays(d, 14)
+  return d
+}
 const todayCT = () => new Date(Date.now() - 6 * 3600000).toISOString().slice(0, 10)
 
 function settingsBlockers(e: SeqEmail, s: SeqSettings): string[] {
@@ -541,7 +556,7 @@ function recordSend(rec: Omit<SeqSend, 'id' | 'at'>) {
 async function sendOne(e: SeqEmail, d: Decision, ctx: { eventId: string | null; next: ResetEvent | null; settings: SeqSettings }): Promise<{ ok: boolean; error?: string }> {
   const link = unsubscribeUrl(d.email), oneClick = unsubscribeApiUrl(d.email)
   if (!link || !oneClick) return { ok: false, error: 'Could not sign an unsubscribe link.' }
-  const r = renderEmail(e, { first_name: d.name.split(/\s+/)[0], segment: d.segment ?? 'list', next_reset_date: ctx.next?.date ?? null, unsubscribe: link, settings: ctx.settings })
+  const r = renderEmail(e, { first_name: d.name.split(/\s+/)[0], segment: d.segment ?? 'list', next_reset_date: ctx.next?.date ?? nextResetDate(), unsubscribe: link, settings: ctx.settings })
   const from = e.branch === 'wfh' ? '"Mandi Beck · AI Mom Podcast" <hi@aimomeducation.com>' : '"Mandi · Be There For Her" <hi@aimomeducation.com>'
   return resendSend(d.email, r.subject, r.html, OWNER_TEST_ADDRESS, from, { 'List-Unsubscribe': `<${oneClick}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' })
 }
@@ -615,5 +630,5 @@ export function previewEmail(key: SeqEmailKey, segment: Segment) {
   const e = seq.emails.find(x => x.key === key)
   if (!e) return null
   const next = (db.reset_events ?? []).filter(x => x.date >= todayCT()).sort((a, b) => a.date.localeCompare(b.date))[0] ?? null
-  return renderEmail(e, { first_name: 'Jess', segment, next_reset_date: next?.date ?? null, unsubscribe: '#unsubscribe', settings: { ...seq.settings, coupon_code: seq.settings.coupon_code || '[COUPON CODE]', gift_name: seq.settings.gift_name || '[GIFT]' } })
+  return renderEmail(e, { first_name: 'Jess', segment, next_reset_date: next?.date ?? nextResetDate(), unsubscribe: '#unsubscribe', settings: { ...seq.settings, coupon_code: seq.settings.coupon_code || '[COUPON CODE]', gift_name: seq.settings.gift_name || '[GIFT]' } })
 }
