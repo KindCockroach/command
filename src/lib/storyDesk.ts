@@ -197,7 +197,7 @@ export async function runFindStories(h: Handoff) {
   // Who she is now and what she's building (from the Brain and the map), for pass 2.
   const db = readDb()
   const { RETIRED } = await import('./health')
-  const who = db.memories.filter(m => m.category !== 'voice_archive' && /(intuition|thesis|mission|purpose|identity|backstory|persona|who)/i.test(`${m.title} ${m.body}`) && !RETIRED.some(r => r.re.test(`${m.title} ${m.body}`))).slice(-6).map(m => `- ${cut(m.title, 80)}: ${cut(m.body, 240)}`).join('\n')
+  const who = db.memories.filter(m => m.category !== 'voice_archive' && !m.retired_at && /(intuition|thesis|mission|purpose|identity|backstory|persona|who)/i.test(`${m.title} ${m.body}`) && !RETIRED.some(r => r.re.test(`${m.title} ${m.body}`))).slice(-6).map(m => `- ${cut(m.title, 80)}: ${cut(m.body, 240)}`).join('\n')
   const goals = (db.goals ?? []).filter(g => g.active).slice(0, 8).map(g => `- ${g.title}`).join('\n')
 
   let out: { stories?: { title: string; take: string; why_now: string; branch: string; form: string; headlines: string[]; her_lines: { date: string; line: string }[]; holds_because: string }[] }

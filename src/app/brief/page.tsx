@@ -40,6 +40,13 @@ export default function BriefPage() {
   const [signups, setSignups] = useState<Signup[]>([])
   const [build, setBuild] = useState<Build[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [filmCard, setFilmCard] = useState<{ id: number; title: string; handle: string | null; date?: string; open_url: string } | null>(null)
+  const [filmWhy, setFilmWhy] = useState<string | null>(null)
+  const [filmLeft, setFilmLeft] = useState(0)
+  const [learning, setLearning] = useState<{ text?: string; ask?: boolean; question?: string } | null>(null)
+  const [kidsAnswer, setKidsAnswer] = useState('')
+  const [inboxLoaded, setInboxLoaded] = useState(false)
+  const [spendLine, setSpendLine] = useState<string | null>(null) // Phase 8 A0: shows once RISE passes 80% of its monthly AI cap
   const [copied, setCopied] = useState(false)
   // When she last opened the brief — so "new signups" means new SINCE THEN, and the
   // brief always shows her what changed rather than repeating what she's already seen.
@@ -58,9 +65,15 @@ export default function BriefPage() {
       fetch('/api/podcast/schedule?admin=1').then(r => r.json()),
       fetch('/api/people').then(r => r.json()),   // RISE-native CRM (not GHL) — the complete list
       fetch('/api/buildlog').then(r => r.json()),  // the build journal: Claude + RISE work, merged
-    ]).then(([l, m, i, b, s, bl]) => {
+      fetch('/api/spend').then(r => r.json()),     // Phase 8 A0: the monthly AI cap
+      fetch('/api/brief/learning').then(r => r.json()), // Phase 8 A3: today's learning thing (Her asks the kids' ages once)
+    ]).then(([l, m, i, b, s, bl, sp, lr]) => {
+      if (lr.status === 'fulfilled' && lr.value) setLearning(lr.value)
+      if (sp.status === 'fulfilled' && typeof sp.value?.brief_line === 'string') setSpendLine(sp.value.brief_line)
       // Mandi Joy's line for today, generated around the current priority (the Reset).
       if (l.status === 'fulfilled' && typeof l.value?.line === 'string' && l.value.line) setLine(l.value.line)
+      if (l.status === 'fulfilled') { setFilmCard(l.value?.card ?? null); setFilmWhy(l.value?.why ?? null); setFilmLeft(Number(l.value?.left_this_week) || 0) }
+      setInboxLoaded(i.status === 'fulfilled')
       if (m.status === 'fulfilled' && m.value?.orders?.your_move?.[0]) setMove(m.value.orders.your_move[0])
       if (i.status === 'fulfilled' && i.value?.inbox) setInbox(i.value.inbox)
       if (b.status === 'fulfilled' && Array.isArray(b.value?.bookings)) setBookings(b.value.bookings)
@@ -100,6 +113,7 @@ export default function BriefPage() {
           <p style={{ fontSize: '13px', letterSpacing: '0.06em', textTransform: 'uppercase', color: '#A8937E', fontWeight: 700 }}>{greeting()} · {today}</p>
           <h1 style={{ fontSize: '30px', fontWeight: 800, lineHeight: 1.18, marginTop: '10px', color: '#2E241D' }}>You&apos;re not behind.<br />Here&apos;s today.</h1>
           <p style={{ fontSize: '15px', color: '#7A6A5B', marginTop: '10px', lineHeight: 1.5 }}>One breath. You don&apos;t have to hold all of it — I am.</p>
+          {spendLine && <p style={{ fontSize: '13.5px', color: '#8A4B2E', marginTop: '10px', lineHeight: 1.5, fontWeight: 700 }}>💸 {spendLine}</p>}
         </header>
 
         {/* 2 — The shape of the day (rhythm, not a calendar) */}
@@ -124,12 +138,14 @@ export default function BriefPage() {
               : line ? (
                 <>
                   <p style={{ fontSize: '17px', fontWeight: 600, lineHeight: 1.4, color: '#2E241D' }}>{line}</p>
+                  {filmCard && <p style={{ fontSize: '13px', color: '#7A6A5B', marginTop: '6px' }}>{filmCard.title}{filmCard.handle ? ` · ${filmCard.handle}` : ''}{filmCard.date ? ` · on the calendar ${filmCard.date}` : ''}{filmLeft > 1 ? ` · ${filmLeft - 1} more to film this week` : ''}</p>}
+                  {filmCard && <a href={filmCard.open_url} style={{ display: 'inline-block', marginTop: '12px', marginRight: '8px', background: '#B5784E', color: '#fff', fontWeight: 700, fontSize: '13px', padding: '8px 14px', borderRadius: '10px', textDecoration: 'none' }}>Open in Content Day</a>}
                   <button onClick={async () => { try { await navigator.clipboard.writeText(line); setCopied(true); setTimeout(() => setCopied(false), 1400) } catch { /* ignore */ } }}
                     style={{ marginTop: '12px', border: 'none', background: copied ? '#E8DCCB' : '#F2E9DF', color: '#6B4A30', fontWeight: 700, fontSize: '13px', padding: '8px 14px', borderRadius: '10px', cursor: 'pointer' }}>
                     {copied ? '✓ Copied' : 'Copy line'}
                   </button>
                 </>
-              ) : <p style={{ color: '#7A6A5B', fontSize: '14px' }}>No line waiting — open Quick Post in RISE and tap &quot;More like this.&quot;</p>}
+              ) : <p style={{ color: '#7A6A5B', fontSize: '14px', lineHeight: 1.5 }}>{filmWhy ?? 'Nothing waiting to film right now.'}</p>}
           </div>
 
           {/* Needle-mover */}
@@ -144,7 +160,14 @@ export default function BriefPage() {
           {/* Homeschool — gentle default until she gives a source */}
           <div style={{ background: 'rgba(255,255,255,0.55)', borderRadius: '20px', padding: '20px', border: '1px solid rgba(168,147,126,0.22)' }}>
             <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#5E8A6B', marginBottom: '9px' }}>🏠 Today&apos;s one learning thing</p>
-            <p style={{ fontSize: '15px', color: '#4A3F35', lineHeight: 1.45 }}>Follow one of their questions for twenty minutes. That counts. That&apos;s the whole lesson.</p>
+            {learning?.ask ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ fontSize: '14.5px', color: '#4A3F35', lineHeight: 1.45 }}>{learning.question}</p>
+                <input value={kidsAnswer} onChange={e => setKidsAnswer(e.target.value)} placeholder="e.g. 5, 3, 3 and 1. Homeschool Mon–Thu." style={{ fontSize: '16px', padding: '9px 12px', borderRadius: '10px', border: '1px solid rgba(168,147,126,0.4)', background: '#fff', color: '#2E241D', fontFamily: 'inherit' }} />
+                <button disabled={!kidsAnswer.trim()} onClick={async () => { await fetch('/api/brief/learning', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kids: kidsAnswer }) }).catch(() => null); const d = await fetch('/api/brief/learning').then(r => r.json()).catch(() => null); if (d) setLearning(d) }}
+                  style={{ alignSelf: 'flex-start', border: 'none', background: '#5E8A6B', color: '#fff', fontWeight: 700, fontSize: '13px', padding: '8px 14px', borderRadius: '10px', cursor: 'pointer', minHeight: 36 }}>Save</button>
+              </div>
+            ) : <p style={{ fontSize: '15px', color: '#4A3F35', lineHeight: 1.45 }}>{learning?.text ?? 'Follow one of their questions for twenty minutes. That counts. That’s the whole lesson.'}</p>}
           </div>
         </section>
 
@@ -152,7 +175,7 @@ export default function BriefPage() {
         <section style={{ borderRadius: '16px', padding: '16px 18px', background: 'rgba(168,147,126,0.12)', border: '1px solid rgba(168,147,126,0.3)' }}>
           <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#A8937E', marginBottom: '10px' }}>📬 Your inbox {!inboxStale && inbox?.items?.length ? `· ${inbox.items.length} need you` : ''}</p>
           {inboxStale ? (
-            <p style={{ fontSize: '13.5px', color: '#7A6A5B', lineHeight: 1.5 }}>Inbox sync has been quiet for a while, so I&apos;m not showing you an old pile. Reconnect the Gmail scan and fresh triage shows up here again. 🤍</p>
+            <p style={{ fontSize: '13.5px', color: '#7A6A5B', lineHeight: 1.5 }}>The Gmail scan hasn&apos;t run since {new Date(inbox!.checked_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, so I&apos;m not showing you an old pile. It&apos;s an outside job; reconnecting it is a separate step.</p>
           ) : inbox && inbox.items.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {inbox.items.map((it, i) => (
@@ -166,9 +189,9 @@ export default function BriefPage() {
               <p style={{ fontSize: '12.5px', color: '#9A8676', marginTop: '2px' }}>Everything else{inbox.count_total ? ` (${inbox.count_total} threads)` : ''} is noise. Not your job this morning.</p>
             </div>
           ) : inbox ? (
-            <p style={{ fontSize: '14px', color: '#5E5044', lineHeight: 1.5 }}>Nothing needs you this morning. I checked — it&apos;s all noise. 🤍</p>
+            <p style={{ fontSize: '14px', color: '#5E5044', lineHeight: 1.5 }}>Nothing needs you. Last checked {new Date(inbox.checked_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}: it&apos;s all noise. 🤍</p>
           ) : (
-            <p style={{ fontSize: '13.5px', color: '#7A6A5B', lineHeight: 1.5 }}>I&apos;ll stand between you and your inbox — this line shows only what actually needs you. Not your job this morning.</p>
+            <p style={{ fontSize: '13.5px', color: '#7A6A5B', lineHeight: 1.5 }}>{inboxLoaded ? 'The Gmail scan has never sent RISE a triage, so there’s nothing to show. Connecting it is a separate step.' : 'Couldn’t reach the inbox status right now.'}</p>
           )}
         </section>
 

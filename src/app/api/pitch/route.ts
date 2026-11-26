@@ -10,13 +10,13 @@ export async function POST(req: NextRequest) {
   const { country, website, email, angle, familyDetails } = await req.json()
   if (!country) return NextResponse.json({ error: 'country required' }, { status: 400 })
 
-  const prompt = `You are writing on behalf of Mandi Beck — content creator, AI educator, mom of 4 kids (twins Max & Jasmine, Wayne, and baby Preston), homeschooler, and founder of Room30.ai and AI Mom Podcast.
+  const prompt = `You are writing on behalf of Mandi Beck — content creator, AI educator, mom of 4 kids (twins Max & Jasmine, Wayne, and baby Preston), homeschooler, and host of the AI Mom Podcast.
 
 She is pitching ${country}'s Tourism Board for a press/creator partnership trip for her family.
 
 Her angles and platforms:
 - @homeschool4humans — documents family world travel as living education (Beatles meets Shakespeare with a side of science)
-- @aimomatwork / AI Mom Podcast — shows how AI tools make family travel planning effortless
+- AI Mom Podcast (@aimompodcast) — shows how AI tools make family travel planning effortless
 - @empoweredsupermom — documents the real, raw, hilarious experience of traveling with 4 kids under 5
 - @mandij0y — personal joy, wonder, and human connection while traveling
 - Combined audience: growing multi-platform creator across Instagram, TikTok, YouTube, Beehiiv newsletter

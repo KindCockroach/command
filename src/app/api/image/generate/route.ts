@@ -3,6 +3,7 @@ import OpenAI from 'openai'
 import { getAllContent, updateContent } from '@/lib/db'
 import { putObject, getPublicUrl, mediaKey } from '@/lib/r2'
 import { logCost } from '@/lib/usage'
+import { budgetGate } from '@/lib/spendCap'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
   const imagePrompt = (prompt ?? piece.image_prompt ?? '').trim()
   if (!imagePrompt) return NextResponse.json({ error: 'No image prompt on this post' }, { status: 400 })
 
+  // Phase 8 A0: images are a flat ~$0.04; the cap still asks first once the month is spent.
+  try { await budgetGate({ model: 'gpt-image-1', inputChars: 0, maxOutTokens: 0, kind: 'image' }) }
+  catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Budget check failed' }, { status: 402 }) }
   const generate = async (model: string) => client.images.generate({
     model,
     prompt: `${imagePrompt}\n\nStyle: warm, human, editorial-quality social media visual. Square 1:1 composition, centered so nothing important is near the edges. No text unless the prompt demands it.`,

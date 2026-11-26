@@ -121,7 +121,7 @@ function TikTokPreview({ content }: { content: PreviewContent }) {
         </div>
         {/* Bottom bar */}
         <div style={{ padding: '12px 16px 20px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }}>
-          <p style={{ color: '#fff', fontSize: '13px', fontWeight: 700, margin: '0 0 4px' }}>@aimomatwork</p>
+          <p style={{ color: '#fff', fontSize: '13px', fontWeight: 700, margin: '0 0 4px' }}>@yourhandle</p>
           <EditableText value={caption} onChange={setCaption} />
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', marginTop: '6px' }}>🎵 Original Sound · AI Mom</p>
         </div>

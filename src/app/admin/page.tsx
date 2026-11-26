@@ -1,5 +1,6 @@
 'use client'
 
+import SpendCard from '@/components/SpendCard'
 import { useEffect, useState } from 'react'
 import { GPT_URL, TEMPLATE_URL, DEFAULT_CHECKOUT } from '@/lib/funnels'
 
@@ -33,8 +34,8 @@ const SITE = 'https://aiworksforher.com'
 // One place for every link across the businesses. Edit here to add/remove.
 const GROUPS: { title: string; note?: string; links: { label: string; href: string; sub?: string }[] }[] = [
   {
-    title: '📣 Caption Writer — the $27 funnel',
-    note: 'Live on aiworksforher.com',
+    title: '📣 Old Caption Writer funnel (RETIRED — these pages redirect; cleanup in Phase 9)',
+    note: 'Not an offer anymore. Kept for reference only.',
     links: [
       { label: 'Homepage (3 doors)', href: `${SITE}/`, sub: 'AI Works For Her hub' },
       { label: 'Seen — Invisible Annie', href: `${SITE}/seen`, sub: 'ad running here' },
@@ -88,7 +89,7 @@ const GROUPS: { title: string; note?: string; links: { label: string; href: stri
 // Fixed monthly AI subscriptions (credit/seat-based — NOT pay-per-call like
 // OpenAI/Anthropic, which are tracked live above). Edit these to your real plans.
 const SUBS: { name: string; note: string; monthly: number }[] = [
-  { name: 'ChatGPT Plus', note: 'GPT + Caption Writer GPT', monthly: 20 },
+  { name: 'ChatGPT Plus', note: 'ChatGPT (the old Caption Writer GPT is retired)', monthly: 20 },
   { name: 'Claude', note: 'Fable/Opus + Claude Code', monthly: 20 },
   { name: 'HeyGen', note: 'avatar videos (Sage)', monthly: 29 },
   { name: 'ElevenLabs', note: 'voice clone / TTS', monthly: 22 },
@@ -171,7 +172,7 @@ export default function AdminPage() {
           {s && (s.unpriced?.length ?? 0) > 0 && (
             <p className="err">No price set for: <span className="mono">{s.unpriced!.join(', ')}</span>. Their calls count but show $0. Add the price in <span className="mono">PRICING</span> (lib/usage.ts).</p>
           )}
-          <p className="gnote">Measuring only. No budget caps yet: two weeks of real numbers come first.</p>
+          <div style={{ marginTop: 12 }}><SpendCard /></div>
 
           {s && (s.byDay?.length ?? 0) > 0 && (
             <>

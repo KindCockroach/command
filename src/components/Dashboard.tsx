@@ -18,6 +18,7 @@ import HomeScreen from './HomeScreen'
 import ContentDay from './ContentDay'
 import ActivityStation from './ActivityStation'
 import InstantCompose from './InstantCompose'
+import BudgetConfirm from './BudgetConfirm'
 import FloatingChat from './FloatingChat'   // StationChat (old bubble) retired Nov 25, code kept
 import PodcastEngine from './PodcastEngine'
 import PodcastStudio from './PodcastStudio'
@@ -161,6 +162,8 @@ export default function Dashboard(_props: Props) {
       if (view === 'command') window.dispatchEvent(new CustomEvent('rise-home-who', { detail: { who: 'her' } }))
     }
     window.addEventListener('station:navigate', nav)
+    // Deep link: /station?view=contentday (Her's Brief "Open" link) opens that view once on load.
+    try { const v = new URLSearchParams(window.location.search).get('view'); if (v) setTimeout(() => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: v } })), 0) } catch { /* fine */ }
     // "Send to Instant Compose" from Media → the Story sub-tab (where it lives)
     const compose = () => open('create', 'story')
     window.addEventListener('rise-goto-compose', compose)
@@ -305,6 +308,7 @@ export default function Dashboard(_props: Props) {
         </p>
       </footer>
       <FloatingChat hidden={tab === 'home' && curSub === 'chat'} />
+      <BudgetConfirm />
     </div>
   )
 }

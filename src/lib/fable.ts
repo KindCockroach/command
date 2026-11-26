@@ -5,11 +5,12 @@
 //   • WRITER_MODEL (gpt-4o) — the real writing.
 //   • CHEAP_MODEL (gpt-4o-mini) — tiny jobs (classification, distilling a voice
 //     lesson): pass cheap:true. A fraction of the cost, plenty smart for the task.
-// Needs OPENAI_API_KEY (Railway). The live-web Researcher below stays on Opus 4.8
+// Needs OPENAI_API_KEY (Railway). The live-web Researcher below runs on Claude (Sonnet 5)
 // because it needs the server-side web_search tool 4o doesn't carry here.
 import OpenAI from 'openai'
 import { safeJson } from './jsonkit'
 import { logUsage, trackedOpenAI } from './usage'
+import { budgetGate } from './spendCap'
 
 export const WRITER_MODEL = 'gpt-4o'
 export const CHEAP_MODEL = 'gpt-4o-mini'
@@ -21,9 +22,11 @@ export const FABLE_MODEL = WRITER_MODEL // back-compat alias for older imports
 // question hooks and paraphrase. Change THIS one line to move every writer at once
 // (→ 'claude-opus-4-8' for max quality, 'claude-fable-5' for top-tier).
 export const WRITER_CLAUDE = 'claude-sonnet-5'
-// Opus 4.8 stays on the Commander — the partner Mandi talks to, low volume, high
-// value. Content generation no longer rides this (it's on WRITER_CLAUDE now).
-export const COMMANDER_MODEL = 'claude-opus-4-8'
+// Commander/Man + the Research desk moved Opus 4.8 → Sonnet 5 on 2026-11-26 (Phase 8 A0,
+// Mandi's $50/month cap): $2/$10 vs $5/$25 per M tokens, 60% cheaper per call. Sonnet 5
+// carries adaptive thinking and web_search_20260209, so nothing else changes.
+export const COMMANDER_MODEL = 'claude-sonnet-5'
+export const RESEARCH_MODEL = 'claude-sonnet-5'
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
@@ -53,7 +56,7 @@ export async function fableText(opts: {
   maxTokens?: number
   effort?: Effort   // accepted for back-compat; ignored by 4o
   cheap?: boolean   // route classification/distillation to gpt-4o-mini
-  useClaude?: boolean // route real caption-writing to Opus 4.8 (better voice; can't hold vision here)
+  useClaude?: boolean // route real caption-writing to Claude (WRITER_CLAUDE, Sonnet 5; can't hold vision here)
   json?: boolean    // force valid JSON output (gpt-4o json mode) — for big structured deliverables
   imageUrl?: string
   imageUrls?: string[]
@@ -61,8 +64,8 @@ export async function fableText(opts: {
   // When images are attached (a photo, or sampled video frames), 4o looks at them.
   const images = [opts.imageUrl, ...(opts.imageUrls ?? [])].filter(Boolean) as string[]
 
-  // Quality caption-writing (no image to see) → Opus 4.8. gpt-4o swings between
-  // flat-paraphrase and purple prose; Opus holds "elevated AND plain".
+  // Quality caption-writing (no image to see) → Claude (WRITER_CLAUDE). gpt-4o swings between
+  // flat-paraphrase and purple prose; Claude holds "elevated AND plain".
   if (opts.useClaude && !opts.cheap && images.length === 0 && process.env.ANTHROPIC_API_KEY) {
     return fableHooks(opts.instructions, opts.input, opts.maxTokens ?? 4000, 'content')
   }
@@ -98,6 +101,7 @@ export async function fableText(opts: {
 export async function commanderChat(system: string, messages: { role: 'user' | 'assistant'; content: unknown }[], maxTokens = 16000): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — add it in Railway so the Commander can think.')
+  await budgetGate({ model: COMMANDER_MODEL, inputChars: system.length + JSON.stringify(messages).length, maxOutTokens: maxTokens, kind: 'commander' })
   // STREAM the reply. A long turn (a multi-slide carousel + its ```actions``` block)
   // plus adaptive thinking used to blow past the old 4000 cap and truncate — cutting
   // the buttons off ("tap to queue" with nothing to tap, replies ending mid-word).
@@ -171,6 +175,7 @@ export const COMMANDER_MAX_STEPS = 8
 const callCommanderModel: AgentModelCall = async ({ system, messages, tools, maxTokens }) => {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — add it in Railway so the Commander can think.')
+  await budgetGate({ model: COMMANDER_MODEL, inputChars: system.length + JSON.stringify(messages).length + JSON.stringify(tools).length, maxOutTokens: maxTokens, kind: 'commander' })
   const res = await fetch(ANTHROPIC_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },
@@ -304,6 +309,7 @@ export async function commanderAgent(opts: {
 export async function fableHooks(system: string, input: string, maxTokens = 3000, kind = 'hooks', _effort: Effort = 'high'): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set — needed for the writer.')
+  await budgetGate({ model: WRITER_CLAUDE, inputChars: system.length + input.length, maxOutTokens: maxTokens, kind })
   // STREAM the response. A big non-streamed reply (high max_tokens + thinking)
   // hits the request timeout — this is exactly the case the Claude API warns about.
   // Streaming keeps the connection alive with data and lets long kits finish.
@@ -367,6 +373,8 @@ export async function researchWithWeb(opts: {
     'x-api-key': apiKey,
     'anthropic-version': ANTHROPIC_VERSION,
   }
+  // Web search adds its own result tokens; count a few searches' worth on top of the prompt.
+  await budgetGate({ model: RESEARCH_MODEL, inputChars: opts.instructions.length + opts.input.length + 40000, maxOutTokens: opts.maxTokens ?? 8000, kind: 'research' })
 
   let messages: Array<Record<string, unknown>> = [{ role: 'user', content: opts.input }]
   let final: AnthropicResponse | null = null
@@ -379,7 +387,7 @@ export async function researchWithWeb(opts: {
       method: 'POST',
       headers,
       body: safeJson({
-        model: 'claude-opus-4-8',
+        model: RESEARCH_MODEL,
         max_tokens: opts.maxTokens ?? 8000,
         system: opts.instructions,
         thinking: { type: 'adaptive' },
@@ -399,7 +407,7 @@ export async function researchWithWeb(opts: {
     messages = [...messages, { role: 'assistant', content: data.content }]
   }
 
-  logUsage({ provider: 'anthropic', model: 'claude-opus-4-8', kind: 'research', inputTokens: inTok, outputTokens: outTok })
+  logUsage({ provider: 'anthropic', model: RESEARCH_MODEL, kind: 'research', inputTokens: inTok, outputTokens: outTok })
 
   return ((final?.content ?? []) as TextBlock[])
     .filter(b => b.type === 'text' && typeof b.text === 'string')

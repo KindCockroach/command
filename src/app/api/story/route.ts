@@ -49,7 +49,7 @@ Return a JSON object with ALL of these fields:
   "substack_subject": "Subject line with a specific from the story (curiosity via detail, not vagueness)",
   "threads_post": "Under 280 chars — the sharpest single observation from this story, in her voice",
   "reflection_questions": ["2 questions to take HER deeper into what this story revealed"],
-  "account_tags": ["which of these accounts this fits: mandijoy, empoweredsupermom, philosophicalmom, homeschool4humans, aimomatwork, art4thefeminine"]
+  "account_tags": ["which of these accounts this fits: mandijoy, empoweredsupermom, philosophicalmom, homeschool4humans, aimompodcast, art4thefeminine"]
 }`
 
   try {

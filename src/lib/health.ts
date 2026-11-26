@@ -20,6 +20,7 @@ import { fableText } from './fable'
 import { cut } from './jsonkit'
 import { commanderCarriesIdeas, ideasForHer } from './ideas'
 import { getSkills, noSkill } from './skills'
+import { spendStatus } from './spendCap'
 
 const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'db.json')
 const DAY = 86400000
@@ -188,7 +189,7 @@ const direction: Check = async ({ db, today, full }, f, ok) => {
   if (lapsed.length) f.push({ key: 'dir:plans-lapsed', area: 'direction', level: 'agents', count: lapsed.length, title: `${lapsed.length} account${lapsed.length > 1 ? 's' : ''} ran past the last approved weekly plan`, detail: lapsed.map(p => p.weekly?.handle ?? p.id).join(', '), fix: 'Cap drafts the next weekly plans; you approve them in Plan.' })
 
   // The Brain: rules written for retired things, and duplicate titles (likely conflicts).
-  const rules = db.memories.filter(m => m.category !== 'voice_archive')
+  const rules = db.memories.filter(m => m.category !== 'voice_archive' && !m.retired_at)
   const stale = rules.map(m => ({ m, hit: RETIRED.find(r => r.re.test(`${m.title} ${m.body}`)) })).filter(x => x.hit)
   if (stale.length) f.push({ key: 'dir:brain-stale', area: 'direction', level: 'needs_you', count: stale.length, title: `${stale.length} Brain rule${stale.length > 1 ? 's' : ''} may be stale`, detail: stale.slice(0, 6).map(x => `#${x.m.id} “${cut(x.m.title, 50)}” mentions ${x.hit!.what}`).join(' · '), fix: 'Her brings these to the weekly review. Only you change a rule: keep, edit, or archive each one.' })
   const byTitle = new Map<string, number[]>()
@@ -255,7 +256,26 @@ const reset: Check = ({ db, today }, f, ok) => {
   if (unknown) f.push({ key: 'reset:consent', area: 'reset', level: 'needs_you', count: unknown, title: `${unknown} Reset guest${unknown > 1 ? 's have' : ' has'} no email consent on record`, fix: 'Add a Luma registration question (“Can Mandi email you about future Resets?”); the import reads it. Whether attending counts as consent is your call.' })
 }
 
-const CHECKS: Check[] = [connections, stuck, direction, reset]
+// Phase 8 · A0: the monthly AI cap. At 80% Mandi hears about it; at 100% background jobs pause.
+async function spend(_ctx: Ctx, f: HealthFinding[], ok: string[]) {
+  const s = spendStatus()
+  const usd = (n: number) => '$' + n.toFixed(2)
+  if (s.over_month) f.push({ key: 'spend:over:' + s.month, area: 'store', level: 'needs_you', title: 'RISE hit its ' + usd(s.cap) + ' AI cap for ' + s.month + ' (' + usd(s.spent) + ' spent)', detail: 'Background jobs are paused until the 1st' + (s.paused.length ? ' (' + s.paused.length + ' paused so far)' : '') + '. Anything you start asks first.', fix: 'Nothing to do unless you want more room: raise the cap in /admin → AI spend.' })
+  else if (s.warn80) f.push({ key: 'spend:80:' + s.month, area: 'store', level: 'needs_you', title: 'RISE has spent ' + usd(s.spent) + ' of ' + usd(s.cap) + ' this month', detail: 'On pace for about ' + usd(s.projection) + '. Top cost: ' + (s.top5[0]?.label ?? 'n/a') + ' (' + usd(s.top5[0]?.costUsd ?? 0) + ').', fix: 'Nothing to do. At the cap, background jobs pause and anything you start asks first. Raise it in /admin → AI spend if you want.' })
+  else ok.push('AI spend ' + usd(s.spent) + ' of ' + usd(s.cap) + ' this month (on pace for ' + usd(s.projection) + ')')
+}
+
+// Phase 8 · A3: the Brief's inbox card only fills when an outside Gmail scan posts to /api/inbox.
+// When that scan goes quiet, say so instead of letting "quiet" look like an empty inbox.
+function inbox(ctx: Ctx, f: HealthFinding[], ok: string[]) {
+  const at = ctx.db.inbox?.checked_at
+  if (!at) { f.push({ key: 'inbox:never', area: 'store', level: 'fyi', title: 'The Gmail scan has never sent RISE an inbox triage', fix: 'Only matters if you want inbox triage in the Brief. Reconnecting the scan is a separate step.' }); return }
+  const age = days(ago(at))
+  if (age >= 2) f.push({ key: 'inbox:stale', area: 'store', level: 'needs_you', title: `The Gmail scan hasn’t run since ${at.slice(0, 10)} (${age} days)`, detail: 'The Brief shows that instead of an old pile.', fix: 'Reconnect the outside Gmail scan if you still want inbox triage (a separate step), or ignore this.' })
+  else ok.push(`Inbox triage ran ${at.slice(0, 10)}`)
+}
+
+const CHECKS: Check[] = [connections, stuck, direction, reset, spend, inbox]
 const ORDER = { needs_you: 0, agents: 1, build: 2, fyi: 3 } as const
 
 export async function runHealthCheck(opts: { full?: boolean; save?: boolean; today?: string } = {}): Promise<HealthReportRecord> {

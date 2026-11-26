@@ -20,7 +20,7 @@ const EVERGREEN: Fmt[] = [
   { id: 'pov-override', name: 'POV — your knowing, overridden', skeleton: 'POV: [someone] just overrode your intuition with their logic. Again.', fits: 'intuition · @mandij0y · @mandijoybeck', source: 'evergreen' },
   { id: 'for-the-woman', name: 'For the woman who…', skeleton: 'For the woman who [pain], [pain], while [cost].\nYou\'ve [behavior].\nNow it\'s time to [the turn].', fits: 'empowerment · Be There For Her', source: 'evergreen' },
   { id: 'big-number', name: 'Before / after (big number)', skeleton: 'Before I [milestone] I\'d [loss or struggle].\nToday I [result].\n[the one true thing that changed].', fits: 'transformation · success', source: 'evergreen' },
-  { id: 'i-replaced', name: '"I replaced my [X]"', skeleton: 'I replaced my entire [task or role] with [tool or shift]. Here\'s what happened.', fits: 'AI · @aimomatwork', source: 'evergreen' },
+  { id: 'i-replaced', name: '"I replaced my [X]"', skeleton: 'I replaced my entire [task or role] with [tool or shift]. Here\'s what happened.', fits: 'AI · @aimompodcast', source: 'evergreen' },
   { id: 'breaking', name: 'Breaking-news framing', skeleton: 'Breaking: [tool/thing] just made [hard thing] accessible to [the audience who thought they couldn\'t].', fits: 'AI · news-jacking', source: 'evergreen' },
 ]
 

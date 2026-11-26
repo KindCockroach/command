@@ -5,6 +5,7 @@ import { parseScript, isChildCharacter, type ScriptLine } from '@/lib/characters
 import { RefreshCw, Camera, Clapperboard, Loader2, ChevronLeft, ChevronRight, Check, X, Plus } from 'lucide-react'
 import CardMedia from './CardMedia'
 import { ink } from '@/lib/ink'
+import { isFaceless, hasVideo } from '@/lib/shootList' // shared with Her's Brief
 
 // CONTENT DAY is EXCLUSIVELY for filming: the director's chair. The script, the emotion to hit,
 // the context that sells the acting. Not a place to plan or coordinate content (that's Cap's
@@ -28,15 +29,7 @@ type ShootPlan = {
   beats?: { label: string; cue: string; text: string; emotion: string; camera: string }[]
 }
 
-const isVideo = (u?: string | null) => !!u && /\.(mp4|mov|m4v|webm|avi|mkv)(\?|$)/i.test(u)
-const hasVideo = (p: ContentPiece) => isVideo(p.media_url) || (p.media_urls ?? []).some(isVideo)
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim()
-
-// Faceless posts (trend clips, text on screen, b-roll, voiceover only) aren't filmed by Mandi.
-function isFaceless(p: ContentPiece): boolean {
-  const blob = `${p.script ?? ''} ${p.frame_plan ?? ''} ${p.notes ?? ''} ${p.post_job ?? ''}`.toLowerCase()
-  return /no[- ]?face|faceless|trend(ing)? clip|text[- ]on[- ]screen|b[- ]?roll only|voice[- ]?over only|no talking|don'?t show your face|do not show your face|on[- ]screen only|stock (clip|footage)|\bcapcut\b/.test(blob)
-}
 
 function readPlan(p: ContentPiece): ShootPlan | null {
   if (!p.shoot_plan) return null

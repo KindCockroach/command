@@ -106,10 +106,9 @@ export async function seedCoreMemories(): Promise<void> {
 
   const facts = [
     "Mandi Beck is building an AI-powered content business during nap time and after bedtime. She has four kids: Preston (4), twins Jasmine and Max (2), Lillie (15 months). Her husband is the provider.",
-    "Mandi's primary goal is $100k in 90 days. Current offer: Reset Button Workshop at $10. Main platform: Room30.ai. Podcast: AI Mom.",
+    "Mandi runs two separate businesses: Joyful Media (mindfulness; the Reset every other Sunday, $33) and AI Mom (the podcast). Caption Writer, AI Mom at Work and Room30 are retired.",
     "Mandi's build windows: nap time ~1.5 hours midday, after bedtime 9-11pm. Kid time is sacred and protected.",
-    "Mandi's Instagram AI Mom at Work account has restrictions. A new avatar account for Room30.ai is in planning.",
-    "Voice test for Mandi's content: would her most honest best friend say this at a dinner table?",
+        "Voice test for Mandi's content: would her most honest best friend say this at a dinner table?",
     "Mandi's core message: Moms are not behind. They are unsupported. Lead with the wound, then give the tool.",
     "Mandi's business priority order: cash flow first, audience growth second, systems and scale third.",
     "Mandi tends to get excited about multiple ideas simultaneously. Shiny object risk is high. Always ask: is this a Level 1 or Level 3 priority?",

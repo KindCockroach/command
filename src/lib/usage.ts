@@ -79,6 +79,9 @@ function append(row: UsageEntry) {
   write(list)
 }
 
+/** Every logged row (the tail kept in usage.json). Read-only; the spending cap counts these. */
+export function readUsageRows(): UsageEntry[] { return read() }
+
 function read(): UsageEntry[] {
   try {
     return JSON.parse(fs.readFileSync(USAGE_PATH, 'utf8')) as UsageEntry[]
@@ -137,6 +140,15 @@ export function trackedOpenAI(kind: string): OpenAI {
   const tracked: typeof fetch = async (input, init) => {
     // Half-emoji in a prompt would make OpenAI reject the whole request; take them out.
     if (init && typeof init.body === 'string') init = { ...init, body: cleanJsonBody(init.body) }
+    // Phase 8 A0: the monthly cap. Throws a BudgetError when this call must wait or needs Mandi's OK.
+    {
+      let model = 'gpt-4o'
+      let maxOut = 1000
+      const bodyText = typeof init?.body === 'string' ? init.body : ''
+      try { const b = JSON.parse(bodyText || '{}'); model = String(b.model || model); maxOut = Number(b.max_tokens || b.max_completion_tokens || maxOut) } catch { /* form data (audio) */ }
+      const { budgetGate } = await import('./spendCap')
+      await budgetGate({ model, inputChars: bodyText.length, maxOutTokens: maxOut, kind })
+    }
     const res = await fetch(input as RequestInfo, init)
     try {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url

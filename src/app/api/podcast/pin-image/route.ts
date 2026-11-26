@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { putObject, getPublicUrl, mediaKey } from '@/lib/r2'
 import { logCost } from '@/lib/usage'
+import { budgetGate } from '@/lib/spendCap'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
 
   // Pinterest pins are tall (2:3). gpt-image-1 supports 1024x1536; dall-e-3 uses
   // its nearest portrait size.
+  // Phase 8 A0: images are a flat ~$0.04; the cap still asks first once the month is spent.
+  try { await budgetGate({ model: 'gpt-image-1', inputChars: 0, maxOutTokens: 0, kind: 'image' }) }
+  catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Budget check failed' }, { status: 402 }) }
   const generate = async (model: string) => client.images.generate({
     model,
     prompt: `${imagePrompt}\n\nStyle: warm, human, editorial-quality Pinterest pin visual. Vertical 2:3 composition, subject centered with breathing room. No text baked in.`,

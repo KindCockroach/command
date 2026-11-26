@@ -86,7 +86,7 @@ Return ONLY valid JSON: {"reply": "...", "actions": [ ... ]}`
   const input = `EPISODES (what's on her screen):\n${JSON.stringify(brief, null, 1)}\n\nBANKED SCRIPTS & TRANSCRIPTS IN NOTES:\n${banked.join('\n') || '(none)'}\n\n${priorTurns ? `RECENT CONVERSATION:\n${priorTurns}\n\n` : ''}MANDI: ${ask}`
 
   try {
-    // Pod thinks on Claude Opus (COMMANDER_MODEL) for best voice + judgment; if the
+    // Pod thinks on Claude (COMMANDER_MODEL, Sonnet 5 since 2026-11-26) for best voice + judgment; if the
     // Anthropic account can't answer (e.g. out of credit), fall back to the 4o writer.
     const raw = await commanderChat(instructions, [{ role: 'user', content: input }], 4000)
       .catch(() => fableText({ instructions, input, maxTokens: 4000, json: true }))

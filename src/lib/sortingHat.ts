@@ -15,11 +15,12 @@ import {
   type ContentPiece,
 } from './db'
 import { logUsage } from './usage'
+import { budgetGate } from './spendCap'
 import { safeJson } from './jsonkit'
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
-const AGENT_MODEL = 'claude-opus-4-8' // strong judgment + tool use, half the price of Fable
+const AGENT_MODEL = 'claude-sonnet-5' // Phase 8 A0 (2026-11-26): Opus 4.8 → Sonnet 5, 60% cheaper, same tool use
 const MAX_STEPS = 8 // hard runaway/cost guard — the agent can never loop forever
 
 type Block = { type: string; text?: string; id?: string; name?: string; input?: Record<string, unknown> }
@@ -201,6 +202,7 @@ Hard rules:
   let summary = ''
 
   for (let step = 0; step < MAX_STEPS; step++) {
+    await budgetGate({ model: AGENT_MODEL, inputChars: system.length + JSON.stringify(messages).length + JSON.stringify(TOOLS).length, maxOutTokens: 4000, kind: 'sorting-hat' })
     const res = await fetch(ANTHROPIC_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': ANTHROPIC_VERSION },

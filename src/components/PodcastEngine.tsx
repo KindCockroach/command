@@ -73,7 +73,6 @@ function mediumBody(m: { sections?: { heading: string; body: string }[]; closing
 // Where people connect with Mandi — shown at the bottom of Episode Identity.
 const CONNECT_LINKS: { label: string; url: string }[] = [
   { label: 'Instagram — @mandij0y', url: 'https://instagram.com/mandij0y' },
-  { label: 'AI Mom at Work — @aimomatwork', url: 'https://instagram.com/aimomatwork' },
   { label: 'Join the list — aimomeducation.com', url: 'https://aimomeducation.com' },
 ]
 function connectBlock(): string {

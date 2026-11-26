@@ -1,44 +1,51 @@
 import { NextResponse } from 'next/server'
-import { getProducts, getFocusProductId, getBriefLine, setBriefLine, getBrandAccount } from '@/lib/db'
-import { fableText } from '@/lib/fable'
+import { readDb, setBriefLine } from '@/lib/db'
+import { getCalendar, getPlanConfig } from '@/lib/plan'
+import { needsFilming } from '@/lib/shootList'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
 
-// The Brief's "one line to film today" — in Mandi Joy's (@mandijoybeck) voice and tied
-// to RISE's current primary order (the focus product, default The Reset). Generated
-// once a day and cached, so the Brief opens instant and the line stays relevant to
-// what she's actually selling right now — not generic intuition lines.
-const PROTECT = 'Never name or blame a real person. Speak to the reader (you/your), not about the host. No "stay or leave." Point her to her own knowing.'
+// Her's Brief · "One line to film today" (Phase 8 A3). Reads Cap's calendar the way Content Day
+// does: the top unfilmed, scripted card (earliest calendar date first), with an Open link. No AI
+// call: the line is the card's own hook. If nothing needs filming, it says why. The last pick is
+// still cached in brief_line so the Brief can show it if the data can't be read.
+const todayCT = () => new Date(Date.now() - 6 * 3600000).toISOString().slice(0, 10)
+const addDays = (d: string, n: number) => new Date(Date.parse(d + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10)
 
 export async function GET() {
-  const today = new Date().toISOString().slice(0, 10)
-  const focusId = getFocusProductId()
-  const cached = getBriefLine()
-  if (cached && cached.date === today && cached.product_id === focusId && cached.line) {
-    return NextResponse.json({ line: cached.line, product_id: focusId, cached: true })
-  }
-
-  const product = getProducts().find(p => p.id === focusId) || getProducts()[0]
-  const acct = getBrandAccount('mandijoybeck')
-  const voice = acct ? `Account @${acct.handle} — ${acct.tone || ''}. ${acct.underlying_message || ''}`.slice(0, 400) : 'Warm, daring, strangely-specific, silly-serious; talks to one tired mom.'
-
-  if (!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
-    // No model available — fall back to the last line rather than breaking the Brief.
-    return NextResponse.json({ line: cached?.line || null, product_id: focusId, cached: false })
-  }
-
-  const instructions = `You are writing ONE on-screen reel line for Mandi Joy Beck (@mandijoybeck) to film today.
-VOICE: ${voice}
-Her real voice is strong, daring, a little funny and strangely-specific — never soft or salesy.
-TODAY'S PRIORITY: ${product?.name}${product?.price ? ` (${product.price})` : ''} — ${product?.mission}
-Write a single line (max ~18 words) that stops a tired mom's scroll and quietly leads toward this — a feeling or an invitation, NOT an ad. It should make her feel seen, then curious. ${PROTECT}
-Return ONLY the line, no quotes, no preamble.`
-
   try {
-    const raw = await fableText({ instructions, input: `Give me today's one line for ${product?.name}.`, useClaude: true, maxTokens: 400 })
-    const line = (raw || '').trim().replace(/^["'“”]|["'“”]$/g, '').split('\n')[0].trim()
-    if (line) { setBriefLine({ product_id: focusId, line }); return NextResponse.json({ line, product_id: focusId, cached: false }) }
-  } catch { /* fall through to cache */ }
-  return NextResponse.json({ line: cached?.line || null, product_id: focusId, cached: false })
+    const db = readDb()
+    const today = todayCT()
+    const dates = new Map<number, string>()
+    for (const i of getCalendar(today, addDays(today, 30))) {
+      const id = (i as { content_id?: number }).content_id
+      const date = (i as { date?: string }).date
+      if (id && date && (!dates.has(id) || date < dates.get(id)!)) dates.set(id, date)
+    }
+    const shoot = db.content.filter(needsFilming)
+    const onCalendar = shoot.filter(c => dates.has(c.id)).sort((a, b) => dates.get(a.id)!.localeCompare(dates.get(b.id)!) || a.id - b.id)
+    const top = onCalendar[0]
+    const thisWeek = onCalendar.filter(c => dates.get(c.id)! <= addDays(today, 6)).length
+    const cap = getPlanConfig().day_capacity
+
+    if (!top) {
+      const why = shoot.length
+        ? `${shoot.length} scripted card${shoot.length > 1 ? 's are' : ' is'} waiting to be filmed, but none is on Cap’s calendar yet. Cap places them; open Content Day to film one anyway.`
+        : 'Nothing scripted is waiting to be filmed. Cap and Ed haven’t sent a new script yet; nothing for you to do here today.'
+      return NextResponse.json({ line: null, why, card: null, left_this_week: 0 })
+    }
+    const acct = (db.brand_accounts ?? []).find(a => a.id === top.account_id)
+    const firstScriptLine = (top.script ?? '').split('\n').map(l => l.replace(/^\s*(\[[^\]]*\]|[A-Z][\w ]{0,20}:)\s*/, '').trim()).find(Boolean) ?? ''
+    const line = (top.onscreen_text ?? '').split('\n')[0].replace(/^slide \d+:\s*/i, '').trim() || firstScriptLine || top.title
+    setBriefLine({ product_id: `card:${top.id}`, line })
+    return NextResponse.json({
+      line,
+      card: { id: top.id, title: top.title, handle: acct?.handle ?? null, date: dates.get(top.id), open_url: '/station?view=contentday' },
+      left_this_week: thisWeek,
+      sized: thisWeek > cap * 7 ? `That’s more than a week’s capacity (${cap} a day). Cap will trim if you can’t fit it.` : null,
+    })
+  } catch (e) {
+    const cached = readDb().brief_line
+    return NextResponse.json({ line: cached?.line ?? null, why: `Couldn’t read the calendar (${e instanceof Error ? e.message : 'error'}).`, card: null, left_this_week: 0 })
+  }
 }

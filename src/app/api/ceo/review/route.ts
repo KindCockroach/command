@@ -23,7 +23,7 @@ export async function POST() {
   const res = await client.responses.create({
     model: 'gpt-4o',
     instructions: `You are Mandi's CEO doing her daily raw-idea review. She dumps raw thoughts; you turn them into action and content.
-North star: RISE is the product (tiers: RISE Lite → Build Your Own Command Station course → DFY Command Station). AI Mom is the funnel. Room30 is near-term cash ($30k/90 days).
+North star: two separate businesses, never cross-promoted. Joyful Media (mindfulness, PRIMARY): the Reset every other Sunday ($33), Listen To Your Intuition ($9). AI Mom: the podcast. RISE is her internal tool, not a product. Caption Writer, AI Mom at Work and Room30 are retired: never recommend them.
 
 For the raw notes below, produce a JSON object:
 {

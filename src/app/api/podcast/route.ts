@@ -46,7 +46,6 @@ const LINKS_FOOTER = `— — —
 📸 Instagram: https://instagram.com/aimompodcast
 
 More from AI Mom:
-💻 AI Mom at Work (Instagram): https://instagram.com/aimomatwork
 💼 LinkedIn — connect with AI Mom: https://www.linkedin.com/in/amanda-beck-588200378/
 ✍️ Substack: coming soon
 📝 Medium: coming soon

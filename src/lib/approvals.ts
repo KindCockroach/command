@@ -3,6 +3,7 @@
 // and every action calls that thing's own route. Nothing moves; it all still lives in its tab.
 // A new kind of approval belongs here too: add a source below so nothing hides in a tab again.
 
+import { brainAuditPending, brainAuditSummary, brainAuditDetail } from './brainAudit'
 import { readDb, getAllBrandAccounts } from './db'
 import { AGENT_LABEL } from './handoffs'
 import { cut } from './jsonkit'
@@ -15,7 +16,7 @@ export type ApprovalAction =
 export type Approval = {
   chat?: number           // turns in the Talk-to-Cap thread
   id: string
-  source: 'plan' | 'email' | 'story' | 'substack' | 'send' | 'idea' | 'question' | 'health'
+  source: 'plan' | 'email' | 'story' | 'substack' | 'send' | 'idea' | 'question' | 'health' | 'brain'
   from: string            // who it's from ("Cap", "Ed", "Cora"...)
   title: string
   detail?: string
@@ -25,7 +26,7 @@ export type Approval = {
   actions: ApprovalAction[]
 }
 
-const SOURCE_LABEL: Record<Approval['source'], string> = { plan: 'Plans', email: 'Campaign emails', story: 'Story desk', substack: 'Substack', send: 'Ready to send', idea: 'Agents’ ideas', question: 'Questions for you', health: 'Needs you (health check)' }
+const SOURCE_LABEL: Record<Approval['source'], string> = { plan: 'Plans', email: 'Campaign emails', story: 'Story desk', substack: 'Substack', send: 'Ready to send', idea: 'Agents’ ideas', question: 'Questions for you', health: 'Needs you (health check)', brain: 'Brain audit' }
 export { SOURCE_LABEL }
 
 export function getApprovals(): { items: Approval[]; counts: Record<string, number>; total: number } {
@@ -93,6 +94,13 @@ export function getApprovals(): { items: Approval[]; counts: Record<string, numb
   for (const t of db.her_threads ?? []) for (const q of t.questions.filter(q => !q.answered)) {
     items.push({ id: `question:${q.id}`, source: 'question', from: AGENT_LABEL[q.from] ?? q.from, view: 'command', at: t.updated_at,
       title: q.text, detail: `From the conversation “${t.title}”. Answer it in Her.`, actions: [{ label: 'Answer in Her', kind: 'open', view: 'command' }] })
+  }
+
+  // Phase 8 A2: the Brain audit, one item until Mandi approves or declines it.
+  if (brainAuditPending()) {
+    items.push({ id: 'brain:audit', source: 'brain', from: 'Man', view: 'agents', at: '2026-11-26T00:00:00.000Z',
+      title: 'Brain audit: clean up what the agents remember', detail: brainAuditSummary(), body: brainAuditDetail(),
+      actions: [{ label: 'Approve', kind: 'post', url: '/api/brain-audit', body: { action: 'approve' }, primary: true }, { label: 'Not now…', kind: 'post', url: '/api/brain-audit', body: { action: 'decline' }, reason: 'What should change? (goes to Man)', reasonField: 'reason' }] })
   }
 
   // What the last health check says needs her (not approvals, but hers to do).

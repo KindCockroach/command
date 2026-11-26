@@ -52,23 +52,25 @@ async function generateLines(accountId: string, count: number): Promise<number> 
 
   // Lauren's REAL moments — the raw material. Every line is built from one of these
   // so she recognizes her exact life before the turn lands. (BTFH / @theknowingis.)
+  // 🔒 2026-11-25: her problem = RELATIONSHIPS / BELONGING. The old decision-paralysis
+  // moments (apples, menus, throw pillows) are dead: "that's why all those quotes SUCK."
   const LAUREN = [
-    `organic vs regular apples — she puts both back and grabs bananas`,
-    `leaves 45 minutes early for a 12-minute drive, then sits in the parking lot`,
     `says yes when she means no, cancels last-minute, decides that's why she has no friends`,
     `the mom-friend she side-eyes but keeps scheduling (the only one free when she's free)`,
-    `felt it day one — he went cold for two days when she disagreed — called herself "too sensitive," three years in`,
-    `"is it him or is it me" — she studies his moods instead of her own body`,
-    `the 4-year-old won't sleep in his own bed; she runs the mom-group's method over her own gut about HER kid`,
-    `teacher says he's "a little behind"; her gut says he's just younger; she books the eval and cries in the car`,
-    `orders whatever her friend orders to dodge the menu; buys both throw pillows or neither`,
+    `stands at the edge of the birthday party holding a juice box she doesn't want, like it's her job there`,
+    `she's in four group chats and started none of them`,
+    `she hosts everybody; nobody invites her back; she tells herself she likes hosting`,
+    `volunteers for the bake sale to make friends and ends up running it alone`,
+    `rehearses the conversation in the car, then says "I'm good, you?" at pickup`,
+    `bends every boundary to keep a friendship, then resents the friend for walking on it`,
+    `doesn't really like anyone right now, and is a little scared of how true that is`,
   ].join('\n')
 
   const special = accountId === 'mandijoybeck'
-    ? `WHO SEES HERSELF HERE — LAUREN: a competent mom in her 30s–40s who runs everyone's life but stopped trusting her own gut. The through-line: a gut signal arrives (which apples, bedtime, a friendship, her marriage) and she OVERRIDES it, then pays for it later. Point her back to her OWN knowing — never toward "stay," never toward "leave."
+    ? `WHO SEES HERSELF HERE — LAUREN: a competent mom in her 30s–40s who runs everyone's life and feels like the odd one out in all of it. No real girlfriends, doesn't let people in, bends her own boundaries to belong and it backfires, or has gone a little bitter about people altogether. The through-line: she abandons her own knowing to fit in, then pays for it. Point her back to her OWN knowing — never toward "stay," never toward "leave." NEVER write decision paralysis or indecision.
 BUILD EACH LINE FROM ONE OF HER REAL MOMENTS, with enough SETUP that she recognizes her exact life before the turn lands:
 ${LAUREN}
-MONEY SHAPE — Hook C: "You're not [what she beats herself up for: flaky / dramatic / too sensitive / indecisive], you're [the truer reframe]." Use it often.
+MONEY SHAPE — Hook C: "You're not [what she beats herself up for: flaky / too much / too sensitive / antisocial / bitter], you're [the truer reframe]." Use it often.
 NEVER use the words "intuition" or "inner child" in the line — lead with the outcome + the weird-specific behavior; the reveal lives in the video, not the hook.`
     : `This account: ${acct.tone || ''}. ${acct.underlying_message || ''}`
 

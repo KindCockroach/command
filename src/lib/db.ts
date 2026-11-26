@@ -213,6 +213,8 @@ export type Memory = {
   agent_tags: string[]   // which agents should see this
   created_at: string
   updated_at: string
+  retired_at?: string    // Phase 8 A2: retired memories are kept as history but never injected
+  retired_why?: string
 }
 
 export type ProjectStatus = 'active' | 'paused' | 'complete' | 'archived'
@@ -1092,6 +1094,10 @@ export type WellspringPost = { id: string; at: string; email: string; name: stri
 export type WellspringStore = { config: WellspringConfig; posts: WellspringPost[] }
 
 export type Db = {
+  her_profile?: { kids_note?: string; kids_saved_at?: string } // Phase 8 A3: what Her asked Mandi once
+  learning_daily?: { date: string; text: string; history: { date: string; text: string }[] } // Phase 8 A3: the Brief's learning thing
+  brain_audit?: { status: 'proposed' | 'applied' | 'declined'; applied_at?: string; declined_at?: string; backup?: string; merged_id?: number; reason?: string } // Phase 8 A2
+  spend_cap?: import('./spendCap').SpendCapState // Phase 8 A0: monthly AI cap settings + paused-job log
   content: ContentPiece[]
   lines?: Line[]
   next_line_id?: number
@@ -2224,7 +2230,7 @@ export function deleteMemory(id: number): boolean {
 export function getMemoryContext(agentRole?: string): string {
   const db = readDb()
   const mems = (db.memories ?? []).filter(m =>
-    !agentRole || m.agent_tags.length === 0 || m.agent_tags.includes(agentRole)
+    !m.retired_at && (!agentRole || m.agent_tags.length === 0 || m.agent_tags.includes(agentRole))
   )
   const audiences = getAllAudiences()
   const audienceBlock = audiences.length

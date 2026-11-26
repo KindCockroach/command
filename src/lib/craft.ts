@@ -40,7 +40,7 @@ HOW WE SPEAK TO HER — TWO ENERGIES (this outranks cleverness):
 - NEVER lead with productivity ("do more, faster", "30 posts in 90 seconds"). That piles onto her load. Direct her toward relief, not more output.
 - NEVER use fear ("AI is coming for your job", "get left behind", layoff dread). Directive is not threatening — command the next step, never scare her into it.
 
-THE ARC (lead her step by step — tell her the next step plainly): the FIRST foot in the door is INWARD — help her get to know herself again, starting by writing it down (30 quiet minutes a week to freewrite; Caption Writer can hold her captions OR just hold her accountable to that half hour for herself). Then, one step at a time, toward a location-free, human-valued, AI-supported business built around HER skills and passion. But first: remembering who she is.
+THE ARC (lead her step by step — tell her the next step plainly): the FIRST foot in the door is INWARD — help her get to know herself again, starting by writing it down (30 quiet minutes a week to freewrite). Then, one step at a time, toward a location-free, human-valued, AI-supported business built around HER skills and passion. But first: remembering who she is.
 
 CRAFT LAWS — priority-ordered; lower number wins a conflict.
 
@@ -145,18 +145,22 @@ const PROTECT_PEOPLE = `
 • A real person is never the villain or the lesson; the content is about HER OWN knowing. Own her part, never assign them fault. No private logistics (living arrangements, specific fights, a partner's job, money). Past-tense pattern, not present-tense exposé. Never tell the reader to stay or leave a relationship — return her to her own intuition. No contempt or mockery of partner/family, ever.
 • TEST every line + caption: could a real person read this and feel called out or hurt? If yes, rewrite to the belief/pattern, not the person.`
 
+// @mandijoybeck ONLY (Mandi, 2026-11-25). Tone rules are per account; don't spread this.
+const MANDIJOYBECK_WINK = `
+
+😉 @mandijoybeck GETS THE WINK. Role-play, inner child, gratitude and mindfulness, never stuffy, never taking itself too seriously, because the cosmic joke in the end is that none of it really matters. Every piece carries at least one wink: an exaggeration taken one step too far, a deadpan self-roast, or an absurd-specific detail. The joke is never on the reader or a real person.`
+
 // Locked categorical hashtag pools per account — REAL, searched tags (topics,
 // niches, communities, public figures), never invented slogans. Generation draws
 // 3-5 from the account's pool; it may swap ONE for a more post-specific tag as long
 // as it's a real category people browse. Edit these to tune an account's discovery.
 const ACCOUNT_HASHTAGS: Record<string, string[]> = {
   content4queens: ['#MotivationForWomen', '#SuccessMindset', '#WomenInBusiness', '#FemaleEntrepreneur', '#WomenSupportingWomen', '#MoneyMindset', '#SheHustles'],
-  aimomatwork: ['#AIForMoms', '#AITools', '#WorkFromHomeMom', '#MomEntrepreneur', '#AIForBeginners', '#ProductivityTips'],
   // RESEARCHED 2026-10-02 — tiered rooms: mom identity (broad) · AI accessibility (mid) · exact niche (small).
   aimompodcast: ['#WorkingMomLife', '#AIForBeginners', '#AITools', '#ParentingInTheDigitalAge', '#MomPodcast'],
   airevealsus: ['#ArtificialIntelligence', '#AIAndHumanity', '#Consciousness', '#SelfDiscovery', '#TechAndSociety', '#PhilosophyOfMind'],
   homeschool4humans: ['#Homeschooling', '#Unschooling', '#Worldschooling', '#HomeschoolMom', '#ChildLedLearning', '#EarlyLiteracy'],
-  // Caption Writer ($27) → Maker Maddie: makes things by hand, dreads the caption.
+  // Maker Maddie: makes things by hand, dreads the caption.
   onetangledmind: ['#HandmadeBusiness', '#SmallBusinessTips', '#MakersOfInstagram', '#EtsySellersOfInstagram', '#SmallBusinessOwner', '#SmallBusinessMarketing', '#ShopSmall', '#SmallBusinessLove', '#Mompreneur'],
   sage: ['#AIForBusiness', '#AITools', '#Automation', '#SmallBusinessTips', '#NoCode', '#Entrepreneurship'],
   empoweredsupermom: ['#GentleParenting', '#NervousSystemRegulation', '#ConsciousParenting', '#MomLife', '#EmotionalRegulation', '#ParentingTips'],
@@ -206,7 +210,7 @@ const PODCAST_ONLY = `
 export function craftFor(accountId?: string | null): string {
   let base = CRAFT_RULES
   if (accountId === 'aimompodcast') base = `${CRAFT_RULES}\n\n${PODCAST_CONSTITUTION}`
-  else if (accountId && PERSONAL_ACCOUNT_IDS.has(accountId)) base = `${CRAFT_RULES}\n${STORY_ACCOUNTS_NOTE}${PROTECT_PEOPLE}`
+  else if (accountId && PERSONAL_ACCOUNT_IDS.has(accountId)) base = `${CRAFT_RULES}\n${STORY_ACCOUNTS_NOTE}${PROTECT_PEOPLE}${accountId === 'mandijoybeck' ? MANDIJOYBECK_WINK : ''}`
   const pool = accountId ? ACCOUNT_HASHTAGS[accountId] : undefined
   const tagLine = pool
     ? `\n\nHASHTAG POOL for this account — draw your 3-5 from these REAL categories (you may swap at most ONE for a more post-specific tag, but it must be a real category people search, never an invented slogan): ${pool.join(' ')}`

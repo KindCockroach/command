@@ -32,7 +32,7 @@ From ONE podcast transcript, produce THREE distinct posts. Each is a different m
 ACCOUNT ROSTER: ${accounts.map(a => `id:"${a.id}" ${a.handle} — ${a.topic}${a.avatar_id ? ' [HAS AVATAR]' : ''}${a.notes?.includes('BOUNDARY') ? ' ⚠ has content boundary' : ''}`).join(' | ')}
 Pick the best account for each post (avatar_clip MUST go to an account with [HAS AVATAR]${avatarAccounts.length ? `: ${avatarAccounts.map(a => a.id).join(', ')}` : ' — none linked yet, pick the best fit anyway'}). Obey any account boundaries.
 ${watch}
-${getAudienceContext(accounts.find(a => a.id === 'aimomatwork')?.audience_id)}
+${getAudienceContext(accounts.find(a => a.id === 'aimompodcast')?.audience_id)}
 ${CRAFT_RULES}
 
 DEFAULT FOR EVERY "onscreen_text" AND "hook": a bold claim stated straight, rather than a question (law 2a). Break it only on purpose.
