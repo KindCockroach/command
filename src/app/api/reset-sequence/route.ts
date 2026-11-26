@@ -5,7 +5,7 @@ import { runHandoff } from '@/lib/agentRun'
 import { listResetEvents } from '@/lib/luma'
 import {
   getSequence, updateSettings, editEmail, approveEmail, briefEmails, recheckEmails, dryRun, welcomeDryRun,
-  runSequence, testSend, previewEmail, capCheck, CAP_PLAN, type Segment,
+  runSequence, testSend, previewEmail, capCheck, CAP_PLAN, nextResetDate, type Segment,
 } from '@/lib/resetSequence'
 import type { BranchId, SeqEmailKey } from '@/lib/db'
 
@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
   const handoffs = listHandoffs({ limit: 200 }).filter(h => h.ref?.type === 'email')
   return NextResponse.json({
     settings: seq.settings,
+    next_reset_date: nextResetDate(),
     emails: seq.emails.map(e => ({ ...e, check: e.body ? capCheck(e) : null })),
     events: listResetEvents(),
     sends: seq.sends.slice(-200),

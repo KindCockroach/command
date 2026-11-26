@@ -13,7 +13,11 @@ type Product = {
   mission: string; fits: string; links: Link[]; cadence_days: number
   last_sent: string | null; days_since: number | null; overdue: boolean
 }
-type Person = { email?: string; labels: string[]; unsubscribed?: boolean }
+type Person = { key?: string; name?: string; email?: string; labels: string[]; unsubscribed?: boolean; resets?: { event_id: string; status: string; attended: boolean }[] }
+type ResetEv = { id: string; name: string; date: string }
+const lc = (e?: string) => (e || '').trim().toLowerCase()
+// People → "Email selected" hands its picks over through sessionStorage, then opens Campaigns.
+export const PICKED_KEY = 'rise-email-picked'
 type Draft = { subject: string; preview?: string; body: string; cta_label?: string; cta_url?: string; send_offset_days?: number }
 
 const BRAND_TEXT: Record<Brand, string> = { btfh: 'Be There For Her', wfh: 'AI Works For Her', joyful: 'Joyful Media' }
@@ -64,14 +68,20 @@ export default function CampaignsPanel() {
   const [busy, setBusy] = useState<false | 'draft' | 'send'>(false)
   const [err, setErr] = useState('')
   const [result, setResult] = useState('')
+  // Who actually gets it: the checked emails. Starts as everyone in the chosen groups;
+  // Mandi unchecks anyone. The send button and the server only ever use this list.
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [fromPeople, setFromPeople] = useState(0)
+  const [events, setEvents] = useState<ResetEv[]>([])
 
   const load = useCallback(async () => {
     setLoading(true)
-    const [c, pp] = await Promise.all([
+    const [c, pp, rs] = await Promise.all([
       fetch('/api/campaigns').then(r => r.json()).catch(() => ({ products: [] })),
       fetch('/api/people').then(r => r.json()).catch(() => ({ people: [] })),
+      fetch('/api/reset-sequence').then(r => r.json()).catch(() => ({ events: [] })),
     ])
-    setProducts(c.products || []); setPeople(pp.people || []); setLoading(false)
+    setProducts(c.products || []); setPeople(pp.people || []); setEvents(rs.events || []); setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
 
@@ -80,13 +90,53 @@ export default function CampaignsPanel() {
   const overdue = products.filter(p => p.overdue)
 
   // Live headcount — matches the backend's "any of these labels" (OR) filter.
-  const audienceCount = useMemo(() => people.filter(p =>
-    p.email && !p.unsubscribed && (labels.length ? labels.some(l => p.labels.includes(l)) : true)).length, [people, labels])
+  const group = useMemo(() => people.filter(p =>
+    p.email && (labels.length ? labels.some(l => p.labels.includes(l)) : true)), [people, labels])
+  const eligible = useMemo(() => group.filter(p => !p.unsubscribed), [group])
+  const optedOut = group.length - eligible.length
+  // Picked people outside the current groups (e.g. handed over from People) stay listed too.
+  const shown = useMemo(() => {
+    const inGroup = new Set(eligible.map(p => lc(p.email)))
+    const extra = people.filter(p => p.email && !p.unsubscribed && picked.has(lc(p.email)) && !inGroup.has(lc(p.email)))
+    return [...extra, ...eligible].sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''))
+  }, [eligible, people, picked])
+  const audienceCount = useMemo(() => shown.filter(p => picked.has(lc(p.email))).length, [shown, picked])
+
+  // Handed over from People: check exactly those people.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(PICKED_KEY)
+      if (!raw) return
+      sessionStorage.removeItem(PICKED_KEY)
+      const list = (JSON.parse(raw) as string[]).map(lc).filter(Boolean)
+      if (list.length) { setPicked(new Set(list)); setFromPeople(list.length) }
+    } catch { /* nothing handed over */ }
+  }, [])
+
+  const lastReset = useMemo(() => {
+    const today = new Date(Date.now() - 6 * 3600000).toISOString().slice(0, 10)
+    return [...events].filter(e => e.date < today).sort((a, b) => b.date.localeCompare(a.date))[0] || null
+  }, [events])
+  const resetPick = (kind: 'came' | 'no_show' | 'not_registered') => {
+    if (!lastReset) return
+    const hit = (p: Person) => {
+      const r = (p.resets || []).find(x => x.event_id === lastReset.id)
+      if (kind === 'came') return !!r?.attended
+      if (kind === 'no_show') return !!r && r.status === 'registered' && !r.attended
+      return !r || (r.status !== 'registered' && !r.attended)
+    }
+    setPicked(new Set(shown.filter(hit).map(p => lc(p.email))))
+  }
 
   const pick = (id: string) => {
     setSelectedId(id); setDrafts([]); setErr(''); setResult(''); setShowDetails(false); setFeedback('')
   }
-  const toggleLabel = (id: string) => setLabels(l => l.includes(id) ? l.filter(x => x !== id) : [...l, id])
+  const toggleLabel = (id: string) => {
+    const next = labels.includes(id) ? labels.filter(x => x !== id) : [...labels, id]
+    setLabels(next); setFromPeople(0)
+    setPicked(new Set(people.filter(p => p.email && !p.unsubscribed && (next.length ? next.some(l => p.labels.includes(l)) : true)).map(p => lc(p.email))))
+  }
+  const togglePerson = (e: string) => setPicked(s => { const n = new Set(s); n.has(e) ? n.delete(e) : n.add(e); return n })
   const setDraft = (i: number, patch: Partial<Draft>) => setDrafts(ds => ds.map((x, j) => j === i ? { ...x, ...patch } : x))
 
   const draft = async (revise = false) => {
@@ -103,11 +153,14 @@ export default function CampaignsPanel() {
 
   const send = async (dft: Draft) => {
     if (!selected) return
-    if (!confirm(`Send "${dft.subject}" to ${audienceCount} ${audienceCount === 1 ? 'person' : 'people'} now?`)) return
+    const to = shown.filter(p => picked.has(lc(p.email)))
+    if (!to.length) { setErr('Nobody is checked. Check who gets it in step 3.'); return }
+    const names = to.map(p => p.name || p.email).slice(0, 12).join(', ') + (to.length > 12 ? `, +${to.length - 12} more` : '')
+    if (!confirm(`Send "${dft.subject}" to these ${to.length} ${to.length === 1 ? 'person' : 'people'} now?\n\n${names}`)) return
     setBusy('send'); setErr('')
     const d = await fetch('/api/campaigns/send', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: selected.id, subject: dft.subject, preview: dft.preview, body: dft.body, cta_label: dft.cta_label, cta_url: dft.cta_url, audience_labels: labels }),
+      body: JSON.stringify({ product_id: selected.id, subject: dft.subject, preview: dft.preview, body: dft.body, cta_label: dft.cta_label, cta_url: dft.cta_url, recipient_emails: to.map(p => lc(p.email)) }),
     }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup.' }))
     setBusy(false)
     if (d.error) { setErr(d.error); return }
@@ -255,7 +308,36 @@ export default function CampaignsPanel() {
                       <button key={a.id} onClick={() => toggleLabel(a.id)} style={{ border: `1px solid ${labels.includes(a.id) ? color : 'var(--border)'}`, background: labels.includes(a.id) ? color : 'transparent', color: labels.includes(a.id) ? '#fff' : 'var(--text-subtle)', borderRadius: '999px', padding: '5px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{a.text}</button>
                     ))}
                   </div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-subtle)', margin: '0 0 18px' }}>None selected = everyone with an email. Pick several to reach anyone in those groups.</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-subtle)', margin: '0 0 8px' }}>Tap a group to check everyone in it, then uncheck anyone who shouldn&rsquo;t get it. Nobody is checked until you choose.</p>
+                  {fromPeople > 0 && <p style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text)', margin: '0 0 8px' }}>✓ {fromPeople} picked in People are checked below.</p>}
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={miniLbl}>Last Reset{lastReset ? ` (${new Date(`${lastReset.date}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })})` : ''}:</span>
+                    {([['came', 'Came'], ['no_show', 'Registered, didn’t come'], ['not_registered', 'Didn’t register']] as const).map(([k, t]) => (
+                      <button key={k} onClick={() => resetPick(k)} disabled={!lastReset} title={lastReset ? '' : 'Import a Reset from Luma (People › Reset · Luma import) to use these.'} style={{ border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', borderRadius: '999px', padding: '4px 11px', fontSize: '12px', fontWeight: 700, cursor: lastReset ? 'pointer' : 'not-allowed', opacity: lastReset ? 1 : 0.5, fontFamily: 'inherit' }}>{t}</button>
+                    ))}
+                    {!lastReset && <span style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>Import a Reset from Luma to use these.</span>}
+                  </div>
+                  <div style={{ border: '1px solid var(--border)', borderRadius: '11px', marginBottom: '18px', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '7px 11px', borderBottom: '1px solid var(--border)', fontSize: '12.5px' }}>
+                      <strong style={{ color: 'var(--text)' }}>{audienceCount} of {shown.length} checked</strong>
+                      <button onClick={() => setPicked(new Set(shown.map(p => lc(p.email))))} style={{ border: 0, background: 'transparent', color: 'var(--link)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '12.5px' }}>Check all</button>
+                      <button onClick={() => setPicked(new Set())} style={{ border: 0, background: 'transparent', color: 'var(--link)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '12.5px' }}>Uncheck all</button>
+                      {optedOut > 0 && <span style={{ marginLeft: 'auto', color: 'var(--text-subtle)' }}>{optedOut} unsubscribed, never sent</span>}
+                    </div>
+                    <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
+                      {shown.length === 0 && <p style={{ margin: 0, padding: '10px 11px', fontSize: '12.5px', color: 'var(--text-subtle)' }}>Nobody in these groups has an email.</p>}
+                      {shown.map(p => {
+                        const e = lc(p.email)
+                        return (
+                          <label key={e} style={{ display: 'flex', gap: '9px', alignItems: 'center', padding: '6px 11px', fontSize: '13px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}>
+                            <input type="checkbox" checked={picked.has(e)} onChange={() => togglePerson(e)} />
+                            <span style={{ fontWeight: 700, color: 'var(--text)' }}>{p.name || '(no name)'}</span>
+                            <span style={{ color: 'var(--text-subtle)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.email}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
 
                   {drafts.map((d, i) => (
                     <div key={i} style={{ border: '1px solid var(--border)', borderRadius: '13px', padding: '14px', marginBottom: '12px', background: 'var(--bg)' }}>
@@ -273,7 +355,7 @@ export default function CampaignsPanel() {
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <button onClick={() => setPreview(s => { const n = new Set(s); n.has(i) ? n.delete(i) : n.add(i); return n })} style={{ display: 'flex', alignItems: 'center', gap: '5px', border: '1px solid var(--border)', borderRadius: '8px', padding: '7px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: 'transparent', color: 'var(--text-subtle)' }}><Eye size={13} /> {preview.has(i) ? 'Edit' : 'Preview'}</button>
                         <button onClick={() => send(d)} disabled={busy !== false} style={{ display: 'flex', alignItems: 'center', gap: '6px', border: 0, borderRadius: '8px', padding: '7px 15px', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', background: color, color: '#fff', opacity: busy ? 0.6 : 1 }}>
-                          {busy === 'send' ? <Loader2 size={13} className="spin" /> : <Send size={13} />} Send to {audienceCount}
+                          {busy === 'send' ? <Loader2 size={13} className="spin" /> : <Send size={13} />} Send to {audienceCount} {audienceCount === 1 ? 'person' : 'people'}
                         </button>
                       </div>
                     </div>

@@ -53,6 +53,7 @@ export default function ResetPeoplePanel({ onImported, part = 'people' }: { onIm
   const [events, setEvents] = useState<ResetEvent[]>([])
   const [emails, setEmails] = useState<Email[]>([])
   const [settings, setSettings] = useState<Settings | null>(null)
+  const [nextDate, setNextDate] = useState<string | null>(null)
   const [people, setPeople] = useState<Person[]>([])
   const [msg, setMsg] = useState('')
 
@@ -61,7 +62,7 @@ export default function ResetPeoplePanel({ onImported, part = 'people' }: { onIm
       fetch('/api/reset-sequence').then(r => r.json()).catch(() => ({})),
       fetch('/api/people').then(r => r.json()).catch(() => ({ people: [] })),
     ])
-    setEvents(s.events || []); setEmails(s.emails || []); setSettings(s.settings || null); setPeople(p.people || [])
+    setEvents(s.events || []); setEmails(s.emails || []); setSettings(s.settings || null); setNextDate(s.next_reset_date || null); setPeople(p.people || [])
   }, [])
   useEffect(() => { load() }, [load])
   // While Ed or Cap is working, look again every few seconds.
@@ -96,7 +97,7 @@ export default function ResetPeoplePanel({ onImported, part = 'people' }: { onIm
       </>}
 
       {part === 'emails' && <>
-      {settings && <SettingsCard settings={settings} onSaved={s => setSettings(s)} />}
+      {settings && <SettingsCard settings={settings} nextDate={nextDate} onSaved={s => setSettings(s)} />}
 
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
@@ -197,7 +198,7 @@ function LumaImport({ onDone }: { onDone: () => void }) {
   )
 }
 
-function SettingsCard({ settings, onSaved }: { settings: Settings; onSaved: (s: Settings) => void }) {
+function SettingsCard({ settings, nextDate, onSaved }: { settings: Settings; nextDate: string | null; onSaved: (s: Settings) => void }) {
   const [f, setF] = useState(settings)
   const [saved, setSaved] = useState('')
   const field = (k: keyof Settings, text: string, hint?: string) => (
@@ -226,8 +227,8 @@ function SettingsCard({ settings, onSaved }: { settings: Settings; onSaved: (s: 
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 200px' }}>
           <p style={{ ...label, margin: '8px 0 4px' }}>Next Reset date</p>
-          <input type="date" style={input} value={String(f.next_reset_date ?? '')} onChange={e => setF({ ...f, next_reset_date: e.target.value })} />
-          <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-subtle)' }}>Fills in the date in every email. Moves ahead two weeks by itself after each Reset.</p>
+          <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text)' }}>{nextDate ? new Date(`${nextDate}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' }) : 'Not on the calendar yet'}</p>
+          <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--text-subtle)' }}>From your calendar (every other Sunday). Fills in the date in every email and moves ahead by itself.</p>
         </div>
         {field('next_reset_url', '"Save your seat" link (Luma)')}
         {field('survey_url', 'Survey link')}

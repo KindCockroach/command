@@ -14,7 +14,7 @@
 // registration, payment and confirmations; nothing here sells a Reset seat natively.
 
 import {
-  readDb, writeDb, getPeople, logSend, logActivity, getVoiceLessonsContext,
+  readDb, writeDb, getPeople, DEFAULT_PLAN_CONFIG, logSend, logActivity, getVoiceLessonsContext,
   type BranchId, type Contact, type Handoff, type PersonView, type ResetEvent,
   type SeqEmail, type SeqEmailKey, type SeqSettings, type ResetSequenceStore, type SeqSend, type PersonEvent,
 } from './db'
@@ -427,15 +427,15 @@ export type DryRun = { event: ResetEvent; next_event: ResetEvent | null; today: 
 const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10)
 
 // The next Reset's date as the emails say it: an imported upcoming Reset if RISE has one, else
-// the date Mandi set in Campaigns, rolled forward two weeks at a time (Resets are every other
-// Sunday) once it has passed. Null when neither is known (the email then says "the next Reset").
+// the calendar's Reset rhythm (Plan › reset_anchor, every other Sunday), rolled forward to the
+// first one on or after today. Same source the calendar and Cap's plans use, so they never disagree.
 export function nextResetDate(onOrAfter = todayCT()): string | null {
   const db = readDb()
   const ev = (db.reset_events ?? []).filter(x => x.date >= onOrAfter).sort((a, b) => a.date.localeCompare(b.date))[0]
   if (ev) return ev.date
-  let d = db.reset_sequence?.settings?.next_reset_date ?? ''
+  let d = { ...DEFAULT_PLAN_CONFIG, ...(db.plan_config ?? {}) }.reset_anchor
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null
-  for (let i = 0; d < onOrAfter && i < 200; i++) d = addDays(d, 14)
+  for (let i = 0; d < onOrAfter && i < 400; i++) d = addDays(d, 14)
   return d
 }
 const todayCT = () => new Date(Date.now() - 6 * 3600000).toISOString().slice(0, 10)

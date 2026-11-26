@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Plus, Search, X, ExternalLink, Save, ChevronDown } from 'lucide-react'
 import GuestsPanel from './GuestsPanel'
 import ResetPeoplePanel from './ResetPeoplePanel'
+import { PICKED_KEY } from './CampaignsPanel'
 
 // PEOPLE — RISE's CRM, replacing GoHighLevel. One list of everyone (signups,
 // guests, persons of interest, customers) wearing LABELS, with filters + search.
@@ -88,6 +89,14 @@ export default function PeoplePanel() {
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [adding, setAdding] = useState(false)
+  // Pick people to email: checked emails go to Campaigns' composer, already checked there.
+  const [sel, setSel] = useState<Set<string>>(new Set())
+  const mail = (p: Person) => (p.email && !p.unsubscribed ? p.email.trim().toLowerCase() : '')
+  const toggleSel = (e: string) => setSel(s => { const n = new Set(s); n.has(e) ? n.delete(e) : n.add(e); return n })
+  const emailSelected = () => {
+    try { sessionStorage.setItem(PICKED_KEY, JSON.stringify([...sel])) } catch { /* private mode */ }
+    window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'campaigns/campaigns' } }))
+  }
   const toggleExp = (k: string) => setExpanded(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n })
 
   const load = useCallback(async () => {
@@ -146,6 +155,17 @@ export default function PeoplePanel() {
             {filters.length > 0 && <button onClick={() => setFilters([])} style={{ border: 0, background: 'transparent', color: 'var(--text-subtle)', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>clear</button>}
           </div>
 
+          {!loading && shown.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '10px', fontSize: '12.5px' }}>
+              <button onClick={() => setSel(new Set([...sel, ...shown.map(mail).filter(Boolean)]))} style={{ border: 0, background: 'transparent', color: 'var(--link)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '12.5px', padding: 0 }}>Check everyone shown</button>
+              {sel.size > 0 && <>
+                <strong style={{ color: 'var(--text)' }}>{sel.size} checked</strong>
+                <button onClick={() => setSel(new Set())} style={{ border: 0, background: 'transparent', color: 'var(--link)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '12.5px', padding: 0 }}>Uncheck all</button>
+                <button onClick={emailSelected} style={{ marginLeft: 'auto', border: 0, borderRadius: '9px', padding: '7px 14px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', background: 'var(--act, var(--accent, #5A4FCF))', color: 'var(--on-act, #fff)' }}>✉️ Email these {sel.size}</button>
+              </>}
+            </div>
+          )}
+
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}><Loader2 size={20} className="spin" style={{ color: 'var(--text-subtle)' }} /></div>
           ) : shown.length === 0 ? (
@@ -158,6 +178,11 @@ export default function PeoplePanel() {
                 return (
                   <div key={p.key} style={{ border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--bg)', overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', paddingLeft: '12px' }}>
+                        {mail(p)
+                          ? <input type="checkbox" aria-label={`Pick ${p.name || p.email} to email`} checked={sel.has(mail(p))} onChange={() => toggleSel(mail(p))} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+                          : <span title={p.unsubscribed ? 'Unsubscribed' : 'No email'} style={{ width: '16px' }} />}
+                      </span>
                       <button onClick={() => setOpenKey(p.key)} style={{
                         display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', flex: 1, minWidth: 0, cursor: 'pointer', fontFamily: 'inherit',
                         border: 0, padding: '11px 14px', background: 'transparent', color: 'var(--text)',
