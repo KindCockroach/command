@@ -1,5 +1,4 @@
 'use client'
-import SpendCard from './SpendCard'
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2, HeartPulse } from 'lucide-react'
 import { healthActions, type HealthAction } from '@/lib/healthActions'
@@ -54,7 +53,6 @@ export default function HealthPanel() {
           ))}
         </div>
       </div>
-      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}><SpendCard /></div>
       {!r && <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '10px' }}>No check has run yet. Opening Her on Home runs the quick one.</p>}
       {r && (
         <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
