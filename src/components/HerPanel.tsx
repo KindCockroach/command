@@ -4,6 +4,7 @@ import { Loader2, Send, Plus } from 'lucide-react'
 import DictateButton from './DictateButton'
 import { HandoffItem, type HandoffRow } from './HandoffList'
 import ManReport from './ManReport'
+import GrowBox from './GrowBox'
 
 // Her, the front door. Say or type it; Her works out what you mean, saves your words to
 // Notes as they are, and hands it to Commander, Cap or the build log with a receipt.
@@ -120,7 +121,7 @@ export default function HerPanel() {
       )}
 
       <div className="her-in">
-        <textarea value={text} rows={2} placeholder={cur ? 'Keep going…' : 'What’s on your mind?'} onChange={e => setText(e.target.value)}
+        <GrowBox value={text} rows={2} maxHeight={260} placeholder={cur ? 'Keep going…' : 'What’s on your mind?'} onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send() }} />
         <div className="her-row">
           <DictateButton title="Talk to Her" onText={t => setText(x => (x ? x + ' ' : '') + t)} onSpoken={() => setSpoken(true)} />

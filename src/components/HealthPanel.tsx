@@ -1,7 +1,9 @@
 'use client'
+import SpendCard from './SpendCard'
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2, HeartPulse } from 'lucide-react'
 import { healthActions, type HealthAction } from '@/lib/healthActions'
+import GrowBox from './GrowBox'
 
 // Activity → System health (Loop 9). The last saved quick and full checks, with buttons to run
 // either now. Every problem has one next fix and says who acts: you, an agent, or a build session.
@@ -52,6 +54,7 @@ export default function HealthPanel() {
           ))}
         </div>
       </div>
+      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}><SpendCard /></div>
       {!r && <p style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '10px' }}>No check has run yet. Opening Her on Home runs the quick one.</p>}
       {r && (
         <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -74,7 +77,7 @@ export default function HealthPanel() {
                         </button>
                       ))}
                       {asking?.key === f.key && <>
-                        <input autoFocus placeholder={asking.a.ask} value={asking.text} onChange={e => setAsking({ ...asking, text: e.target.value })} style={{ font: 'inherit', fontSize: '12px', border: '1px solid var(--border)', borderRadius: '8px', padding: '5px 8px', background: 'var(--bg)', color: 'var(--text)' }} />
+                        <GrowBox autoFocus placeholder={asking.a.ask} value={asking.text} onChange={e => setAsking({ ...asking, text: e.target.value })} style={{ flex: 1, minWidth: 180, font: 'inherit', fontSize: '12px', border: '1px solid var(--border)', borderRadius: '8px', padding: '5px 8px', background: 'var(--bg)', color: 'var(--text)' }} />
                         <button type="button" disabled={!asking.text.trim()} onClick={() => act(f.key, asking.a, asking.text.trim())} style={{ padding: '5px 12px', borderRadius: '999px', border: 'none', background: '#5A4FCF', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
                       </>}
                     </div>

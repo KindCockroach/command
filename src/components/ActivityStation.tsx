@@ -5,6 +5,7 @@ import { Loader2, RefreshCw, Moon, Send, MessageCircle, Search } from 'lucide-re
 import CommanderModal from './CommanderModal'
 import HandoffList from './HandoffList'
 import { parseReceipts, receiptLine, withReceipts, shredRequest, announceDataChanged, type CommanderReceipt } from '@/lib/commanderActions'
+import GrowBox from './GrowBox'
 
 // THE ACTIVITY STATION — the window into RISE while Mandi's away. A running, grouped
 // feed of everything the station did (drops, transcripts, drafts, approvals, the
@@ -157,7 +158,7 @@ export default function ActivityStation() {
         <div style={{ display: 'flex', gap: '8px' }}>
           <input value={tag} onChange={e => setTag(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') runScout() }}
             placeholder="#healingjourney"
-            style={{ flex: 1, padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px', outline: 'none' }} />
+            style={{ flex: 1, padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px', fontFamily: 'inherit', outline: 'none' }} />
           <button onClick={runScout} disabled={scouting || !tag.trim()} className="rise-tactile" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '10px', border: 'none', background: tag.trim() ? 'var(--purple)' : 'var(--border)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: tag.trim() ? 'pointer' : 'default' }}>
             {scouting ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> scanning the web…</> : 'Scout'}
           </button>
@@ -200,7 +201,7 @@ export default function ActivityStation() {
           </div>
         )}
         <div style={{ display: 'flex', gap: '8px', padding: '12px 15px' }}>
-          <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') ask() }}
+          <GrowBox value={q} onChange={e => setQ(e.target.value)} onEnter={ask}
             placeholder="e.g. what did you draft last night? why that account?"
             style={{ flex: 1, padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px', outline: 'none' }} />
           <button onClick={ask} disabled={asking || !q.trim()} className="rise-tactile" style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '10px 15px', borderRadius: '10px', border: 'none', background: q.trim() ? 'var(--purple)' : 'var(--border)', color: '#fff', fontWeight: 800, fontSize: '13px', cursor: q.trim() ? 'pointer' : 'default' }}>

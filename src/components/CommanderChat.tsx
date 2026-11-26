@@ -4,6 +4,7 @@ import { uploadBig, folderFor } from '@/lib/uploadBig'
 import { Loader2, Send, Paperclip, X } from 'lucide-react'
 import CommanderModal from './CommanderModal'
 import { parseReceipts, receiptLine, withReceipts, shredRequest, announceDataChanged, type CommanderReceipt } from '@/lib/commanderActions'
+import GrowBox from './GrowBox'
 
 type Attach = { url: string; type: string; name: string }
 type Msg = { role: 'user' | 'assistant'; content: string; receipts?: CommanderReceipt[]; attach?: Attach | null }
@@ -149,11 +150,10 @@ export default function CommanderChat() {
           style={{ padding: '10px', background: 'var(--surface-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
           {uploading ? <span style={{ fontSize: '10px', fontWeight: 700 }}>{uploadPct}%</span> : <Paperclip size={14} />}
         </button>
-        <textarea value={input} onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+        <GrowBox value={input} onChange={e => setInput(e.target.value)} onEnter={send} maxHeight={300}
           placeholder="Talk to me, or drop something in… (Shift+Enter for a new line)"
-          rows={4}
-          style={{ flex: 1, resize: 'vertical', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px', fontFamily: 'inherit', lineHeight: 1.5, minHeight: '96px', maxHeight: '300px', outline: 'none' }} />
+          rows={2}
+          style={{ flex: 1, padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: '13px', fontFamily: 'inherit', lineHeight: 1.5, outline: 'none' }} />
         <button onClick={send} disabled={loading || (!input.trim() && !attach)}
           style={{ padding: '10px 14px', background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: '10px', cursor: loading || (!input.trim() && !attach) ? 'default' : 'pointer', opacity: (!input.trim() && !attach) ? 0.5 : 1, display: 'flex', alignItems: 'center', fontWeight: 800 }}>
           {loading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={14} />}

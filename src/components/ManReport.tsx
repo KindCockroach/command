@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import GrowBox from './GrowBox'
 
 // Inside Her: Man's (Commander's) report. He runs the quick health check every time Her opens
 // (the full one weekly) and carries the agents' ideas up. Her shows Mandi only what needs her,
@@ -91,7 +92,7 @@ export default function ManReport() {
               {i.why && <span className="mr-d">Why: {i.why}</span>}
               {noFor === i.id ? (
                 <div className="mr-row">
-                  <input value={reason} placeholder="Why not? (goes to Notes with it)" onChange={e => setReason(e.target.value)} />
+                  <GrowBox value={reason} placeholder="Why not? (goes to Notes with it)" onChange={e => setReason(e.target.value)} />
                   <button type="button" disabled={busy === i.id} onClick={() => answer(i.id, 'no')}>Park it</button>
                   <button type="button" className="mr-ghost" onClick={() => { setNoFor(null); setReason('') }}>Cancel</button>
                 </div>
@@ -128,5 +129,5 @@ const css = `
 .mr-row button{border:0;background:#7C4DDB;color:#fff;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
 .mr-row button.mr-ghost{background:none;color:var(--text);border:1px solid var(--border,#E7E1D6)}
 .mr-row button:disabled{opacity:.5}
-.mr-row input{flex:1;min-width:160px;font:inherit;font-size:12px;border:1px solid var(--border,#E7E1D6);border-radius:9px;padding:5px 9px;background:var(--bg,#fff);color:var(--text)}
+.mr-row input,.mr-row textarea{flex:1;min-width:160px;font:inherit;font-size:12px;border:1px solid var(--border,#E7E1D6);border-radius:9px;padding:5px 9px;background:var(--bg,#fff);color:var(--text)}
 `

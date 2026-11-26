@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2, RefreshCw, ChevronDown } from 'lucide-react'
 import { TalkToCapButton, TalkToCapThread } from './TalkToCap'
+import GrowBox from './GrowBox'
 
 // Approve: everything waiting on your yes, in one window. Each thing still lives in its own tab;
 // this gathers them, lets you read the draft right here, and approve (or say no with a reason).
@@ -87,7 +88,7 @@ export default function ApprovalsPanel() {
         {chatOpen === it.id && <TalkToCapThread id={it.id} onChanged={() => load()} />}
         {ask?.item === it.id && (() => { const a = it.actions[ask.action] as Extract<Action, { kind: 'post' }>; return (
           <div className="ap-row">
-            <input autoFocus placeholder={a.reason} value={ask.text} onChange={e => setAsk({ ...ask, text: e.target.value })} />
+            <GrowBox autoFocus placeholder={a.reason} value={ask.text} onChange={e => setAsk({ ...ask, text: e.target.value })} />
             <button type="button" className="ap-p" disabled={!ask.text.trim()} onClick={() => run(it, a, ask.text.trim())}>{a.label.replace('…', '')}</button>
             <button type="button" className="ap-ghost" onClick={() => setAsk(null)}>Cancel</button>
           </div>
@@ -113,8 +114,8 @@ button.ap-gh{cursor:pointer}
 .ap-d{font-size:12px;color:var(--text-subtle);line-height:1.5}
 .ap-link{all:unset;cursor:pointer;font-size:12px;font-weight:600;color:var(--link)}
 .ap-body{white-space:pre-wrap;font-size:14px;line-height:1.55;background:var(--surface-raised,#F4F1EC);border-radius:10px;padding:10px 12px;max-height:420px;overflow-y:auto}
-.ap-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;align-items:center}
-.ap-row input{flex:1;min-width:200px;font:inherit;font-size:12px;border:1px solid var(--border);border-radius:9px;padding:6px 9px;background:var(--bg);color:var(--text)}
+.ap-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;align-items:flex-end}
+.ap-row input,.ap-row textarea{flex:1;min-width:200px;font:inherit;font-size:12px;border:1px solid var(--border);border-radius:9px;padding:6px 9px;background:var(--bg);color:var(--text)}
 .ap-p,.ap-ghost{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer}
 .ap-p{border:0;background:#5A4FCF;color:#fff}
 .ap-ghost{border:1px solid var(--border);background:var(--surface);color:var(--text)}
