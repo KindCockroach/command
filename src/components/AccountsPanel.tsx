@@ -1024,7 +1024,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
             <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 8px', borderRadius: '10px', background: statusChip.bg, color: statusChip.color }}>{statusChip.label}</span>
             {gallery.length > 0 ? <span style={{ fontSize: '9px', color: '#3DAA7C', fontWeight: 700 }}>📎 {gallery.length > 1 ? `${gallery.length} slides` : 'media'}</span>
               : post.image_prompt ? <span style={{ fontSize: '9px', color: 'var(--text-subtle)' }}>🎨 prompt ready</span> : null}
-            {post.note_id ? <button onClick={e => { e.stopPropagation(); openLinkedNote(post.note_id!) }} title="Open the linked draft in Notes" style={{ fontSize: '9px', fontWeight: 800, padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: ink(accentColor), border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>📄 Draft note →</button> : null}
+            {post.note_id ? <button onClick={e => { e.stopPropagation(); openLinkedNote(post.note_id!) }} title={post.quote ? post.quote.label : 'Open the linked draft in Notes'} style={{ fontSize: '9px', fontWeight: 800, padding: '3px 8px', borderRadius: '10px', background: `${accentColor}18`, color: ink(accentColor), border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>{post.quote ? `📝 From Note #${post.note_id} →` : '📄 Draft note →'}</button> : null}
           </div>
         </div>
 

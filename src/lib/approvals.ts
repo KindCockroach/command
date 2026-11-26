@@ -8,6 +8,7 @@ import { readDb, getAllBrandAccounts } from './db'
 import { AGENT_LABEL } from './handoffs'
 import { cut } from './jsonkit'
 import { healthActions } from './healthActions'
+import { reviewBody, kindsText } from './noteIdeas'
 
 export type ApprovalAction =
   | { label: string; kind: 'post'; url: string; method?: 'POST' | 'PATCH'; body: Record<string, unknown>; reason?: string; reasonField?: string; primary?: boolean; resolve?: string }
@@ -16,7 +17,7 @@ export type ApprovalAction =
 export type Approval = {
   chat?: number           // turns in the Talk-to-Cap thread
   id: string
-  source: 'plan' | 'email' | 'story' | 'substack' | 'send' | 'idea' | 'question' | 'health' | 'brain'
+  source: 'plan' | 'email' | 'story' | 'substack' | 'send' | 'idea' | 'question' | 'health' | 'brain' | 'notes'
   from: string            // who it's from ("Cap", "Ed", "Cora"...)
   title: string
   detail?: string
@@ -26,7 +27,7 @@ export type Approval = {
   actions: ApprovalAction[]
 }
 
-const SOURCE_LABEL: Record<Approval['source'], string> = { plan: 'Plans', email: 'Campaign emails', story: 'Story desk', substack: 'Substack', send: 'Ready to send', idea: 'Agents’ ideas', question: 'Questions for you', health: 'Needs you (health check)', brain: 'Brain audit' }
+const SOURCE_LABEL: Record<Approval['source'], string> = { plan: 'Plans', email: 'Campaign emails', story: 'Story desk', substack: 'Substack', send: 'Ready to send', idea: 'Agents’ ideas', question: 'Questions for you', health: 'Needs you (health check)', brain: 'Brain audit', notes: 'Ideas from your notes' }
 export { SOURCE_LABEL }
 
 export function getApprovals(): { items: Approval[]; counts: Record<string, number>; total: number } {
@@ -101,6 +102,14 @@ export function getApprovals(): { items: Approval[]; counts: Record<string, numb
     items.push({ id: 'brain:audit', source: 'brain', from: 'Man', view: 'agents', at: '2026-11-26T00:00:00.000Z',
       title: 'Brain audit: clean up what the agents remember', detail: brainAuditSummary(), body: brainAuditDetail(),
       actions: [{ label: 'Approve', kind: 'post', url: '/api/brain-audit', body: { action: 'approve' }, primary: true }, { label: 'Not now…', kind: 'post', url: '/api/brain-audit', body: { action: 'decline' }, reason: 'What should change? (goes to Man)', reasonField: 'reason' }] })
+  }
+
+  // Phase 8 A7: what Cap found in her Notes, one item with his top picks.
+  const ni = db.note_ideas?.review
+  if (ni?.status === 'proposed') {
+    items.push({ id: 'notes:picks', source: 'notes', from: 'Cap (your own words, from your notes)', view: 'story', at: ni.at,
+      title: `Found ${kindsText(ni.counts)} in your notes`, detail: ni.summary, body: reviewBody(db),
+      actions: [{ label: 'Make these cards', kind: 'post', url: '/api/notes-ideas', body: { action: 'approve' }, primary: true }, { label: 'Not these…', kind: 'post', url: '/api/notes-ideas', body: { action: 'decline' }, reason: 'What should Cap pick instead? (he uses it next time)', reasonField: 'reason' }] })
   }
 
   // What the last health check says needs her (not approvals, but hers to do).

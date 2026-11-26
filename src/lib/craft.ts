@@ -138,7 +138,7 @@ const PERSONAL_ACCOUNT_IDS = new Set(['mandijoybeck', 'amandabeck', 'theknowingi
 
 // HARD RULE — protect the real people in her life (her mom, Preston/partner, family,
 // friends). Applied to the accounts that draw on her real story.
-const PROTECT_PEOPLE = `
+export const PROTECT_PEOPLE = `
 
 ⚠ PROTECT THE REAL PEOPLE IN HER LIFE (non-negotiable — her mom, her partner, family, friends):
 • NEVER name or make identifiable a real person, and NEVER attribute a hurtful line or action to one ("my mom said…", "my husband told me…"). TRANSMUTE it instead — to the internalized belief ("somewhere I learned my feelings were 'too much'" / "I was the 'dramatic' one"), OR to the reader ("if you were the one always called 'too sensitive'…"), OR a faceless source ("you were told", "the room decided") — never a specific person.

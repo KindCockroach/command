@@ -9,6 +9,7 @@ import {
   type BranchId, type Plan, type PlanNote, type CalendarItem, type PlanConfig, type MonthlyPlanBody, type WeeklyPlanBody, type ContentPiece,
 } from './db'
 import { effectiveUpload } from './cardMedia'
+import { quoteFormatFor } from './quotes'
 
 // ── dates (plain YYYY-MM-DD math in UTC so it never drifts with the server's timezone) ──
 const DAY = 86400000
@@ -365,8 +366,11 @@ export function generateCalendar(from = todayStr(), days = 14): { created: numbe
     if ((have[k] ?? 0) >= wantedBy[k]) continue
     have[k] = (have[k] ?? 0) + 1
     let card: ContentPiece | undefined
+    const qf = n.slot === 'post' ? quoteFormatFor(n.format) : null
     if (n.slot === 'post') {
-      const fresh = readDb().content.find(c => c.account_id === n.account_id && (c.status === 'idea' || c.status === 'in_progress') && !usedContent.has(c.id) && !c.scheduled_at)
+      const open = readDb().content.filter(c => c.account_id === n.account_id && (c.status === 'idea' || c.status === 'in_progress') && !usedContent.has(c.id) && !c.scheduled_at)
+      // A7: a quote slot takes a ready quote card first (her ideas from Notes she approved); other slots leave those for quote slots.
+      const fresh = qf ? (open.find(c => c.quote?.text && c.quote_format === qf) ?? open.find(c => c.quote?.text && c.quote_format !== 'film') ?? open.find(c => !c.quote)) : (open.find(c => !c.quote || c.quote_format === 'film') ?? open[0])
       if (fresh) { card = fresh; reused++ }
     }
     if (!card) {
@@ -375,6 +379,7 @@ export function generateCalendar(from = todayStr(), days = 14): { created: numbe
         type: n.slot === 'reset' ? 'workshop' : n.slot === 'podcast' ? 'podcast' : 'post',
         account_id: n.account_id, river_source: 'cap-plan',
         notes: `Planned by Cap for ${n.date} (${n.plan_id}). ${n.format ? `Format: ${n.format}. ` : ''}Script and captions get written on this same record.`,
+        ...(qf ? { quote_format: qf, type: qf === 'carousel' ? 'carousel' as const : qf === 'still' ? 'image' as const : 'video' as const } : {}),
       })
       created++
     }
@@ -388,7 +393,14 @@ export function generateCalendar(from = todayStr(), days = 14): { created: numbe
   writeDb(db)
   // New slots get a real title, a hook, Cap's job pick and what to film (Ed, one at a time, in the background).
   const fresh = out.map(o => o.content_id)
-  if (fresh.length) void import('./cardAudit').then(async m => { for (const id of fresh) await m.fillCardBasics(id).catch(() => null) }).catch(() => null)
+  // A7: a quote slot gets its quote first (Ed: her words from Notes or the Well, else written in her voice, labeled).
+  if (fresh.length) void Promise.all([import('./cardAudit'), import('./quotes')]).then(async ([m, q]) => {
+    for (const id of fresh) {
+      const c = readDb().content.find(x => x.id === id)
+      if (c?.quote_format && c.quote_format !== 'film' && !c.quote?.text) await q.fillQuoteCard(id, c.quote_format).catch(() => null)
+      await m.fillCardBasics(id).catch(() => null)
+    }
+  }).catch(() => null)
   return { created, reused, moved, dropped, window: [from, to] }
 }
 

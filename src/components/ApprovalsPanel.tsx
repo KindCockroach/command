@@ -11,7 +11,7 @@ type Action = { label: string; kind: 'post'; url: string; method?: 'POST' | 'PAT
 type Item = { id: string; source: string; from: string; title: string; detail?: string; body?: string; at: string; view: string; actions: Action[]; chat?: number }
 type Data = { items: Item[]; counts: Record<string, number>; total: number; labels: Record<string, string> }
 
-const ORDER = ['plan', 'email', 'story', 'substack', 'send', 'idea', 'question', 'health']
+const ORDER = ['plan', 'notes', 'email', 'story', 'substack', 'send', 'idea', 'question', 'brain', 'health']
 const go = (view: string) => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view } }))
 
 export default function ApprovalsPanel() {

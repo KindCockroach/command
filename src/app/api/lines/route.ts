@@ -148,9 +148,10 @@ async function replenish(accountId: string): Promise<number> {
 
 // GET /api/lines?account=mandijoybeck  → active lines (newest first), auto-replenished.
 // GET /api/lines                        → all active lines across accounts.
+// Phase 8 A7: no standalone Lines generation any more (quotes are a card format Cap plans).
+// GET only reads what is there; listed for removal in Phase 10.
 export async function GET(req: NextRequest) {
   const account = new URL(req.url).searchParams.get('account') || undefined
-  if (account) await replenish(account)
   return NextResponse.json({ lines: getLines({ accountId: account }) })
 }
 
@@ -164,11 +165,14 @@ export async function POST(req: NextRequest) {
   if (body.id != null && (body.used || body.dismiss)) {
     const row = updateLine(Number(body.id), body.used ? { used: true } : { dismissed: true })
     if (!row) return NextResponse.json({ error: 'line not found' }, { status: 404 })
-    const refilled = await replenish(row.account_id)
+    const refilled = 0   // Phase 8 A7: no refills
     return NextResponse.json({ ok: true, refilled, lines: getLines({ accountId: row.account_id }) })
   }
 
   if (body.more && body.account) {
+    return NextResponse.json({ error: 'Lines are retired. Quotes are a card format Cap plans now.' }, { status: 410 })
+  }
+  if (false as boolean) {
     if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'No writer key set — add ANTHROPIC_API_KEY in Railway.' }, { status: 400 })
     }

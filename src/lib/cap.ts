@@ -93,6 +93,7 @@ export async function writerDraft(writer: Writer, id: number, opts: { platforms:
     c.post_job && `The one job of this post: ${c.post_job}`,
     c.onscreen_text && `On-screen text in the video (the FIRST hook; the caption must open a different door): ${c.onscreen_text}`,
     (c.script || c.transcript) && `What she says:\n${(c.script || c.transcript).slice(0, 2500)}`,
+    c.quote?.text && `THIS IS A QUOTE CARD (${c.quote.label}). The words on it are fixed: ${c.quote.kind === 'written' ? 'written in her voice' : 'her exact words, never reword them'}:\n${c.quote.text.slice(0, 1200)}\nThe caption builds AROUND them and opens a different door; it never repeats or explains the quote.`,
     c.source_context && `HER OWN WORDS behind this post:\n${c.source_context.slice(0, 1500)}`,
     note && `MANDI'S NOTE ON THE FINISHED VIDEO (what changed from the plan; this wins over the plan):\n${note}`,
     well.length && `HER WORDS FROM THE WELL (her own past captions on this theme; pull and sharpen her phrasing first, never invent a voice):\n${well.map(w => `- (${w.date.slice(0, 10)}) ${w.cap}`).join('\n')}`,

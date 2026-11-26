@@ -69,6 +69,45 @@ export type ContentPiece = {
   characters?: string[]            // roster names (db.characters), open and extensible; a dialogue card has several
   characters_by?: 'auto' | 'cap' | 'mandi' | null  // 'mandi' = she set them by hand; auto-tagging never overwrites hers
   filmed_at?: string | null        // she tapped Filmed ✓ in Content Day (it leaves the shoot list, like an uploaded video)
+  // Phase 8 A7: a quote card. The words on it and where they came from, always labeled.
+  quote?: QuoteSource | null
+  quote_format?: QuoteFormat | null
+}
+
+// Phase 8 A7: quotes are a card format. Three kinds, never mixed up:
+//   'well'    = a REAL quote, her exact words from an old caption (date kept)
+//   'note'    = HER IDEA FROM NOTES, her exact words from a note she dropped (Note #N kept)
+//   'written' = written in her voice by Ed (labeled as written, never passed off as a quote)
+export type QuoteKind = 'well' | 'note' | 'written'
+export type QuoteFormat = 'still' | 'carousel' | 'broll_overlay' | 'film'
+export type QuoteSource = { kind: QuoteKind; text: string; label: string; note_id?: number | null; date?: string | null; idea_id?: string | null; softened?: boolean }
+
+// Phase 8 A7: the idea bank. What Cap found in her Notes: quotes, lines and skits, in her words.
+export type NoteIdeaKind = 'quote' | 'line' | 'skit'
+export type NoteIdea = {
+  id: string
+  kind: NoteIdeaKind
+  text: string                     // her exact words from the note (never rewritten here)
+  note_id: number
+  note_title: string
+  account_id: string | null        // Cap's guess; Mandi can change it on the card
+  branch: BranchId | null          // never crosses: Joyful Media or AI Mom (WFH)
+  why?: string                     // one line: why it's usable
+  careful?: string | null          // names a real person or could hurt one: Ed softens it before it goes on a card
+  characters?: string[]            // skits: who she plays
+  status: 'banked' | 'picked' | 'carded' | 'passed'
+  pick_why?: string | null
+  format?: QuoteFormat | null
+  content_id?: number | null
+  created_at: string
+  updated_at: string
+}
+export type NoteIdeaStore = {
+  ideas: NoteIdea[]
+  mined: Record<string, string>    // note id → the note's updated_at when Cap read it (an edited note gets read again)
+  backfill?: { status: 'running' | 'done' | 'failed'; started_at: string; finished_at?: string | null; notes_total: number; notes_read: number; found: number; error?: string | null; handoff_id?: string | null }
+  review?: { status: 'proposed' | 'approved' | 'declined'; at: string; summary: string; pick_ids: string[]; reason?: string | null; counts: Record<NoteIdeaKind, number> }
+  last_daily?: string | null
 }
 
 // A character Mandi plays on camera. The roster is open: Cap (or she) mints a new one the
@@ -141,6 +180,7 @@ export type HandoffKind =
   | 'interview_prep'  // Cora reads the Well like a journalist (loss, depression, anxiety) → her notebook of questions
   | 'interview_shape' // Cora turns the charged points from the interview into Medium story shapes
   | 'card_fix'        // Cap → Ed: fill what cards are missing (title, on-screen hook, job, caption, what to film)
+  | 'notes_mine'      // Phase 8 A7: Cap reads her Notes for quotes, lines and skits → the idea bank
 export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log' | 'email' | 'story' | 'substack' | 'reuse' | 'interview'; id: string | number; label?: string }
 export type Handoff = {
   id: string
@@ -1142,6 +1182,7 @@ export type Db = {
   skills?: Skill[]                                                                       // Phase 6: Loop 10
   agent_ideas?: AgentIdea[]                                                              // Phase 6: Loop 14
   reuse?: ReuseProposal[]                                                                // Phase 6b: Loop 15
+  note_ideas?: NoteIdeaStore                                                             // Phase 8 A7: quotes, lines, skits from her Notes
   stories?: Story[]                                                                      // Phase 6b: Loop 11
   story_pitches?: StoryPitch[]                                                           // Cora's story ideas from the Well
   story_seeds?: { at: string; count: number; seeds: string[] }                           // Cora's last read of the Well (pass 1)
@@ -2104,6 +2145,8 @@ export function createContent(data: Partial<ContentPiece>): ContentPiece {
     note_id: data.note_id,
     shoot_format: data.shoot_format,
     shoot_plan: data.shoot_plan,
+    ...(data.quote ? { quote: data.quote } : {}),            // Phase 8 A7
+    ...(data.quote_format ? { quote_format: data.quote_format } : {}),
   }
   // Characters are tagged at creation (Content Day batches the shoot by them).
   if (data.characters?.length) setCardCharacters(db, piece, data.characters)

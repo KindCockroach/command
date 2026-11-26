@@ -12,7 +12,7 @@ const nowIso = () => new Date().toISOString()
 
 // Handoffs an agent picks up by itself. If one of these is still open after this long,
 // the run died (a restart, a timeout) and it shows as stuck with a retry.
-export const AUTO_KINDS: HandoffKind[] = ['footage_in', 'write', 'review', 'ed_check', 'rewrite', 'her_note', 'winners_in', 'film_now', 'email_write', 'email_review', 'email_rewrite', 'sweep', 'story', 'longform_write', 'longform_check', 'substack_series', 'substack_outline', 'story_find', 'interview_prep', 'interview_shape', 'card_fix']
+export const AUTO_KINDS: HandoffKind[] = ['footage_in', 'write', 'review', 'ed_check', 'rewrite', 'her_note', 'winners_in', 'film_now', 'email_write', 'email_review', 'email_rewrite', 'sweep', 'story', 'longform_write', 'longform_check', 'substack_series', 'substack_outline', 'story_find', 'interview_prep', 'interview_shape', 'card_fix', 'notes_mine']
 export const STUCK_MS = 10 * 60 * 1000
 
 export const AGENT_LABEL: Record<HandoffAgent, string> = {

@@ -27,7 +27,7 @@ export async function register() {
     const next = new Date(now)
     next.setUTCHours(11, 30, 0, 0)
     if (next <= now) next.setUTCDate(next.getUTCDate() + 1)
-    setTimeout(async () => { await ping('/api/cron/draft-from-notes'); await ping('/api/cron/plan-projects'); runDaily() }, next.getTime() - now.getTime())
+    setTimeout(async () => { await ping('/api/cron/draft-from-notes'); await ping('/api/cron/plan-projects'); await ping('/api/cron/notes-ideas'); runDaily() }, next.getTime() - now.getTime())
   }
 
   // Weekly: next Monday at 13:00 UTC. Cheap (one pass a week) — keeps spend down.

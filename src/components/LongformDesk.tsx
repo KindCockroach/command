@@ -17,6 +17,17 @@ type Sub = { account_id: string; cadence: string | null; history_note_ids: numbe
 type Reuse = { id: string; note_id: number; note_title: string; goal: string; who_for: string; by_when: string | null; kind: string; why: string; status: string; ed?: Ed | null; replies?: { text: string }[] }
 
 const STATUS: Record<string, string> = { forming: 'Cora is forming it', outlined: 'Outlined', writing: 'Pod is writing', checking: 'Ed is checking', ready: 'Ready for your approval', approved: 'Approved', killed: 'Didn’t hold / parked', split: 'Split into separate stories', failed: 'Failed (retry in Activity)', proposed: 'Proposed', outlining: 'Biz + Cap are outlining', published: 'Published' }
+type NoteIdeasView = { counts: { quote: number; line: number; skit: number }; notes_mineable: number; notes_unread: number; estimate_usd: number; backfill: { status: string; notes_total: number; notes_read: number; found: number; error?: string | null } | null; review: { status: string } | null }
+// Phase 8 A7: one plain line about Cap's read of her notes.
+function notesLine(v: NoteIdeasView | null): string {
+  if (!v) return 'Cap reads your notes once, in your own words, and checks new ones each morning.'
+  const pl = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
+  const bank = `${pl(v.counts.quote, 'quote')}, ${pl(v.counts.line, 'line')}, ${pl(v.counts.skit, 'skit')} banked`
+  if (v.backfill?.status === 'running') return `Reading… ${v.backfill.notes_read} of ${v.backfill.notes_total} notes, ${v.backfill.found} found so far.`
+  if (v.backfill?.status === 'failed' && v.backfill.error) return `Stopped: ${v.backfill.error} ${bank}.`
+  if (!v.backfill) return `${v.notes_unread} notes to read, about $${Math.max(v.estimate_usd, 0.01).toFixed(2)}. Your exact words only, each linked to its note; his top picks go to Approve.`
+  return `${bank}.${v.notes_unread ? ` ${v.notes_unread} new notes wait for the morning check.` : ' Every note is read; new ones get checked each morning.'}${v.review?.status === 'proposed' ? ' His picks are in Approve.' : ''}`
+}
 const post = (url: string, body: unknown, method = 'POST') => fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => ({ error: 'Connection hiccup.' }))
 
 function EdLine({ ed }: { ed?: Ed | null }) {
@@ -40,13 +51,15 @@ export default function LongformDesk() {
   const [form, setForm] = useState({ text: '', goal: '', campaign: '', branch: 'joyful_media' })
   const [hist, setHist] = useState('')
   const [cad, setCad] = useState('')
+  const [ni, setNi] = useState<NoteIdeasView | null>(null)
 
   const load = useCallback(async () => {
     const [a, b, c] = await Promise.all([fetch('/api/stories').then(r => r.json()).catch(() => null), fetch('/api/substack').then(r => r.json()).catch(() => null), fetch('/api/sweep').then(r => r.json()).catch(() => null)])
     if (a?.stories) setStories(a.stories); if (b) setSub(b); if (c?.proposals) setReuse(c.proposals)
+    fetch('/api/notes-ideas').then(r => r.json()).then(setNi).catch(() => null)
   }, [])
   useEffect(() => { load() }, [load])
-  const working = stories.some(s => ['forming', 'writing', 'checking'].includes(s.status)) || (sub?.issues ?? []).some(i => ['outlining', 'writing', 'checking'].includes(i.status))
+  const working = ni?.backfill?.status === 'running' || stories.some(s => ['forming', 'writing', 'checking'].includes(s.status)) || (sub?.issues ?? []).some(i => ['outlining', 'writing', 'checking'].includes(i.status))
   useEffect(() => { if (!working) return; const t = setInterval(load, 5000); return () => clearInterval(t) }, [working, load])
 
   const act = async (key: string, url: string, body: unknown, method = 'POST', ok = '') => {
@@ -69,6 +82,7 @@ export default function LongformDesk() {
         <>
           <CoraInterview />
           <div className="lf-row"><button type="button" disabled={busy === 'find'} onClick={() => act('find', '/api/stories', { action: 'find' }, 'POST', 'Cora is reading your captions (a few minutes). Her story ideas will land in Approve.')}>{busy === 'find' ? <Loader2 size={12} className="spin" /> : null} Cora: find stories in my captions</button><span className="lf-d">She reads all your captions in the Well and pitches 6–8 stories with clickable headlines.</span></div>
+          <div className="lf-row"><button type="button" disabled={busy === 'notes' || ni?.backfill?.status === 'running' || !ni?.notes_unread} onClick={() => act('notes', '/api/notes-ideas', { action: 'backfill' }, 'POST', 'Cap is reading your notes (a few minutes). His top picks will land in Approve.')}>{busy === 'notes' || ni?.backfill?.status === 'running' ? <Loader2 size={12} className="spin" /> : null} Cap: find quotes, lines & skits in my notes</button><span className="lf-d">{notesLine(ni)}</span></div>
           <p className="lf-s">Cap sends a story to Cora with the goal it serves. Cora untangles it, checks facts with Owl and the open angle with Ten, and outlines it. Pod writes it (Medium for Joyful Media, teleprompter for either), Ed checks it, Cap dates it, you approve.</p>
           <div className="lf-form">
             <textarea rows={4} placeholder="The story, as you'd tell it (several tangled together is fine)" value={form.text} onChange={e => setForm({ ...form, text: e.target.value })} />
