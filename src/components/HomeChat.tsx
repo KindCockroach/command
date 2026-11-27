@@ -50,7 +50,12 @@ export default function HomeChat() {
           <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)', marginLeft: 4 }}>{me.what}</span>
         </div>
         {items.length > 0 && (
-          <div className="rp-subtabs" aria-label="Needs you">
+          <button type="button" className="rp-pill rp-secondary rp-needs-line" onClick={() => go('approve')}>
+            {items.length} thing{items.length === 1 ? '' : 's'} need{items.length === 1 ? 's' : ''} you →
+          </button>
+        )}
+        {items.length > 0 && (
+          <div className="rp-subtabs rp-needs-full" aria-label="Needs you">
             {rest > 0 && <button type="button" className="rp-pill rp-secondary" onClick={() => go('approve')}>Waiting on your yes <span className="rp-count">{rest}</span></button>}
             {health > 0 && <button type="button" className="rp-pill rp-secondary" onClick={() => go('approve')}>Health check <span className="rp-count">{health}</span></button>}
           </div>

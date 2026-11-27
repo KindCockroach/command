@@ -17,7 +17,7 @@ import HomeScreen from './HomeScreen'
 // LinesPanel ("Quick Post") retired Nov 25: off the menu, code + data kept; the old view forwards to Home.
 import ContentDay from './ContentDay'
 import ActivityStation from './ActivityStation'
-import InstantCompose from './InstantCompose'
+import QuickCaption from './QuickCaption'   // B5: replaces InstantCompose (file kept until Phase 10)
 import BudgetConfirm from './BudgetConfirm'
 import FloatingChat from './FloatingChat'   // StationChat (old bubble) retired Nov 25, code kept
 import PodcastEngine from './PodcastEngine'
@@ -33,7 +33,7 @@ import GoalsPanel from './GoalsPanel'
 import SitesPanel from './SitesPanel'
 import WinnersPanel from './WinnersPanel'
 import PlanPanel from './PlanPanel'
-import { Archive, Brain, Zap, Sun, Moon, LayoutGrid } from 'lucide-react'
+import { Archive, Brain, Zap, Sun, Moon, LayoutGrid, Home as HomeIcon, CheckSquare, Clapperboard, CalendarDays, MoreHorizontal } from 'lucide-react'
 import HomeChat from './HomeChat'
 import AgentsRoster from './AgentsRoster'
 import Banner from './glow/Banner'
@@ -53,7 +53,7 @@ const stack = (...n: React.ReactNode[]) => <div style={{ display: 'flex', flexDi
 
 const TABS: Tab[] = [
   { id: 'home', label: 'Home', sub: 'Talk to Her, Man or Cap. Start here; RISE AI always brings you back.', subs: [
-    { id: 'chat', label: 'Chat', keep: true, render: () => <HomeChat /> },
+    { id: 'chat', label: 'Chat', keep: true, render: () => stack(<QuickCaption key="qc" />, <HomeChat key="chat" />) },
     { id: 'board', label: 'My board', old: 'Daily Command', keep: true, render: () => <HomeScreen /> },
   ] },
   { id: 'approve', label: 'Approve', sub: 'Everything waiting on your yes, in one list.', subs: [
@@ -61,7 +61,7 @@ const TABS: Tab[] = [
   ] },
   { id: 'create', label: 'Create', sub: 'Film, write and record. What you make starts here.', links: [{ href: '/repurpose', label: '1→30', icon: <Zap size={14} /> }], subs: [
     { id: 'contentday', label: 'Content Day', keep: true, render: () => <ContentDay /> },
-    { id: 'story', label: 'Story', render: () => stack(<LongformDesk key="a" />, <StoryStudio key="b" />, <InstantCompose key="c" />, <StoryProcessor key="d" />) },
+    { id: 'story', label: 'Story', render: () => stack(<LongformDesk key="a" />, <StoryStudio key="b" />, <StoryProcessor key="d" />) },
     { id: 'podcast', label: 'Podcast', keep: true, render: () => stack(<PodcastStudio key="a" />, <PodcastEngine key="b" />) },
   ] },
   { id: 'plan', label: 'Plan', sub: 'Cap’s plans, the calendar, your goals and what’s working.', subs: [
@@ -131,6 +131,7 @@ export default function Dashboard(_props: Props) {
   const [navOrder, setNavOrder] = useState<TabId[]>([])
   const [allTools, setAllTools] = useState(false)
   const [dragId, setDragId] = useState<TabId | null>(null)
+  const [more, setMore] = useState(false)   // B0: the phone's More sheet
   // How many things wait on her yes (the Approve tab's badge). Checked every minute.
   const [approveCount, setApproveCount] = useState(0)
   useEffect(() => {
@@ -142,7 +143,7 @@ export default function Dashboard(_props: Props) {
   const open = (t: TabId, s?: string | null) => {
     setTab(t)
     if (s) setSubs(cur => { const next = { ...cur, [t]: s }; try { localStorage.setItem('rise-subtab-v1', JSON.stringify(next)) } catch { /* fine */ } return next })
-    setAllTools(false)
+    setAllTools(false); setMore(false)
     window.scrollTo({ top: 0 })
   }
   const goHome = () => open('home', 'chat')
@@ -164,8 +165,8 @@ export default function Dashboard(_props: Props) {
     window.addEventListener('station:navigate', nav)
     // Deep link: /station?view=contentday (Her's Brief "Open" link) opens that view once on load.
     try { const v = new URLSearchParams(window.location.search).get('view'); if (v) setTimeout(() => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: v } })), 0) } catch { /* fine */ }
-    // "Send to Instant Compose" from Media → the Story sub-tab (where it lives)
-    const compose = () => open('create', 'story')
+    // "Send to Quick Caption" from Media → Home, where Quick Caption lives (B5)
+    const compose = () => open('home', 'chat')
     window.addEventListener('rise-goto-compose', compose)
     return () => { window.removeEventListener('station:navigate', nav); window.removeEventListener('rise-goto-compose', compose) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -260,6 +261,11 @@ export default function Dashboard(_props: Props) {
             </button>
           </nav>
 
+          {/* B0: on a phone the top bar is just logo, Approve count and theme */}
+          <span style={{ flex: 1 }} className="rp-top-approve" aria-hidden />
+          <button type="button" className="rp-tab rp-top-approve" onClick={() => open('approve')} title="Waiting on your yes" style={{ display: 'none' }}>
+            Approve{approveCount ? <span className="rp-count">{approveCount}</span> : null}
+          </button>
           <button type="button" onClick={toggleTheme} title={dark ? 'Switch to Day' : 'Switch to Night'} className="rp-tab" style={{ padding: '7px 10px' }}>
             {dark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
@@ -307,6 +313,24 @@ export default function Dashboard(_props: Props) {
           RISE Station · <span style={{ color: 'var(--act)', fontWeight: 600 }}>she said she would and so she did</span>
         </p>
       </footer>
+      {/* B0: the phone's bottom tab bar (hidden on desktop by CSS) */}
+      {more && (
+        <div className="rp-more" role="menu" aria-label="More">
+          {(['campaigns', 'library', 'agents', 'business'] as TabId[]).map(id => <button key={id} type="button" className="rp-pill rp-secondary" onClick={() => open(id)}>{TABS.find(t => t.id === id)!.label}</button>)}
+          <Link href="/brief" className="rp-pill rp-secondary">☀️ Brief</Link>
+          <button type="button" className="rp-pill rp-secondary" onClick={() => { setMore(false); setAllTools(true); window.scrollTo({ top: 0 }) }}>All tools</button>
+        </div>
+      )}
+      <nav className="rp-bottom" aria-label="Main">
+        {([['home', 'Home', <HomeIcon key="i" size={20} />], ['approve', 'Approve', <CheckSquare key="i" size={20} />], ['create', 'Create', <Clapperboard key="i" size={20} />], ['plan', 'Plan', <CalendarDays key="i" size={20} />]] as [TabId, string, React.ReactNode][]).map(([id, label, icon]) => (
+          <button key={id} type="button" className={tab === id && !more ? 'on' : ''} aria-current={tab === id ? 'page' : undefined} onClick={() => open(id)}>
+            {icon}{label}{id === 'approve' && approveCount ? <span className="rp-count">{approveCount}</span> : null}
+          </button>
+        ))}
+        <button type="button" className={more || ['campaigns', 'library', 'agents', 'business'].includes(tab) ? 'on' : ''} aria-expanded={more} onClick={() => setMore(v => !v)}>
+          <MoreHorizontal size={20} />More
+        </button>
+      </nav>
       <FloatingChat hidden={tab === 'home' && curSub === 'chat'} />
       <BudgetConfirm />
     </div>

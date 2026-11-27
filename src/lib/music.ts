@@ -26,10 +26,11 @@ export function musicLink(pick: string, artist?: string): string {
 
 export const needsMusic = (c: ContentPiece) => c.type === 'video' && !c.music
 
-/** Cap picks the song for a video card. Returns the pick, or null (not a video, already has one, no answer). */
-export async function fillMusic(contentId: number): Promise<MusicPick | null> {
+/** Cap picks the song for a video card (or any card with force). Returns the pick, or null (not a video, already has one, no answer). */
+export async function fillMusic(contentId: number, opts: { force?: boolean } = {}): Promise<MusicPick | null> {
   const c = readDb().content.find(x => x.id === contentId)
-  if (!c || !needsMusic(c)) return null
+  // force: Quick Caption with "sound" ticked (a photo can get a song too).
+  if (!c || c.music || (!opts.force && !needsMusic(c))) return null
   const verified = recentVerifiedSounds().slice(0, 12)
   const instructions = `You are Cap, choosing the background song for one short video. Pick the one song that fits what this video makes the viewer feel.
 If one of the TRENDING SOUNDS (numbered) truly fits, choose it by number. Don't force a trend that fights the mood: then pick a real, findable song that suits the mood (song + artist), with trend_index null.

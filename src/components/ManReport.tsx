@@ -18,6 +18,9 @@ export default function ManReport() {
   const [r, setR] = useState<Report | null>(null)
   const [err, setErr] = useState('')
   const [all, setAll] = useState(false)
+  // B0: on a phone the list folds to one line so it never pushes Her's text box down.
+  const [fold, setFold] = useState(false)
+  useEffect(() => { try { setFold(window.matchMedia('(max-width: 767px)').matches) } catch { /* desktop */ } }, [])
   const [force, setForce] = useState(false)
   const [noFor, setNoFor] = useState<string | null>(null)
   const [reason, setReason] = useState('')
@@ -51,10 +54,16 @@ export default function ManReport() {
   const ideas = r.ideas
   const showIdeas = ideas.ideas.length > 0 && (ideas.room || force)
 
+  const head = `From Man${r.needs_you.length ? ` · ${r.needs_you.length} need${r.needs_you.length === 1 ? 's' : ''} you` : ''}`
+  if (fold && r.needs_you.length) return (
+    <div className="mr"><style>{css}</style>
+      <button type="button" className="mr-h" onClick={() => setFold(false)} style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer', minHeight: 44, textAlign: 'left', width: '100%' }}>{head} · show</button>
+    </div>
+  )
   return (
     <div className="mr">
       <style>{css}</style>
-      <p className="mr-h">From Man{r.needs_you.length ? ` · ${r.needs_you.length} need${r.needs_you.length === 1 ? 's' : ''} you` : ''}</p>
+      <p className="mr-h">{head}</p>
       {r.needs_you.length === 0 && <p className="mr-s">Nothing needs you from the health check{r.agents ? ` (${r.agents} thing${r.agents > 1 ? 's' : ''} the agents pick up on their own)` : ''}.</p>}
       {shown.map(f => (
         <div key={f.key} className="mr-f">
