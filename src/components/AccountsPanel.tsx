@@ -1,4 +1,5 @@
 'use client'
+import MusicLine from './MusicLine'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { uploadBig } from '@/lib/uploadBig'
 import { ExternalLink, CheckCircle2, AlertCircle, Clock, Lock, RefreshCw, Copy, Archive, Pencil, X, Save, Plus, CheckSquare, Eye, Heart, MessageCircle, Send, Bookmark, ChevronLeft, ChevronRight, Rows3, LayoutGrid, GalleryHorizontal, Search } from 'lucide-react'
@@ -1059,6 +1060,8 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
               {curJob && <span title="Cap picks each post's job" style={{ fontSize: '10px', fontWeight: 800, color: curJob.color }}>Cap’s pick: {curJob.label.toLowerCase()}</span>}
             </div>
           </div>
+          {/* A8: the song, right under the hook */}
+          <MusicLine p={post} onSaved={() => onChanged?.()} />
           {/* Open questions — answer here, river finishes the post */}
           {hasQuestions && (
             <div style={{ padding: '12px', background: 'rgba(224,82,82,0.05)', borderRadius: '10px', border: '1px solid rgba(224,82,82,0.25)', display: 'flex', flexDirection: 'column', gap: '10px' }}>

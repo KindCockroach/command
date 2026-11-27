@@ -1,4 +1,5 @@
 'use client'
+import MusicLine from './MusicLine'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { ContentPiece, BrandAccount, Character, Db } from '@/lib/db'
 import { parseScript, isChildCharacter, type ScriptLine } from '@/lib/characters'
@@ -295,6 +296,7 @@ export default function ContentDay() {
           {her && <p style={{ marginTop: '5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Your words: “{her.slice(0, 220)}{her.length > 220 ? '…' : ''}”</p>}
         </Row>
         <Row k="On-screen text">{onscreen.length ? onscreen.map((o, i) => <p key={i} style={{ fontWeight: 700 }}>{o}</p>) : <span style={{ color: 'var(--text-subtle)' }}>None</span>}</Row>
+        {(p.type === 'video' || p.music) && <Row k="Song"><MusicLine p={p} compact onSaved={r => setPosts(ps => ps.map(x => x.id === p.id ? r : x))} /></Row>}
         <Row k="Shot and setup">{shot.length ? shot.map((s, i) => <p key={i}>{s}</p>) : <span style={{ color: 'var(--text-subtle)' }}>Your call</span>}</Row>
       </div>
     )
@@ -311,6 +313,7 @@ export default function ContentDay() {
           <span style={{ fontFamily: MONO, fontSize: '11px', color: 'var(--text-subtle)' }}>{p.status}{dates[p.id] ? ` · ${dates[p.id]}` : ' · not on the calendar'}</span>
         </div>
         {p.onscreen_text && <div><p style={label}>On-screen</p><p style={{ fontSize: '16px', fontWeight: 800 }}>{p.onscreen_text}</p></div>}
+        <MusicLine p={p} onSaved={r => setPosts(ps => ps.map(x => x.id === p.id ? r : x))} />
         {(p.description ?? '').trim() && <div><p style={label}>Caption</p><p style={{ fontSize: '14px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{p.description}</p></div>}
         {(p.hashtags ?? '').trim() && <p style={{ fontSize: '13px', color: 'var(--purple)' }}>{p.hashtags}</p>}
         <div>

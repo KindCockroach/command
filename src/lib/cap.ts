@@ -234,6 +234,8 @@ export async function runReview(h: Handoff) {
   const round = h.round ?? 1
   // Every post has a title, an on-screen hook and Cap's job pick before Cap confirms anything.
   await (await import('./cardAudit')).fillCardBasics(h.content_id).catch(() => null)
+  // A8: a video gets its song when Cap reviews it ("trending" only with the scout's source + date).
+  const song = await (await import('./music')).fillMusic(h.content_id).catch(() => null)
   const c = readDb().content.find(x => x.id === h.content_id)
   if (!c) return failHandoff(h.id, 'That card isn’t in RISE any more.')
   // Which writer's drafts: the one who handed it over (an old ed_check or Mandi's "review again" = all).
@@ -264,6 +266,7 @@ export async function runReview(h: Handoff) {
   const receipt = [
     confirmed.length && `Confirmed ${list(confirmed)}${slot ? ` and scheduled for ${slot.replace('T', ' at ')}` : ' (no calendar date yet, so it isn’t scheduled)'}.`,
     ...backNames.map(p => `Sent ${p} back to ${WRITER_NAME[writerFor(p)]}: ${back[p].join(' ')}`),
+    song && `Song: ${song.pick}${song.artist ? ` by ${song.artist}` : ''} (${song.source === 'verified-trend' ? `trending, checked ${song.checked_at.slice(0, 10)}` : 'suits the mood'}).`,
     round >= MAX_REVIEW_ROUNDS && confirmed.some(p => p.includes('let through')) && `After ${MAX_REVIEW_ROUNDS - 1} rewrites Cap let the rest through; what he'd still change is noted on the card.`,
   ].filter(Boolean).join(' ')
   const done = completeHandoff(h.id, 'cap', receipt, [{ type: 'card', id: h.content_id }])

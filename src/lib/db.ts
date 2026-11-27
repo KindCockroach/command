@@ -34,6 +34,7 @@ export type ContentPiece = {
   account_id?: string | null       // brand_accounts id this post belongs to
   image_prompt?: string            // AI image/video generation prompt for the visual
   onscreen_text?: string           // text overlay (video) or slide lines (carousel) — can differ from script
+  music?: MusicPick                // Phase 8 · A8: the song for a video (Cap's pick on review, or Mandi's)
   hashtags?: string                // hashtags/metadata string
   media_url?: string               // primary visual (first slide) — kept for scheduling/preview compat
   media_urls?: string[]            // full carousel: ordered list of image/video URLs
@@ -1104,7 +1105,11 @@ export type MediaMeta = {
 // A trending-audio SUGGESTION — not just a sound, but what it's trending FOR and
 // exactly what Mandi could film/say, grounded in her real recent life. The point:
 // she reads it and knows precisely what to do, not just something to think about.
-export type TrendSuggestion = { sound: string; trending_for: string; use_it: string; search?: string }
+export type TrendSuggestion = { sound: string; trending_for: string; use_it: string; search?: string; source_url?: string; checked_at?: string }
+
+// Phase 8 · A8: the music on a video card. "verified-trend" only when it came from the scout with a
+// source and a date; anything else is "suits-the-mood". set_by 'mandi' = her override, Cap never replaces it.
+export type MusicPick = { pick: string; artist?: string; why: string; link?: string; source: 'verified-trend' | 'suits-the-mood'; source_url?: string; checked_at: string; set_by?: 'cap' | 'mandi' }
 
 // A LINE — one copy-ready reel idea for the calm "Lines" feed. Not a content card:
 // it renders as four short strings and nothing else.
@@ -1149,6 +1154,7 @@ export type Db = {
   inbox?: InboxBrief
   media_meta?: Record<string, MediaMeta>
   trend_audio?: { audio: string; format: string; sounds?: string[]; suggestions?: TrendSuggestion[]; when: string }
+  trend_audio_history?: TrendSuggestion[]   // A8: every sound the scout found, with its source + date (newest last)
   focus_product_id?: string   // RISE's current "primary order" — what the Brief line orbits (default 'reset')
   brief_line?: { date: string; product_id: string; line: string }
   saved_headlines?: SavedHeadline[]
@@ -3020,7 +3026,12 @@ export function getTrendAudio(): { audio: string; format: string; sounds?: strin
 }
 export function setTrendAudio(data: { audio: string; format: string; sounds?: string[]; suggestions?: TrendSuggestion[] }): void {
   const db = readDb()
-  db.trend_audio = { ...data, when: new Date().toISOString() }
+  const when = new Date().toISOString()
+  db.trend_audio = { ...data, when }
+  // A8: keep every sound with its source and date, not just the latest pull.
+  const hist = db.trend_audio_history ?? []
+  for (const s of data.suggestions ?? []) hist.push({ ...s, checked_at: s.checked_at ?? when })
+  db.trend_audio_history = hist.slice(-300)
   writeDb(db)
 }
 

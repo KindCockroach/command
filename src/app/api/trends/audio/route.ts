@@ -39,23 +39,24 @@ export async function POST(req: NextRequest) {
 
   const instructions = `You are RISE's trending-audio scout. Using live web search, find what SOUNDS/AUDIO are trending on Instagram Reels and TikTok RIGHT NOW (this week). Name real, specific audio a creator could search and use today — song + artist, OR the named original/meme audio AND where it's from (e.g. "'Get Mondays' — from the show Ted"). For EACH, say what it's trending FOR: the exact feeling or situation people are using it to show (e.g. "minor everyday frustration", "the ironic flex", "chaotic family mornings"). Ground everything in current roundups/creator reports — never invent a trend. Mandi's lane: intuition, self-trust, reparenting, mindful + playful content for tired moms (silly-serious), so favor sounds that fit relatable/emotional/funny storytelling, plus a couple broadly-trending ones. Give VARIETY each time — rotate the lead pick.`
   const input = `Return ONLY JSON:
-{"sounds":[{"sound":"'Name' — Artist/where it's from","trending_for":"the exact feeling/situation it's used for","search":"the exact phrase to type into Instagram/TikTok/YouTube to find THIS audio — normally the song title + the artist, plain text, no quotes, no extra words"}, "... 3-4 total"], "format":"one trending on-screen-text FORMAT to try this week (short, concrete)"}
-The "search" must be the cleanest unambiguous phrase that lands on the exact sound (e.g. sound "'Birds of a Feather' — Billie Eilish" → search "Birds of a Feather Billie Eilish"; an original/meme audio → the creator handle + a few exact words of the clip). Name real current audio a creator can find in the app today. No preamble.${avoidList.length ? `\nShe has ALREADY seen these recently — do NOT lead with them; surface something different and current: ${avoidList.join('; ')}.` : ''}`
+{"sounds":[{"sound":"'Name' — Artist/where it's from","trending_for":"the exact feeling/situation it's used for","search":"the exact phrase to type into Instagram/TikTok/YouTube to find THIS audio — normally the song title + the artist, plain text, no quotes, no extra words","source_url":"the URL of the roundup/report you found it in (from your search results; leave empty if you have none)"}, "... 3-4 total"], "format":"one trending on-screen-text FORMAT to try this week (short, concrete)"}
+The "search" must be the cleanest unambiguous phrase that lands on the exact sound (e.g. sound "'Birds of a Feather' — Billie Eilish" → search "Birds of a Feather Billie Eilish"; an original/meme audio → the creator handle + a few exact words of the clip). Name real current audio a creator can find in the app today. Every source_url must be a page you actually saw in your search results this time; never make one up. No preamble.${avoidList.length ? `\nShe has ALREADY seen these recently — do NOT lead with them; surface something different and current: ${avoidList.join('; ')}.` : ''}`
 
   const parse = (raw: string) => {
     let p: { sounds?: unknown[]; format?: string } = {}
     try { p = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? '{}') } catch { /* fall through */ }
     const sounds = Array.isArray(p.sounds) ? p.sounds.map(s => {
-      if (typeof s === 'string') { const [snd, tf] = s.split('—').map(x => x.trim()); return { sound: snd || s.trim(), trending_for: tf || '', search: '' } }
-      const o = s as { sound?: string; trending_for?: string; search?: string }
-      return { sound: String(o.sound || '').trim(), trending_for: String(o.trending_for || '').trim(), search: String(o.search || '').trim() }
+      if (typeof s === 'string') { const [snd, tf] = s.split('—').map(x => x.trim()); return { sound: snd || s.trim(), trending_for: tf || '', search: '', source_url: '' } }
+      const o = s as { sound?: string; trending_for?: string; search?: string; source_url?: string }
+      const url = String(o.source_url || '').trim()
+      return { sound: String(o.sound || '').trim(), trending_for: String(o.trending_for || '').trim(), search: String(o.search || '').trim(), source_url: /^https?:\/\/\S+$/.test(url) ? url : '' }
     }).filter(s => s.sound).slice(0, 4) : []
     return { sounds, format: (p.format ?? '').trim() }
   }
   // Primary: Anthropic (Opus + real web search; needs headroom or the JSON never lands).
   // Fallback: OpenAI web search — so ONE provider being out of credits can't freeze the
   // pulse on a stale song. Whichever has credits keeps the sound fresh.
-  type RawSound = { sound: string; trending_for: string; search: string }
+  type RawSound = { sound: string; trending_for: string; search: string; source_url: string }
   const pullAnthropic = async () => parse(await researchWithWeb({ instructions, input, maxTokens: 3000, maxSearches: 4 }))
   const pullOpenAI = async () => parse(await callGPT('research', input, instructions))
 
@@ -76,7 +77,9 @@ The "search" must be the cleanest unambiguous phrase that lands on the exact sou
 
   // Just the song + what it's trending for — no AI "what to say". Mandi would rather
   // see the sound and come up with her own idea. (Removed the prescriptive Stage 2.)
-  const suggestions: TrendSuggestion[] = sounds.map(s => ({ sound: s.sound, trending_for: s.trending_for, use_it: '', search: s.search }))
+  // A8: each sound keeps where it came from and when; setTrendAudio adds it to the history.
+  const checked_at = new Date().toISOString()
+  const suggestions: TrendSuggestion[] = sounds.map(s => ({ sound: s.sound, trending_for: s.trending_for, use_it: '', search: s.search, ...(s.source_url ? { source_url: s.source_url } : {}), checked_at }))
   const richStrings = suggestions.map(s => [s.sound, s.trending_for && `trending for ${s.trending_for}`].filter(Boolean).join(' — '))
   let audio = richStrings[0] || sounds[0]?.sound || ''
   const prevLead = (prev?.audio ?? '').toLowerCase()
