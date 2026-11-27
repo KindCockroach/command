@@ -539,3 +539,14 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
 @media (max-width: 767px) { .rise-app textarea, .rise-app input[type="text"], .rise-app input:not([type]), .rise-app select { font-size: 16px !important; } }
 /* B0: bottom bar labels keep readable ink (another nav rule was paling them). */
 @media (max-width: 767px) { .rise-app .rp-bottom button { color: var(--ink-muted) !important; } .rise-app .rp-bottom button.on { color: var(--act) !important; } }
+
+/* ── Phase 8 · B1: the gold back arrow (one step back inside RISE) ── */
+.rp-banner-head { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; }
+.rp-back { flex-shrink: 0; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; cursor: pointer;
+  color: #3A2606; background: linear-gradient(135deg, #FFE08A 0%, #E8B04A 55%, #C98E2E 100%);
+  box-shadow: 0 2px 8px rgba(138,90,30,0.35), inset 0 1px 0 rgba(255,255,255,0.6); transition: transform .15s, opacity .2s, box-shadow .2s; }
+.rp-back:hover:not(:disabled) { transform: translateX(-2px); box-shadow: 0 4px 12px rgba(138,90,30,0.45), inset 0 1px 0 rgba(255,255,255,0.6); }
+.rp-back:disabled { opacity: .35; cursor: default; box-shadow: none; }
+.rp-back:focus-visible { outline: 2px solid #FFE08A; outline-offset: 2px; }
+@media (max-width: 767px) { .rp-back { width: 44px; height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .rp-back { transition: none; } .rp-back:hover:not(:disabled) { transform: none; } }

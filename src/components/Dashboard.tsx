@@ -140,9 +140,26 @@ export default function Dashboard(_props: Props) {
   }, [])
 
   const subOf = (t: TabId) => { const tb = TABS.find(x => x.id === t)!; const s = subs[t]; return tb.subs.some(x => x.id === s) ? s! : tb.subs[0].id }
-  const open = (t: TabId, s?: string | null) => {
+  // B1: one-step Back inside RISE. Every view change is pushed into the URL (?view=tab/sub), so the
+  // gold arrow, the browser's Back and a refresh all land on the right view. depth = steps we can go back.
+  const loc = useRef<{ tab: TabId; sub: string }>({ tab: 'home', sub: 'chat' })
+  const subsRef = useRef<Record<string, string>>({})
+  const [depth, setDepth] = useState(0)
+  const depthRef = useRef(0)
+  const viewUrl = (t: TabId, s: string) => { const u = new URL(window.location.href); u.searchParams.set('view', `${t}/${s}`); return u.pathname + u.search + u.hash }
+  const open = (t: TabId, s?: string | null, how: 'push' | 'replace' | 'none' = 'push') => {
+    const tb = TABS.find(x => x.id === t)!
+    const saved = subsRef.current[t]
+    const target = s && tb.subs.some(x => x.id === s) ? s : (tb.subs.some(x => x.id === saved) ? saved! : tb.subs[0].id)
+    const same = loc.current.tab === t && loc.current.sub === target
+    try {
+      if (how === 'push' && !same) { depthRef.current += 1; window.history.pushState({ rise: depthRef.current }, '', viewUrl(t, target)) }
+      else if (how === 'replace' || (how === 'push' && same)) window.history.replaceState({ rise: depthRef.current }, '', viewUrl(t, target))
+    } catch { /* history unavailable: the view still switches */ }
+    setDepth(depthRef.current)
+    loc.current = { tab: t, sub: target }
     setTab(t)
-    if (s) setSubs(cur => { const next = { ...cur, [t]: s }; try { localStorage.setItem('rise-subtab-v1', JSON.stringify(next)) } catch { /* fine */ } return next })
+    if (s) setSubs(cur => { const next = { ...cur, [t]: s }; subsRef.current = next; try { localStorage.setItem('rise-subtab-v1', JSON.stringify(next)) } catch { /* fine */ } return next })
     setAllTools(false); setMore(false)
     window.scrollTo({ top: 0 })
   }
@@ -151,7 +168,7 @@ export default function Dashboard(_props: Props) {
   useEffect(() => {
     const saved = localStorage.getItem('cc-theme')
     if (saved === 'dark') { setDark(true); document.documentElement.setAttribute('data-theme', 'dark') }
-    try { const s = JSON.parse(localStorage.getItem('rise-subtab-v1') ?? '{}'); if (s && typeof s === 'object') setSubs(s) } catch { /* fresh */ }
+    try { const s = JSON.parse(localStorage.getItem('rise-subtab-v1') ?? '{}'); if (s && typeof s === 'object') { setSubs(s); subsRef.current = s } } catch { /* fresh */ }
     // Cross-tab navigation (old tab names forward to their new home)
     const nav = (e: Event) => {
       const view = String((e as CustomEvent).detail?.view ?? '')
@@ -164,11 +181,24 @@ export default function Dashboard(_props: Props) {
     }
     window.addEventListener('station:navigate', nav)
     // Deep link: /station?view=contentday (Her's Brief "Open" link) opens that view once on load.
-    try { const v = new URLSearchParams(window.location.search).get('view'); if (v) setTimeout(() => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: v } })), 0) } catch { /* fine */ }
+    // B1: the view in the URL (a refresh or a shared link) opens without adding a Back step.
+    try {
+      const v = new URLSearchParams(window.location.search).get('view')
+      const r = v ? resolve(v) : null
+      if (r) setTimeout(() => open(r[0], r[1], 'replace'), 0)
+      else window.history.replaceState({ rise: 0 }, '', viewUrl('home', 'chat'))
+    } catch { /* fine */ }
+    // Browser Back/Forward (and the gold arrow, which calls history.back()) step one view at a time.
+    const onPop = (e: PopStateEvent) => {
+      depthRef.current = typeof e.state?.rise === 'number' ? e.state.rise : 0
+      const r = resolve(new URLSearchParams(window.location.search).get('view') ?? '') ?? ['home', 'chat']
+      open(r[0] as TabId, r[1], 'none')
+    }
+    window.addEventListener('popstate', onPop)
     // "Send to Quick Caption" from Media → Home, where Quick Caption lives (B5)
     const compose = () => open('home', 'chat')
     window.addEventListener('rise-goto-compose', compose)
-    return () => { window.removeEventListener('station:navigate', nav); window.removeEventListener('rise-goto-compose', compose) }
+    return () => { window.removeEventListener('station:navigate', nav); window.removeEventListener('rise-goto-compose', compose); window.removeEventListener('popstate', onPop) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -292,7 +322,7 @@ export default function Dashboard(_props: Props) {
           </section>
         )}
 
-        <Banner title={cur.label} sub={cur.sub}>
+        <Banner title={cur.label} sub={cur.sub} back={{ can: depth > 0, onBack: () => { if (depthRef.current > 0) window.history.back() } }}>
           {(cur.subs.length > 1 || cur.links) && (
             <div className="rp-subtabs">
               <SubTabs tabs={cur.subs.map(s => ({ id: s.id, label: s.label }))} active={curSub} onPick={s => open(tab, s)} />
