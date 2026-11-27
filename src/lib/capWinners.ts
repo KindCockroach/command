@@ -32,13 +32,14 @@ const when = (s: string | null) => {
 // The model sometimes answers a list with objects ({ point, support }); keep them as plain lines.
 const lines = (a: unknown): string[] => (Array.isArray(a) ? a : []).map(x => typeof x === 'string' ? x : x && typeof x === 'object' ? Object.values(x as Record<string, unknown>).filter(v => typeof v === 'string' || typeof v === 'number').join(' · ') : String(x)).filter(Boolean).slice(0, 8)
 
-export async function weighWinners(accountId: string, platform: string): Promise<WinnerReview | { error: string }> {
+export async function weighWinners(accountId: string, platform: string): Promise<WinnerReview | { error: string } | { skip: string }> {
   const all = scoreResults(accountId).filter(r => (r.platform || 'instagram') === platform)
-  if (all.length < 3) return { error: `Only ${all.length} ${platform} result${all.length === 1 ? '' : 's'} for this account. Cap needs at least 3 to compare.` }
+  // Too few posts isn't a failure: there's just nothing to compare yet. Close it as done, not broken.
+  if (all.length < 3) return { skip: `Not enough to weigh yet: only ${all.length} ${platform} post${all.length === 1 ? '' : 's'} with results for this account. Cap compares once there are at least 3. Nothing is broken.` }
   const top = all.filter(r => r.verdict === 'make_more' || r.verdict === 'rehook').sort((a, b) => b.views_vs_median - a.views_vs_median).slice(0, 6)
   const low = all.filter(r => r.verdict === 'retire').sort((a, b) => a.views_vs_median - b.views_vs_median).slice(0, 4)
   const sample = [...top, ...low]
-  if (!sample.length) return { error: 'Nothing stood out from typical yet, so there is nothing to weigh.' }
+  if (!sample.length) return { skip: 'Nothing stood out from typical yet, so there is nothing to weigh. Nothing is broken.' }
   const dates = all.map(r => Date.parse(r.posted_at ?? '')).filter(n => !isNaN(n)).sort((x, y) => x - y)
   const day = (n: number) => new Date(n).toISOString().slice(0, 10)
   const period = dates.length ? `${day(dates[0])} to ${day(dates[dates.length - 1])}` : 'unknown dates'
@@ -99,6 +100,7 @@ export async function runWeighWinners(h: Handoff) {
   const platform = h.ref?.label || 'instagram'
   if (!accountId) return failHandoff(h.id, 'Which account? The export wasn’t tied to one.')
   const r = await weighWinners(accountId, platform)
+  if ('skip' in r) return completeHandoff(h.id, 'cap', r.skip)
   if ('error' in r) return failHandoff(h.id, r.error)
   const d = readDb(); const w = d.winner_reviews!.find(x => x.id === r.id)!; w.handoff_id = h.id; writeDb(d)
   return completeHandoff(h.id, 'cap', `Weighed ${r.posts} posts (${r.period}). Hypothesis: ${r.hypothesis} Experiment for the next weekly plan: ${r.experiment.what}`, [{ type: 'review', id: r.id }])

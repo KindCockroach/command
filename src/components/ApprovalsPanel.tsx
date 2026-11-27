@@ -55,20 +55,22 @@ export default function ApprovalsPanel() {
       {groups.map(g => g.s === 'health' ? (
         <div key={g.s} className="ap-g">
           <button type="button" className="ap-gh" onClick={() => setShowHealth(x => !x)}>{d.labels[g.s]} · {g.items.length} <ChevronDown size={13} style={{ transform: showHealth ? 'rotate(180deg)' : 'none' }} /></button>
-          {showHealth && g.items.map(it => <Row key={it.id} it={it} />)}
+          {showHealth && g.items.map(row)}
         </div>
       ) : (
         <div key={g.s} className="ap-g">
           <p className="ap-gh">{d.labels[g.s]} · {g.items.length}</p>
-          {g.items.map(it => <Row key={it.id} it={it} />)}
+          {g.items.map(row)}
         </div>
       ))}
     </div>
   )
 
-  function Row({ it }: { it: Item }) {
+  // A plain render helper, NOT a component: a component defined inside this one is a brand-new
+  // type every render, so React threw away each row (and the text she was typing) on every refresh.
+  function row(it: Item) {
     return (
-      <div className="ap-i">
+      <div key={it.id} className="ap-i">
         <span className="ap-from">{it.from}</span>
         <b>{it.title}</b>
         {it.detail && <span className="ap-d">{it.detail}</span>}
