@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { openHandoff } from '@/lib/handoffs'
+import { runHandoff } from '@/lib/agentRun'
 import { getAllBrandAccounts, getAllNotes, createNote, logActivity } from '@/lib/db'
 import { fableText } from '@/lib/fable'
 
@@ -51,7 +53,7 @@ MOST IMPORTANT — CAPTURE THE FORMAT SKELETON. The words/format ARE the show fo
     const dateLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     const bestBet = (clean.match(/THIS WEEK'S BEST BET:\s*(.+)$/im)?.[1] || '').trim()
 
-    createNote({
+    const digestNote = createNote({
       title: `📡 Weekly Trends — ${dateLabel}`,
       body: clean,
       category: 'idea',
@@ -68,7 +70,11 @@ MOST IMPORTANT — CAPTURE THE FORMAT SKELETON. The words/format ARE the show fo
       icon: '📡', source: 'cron',
     })
 
-    return NextResponse.json({ ran: true, bestBet, savedToNotes: true })
+    // Phase 8 A6: Ten hands the digest to Cap, who keeps/rejects each trend and puts keepers on the calendar.
+    const h = openHandoff({ kind: 'trend_pick', from: 'ten', to: 'cap', what: `This week’s trends (${dateLabel}): keep or reject each; put the keepers on the calendar`, ref: { type: 'note', id: digestNote.id, label: 'trend digest' } })
+    after(async () => { await runHandoff(h.id) })
+
+    return NextResponse.json({ ran: true, bestBet, savedToNotes: true, handed_to_cap: h.id })
   } catch (e) {
     logActivity({ type: 'trend_checkin', title: 'Weekly trend check-in failed', detail: e instanceof Error ? e.message.slice(0, 120) : 'unknown', icon: '📡', source: 'cron' })
     return NextResponse.json({ ran: false, error: e instanceof Error ? e.message : 'failed' }, { status: 502 })

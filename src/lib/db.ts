@@ -182,6 +182,7 @@ export type HandoffKind =
   | 'card_fix'        // Cap → Ed: fill what cards are missing (title, on-screen hook, job, caption, what to film)
   | 'notes_mine'      // Phase 8 A7: Cap reads her Notes for quotes, lines and skits → the idea bank
   | 'capacity_trim'   // Phase 8 A4: Her → Cap: Mandi's hours this week are short; move the overflow to next week
+  | 'trend_pick'      // Phase 8 A6: Ten → Cap: the weekly trend digest; keep/reject each, keepers go on the calendar
 export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log' | 'email' | 'story' | 'substack' | 'reuse' | 'interview'; id: string | number; label?: string }
 export type Handoff = {
   id: string

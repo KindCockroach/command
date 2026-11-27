@@ -37,6 +37,7 @@ export async function runHandoff(id: string): Promise<{ ok: boolean; error?: str
       case 'story_find': await runFindStories(h); break
       case 'interview_prep': await (await import('./coraInterview')).runInterviewPrep(h); break
       case 'capacity_trim': await (await import('./capacity')).runCapacityTrim(h); break
+      case 'trend_pick': await (await import('./trendPick')).runTrendPick(h); break
       case 'notes_mine': await (await import('./noteIdeas')).runNotesMine(h); break
       case 'card_fix': await (await import('./cardAudit')).runCardFix(h); break
       case 'interview_shape': await (await import('./coraInterview')).runInterviewShape(h); break
