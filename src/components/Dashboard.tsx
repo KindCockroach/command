@@ -37,6 +37,7 @@ import { Archive, Brain, Zap, Sun, Moon, LayoutGrid, Home as HomeIcon, CheckSqua
 import HomeChat from './HomeChat'
 import AgentsRoster from './AgentsRoster'
 import Banner from './glow/Banner'
+import { showRecord, parseRecord } from '@/lib/openRecord'
 import SubTabs from './glow/SubTabs'
 import Link from 'next/link'
 
@@ -142,22 +143,23 @@ export default function Dashboard(_props: Props) {
   const subOf = (t: TabId) => { const tb = TABS.find(x => x.id === t)!; const s = subs[t]; return tb.subs.some(x => x.id === s) ? s! : tb.subs[0].id }
   // B1: one-step Back inside RISE. Every view change is pushed into the URL (?view=tab/sub), so the
   // gold arrow, the browser's Back and a refresh all land on the right view. depth = steps we can go back.
-  const loc = useRef<{ tab: TabId; sub: string }>({ tab: 'home', sub: 'chat' })
+  const loc = useRef<{ tab: TabId; sub: string; record?: string | null }>({ tab: 'home', sub: 'chat', record: null })
   const subsRef = useRef<Record<string, string>>({})
   const [depth, setDepth] = useState(0)
   const depthRef = useRef(0)
-  const viewUrl = (t: TabId, s: string) => { const u = new URL(window.location.href); u.searchParams.set('view', `${t}/${s}`); return u.pathname + u.search + u.hash }
-  const open = (t: TabId, s?: string | null, how: 'push' | 'replace' | 'none' = 'push') => {
+  const viewUrl = (t: TabId, s: string, record?: string | null) => { const u = new URL(window.location.href); u.searchParams.set('view', `${t}/${s}`); if (record) u.searchParams.set('open', record); else u.searchParams.delete('open'); return u.pathname + u.search + u.hash }
+  // B3: `record` ('note:310', 'card:25') makes an opened record its own Back step.
+  const open = (t: TabId, s?: string | null, how: 'push' | 'replace' | 'none' = 'push', record: string | null = null) => {
     const tb = TABS.find(x => x.id === t)!
     const saved = subsRef.current[t]
     const target = s && tb.subs.some(x => x.id === s) ? s : (tb.subs.some(x => x.id === saved) ? saved! : tb.subs[0].id)
-    const same = loc.current.tab === t && loc.current.sub === target
+    const same = loc.current.tab === t && loc.current.sub === target && (loc.current.record ?? null) === record
     try {
-      if (how === 'push' && !same) { depthRef.current += 1; window.history.pushState({ rise: depthRef.current }, '', viewUrl(t, target)) }
-      else if (how === 'replace' || (how === 'push' && same)) window.history.replaceState({ rise: depthRef.current }, '', viewUrl(t, target))
+      if (how === 'push' && !same) { depthRef.current += 1; window.history.pushState({ rise: depthRef.current }, '', viewUrl(t, target, record)) }
+      else if (how === 'replace' || (how === 'push' && same)) window.history.replaceState({ rise: depthRef.current }, '', viewUrl(t, target, record))
     } catch { /* history unavailable: the view still switches */ }
     setDepth(depthRef.current)
-    loc.current = { tab: t, sub: target }
+    loc.current = { tab: t, sub: target, record }
     setTab(t)
     if (s) setSubs(cur => { const next = { ...cur, [t]: s }; subsRef.current = next; try { localStorage.setItem('rise-subtab-v1', JSON.stringify(next)) } catch { /* fine */ } return next })
     setAllTools(false); setMore(false)
@@ -176,7 +178,8 @@ export default function Dashboard(_props: Props) {
       if (view === 'assistants') { try { if (localStorage.getItem('station-open-agent')) { open('agents', 'oldchats'); return } } catch { /* fine */ } }
       const r = resolve(view)
       if (!r) return
-      open(r[0], r[1])
+      const rec = String((e as CustomEvent).detail?.record ?? '') || null
+      open(r[0], r[1], 'push', parseRecord(rec) ? rec : null)
       if (view === 'command') window.dispatchEvent(new CustomEvent('rise-home-who', { detail: { who: 'her' } }))
     }
     window.addEventListener('station:navigate', nav)
@@ -185,14 +188,19 @@ export default function Dashboard(_props: Props) {
     try {
       const v = new URLSearchParams(window.location.search).get('view')
       const r = v ? resolve(v) : null
-      if (r) setTimeout(() => open(r[0], r[1], 'replace'), 0)
+      const rec = new URLSearchParams(window.location.search).get('open')
+      const pr = parseRecord(rec)
+      if (r) setTimeout(() => { open(r[0], r[1], 'replace', pr ? rec : null); if (pr) showRecord(pr[0], pr[1]) }, 0)
       else window.history.replaceState({ rise: 0 }, '', viewUrl('home', 'chat'))
     } catch { /* fine */ }
     // Browser Back/Forward (and the gold arrow, which calls history.back()) step one view at a time.
     const onPop = (e: PopStateEvent) => {
       depthRef.current = typeof e.state?.rise === 'number' ? e.state.rise : 0
-      const r = resolve(new URLSearchParams(window.location.search).get('view') ?? '') ?? ['home', 'chat']
-      open(r[0] as TabId, r[1], 'none')
+      const q = new URLSearchParams(window.location.search)
+      const r = resolve(q.get('view') ?? '') ?? ['home', 'chat']
+      const pr = parseRecord(q.get('open'))
+      open(r[0] as TabId, r[1], 'none', pr ? q.get('open') : null)
+      showRecord(pr ? pr[0] : null, pr ? pr[1] : undefined)   // B3: step into / out of the record
     }
     window.addEventListener('popstate', onPop)
     // "Send to Quick Caption" from Media → Home, where Quick Caption lives (B5)

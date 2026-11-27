@@ -1,4 +1,5 @@
 'use client'
+import { openRecord } from '@/lib/openRecord'
 import MusicLine from './MusicLine'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { uploadBig } from '@/lib/uploadBig'
@@ -550,9 +551,7 @@ export function PostCard({ post, accentColor, onApprove, approving, approveNote,
 
   // Jump to the linked draft/banked note in the Notes tab (uses post.note_id).
   const openLinkedNote = (noteId: number) => {
-    try { localStorage.setItem('rise-open-note', String(noteId)) } catch { /* ok */ }
-    window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'notes' } }))
-    window.dispatchEvent(new CustomEvent('rise-open-note'))
+    openRecord('note', noteId)   // B3: one opener for every record (and a Back step)
   }
 
   // Inline editing of the card's fields

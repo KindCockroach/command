@@ -1,6 +1,7 @@
 'use client'
 // Phase 8 · B2: compact receipts beside the Home chat (desktop only, hidden on phones by CSS).
 // What got routed where, what was handed off, what got made — straight from the handoff receipts.
+import { withRecordLinks } from './RecordText'
 import { useEffect, useState } from 'react'
 
 type Ref = { type: string; id: number | string; label?: string }
@@ -34,9 +35,9 @@ export default function HomeReceipts() {
           return (
             <div key={h.id} className={`hr-i ${h.status}`}>
               <span className="hr-who">{nm(h.from)} → {nm(h.to)} <span className="hr-t">{ago(h.updated_at)}</span></span>
-              <span className="hr-w">{h.what || '(no note)'}</span>
+              <span className="hr-w">{withRecordLinks(h.what || '(no note)')}</span>
               {h.status === 'failed' ? <span className="hr-bad">Didn’t finish{h.receipt ? `: ${h.receipt.slice(0, 90)}` : ''}</span>
-                : h.receipt ? <span className="hr-s">{h.receipt.split('\n')[0].slice(0, 120)}</span> : null}
+                : h.receipt ? <span className="hr-s">{withRecordLinks(h.receipt.split('\n')[0].slice(0, 120))}</span> : null}
               {cards > 0 && <span className="hr-tag">{cards} card{cards === 1 ? '' : 's'}</span>}
             </div>
           )

@@ -1,4 +1,5 @@
 'use client'
+import { withRecordLinks } from './RecordText'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Loader2, Send, Plus } from 'lucide-react'
 import DictateButton from './DictateButton'
@@ -99,7 +100,7 @@ export default function HerPanel() {
         <div className="her-log">
           {cur.turns.map((t, i) => (
             <div key={i} className={`her-msg ${t.role}`}>
-              <div className="her-b">{t.spoken ? '🎙 ' : ''}{t.text}</div>
+              <div className="her-b">{t.spoken ? '🎙 ' : ''}{t.role === 'her' ? withRecordLinks(t.text) : t.text}</div>
               {(t.handoff_ids ?? []).map(id => { const o = byId.get(id); return o ? <HandoffItem key={id} h={o} onChanged={() => open(cur.id)} /> : null })}
             </div>
           ))}

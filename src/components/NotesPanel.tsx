@@ -347,8 +347,11 @@ export default function NotesPanel() {
       } catch { /* ignore */ }
     }
     openPending()
+    // B3: Back out of an opened note closes it.
+    const close = () => setSelected(null)
     window.addEventListener('rise-open-note', openPending)
-    return () => window.removeEventListener('rise-open-note', openPending)
+    window.addEventListener('rise:record-close', close)
+    return () => { window.removeEventListener('rise-open-note', openPending); window.removeEventListener('rise:record-close', close) }
   }, [notes])
 
   // Send a note to the River to compose a post for a specific account (account is LAW there).

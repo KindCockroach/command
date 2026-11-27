@@ -1,4 +1,5 @@
 'use client'
+import { withRecordLinks } from './RecordText'
 import { useCallback, useEffect, useState } from 'react'
 import { RotateCcw, Loader2 } from 'lucide-react'
 
@@ -48,8 +49,8 @@ export function HandoffItem({ h, onChanged }: { h: HandoffRow; onChanged?: () =>
         <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: t.bg, color: t.fg }}>{h.state === 'open' ? <><Loader2 size={10} style={{ animation: 'spin 1s linear infinite', verticalAlign: -1 }} /> {t.label}</> : t.label}</span>
         <span style={{ fontSize: 11, color: 'var(--text-subtle)', marginLeft: 'auto' }}>{ago(h.updated_at)}{(h.attempts ?? 0) > 1 ? ` · try ${h.attempts}` : ''}</span>
       </div>
-      <span style={{ color: 'var(--text)', overflowWrap: 'anywhere' }}>{h.what || h.kind}{h.content_id ? <span style={{ color: 'var(--text-subtle)' }}> · card #{h.content_id}{h.title ? ` “${h.title.slice(0, 40)}”` : ''}</span> : null}</span>
-      {h.receipt && <span style={{ color: 'var(--text-muted,#5F6178)', overflowWrap: 'anywhere' }}>✓ {h.receipt}</span>}
+      <span style={{ color: 'var(--text)', overflowWrap: 'anywhere' }}>{h.what || h.kind}{h.content_id ? <span style={{ color: 'var(--text-subtle)' }}> · {withRecordLinks(`card #${h.content_id}`)}{h.title ? ` “${h.title.slice(0, 40)}”` : ''}</span> : null}</span>
+      {h.receipt && <span style={{ color: 'var(--text-muted,#5F6178)', overflowWrap: 'anywhere' }}>✓ {withRecordLinks(h.receipt)}</span>}
       {h.state === 'failed' && h.error && <span style={{ color: 'var(--bad)', overflowWrap: 'anywhere' }}>⚠ {h.error}</span>}
       {h.state === 'stuck' && <span style={{ color: '#A3610F' }}>⚠ This stopped partway (no word back in over 10 minutes).</span>}
       {h.state === 'waiting' && <span style={{ color: 'var(--text-subtle)', fontSize: 11.5 }}>{NAME[h.to] ?? h.to} picks this up in planning.</span>}

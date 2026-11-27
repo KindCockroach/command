@@ -567,3 +567,8 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
 .hr-s { font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.4; margin: 0; }
 .hr-bad { font-size: var(--fs-xs); color: var(--needs); line-height: 1.4; }
 .hr-tag { align-self: flex-start; font-size: 11px; font-weight: var(--fw-bold); padding: 1px 8px; border-radius: 99px; background: var(--done-bg); color: var(--done); }
+
+/* ── Phase 8 · B3: Open-in-RISE links inside agent replies and receipts ── */
+.rec-link { display: inline; border: 0; padding: 0 2px; margin: 0; background: none; font: inherit; font-weight: var(--fw-bold); color: var(--act); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; border-radius: 4px; }
+.rec-link:hover { background: var(--surface-raised); }
+.rec-link:focus-visible { outline: 2px solid var(--act); outline-offset: 1px; }

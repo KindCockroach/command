@@ -1,4 +1,5 @@
 'use client'
+import { withRecordLinks } from './RecordText'
 import { useState, useRef, useEffect } from 'react'
 import { uploadBig, folderFor } from '@/lib/uploadBig'
 import { Loader2, Send, Paperclip, X } from 'lucide-react'
@@ -107,13 +108,13 @@ export default function CommanderChat() {
                       style={{ display: 'block', maxWidth: '180px', maxHeight: '180px', borderRadius: '10px', marginBottom: m.content ? '6px' : 0, cursor: 'zoom-in', objectFit: 'cover' }} />
                   : <div style={{ fontSize: '11px', opacity: 0.85, marginBottom: m.content ? '5px' : 0 }}>📎 {m.attach.name}</div>
               )}
-              {m.content}
+              {m.role === 'assistant' ? withRecordLinks(m.content) : m.content}
             </div>}
             {m.receipts && m.receipts.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {m.receipts.map((r, ri) => (
                   <div key={ri} style={{ fontSize: '12px', fontWeight: 700, lineHeight: 1.45, padding: '6px 10px', borderRadius: '9px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', border: `1px solid ${r.ok ? 'rgba(61,170,124,0.45)' : 'rgba(224,82,82,0.45)'}`, background: r.ok ? '#EAF7F0' : 'rgba(224,82,82,0.08)', color: r.ok ? '#2E8B60' : '#C0392B' }}>
-                    {receiptLine(r)}
+                    {withRecordLinks(receiptLine(r))}
                   </div>
                 ))}
               </div>
