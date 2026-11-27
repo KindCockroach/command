@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import HerPanel from './HerPanel'
 import CommanderChat from './CommanderChat'
 import { TalkToCapThread } from './TalkToCap'
+import HomeReceipts from './HomeReceipts'
 
 // Phase 7 · Home is a chat. One conversation with Her, Man or Cap (Her is the front door),
 // built on their existing chats and receipts, plus a small strip of what needs Mandi.
@@ -103,10 +104,13 @@ export default function HomeChat() {
       {hide && unseen > 0 && (
         <button type="button" className="rp-pill rp-secondary" style={{ alignSelf: 'flex-start' }} onClick={() => toggleHide(false)}>{me.name} replied · show</button>
       )}
+      <div className="hc-wrap">
       <div ref={boxRef} className={`rp-card rp-glow-input hc${hide ? ' hc-hide' : ' hc-split'}`} style={{ padding: who === 'cap' ? '18px 20px' : 0, overflow: 'hidden' }}>
         {who === 'her' && <HerPanel />}
         {who === 'man' && <CommanderChat />}
         {who === 'cap' && <TalkToCapThread id="cap:general" intro="Cap owns the map: every account’s plan, the calendar and your campaigns. Ask him what’s coming up, what’s waiting on you, or where an idea should go." placeholder="Ask Cap: what's on the calendar this week? What's waiting on me? Where should this idea go?" />}
+      </div>
+      <HomeReceipts />
       </div>
     </div>
   )

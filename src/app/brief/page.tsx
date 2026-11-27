@@ -51,6 +51,10 @@ export default function BriefPage() {
   const [weekMsg, setWeekMsg] = useState<string | null>(null)
   const [spendLine, setSpendLine] = useState<string | null>(null) // Phase 8 A0: shows once RISE passes 80% of its monthly AI cap
   const [copied, setCopied] = useState(false)
+  // Phase 8 B2: where she's the gap — the top 3 things only she can move (Approve shows everything).
+  const [gap, setGap] = useState<{ label: string; who: string; moves: string; view: string }[] | null>(null)
+  const [gapTotal, setGapTotal] = useState(0)
+  useEffect(() => { fetch('/api/approvals').then(r => r.json()).then(d => { if (Array.isArray(d?.gap)) { setGap(d.gap.slice(0, 3)); setGapTotal(d.gap.length) } }).catch(() => {}) }, [])
   // When she last opened the brief — so "new signups" means new SINCE THEN, and the
   // brief always shows her what changed rather than repeating what she's already seen.
   const [prevSeen, setPrevSeen] = useState<string | null>(null)
@@ -176,6 +180,24 @@ export default function BriefPage() {
                 </div>
               )}
               {weekMsg && <p style={{ fontSize: '13px', color: '#7A6A5B', marginTop: '8px' }}>{weekMsg}</p>}
+            </div>
+          )}
+
+          {/* Where you're the gap — Phase 8 B2 */}
+          {gap && (
+            <div style={{ background: '#fff', borderRadius: '20px', padding: '20px', border: '1px solid rgba(168,147,126,0.22)', boxShadow: '0 6px 24px -14px rgba(90,60,30,0.25)' }}>
+              <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#9E3F5E', marginBottom: '9px' }}>🧭 Where you’re the gap{gapTotal ? ` · ${gapTotal}` : ''}</p>
+              {gap.length === 0 ? <p style={{ fontSize: '14.5px', color: '#4A3F35' }}>Nothing is waiting on you. RISE is moving on its own.</p> : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {gap.map((g, k) => (
+                    <a key={k} href={`/station?view=${encodeURIComponent(g.view)}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#2E241D', lineHeight: 1.35 }}>{g.label}</span>
+                      <span style={{ fontSize: '13px', color: '#7A6A5B', lineHeight: 1.4 }}>Waiting on {g.who.replace(/^You/, 'you')}. {g.moves}</span>
+                    </a>
+                  ))}
+                  {gapTotal > 3 && <a href="/station?view=approve" style={{ fontSize: '13px', fontWeight: 700, color: '#9E3F5E', textDecoration: 'none' }}>See all {gapTotal} in Approve →</a>}
+                </div>
+              )}
             </div>
           )}
 

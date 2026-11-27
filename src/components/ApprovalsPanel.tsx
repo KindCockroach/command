@@ -8,8 +8,9 @@ import GrowBox from './GrowBox'
 // this gathers them, lets you read the draft right here, and approve (or say no with a reason).
 
 type Action = { label: string; kind: 'post'; url: string; method?: 'POST' | 'PATCH'; body: Record<string, unknown>; reason?: string; reasonField?: string; primary?: boolean; resolve?: string } | { label: string; kind: 'open'; view: string }
-type Item = { id: string; source: string; from: string; title: string; detail?: string; body?: string; at: string; view: string; actions: Action[]; chat?: number }
-type Data = { items: Item[]; counts: Record<string, number>; total: number; labels: Record<string, string> }
+type Item = { id: string; source: string; from: string; title: string; detail?: string; body?: string; at: string; view: string; actions: Action[]; chat?: number; moves?: string }
+type Owed = { kind: 'filming' | 'uploads'; count: number; label: string; moves: string; view: string; cards: { id: number; title: string; date?: string }[] }
+type Data = { items: Item[]; counts: Record<string, number>; total: number; labels: Record<string, string>; owed?: Owed[] }
 
 const ORDER = ['plan', 'notes', 'email', 'story', 'substack', 'send', 'idea', 'question', 'brain', 'health']
 const go = (view: string) => window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view } }))
@@ -52,6 +53,22 @@ export default function ApprovalsPanel() {
       </div>
       {msg && <p className="ap-msg">{msg}</p>}
 
+      {/* B2: where you're the gap — work only you can do that isn't a yes. */}
+      {(d.owed ?? []).some(o => o.count) && (
+        <div className="ap-g">
+          <p className="ap-gh">Only you can do these</p>
+          {(d.owed ?? []).filter(o => o.count).map(o => (
+            <div key={o.kind} className="ap-i">
+              <span className="ap-from">{o.kind === 'filming' ? '🎬 Filming owed' : '⬆ Footage owed'}</span>
+              <b>{o.label}</b>
+              <span className="ap-wait">Waiting on you. {o.moves}</span>
+              {o.cards.length > 0 && <span className="ap-d">{o.cards.slice(0, 5).map(c => `${c.title}${c.date ? ` (${c.date.slice(5)})` : ''}`).join(' · ')}{o.cards.length > 5 ? ` · +${o.count - 5} more` : ''}</span>}
+              <div className="ap-row"><button type="button" className="ap-p" onClick={() => go(o.view)}>Open Content Day</button></div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {groups.map(g => g.s === 'health' ? (
         <div key={g.s} className="ap-g">
           <button type="button" className="ap-gh" onClick={() => setShowHealth(x => !x)}>{d.labels[g.s]} · {g.items.length} <ChevronDown size={13} style={{ transform: showHealth ? 'rotate(180deg)' : 'none' }} /></button>
@@ -74,6 +91,7 @@ export default function ApprovalsPanel() {
         <span className="ap-from">{it.from}</span>
         <b>{it.title}</b>
         {it.detail && <span className="ap-d">{it.detail}</span>}
+        {it.moves && <span className="ap-wait">Waiting on you. {it.moves}</span>}
         {it.body && <>
           <button type="button" className="ap-link" onClick={() => setOpen(o => ({ ...o, [it.id]: !o[it.id] }))}>{open[it.id] ? 'Hide' : 'Read it here'}</button>
           {open[it.id] && <div className="ap-body">{it.body}</div>}
@@ -114,6 +132,7 @@ button.ap-gh{cursor:pointer}
 .ap-i:first-of-type{border-top:0}
 .ap-from{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gold)}
 .ap-d{font-size:12px;color:var(--text-subtle);line-height:1.5}
+.ap-wait{font-size:12px;font-weight:600;color:var(--needs,#B3125A);line-height:1.45}
 .ap-link{all:unset;cursor:pointer;font-size:12px;font-weight:600;color:var(--link)}
 .ap-body{white-space:pre-wrap;font-size:14px;line-height:1.55;background:var(--surface-raised,#F4F1EC);border-radius:10px;padding:10px 12px;max-height:420px;overflow-y:auto}
 .ap-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;align-items:flex-end}

@@ -550,3 +550,20 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
 .rp-back:focus-visible { outline: 2px solid #FFE08A; outline-offset: 2px; }
 @media (max-width: 767px) { .rp-back { width: 44px; height: 44px; } }
 @media (prefers-reduced-motion: reduce) { .rp-back { transition: none; } .rp-back:hover:not(:disabled) { transform: none; } }
+
+/* ── Phase 8 · B2: receipts beside the Home chat (desktop only) ── */
+.hc-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.hr { display: none; }
+@media (min-width: 1200px) {
+  .hc-wrap { grid-template-columns: minmax(0, 1fr) 300px; }
+  .hr { display: flex; flex-direction: column; gap: 10px; padding: 16px; position: sticky; top: 76px; max-height: calc(100vh - 96px); overflow-y: auto; }
+}
+.hr-h { margin: 0; font-size: var(--fs-xs); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: .08em; color: var(--text-subtle); }
+.hr-i { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-top: 1px solid var(--border); }
+.hr-i:first-of-type { border-top: 0; }
+.hr-who { font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--act); }
+.hr-t { font-weight: 400; color: var(--text-subtle); margin-left: 4px; }
+.hr-w { font-size: var(--fs-sm); color: var(--text); line-height: 1.35; }
+.hr-s { font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.4; margin: 0; }
+.hr-bad { font-size: var(--fs-xs); color: var(--needs); line-height: 1.4; }
+.hr-tag { align-self: flex-start; font-size: 11px; font-weight: var(--fw-bold); padding: 1px 8px; border-radius: 99px; background: var(--done-bg); color: var(--done); }

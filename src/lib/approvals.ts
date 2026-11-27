@@ -9,6 +9,7 @@ import { AGENT_LABEL } from './handoffs'
 import { cut } from './jsonkit'
 import { healthActions } from './healthActions'
 import { reviewBody, kindsText } from './noteIdeas'
+import { needsFilming, hasVideo } from './shootList'
 
 export type ApprovalAction =
   | { label: string; kind: 'post'; url: string; method?: 'POST' | 'PATCH'; body: Record<string, unknown>; reason?: string; reasonField?: string; primary?: boolean; resolve?: string }
@@ -24,13 +25,53 @@ export type Approval = {
   body?: string           // the draft itself, to read without leaving
   at: string
   view: string            // the tab it lives in
+  moves?: string          // B2: what moves it (every waiting label says who it waits on and what moves it)
   actions: ApprovalAction[]
 }
 
 const SOURCE_LABEL: Record<Approval['source'], string> = { plan: 'Plans', email: 'Campaign emails', story: 'Story desk', substack: 'Substack', send: 'Ready to send', idea: 'Agents’ ideas', question: 'Questions for you', health: 'Needs you (health check)', brain: 'Brain audit', notes: 'Ideas from your notes' }
 export { SOURCE_LABEL }
 
-export function getApprovals(): { items: Approval[]; counts: Record<string, number>; total: number } {
+// B2: everything here waits on Mandi; this says what moves each kind along.
+const MOVES: Record<Approval['source'], string> = {
+  plan: 'Your Approve or Decline. Then Cap places the posts on the calendar.',
+  notes: 'Pick the ones worth writing. Then Ed writes them.',
+  email: 'Your approval. Sending stays off until you turn the sequence on.',
+  story: 'Your yes (or pass). Then Pod writes or finishes it.',
+  substack: 'Your approval. Then the issue is ready to publish.',
+  send: 'Your OK to send it.',
+  idea: 'Your yes or no. Yes hands it to that agent.',
+  question: 'Your answer in Her’s chat. Then the agent carries on.',
+  brain: 'Your approval. Then Man tags and merges the Brain.',
+  health: 'The fix it names (or tell Man it’s fine).',
+}
+
+export type Owed = { kind: 'filming' | 'uploads'; count: number; label: string; moves: string; view: string; cards: { id: number; title: string; date?: string }[] }
+export type GapItem = { label: string; who: string; moves: string; view: string }
+
+const todayCT = () => new Date(Date.now() - 6 * 3600000).toISOString().slice(0, 10)
+const addDays = (d: string, n: number) => new Date(Date.parse(d + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10)
+
+/** B2: work only Mandi can do that isn't a yes: filming owed this week, and footage owed for filmed cards. */
+export function owedWork(today = todayCT()): Owed[] {
+  const db = readDb()
+  const dow = new Date(today + 'T00:00:00Z').getUTCDay()
+  const end = addDays(today, 6 - ((dow + 6) % 7))   // through Sunday
+  const byId = new Map(db.content.map(c => [c.id, c]))
+  const film = new Map<number, { id: number; title: string; date?: string }>()
+  for (const i of (db.calendar_items ?? []).filter(x => x.date <= end).sort((a, b) => a.date.localeCompare(b.date))) {
+    const c = byId.get(i.content_id)
+    if (c && !film.has(c.id) && needsFilming(c)) film.set(c.id, { id: c.id, title: c.title, date: i.date })
+  }
+  const uploads = db.content.filter(c => !!c.filmed_at && !hasVideo(c) && !['published', 'archived'].includes(c.status))
+    .map(c => ({ id: c.id, title: c.title }))
+  return [
+    { kind: 'filming', count: film.size, label: `${film.size} card${film.size === 1 ? '' : 's'} to film this week`, moves: 'Film it on Content Day, then drop the footage on the card.', view: 'contentday', cards: [...film.values()].slice(0, 20) },
+    { kind: 'uploads', count: uploads.length, label: `${uploads.length} filmed card${uploads.length === 1 ? '' : 's'} waiting for the footage`, moves: 'Drop the video on the card (Content Day › Post). Then Cap writes and schedules it.', view: 'contentday', cards: uploads.slice(0, 20) },
+  ]
+}
+
+export function getApprovals(): { items: Approval[]; counts: Record<string, number>; total: number; owed: Owed[]; gap: GapItem[] } {
   const db = readDb()
   const items: Approval[] = []
   const handle = new Map(getAllBrandAccounts().map(a => [a.id, a.handle]))
@@ -130,8 +171,16 @@ export function getApprovals(): { items: Approval[]; counts: Record<string, numb
   const chats = db.approval_chats ?? {}
   for (const i of items) if (chats[i.id]?.length) i.chat = chats[i.id].length
 
+  for (const i of items) i.moves ??= MOVES[i.source]
+
   const counts: Record<string, number> = {}
   for (const i of items) counts[i.source] = (counts[i.source] ?? 0) + 1
   const total = items.filter(i => i.source !== 'health').length
-  return { items, counts, total }
+  const owed = owedWork()
+  // Her's Brief shows the top 3 of this; Approve shows everything.
+  const gap: GapItem[] = [
+    ...owed.filter(o => o.count).map(o => ({ label: o.label, who: 'You', moves: o.moves, view: o.view })),
+    ...items.filter(i => i.source !== 'health').sort((a, b) => String(a.at).localeCompare(String(b.at))).map(i => ({ label: i.title, who: `You (from ${i.from})`, moves: i.moves ?? '', view: i.view })),
+  ]
+  return { items, counts, total, owed, gap }
 }
