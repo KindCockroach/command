@@ -235,13 +235,16 @@ const reset: Check = ({ db, today }, f, ok) => {
   if (waiting.length) f.push({ key: 'reset:approve', area: 'reset', level: 'needs_you', count: waiting.length, title: `${waiting.length} email draft${waiting.length > 1 ? 's' : ''} Cap confirmed, waiting for your Approve`, detail: waiting.map(e => e.title).join(' · '), fix: 'Read each one in Approve (or Campaigns → Reset emails) and press Approve (or edit it first).' })
   else if (seq.emails.length) ok.push('No email drafts waiting on approval')
 
-  // The next Reset: every 14 days from the anchor. Is its Luma list in RISE?
+  // The guest list comes in only AFTER a Reset happens (check-in done). So ask for the most
+  // recent past Reset's list, never the upcoming one: the emails take its date from the calendar.
   const cfg = getPlanConfig()
-  let next = cfg.reset_anchor
-  while (next < today) next = addDays(next, 14)
+  let past = cfg.reset_anchor
+  if (/^\d{4}-\d{2}-\d{2}$/.test(past) && past < today) {
+    while (addDays(past, 14) < today) past = addDays(past, 14)
+  } else past = ''
   const events = db.reset_events ?? []
-  if (!events.some(e => e.date === next)) f.push({ key: `reset:next:${next}`, area: 'reset', level: 'needs_you', title: `The next Reset (${next}) isn’t imported yet`, fix: 'Export its guest list from Luma (even with nobody registered) and drop it in People → Reset · Luma import, so touches 4 and 5 have the date and can see who registered.' })
-  else ok.push(`Next Reset ${next} is imported`)
+  if (past && !events.some(e => e.date === past)) f.push({ key: `reset:past:${past}`, area: 'reset', level: 'needs_you', title: `The ${past} Reset’s guest list isn’t uploaded yet`, fix: 'Export its guest list from Luma (Guests → Export CSV, after check-in) and drop it in People → Reset · Luma import. That starts the thank-you touches and the free-seat email for anyone who registered but didn’t come.' })
+  else if (past) ok.push(`The ${past} Reset’s guest list is in`)
 
   // Touches due on the latest past Reset that are blocked.
   const last = events.filter(e => e.date < today).sort((a, b) => b.date.localeCompare(a.date))[0]

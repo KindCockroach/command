@@ -1,5 +1,6 @@
 'use client'
 import MusicLine from './MusicLine'
+import MakeView from './MakeView'
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { ContentPiece, BrandAccount, Character, Db } from '@/lib/db'
 import { parseScript, isChildCharacter, type ScriptLine } from '@/lib/characters'
@@ -64,6 +65,12 @@ export default function ContentDay() {
   const [want, setWant] = useState<number | null>(null)   // a card someone asked to open (calendar)
   const [jumpTo, setJumpTo] = useState<number | null>(null)
   const [note, setNote] = useState('')
+  // SHOOT = the director's chair (scripted cards to film) · MAKE = every open card, searchable and
+  // filtered by what she wants to make (talking head, role play, b-roll, carousel).
+  const [mode, setModeRaw] = useState<'shoot' | 'make'>(() => { try { return localStorage.getItem('rise-contentday-mode') === 'make' ? 'make' : 'shoot' } catch { return 'shoot' } })
+  const setMode = (m: 'shoot' | 'make') => { setModeRaw(m); try { localStorage.setItem('rise-contentday-mode', m) } catch { /* ok */ } }
+  const [makeOpen, setMakeOpen] = useState<number | null>(null)
+  const [resetIds, setResetIds] = useState<Set<number>>(new Set())
 
   const load = useCallback(() => {
     setLoading(true)
@@ -77,8 +84,13 @@ export default function ContentDay() {
       setPosts(Array.isArray(c) ? c : [])
       setAccounts(Array.isArray(a) ? a : [])
       const d: Record<number, string> = {}
-      for (const i of (pl?.calendar ?? []) as { content_id: number; date: string }[]) if (!d[i.content_id] || i.date < d[i.content_id]) d[i.content_id] = i.date
-      setDates(d)
+      const rs = new Set<number>()
+      for (const i of (pl?.calendar ?? []) as { content_id: number; date: string; slot?: string }[]) {
+        if (!d[i.content_id] || i.date < d[i.content_id]) d[i.content_id] = i.date
+        if (i.slot === 'reset') rs.add(i.content_id)
+      }
+      for (const p of (Array.isArray(c) ? c : []) as ContentPiece[]) if ((p.tags ?? []).includes('reset-promo')) rs.add(p.id)
+      setDates(d); setResetIds(rs)
     }).finally(() => setLoading(false))
   }, [])
   useEffect(() => { load() }, [load])
@@ -142,14 +154,12 @@ export default function ContentDay() {
     setWant(null)
     if (!p) { setNote(`Card #${want} wasn’t found. It may have been deleted.`); return }
     const name = `“${(p.title || `Card #${p.id}`).slice(0, 70)}”`
-    const why = ['published', 'archived'].includes(p.status) ? `is already ${p.status}`
-      : !(p.script ?? '').trim() ? 'has no script yet, so there’s nothing to film. Ask Ed or Cap for one'
-      : hasVideo(p) ? 'already has a video on it'
-      : p.filmed_at && !filmedNow.includes(p.id) ? 'is marked Filmed ✓ (open it in Create to un-mark it)'
-      : isFaceless(p) ? 'is a no-face post (trend clip, text on screen or b-roll), so it isn’t filmed here'
-      : ''
-    if (why) { setNote(`${name} ${why}.`); return }
+    if (['published', 'archived'].includes(p.status)) { setNote(`${name} is already ${p.status}.`); return }
     setNote('')
+    // Not on the shoot list (no script yet, a b-roll or carousel, already has video): open it in Make.
+    const filmable = (p.script ?? '').trim() && !hasVideo(p) && !(p.filmed_at && !filmedNow.includes(p.id)) && !isFaceless(p)
+    if (!filmable) { setMode('make'); setMakeOpen(p.id); return }
+    setMode('shoot')
     const cs = p.characters?.length ? p.characters : [UNTAGGED]
     setCharacter(c => cs.includes(c) ? c : cs[0])
     setJumpTo(p.id)
@@ -345,21 +355,29 @@ export default function ContentDay() {
           <p style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--purple)' }}>Director’s chair</p>
           <p style={{ fontSize: '17px', fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.015em', lineHeight: 1.1 }}>Content Day</p>
         </div>
-        <div role="group" aria-label="View" style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
-          {(['film', 'post'] as const).map(v => (
-            <button key={v} onClick={() => setView(v)} aria-pressed={view === v}
-              style={{ padding: '7px 11px', border: 0, background: view === v ? 'var(--purple)' : 'var(--surface)', color: view === v ? '#fff' : 'var(--text-muted)', fontWeight: 800, fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>
-              {v === 'film' ? '🎬 Film' : '📄 Post'}
+        <div role="group" aria-label="Mode" style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+          {(['shoot', 'make'] as const).map(m => (
+            <button key={m} onClick={() => setMode(m)} aria-pressed={mode === m}
+              style={{ padding: '7px 11px', border: 0, background: mode === m ? 'var(--purple)' : 'var(--surface)', color: mode === m ? '#fff' : 'var(--text-muted)', fontWeight: 800, fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              {m === 'shoot' ? '🎬 Shoot list' : '🧰 Make'}
             </button>
           ))}
         </div>
+        {mode === 'shoot' && <div role="group" aria-label="View" style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+          {(['film', 'post'] as const).map(v => (
+            <button key={v} onClick={() => setView(v)} aria-pressed={view === v}
+              style={{ padding: '7px 11px', border: 0, background: view === v ? 'var(--purple)' : 'var(--surface)', color: view === v ? '#fff' : 'var(--text-muted)', fontWeight: 800, fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              {v === 'film' ? 'Film' : 'Post'}
+            </button>
+          ))}
+        </div>}
         <button onClick={load} disabled={loading} title="Refresh" style={{ ...btn, padding: '7px 9px', color: 'var(--text-muted)' }}>
           <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : undefined} />
         </button>
       </div>
 
       {/* Character rail: batch size per outfit */}
-      {rail.length > 0 && (
+      {mode === 'shoot' && rail.length > 0 && (
         <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', padding: '11px 14px', borderBottom: '1px solid var(--border)' }}>
           {rail.map(([c, n]) => {
             const on = c === character
@@ -375,6 +393,17 @@ export default function ContentDay() {
         </div>
       )}
 
+      {mode === 'make' ? (
+        <div style={{ padding: '14px' }}>
+          {loading && !posts.length ? <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '14px', textAlign: 'center' }}>Laying out the cards…</p> : (
+            <MakeView posts={posts} accounts={accounts} dates={dates} resetIds={resetIds}
+              openId={makeOpen} onOpened={() => setMakeOpen(null)}
+              onSaved={r => setPosts(ps => ps.map(x => x.id === r.id ? r : x))} onReload={load}
+              canFilm={p => shoot.some(x => x.id === p.id)}
+              onFilm={p => setWant(p.id)} />
+          )}
+        </div>
+      ) : (
       <div style={{ padding: '14px' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {loading && !posts.length && <p style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '14px', textAlign: 'center' }}>Setting up the chair…</p>}
         {!loading && !shoot.length && (
@@ -383,7 +412,7 @@ export default function ContentDay() {
         {err && <p style={{ fontSize: '12px', color: '#C0392B', marginBottom: '8px' }}>{err}</p>}
         {note && (
           <div role="status" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', lineHeight: 1.5, color: 'var(--text)', background: 'var(--surface-raised, var(--surface))', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 12px', marginBottom: '10px' }}>
-            <span style={{ flex: 1 }}>That card isn’t on the shoot list: {note}</span>
+            <span style={{ flex: 1 }}>{note}</span>
             <button onClick={() => setNote('')} aria-label="Dismiss" style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}><X size={14} /></button>
           </div>
         )}
@@ -423,6 +452,7 @@ export default function ContentDay() {
           </>
         )}
       </div>
+      )}
       <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
 .cd-film { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 @media (min-width: 860px) { .cd-film { grid-template-columns: minmax(0, 1.7fr) minmax(240px, 1fr); align-items: start; } }`}</style>

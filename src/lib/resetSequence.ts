@@ -32,6 +32,7 @@ const MAX_ROUNDS = 3   // Cap's reviews before he lets a draft through with note
 
 export const DEFAULT_SETTINGS: SeqSettings = {
   coupon_code: '',
+  noshow_code: '',
   next_reset_url: 'https://www.bethereforher.com/reset',
   next_reset_date: '',
   survey_url: 'https://www.bethereforher.com/reset/survey',
@@ -65,6 +66,10 @@ export const CAP_PLAN: Plan[] = [
     brief: 'The morning after the Reset. Thank her for giving herself the hour; name what that took without making it heavy. Ask her to take the short survey (the button). "coupon_block" is a separate short paragraph used for everyone except pass holders: her returning price is $25 instead of $33 with the code {{coupon_code}} on Luma for the next Reset ({{next_reset_date}}). The survey is the one call to action; the coupon is a gift, not a second ask.',
   },
   {
+    key: 'noshow', branch: 'joyful_media', title: 'No-show · A free seat at the next Reset', day_offset: 1, cta: 'next_reset', extras: [],
+    brief: 'Only for people who registered for this Reset and didn’t make it. No guilt, no "we missed you" heaviness: life happens, especially for moms. Give her a one-time free seat at the next Reset on {{next_reset_date}} at 8 PM Central with the code {{noshow_code}} on Luma. Name no price. Never mention a survey or the $9 collection. One call to action: save your free seat.',
+  },
+  {
     key: 't2', branch: 'joyful_media', title: 'Touch 2 · Optional $9 Listen To Your Intuition', day_offset: 3, cta: 'nine',
     extras: [],
     brief: 'Two days after touch 1. A light, truly optional offer: the Listen To Your Intuition collection, seven short guided meditations, $9, for the days between Resets. Make it easy to say no. No pressure, no scarcity, no promise of results. One call to action: the collection.',
@@ -79,7 +84,7 @@ export const CAP_PLAN: Plan[] = [
   },
   {
     key: 't5', branch: 'joyful_media', title: 'Touch 5 · Reminder (only if not registered)', day_offset: 11, cta: 'next_reset', extras: [],
-    brief: 'Sent ONLY to people who have not registered for the next Reset on {{next_reset_date}}. A short reminder that the door is open, no guilt, no countdown, no fake scarcity. Mention her returning price ($25 with code {{coupon_code}}) in one plain line. One call to action: save your seat.',
+    brief: 'For people who came to this Reset. RISE can’t see registrations for the next Reset until its guest list comes in after it, so include one plain line like "If you already saved your seat, see you Sunday." A short reminder that the door is open, no guilt, no countdown, no fake scarcity. Mention her returning price ($25 with code {{coupon_code}}) in one plain line. One call to action: save your seat.',
   },
   {
     key: 't6', branch: 'joyful_media', title: 'Touch 6 · A free gift, no sales pressure', day_offset: 12, cta: 'gift', extras: ['medium_note'],
@@ -125,7 +130,7 @@ export function getSequence(): ResetSequenceStore {
 export function updateSettings(patch: Partial<SeqSettings>): SeqSettings {
   const db = readDb()
   const s = ensure(db)
-  const str = ['coupon_code', 'next_reset_url', 'survey_url', 'nine_url', 'pass_url', 'gift_name', 'gift_url', 'medium_url', 'podcast_url'] as const
+  const str = ['coupon_code', 'noshow_code', 'next_reset_url', 'survey_url', 'nine_url', 'pass_url', 'gift_name', 'gift_url', 'medium_url', 'podcast_url'] as const
   for (const k of str) if (typeof patch[k] === 'string') s.settings[k] = (patch[k] as string).trim()
   if (typeof patch.next_reset_date === 'string') s.settings.next_reset_date = /^\d{4}-\d{2}-\d{2}$/.test(patch.next_reset_date.trim()) ? patch.next_reset_date.trim() : ''
   if (typeof patch.sequence_live === 'boolean') s.settings.sequence_live = patch.sequence_live
@@ -195,7 +200,7 @@ export function capCheck(e: SeqEmail, db = readDb()): { reasons: string[]; notes
   if (!e.body.trim()) reasons.push('The body is empty.')
   if (!e.cta_label.trim() && e.cta !== 'none') reasons.push('No button label for the one call to action.')
   for (const x of p.extras) if (!(e.extras[x] ?? '').trim()) reasons.push(`The "${x}" paragraph is missing.`)
-  const badTokens = [...all.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1]).filter(t => !['first_name', 'next_reset_date', 'coupon_code', 'gift_name'].includes(t))
+  const badTokens = [...all.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1]).filter(t => !['first_name', 'next_reset_date', 'coupon_code', 'gift_name', ...(e.key === 'noshow' ? ['noshow_code'] : [])].includes(t))
   if (badTokens.length) reasons.push(`Unknown token${badTokens.length > 1 ? 's' : ''} in the text: ${[...new Set(badTokens)].map(t => `{{${t}}}`).join(', ')}. The segment paragraphs are added automatically; only {{first_name}}, {{next_reset_date}}, {{coupon_code}} and {{gift_name}} are filled in.`)
   if (/(^|\n)\s*(warmly|with warmth|with love|love|be well|xo+|cheers|best|with you|hugs)?,?\s*\n?\s*mandi( beck)?\s*$/i.test(e.body.trim()) || /(^|\n)\s*(warmly|with warmth|with love|be well|xo+|cheers|best|hugs),?\s*$/i.test(e.body.trim())) reasons.push('The body ends with a sign-off. The email template already signs it "With you, Mandi Beck"; take the sign-off out.')
   // Links Mandi gave (in her notes, or in her own edit) are hers to keep; only a writer's invented link is flagged.
@@ -215,6 +220,8 @@ export function capCheck(e: SeqEmail, db = readDb()): { reasons: string[]; notes
   if (e.key === 't4' && /\$\s?\d/.test(e.body)) reasons.push('Touch 4’s body names a price. Prices go in the segment paragraphs so each person sees the right one.')
   if (e.key === 't4' && /\$|code|coupon|price/i.test(e.extras.pass_holder_note ?? '')) reasons.push('The pass-holder paragraph mentions a price or code. Pass holders don’t pay per Reset.')
   if ((e.key === 't1' || e.key === 't4' || e.key === 't5') && !/\{\{coupon_code\}\}/.test(all)) reasons.push('The coupon code token {{coupon_code}} is missing, so she won’t see her $25 code.')
+  if (e.key === 'noshow' && !/\{\{noshow_code\}\}/.test(all)) reasons.push('The free-seat code token {{noshow_code}} is missing, so she won’t see her code.')
+  if (e.key === 'noshow' && /\$\s?\d/.test(all)) reasons.push('The no-show email names a price. Her seat is free; no price at all.')
   if (e.key === 't6' && SELL.test([e.subject, e.preheader, e.body, e.cta_label, e.ps].join('\n'))) reasons.push(`Touch 6 is a gift with no sales pressure, but it mentions "${[e.subject, e.preheader, e.body, e.cta_label, e.ps].join('\n').match(SELL)![0]}". Take every ask out.`)
   if (PRESSURE.test(all)) reasons.push(`Pressure language ("${all.match(PRESSURE)![0]}"). No fake scarcity, no countdowns.`)
   // Guardrails.
@@ -283,7 +290,7 @@ const emailKeyOf = (h: Handoff) => (h.ref?.type === 'email' ? String(h.ref.id) :
 const PRICE_FACTS = `FACTS (never invent others):
 - The Reset: a live, guided hour, every other Sunday at 8 PM Central. $33 standard. $25 returning (an $8 coupon code, written {{coupon_code}}). After two attendances only: a $44/month pass for every Reset. There is NO 2-pack. Registration is on Luma.
 - Listen To Your Intuition: seven short guided meditations, $9.
-- Tokens you may use and must not fill in yourself: {{first_name}} (may be blank, so write so it reads fine either way, e.g. "Hi {{first_name}},"), {{next_reset_date}}, {{coupon_code}}, {{gift_name}}.
+- Tokens you may use and must not fill in yourself: {{first_name}} (may be blank, so write so it reads fine either way, e.g. "Hi {{first_name}},"), {{next_reset_date}}, {{coupon_code}}, {{gift_name}}, and in the no-show email only {{noshow_code}} (her one-time free-seat code).
 - Links go on the button only. Never write a URL.
 - Don't sign off: the template signs every email "With you, Mandi Beck". Never put a segment paragraph's name (like {{coupon_block}}) in the body; those paragraphs are added after the body automatically.`
 
@@ -399,6 +406,7 @@ export function renderEmail(e: SeqEmail, opts: { first_name?: string; segment: S
   const vars: Record<string, string> = {
     first_name: (opts.first_name ?? '').trim(),
     coupon_code: s.coupon_code,
+    noshow_code: s.noshow_code ?? '',
     next_reset_date: opts.next_reset_date ? niceDate(opts.next_reset_date) : 'the next Reset',
     gift_name: s.gift_name,
   }
@@ -445,6 +453,7 @@ function settingsBlockers(e: SeqEmail, s: SeqSettings): string[] {
   const b: string[] = []
   if (e.status !== 'approved') b.push(e.body ? 'Waiting for your approval of the draft.' : 'Ed hasn’t written it yet.')
   if (['t1', 't4', 't5'].includes(e.key) && !s.coupon_code) b.push('No $8 coupon code is set, so the $25 price can’t be given.')
+  if (e.key === 'noshow' && !s.noshow_code) b.push('No free-seat code for no-shows is set yet (Campaigns → Reset emails → Settings).')
   if (e.key === 't2' && !s.nine_url) b.push('No link for Listen To Your Intuition ($9) is set. Touch 2 is optional, so it simply holds.')
   if (e.key === 't6' && (!s.gift_name || !s.gift_url)) b.push('No free gift is set (name and link).')
   if (!ctaUrl(e, s) && e.cta !== 'none' && e.cta !== 'reply') b.push('The button has no link.')
@@ -471,13 +480,22 @@ function decide(key: SeqEmailKey, p: PersonView, c: Contact | undefined, ctx: { 
     return no('No consent: Luma didn’t say yes and she hasn’t joined the Joyful Media list.')
   }
   const a = c?.resets?.find(r => r.event_id === ctx.eventId)
+  if (key === 'noshow') {
+    if (a?.attended) return no('Came to this Reset: the no-show seat isn’t for her.')
+    if (a?.status !== 'registered') return no(a?.status === 'invited' ? 'Invited on Luma, never registered.' : `Not registered for this Reset (${a?.status ?? 'not on it'}).`)
+    if (ctx.sends.some(s => s.event_id === ctx.eventId && s.key === key && s.email === email && s.status === 'sent')) return no('Already got the free-seat email for this Reset.')
+    const seg = segmentOf(c)
+    if (seg === 'pass_holder') return no('Has the pass: her seat is already covered.')
+    return { email, name, send: true, reason: 'Registered, didn’t make it · free seat at the next one', segment: seg }
+  }
   if (!a?.attended) return no(a?.status === 'registered' ? 'Registered but didn’t attend this Reset.' : a?.status === 'invited' ? 'Invited on Luma, never registered.' : `Didn’t attend (${a?.status ?? 'not on this Reset'}).`)
   if (ctx.sends.some(s => s.event_id === ctx.eventId && s.key === key && s.email === email && s.status === 'sent')) return no(`Already got this touch for this Reset.`)
   const segment = segmentOf(c)
   if (key === 't5') {
     if (segment === 'pass_holder') return no('Has the pass: no reminder pressure.')
-    if (!ctx.next) return no('Can’t tell yet whether she registered: import the next Reset’s Luma list first.')
-    const n = c?.resets?.find(r => r.event_id === ctx.next!.id)
+    // The next Reset's list only comes in after it happens, so usually RISE can't see who
+    // registered yet: she gets the reminder (the email says "if you already saved your seat…").
+    const n = ctx.next ? c?.resets?.find(r => r.event_id === ctx.next!.id) : undefined
     if (n && (n.status === 'registered' || n.attended)) return no('Already registered for the next Reset.')
   }
   return { email, name, send: true, reason: `Eligible · ${SEGMENT_TEXT[segment]}`, segment }
@@ -499,8 +517,9 @@ export function dryRun(eventId: string, opts: { today?: string } = {}): DryRun |
     const send_on = addDays(event.date, e.day_offset!)
     const blockers = settingsBlockers(e, seq.settings)
     if (e.key === 't4' || e.key === 't5') {
-      if (!next) blockers.push(`The next Reset (${target}?) isn’t in RISE yet. Import its Luma list (even with no one registered) so the date and the registrations are right.`)
-      else if (next.date !== target) blockers.push(`Heads up: the next Reset in RISE is ${next.date}, not ${target} (two weeks later). Check the date.`)
+      // No upload needed: the date comes from the calendar (every other Sunday). The guest list
+      // only comes in after that Reset happens. Only flag an imported Reset whose date disagrees.
+      if (next && next.date !== target) blockers.push(`Heads up: the next Reset in RISE is ${next.date}, not ${target} (two weeks later). Check the date.`)
     }
     const decisions = onEvent.map(p => decide(e.key, p, contacts.get(p.email!), { eventId, next, sends: seq.sends }))
     touches.push({ key: e.key, title: e.title, send_on, due: send_on <= today, blockers, send: decisions.filter(d => d.send), skip: decisions.filter(d => !d.send) })

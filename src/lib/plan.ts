@@ -490,6 +490,8 @@ export function generateCalendar(from = todayStr(), days = 14): { created: numbe
       const c = readDb().content.find(x => x.id === id)
       if (c?.quote_format && c.quote_format !== 'film' && !c.quote?.text) await q.fillQuoteCard(id, c.quote_format).catch(() => null)
       await m.fillCardBasics(id).catch(() => null)
+      // The whole post up front: captions (with the one call to action) and, for a video, its song.
+      await (await import('./cap')).prewriteCard(id).catch(() => null)
     }
   }).catch(() => null)
   if (held.length) logActivity({ type: 'plan', title: `Cap held ${held.length} filmed slot${held.length === 1 ? '' : 's'} to fit your hours`, detail: held.join('; '), icon: '🗓️', source: 'cap' })

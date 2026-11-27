@@ -145,6 +145,7 @@ export type PlatformPost = {
   // `ed` because before Nov 22 Ed was the checker. INTENTIONAL REVERSAL: Ed and Pod now WRITE and
   // Cap REVIEWS (confirms + schedules, or sends back). Don't "fix" this back.
   ed?: EdVerdict | null
+  prefilm?: boolean                 // written from the plan before filming; the writer refreshes it once footage lands
   updated_at: string
 }
 
@@ -572,7 +573,7 @@ export type ResetEvent = { id: string; name: string; date: string; imported_at: 
 // ─── THE RESET SEQUENCE (Phase 5) ──────────────────────────────────────────
 // Cap briefs → Ed writes (short-form) → Cap confirms or sends back → Mandi approves.
 // Nothing sends until she approves the draft AND turns the sequence (or welcome) live.
-export type SeqEmailKey = 'welcome_joyful_media' | 'welcome_wfh' | 't1' | 't2' | 't3' | 't4' | 't5' | 't6'
+export type SeqEmailKey = 'welcome_joyful_media' | 'welcome_wfh' | 't1' | 'noshow' | 't2' | 't3' | 't4' | 't5' | 't6'
 export type SeqEmailStatus = 'brief' | 'writing' | 'review' | 'sent_back' | 'confirmed' | 'approved'
 export type SeqEmail = {
   key: SeqEmailKey
@@ -599,6 +600,7 @@ export type SeqEmail = {
 }
 export type SeqSettings = {
   coupon_code: string               // the $8 returning coupon on Luma ($33 → $25). Needed by touch 1 + 4.
+  noshow_code?: string              // one-off free-seat code for people who registered but didn't come. Blank = that email holds.
   next_reset_url: string            // where "save your seat" goes (Luma via the /reset page)
   next_reset_date?: string          // YYYY-MM-DD of the next Reset; rolls forward 14 days once it passes (every other Sunday)
   survey_url: string

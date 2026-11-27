@@ -2,6 +2,18 @@
 import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import GrowBox from './GrowBox'
+import { openInContentDay } from '@/lib/openCard'
+
+// "card #123" in an agent's reply becomes a button that opens that card in Content Day.
+function withCardLinks(text: string) {
+  const parts = text.split(/(card #\d+)/gi)
+  return parts.map((s, i) => {
+    const m = s.match(/^card #(\d+)$/i)
+    if (!m) return s
+    const id = Number(m[1])
+    return <button key={i} type="button" onClick={() => openInContentDay(id)} title="Open in Content Day" style={{ border: 0, padding: 0, background: 'none', color: 'var(--purple)', fontWeight: 800, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}>{s}</button>
+  })
+}
 
 // Talk to Cap about one item (an Approve item, or an email in Campaigns). Ask him about it, or
 // tell him what to change: a change goes to the writer and comes back for your approval.
@@ -34,7 +46,7 @@ export function TalkToCapThread({ id, onChanged, placeholder, intro, who = 'Cap'
     <div className="ttc">
       <style>{css}</style>
       {(turns ?? []).length === 0 && <p className="ttc-d">{intro ?? <>Ask Cap anything about this, or tell him what to change. To add a link, paste the address and say where it goes (e.g. “add a link to https://… on the words ‘the free meditation’”).</>}</p>}
-      {(turns ?? []).map((t, k) => <p key={k} className={`ttc-t ${t.role}`}><b>{t.role === 'mandi' ? 'You' : who}:</b> {t.text}</p>)}
+      {(turns ?? []).map((t, k) => <p key={k} className={`ttc-t ${t.role}`}><b>{t.role === 'mandi' ? 'You' : who}:</b> {t.role === 'mandi' ? t.text : withCardLinks(t.text)}</p>)}
       {msg && <p className="ttc-m">{msg}</p>}
       <div className="ttc-row">
         <GrowBox placeholder={placeholder ?? 'e.g. Add a link to https://… on “the free meditation”. / Make it a plain hello, no selling.'} value={said} onChange={e => setSaid(e.target.value)} onEnter={send} />

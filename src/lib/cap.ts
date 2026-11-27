@@ -24,6 +24,7 @@ import { wellLinesFor, wellStatus } from './well'
 import { capReview } from './review'
 import { openHandoff, startAttempt, completeHandoff, failHandoff, getHandoff } from './handoffs'
 import { ROLE_LINES } from './roles'
+import { isVideoFormat, whatToFilm } from './cardFormat'
 
 type Writer = 'ed' | 'pod'
 const WRITER_NAME: Record<Writer, string> = { ed: 'Ed', pod: 'Pod' }
@@ -62,7 +63,8 @@ function openTargets(c: ContentPiece, opts: { platforms?: string[]; rewrite?: bo
     const pp = posts.find(x => x.platform === p)
     if (pp && pp.status !== 'draft') { if (pp.caption.trim()) kept.push(p); return false }
     if (!pp?.caption.trim()) return true
-    if (pp.written_by === 'mandi' || !opts.rewrite) { kept.push(p); return false }
+    // A pre-film draft (written from the plan) is always refreshed once there's footage.
+    if (pp.written_by === 'mandi' || (!opts.rewrite && !pp.prefilm)) { kept.push(p); return false }
     return true
   })
   return { targets, kept }
@@ -71,7 +73,7 @@ function openTargets(c: ContentPiece, opts: { platforms?: string[]; rewrite?: bo
 // ── the writers: Ed (short-form) and Pod (long-form) ──
 export type WriteResult = { written: string[]; cover_note: string | null; well_lines: number; well_loaded: boolean } | { error: string }
 
-export async function writerDraft(writer: Writer, id: number, opts: { platforms: string[]; brief?: string; note?: string; reasons?: Record<string, string[]> }): Promise<WriteResult> {
+export async function writerDraft(writer: Writer, id: number, opts: { platforms: string[]; brief?: string; note?: string; reasons?: Record<string, string[]>; prefilm?: boolean }): Promise<WriteResult> {
   const db = readDb()
   const c = db.content.find(x => x.id === id)
   if (!c) return { error: 'That card isn’t in RISE any more.' }
@@ -79,7 +81,7 @@ export async function writerDraft(writer: Writer, id: number, opts: { platforms:
   const post = (p: string): PlatformPost | undefined => (c.platform_posts ?? []).find(x => x.platform === p)
   const targets = opts.platforms
   const media = [c.media_url, ...(c.media_urls ?? [])].filter(Boolean) as string[]
-  const wantsCover = writer === 'ed' && media.some(isVideo) && !c.thumbnail_url && !c.cover_note
+  const wantsCover = !opts.prefilm && writer === 'ed' && media.some(isVideo) && !c.thumbnail_url && !c.cover_note
   if (!targets.length && !wantsCover) return { written: [], cover_note: c.cover_note ?? null, well_lines: 0, well_loaded: wellStatus().loaded }
 
   const note = (opts.note ?? '').trim()
@@ -109,7 +111,7 @@ export async function writerDraft(writer: Writer, id: number, opts: { platforms:
     : `You are Ed. ${ROLE_LINES.ed} Cap, the campaign manager, briefed you.`
   const instructions = `${craftFor(c.account_id)}
 
-${role} Mandi has filmed this card. Write ONE caption per platform below, each adapted to its platform:
+${role} ${opts.prefilm ? 'Mandi has NOT filmed this card yet. Write from the plan (the hook, the one job, what to film) so she sees the whole post before she makes it; it gets refreshed once her footage lands. Never describe what happens in the video beyond the plan.' : 'Mandi has filmed this card.'} Write ONE caption per platform below, each adapted to its platform:
 ${targets.map(p => '- ' + (PLATFORM_STYLE[p] ?? p)).join('\n') || '- (no captions needed this time)'}
 Write to the reader (you/your), in Mandi's voice, from her own words first. Exactly ONE call to action, inside this account's branch. The caption's first line is a SECOND hook: a different door from the on-screen text, never a repeat. Vary the call to action across posts. Never invent facts about her life or the video; if you know little about the video, stay honest and general. Cap reviews every draft before it is scheduled.
 ${wantsCover ? 'Also write "cover_note": one line for the cover frame: which moment to grab and the few words to put on it.' : ''}
@@ -127,6 +129,11 @@ Reply ONLY with JSON: {"captions": {${targets.map(p => `"${p}": "..."`).join(', 
     if (!text) continue
     const r = setPlatformPost(id, p, { caption: text, ed: null }, writer)
     if (!('error' in r)) written.push(p)
+  }
+  if (written.length) {
+    const d = readDb(); const cc = d.content.find(x => x.id === id)
+    for (const pp of cc?.platform_posts ?? []) if (written.includes(pp.platform)) { if (opts.prefilm) pp.prefilm = true; else delete pp.prefilm }
+    writeDb(d)
   }
   if (targets.length && !written.length) return { error: `${WRITER_NAME[writer]} came back empty. Retry, or add a note about the video.` }
   let cover: string | null = c.cover_note ?? null
@@ -322,3 +329,63 @@ export async function runFilmNow(h: Handoff) {
   return completeHandoff(h.id, 'cap', receipt, [{ type: 'card', id: card.id }])
 }
 
+
+// ── pre-film copy: the whole post before she makes it ──
+// Plan cards used to get only a title, a hook and a job; captions waited for footage, so most of
+// the calendar sat half-formed. Now each one gets its captions (with its one call to action) and,
+// for a video, its song, right after its hook. These drafts are marked prefilm: once footage lands
+// the normal chain (footage_in → Ed/Pod → Cap) rewrites them from the real video.
+const EVENT_CARD = new Set(['workshop', 'podcast'])
+const plusDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10)
+
+// Cap's plan: "roughly 1 in 3 Joyful Media posts points to the next Reset". Which ones: of the
+// Joyful posts in the 7 days before a Reset, the one closest to it and every third going back.
+// Returns that Reset's date for a promo post, else null.
+export async function resetPromoFor(id: number): Promise<string | null> {
+  const cal = readDb().calendar_items ?? []
+  const mine = cal.filter(i => i.content_id === id && i.slot === 'post' && i.branch_id === 'joyful_media').sort((a, b) => a.date.localeCompare(b.date))[0]
+  if (!mine) return null
+  const { nextResetDate } = await import('./resetSequence')
+  const reset = nextResetDate(plusDays(mine.date, 1))
+  if (!reset || reset > plusDays(mine.date, 7)) return null
+  const week = cal.filter(i => i.slot === 'post' && i.branch_id === 'joyful_media' && i.date >= plusDays(reset, -7) && i.date < reset)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.content_id - b.content_id)
+  const ix = week.findIndex(i => i.content_id === id)
+  return ix >= 0 && (week.length - 1 - ix) % 3 === 0 ? reset : null
+}
+export async function prewriteCard(id: number): Promise<{ written: string[]; song?: boolean } | { error: string }> {
+  const db = readDb()
+  const c = db.content.find(x => x.id === id)
+  if (!c) return { error: 'That card isn’t in RISE any more.' }
+  if (EVENT_CARD.has(c.type) || ['published', 'archived'].includes(c.status)) return { written: [] }
+  if (!c.account_id) return { error: 'No account on this card.' }
+  // A planned "post" that's really a reel/clip is a video (so it gets a song and shows as one).
+  if (c.type === 'post' && isVideoFormat(c) && !c.quote_format) { c.type = 'video'; c.updated_at = new Date().toISOString(); writeDb(db) }
+  if (!(c.onscreen_text ?? '').trim() && !c.post_job) await (await import('./cardAudit')).fillCardBasics(id).catch(() => null)
+  const promo = await resetPromoFor(id)
+  if (promo) {
+    const d = readDb(); const cc = d.content.find(x => x.id === id)
+    if (cc && !(cc.tags ?? []).includes('reset-promo')) { cc.tags = [...(cc.tags ?? []), 'reset-promo']; cc.updated_at = new Date().toISOString(); writeDb(d) }
+  }
+  const nice = promo ? new Date(`${promo}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' }) : ''
+  const fresh = readDb().content.find(x => x.id === id)!
+  const { targets } = openTargets(fresh, {})
+  const written: string[] = []
+  for (const w of ['ed', 'pod'] as Writer[]) {
+    const mine = targets.filter(p => writerFor(p) === w)
+    if (!mine.length) continue
+    const plan = whatToFilm(fresh)
+    const r = await writerDraft(w, id, { platforms: mine, prefilm: true, brief: ['Pre-film draft from the plan.', plan && `What she'll film: ${plan}`, promo && `RESET PROMO: this post's ONE call to action invites her to The Reset on ${nice} at 8 PM Central (a live guided hour, every other Sunday; register on Luma). Give value first; the invite is the call to action. Name no price.`].filter(Boolean).join('\n') })
+    if ('error' in r) return written.length ? { written } : { error: r.error }
+    written.push(...r.written)
+  }
+  const song = await (await import('./music')).fillMusic(id).catch(() => null)
+  return { written, song: !!song }
+}
+
+/** Open cards with a hook but no caption anywhere: the half-formed ones. */
+export function halfFormedCards(): number[] {
+  return readDb().content.filter(c => !['published', 'archived'].includes(c.status) && !EVENT_CARD.has(c.type)
+    && (c.onscreen_text ?? '').trim() && !(c.description ?? '').trim() && !(c.platform_posts ?? []).some(p => p.caption.trim()))
+    .map(c => c.id)
+}

@@ -26,7 +26,7 @@ type Email = {
   written_by: 'ed' | 'mandi' | null; check: { reasons: string[]; notes: string[] } | null
 }
 type Settings = {
-  coupon_code: string; next_reset_url: string; survey_url: string; nine_url: string; pass_url: string
+  coupon_code: string; noshow_code?: string; next_reset_url: string; survey_url: string; nine_url: string; pass_url: string
   gift_name: string; gift_url: string; medium_url: string; podcast_url: string; next_reset_date?: string
   sequence_live: boolean; welcome_live: { joyful_media: boolean; wfh: boolean }
 }
@@ -154,7 +154,7 @@ function LumaImport({ onDone }: { onDone: () => void }) {
   return (
     <div style={card}>
       <p style={{ ...label, margin: '0 0 8px' }}>Import a Luma guest list</p>
-      <p style={{ fontSize: '12px', color: 'var(--text-subtle)', margin: '0 0 10px' }}>On Luma: your event → Guests → Export (CSV). Drop it here; you&rsquo;ll see what it would do before anything is written. Export again after the Reset so attendance (check-in) is in it.</p>
+      <p style={{ fontSize: '12px', color: 'var(--text-subtle)', margin: '0 0 10px' }}>On Luma: your event → Guests → Export (CSV). Drop it here; you&rsquo;ll see what it would do before anything is written. Upload it after the Reset ends, once check-in is done: that’s when RISE learns who came (thank-you touches) and who registered but didn’t (the free-seat email). Nothing needs uploading before a Reset.</p>
       <label style={{ ...btn(true), display: 'inline-flex' }}>
         <Upload size={13} /> Choose the CSV
         <input type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={e => pick(e.target.files?.[0])} />
@@ -216,6 +216,7 @@ function SettingsCard({ settings, nextDate, onSaved }: { settings: Settings; nex
       <p style={{ ...label, margin: 0 }}>What the emails need from you</p>
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         {field('coupon_code', '$8 returning coupon code (on Luma)', 'the code that makes $33 → $25')}
+        {field('noshow_code', 'Free-seat code for no-shows (on Luma)', 'blank = the no-show email holds')}
         {field('nine_url', 'Link: Listen To Your Intuition ($9)', 'blank = touch 2 holds')}
         {field('pass_url', 'Link: the $44/month pass', 'blank = no pass offer')}
       </div>

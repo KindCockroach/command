@@ -7,7 +7,8 @@
 // It comes back to Approve when it's ready. Cap never rewrites the piece himself.
 // Plans keep their own "Ask Cap" (lib/plan.ts askAboutPlan), which this calls for plan items.
 
-import { readDb, writeDb, type Handoff } from './db'
+import { readDb, writeDb, type Handoff, type ContentPiece } from './db'
+import { makeFormat, MAKE_FORMATS } from './cardFormat'
 import { fableText } from './fable'
 import { openHandoff } from './handoffs'
 import { askAboutPlan } from './plan'
@@ -16,6 +17,7 @@ import { cut, extractJsonObject } from './jsonkit'
 import { AGENTS } from './agentRoster'
 import { getSkills } from './skills'
 import { ROLE_LINES } from './roles'
+import { nextResetDate } from './resetSequence'
 
 export type ChatTurn = { role: 'mandi' | 'cap'; text: string; at: string; handoff_id?: string | null }
 const nowIso = () => new Date().toISOString()
@@ -118,6 +120,17 @@ function startRewrite(itemId: string, fix: string): string | null {
 // change he says where to do it, or that she can tell him on the plan in Approve.
 export const CAP_GENERAL = 'cap:general'
 
+const STOP = new Set(['where', 'what', 'when', 'which', 'that', 'this', 'post', 'posts', 'card', 'cards', 'does', 'have', 'with', 'from', 'there', 'about', 'live', 'lives', 'want', 'need', 'film', 'prep', 'next', 'your', 'should', 'could', 'would', 'just', 'like', 'make', 'today', 'tomorrow'])
+// What she'd need to know to sit down and make it: format, and what's written vs missing.
+function cardKind(p: ContentPiece): string {
+  const f = makeFormat(p)
+  const fmt = MAKE_FORMATS.find(x => x.key === f)?.label ?? p.type
+  const cap = (p.platform_posts ?? []).some(x => (x.caption ?? '').trim()) || !!(p.description ?? '').trim()
+  // Only talking-head and role-play cards are scripted; b-roll and carousels need no script.
+  const missing = [!p.onscreen_text?.trim() && 'hook', !cap && 'caption', !p.script?.trim() && (f === 'talking_head' || f === 'role_play') && 'script'].filter(Boolean)
+  return ` · ${fmt}${missing.length ? ' · missing: ' + missing.join(', ') : ' · copy ready'}`
+}
+
 async function talkToCapGeneral(said: string): Promise<{ turns: ChatTurn[] } | { error: string }> {
   push(CAP_GENERAL, { role: 'mandi', text: cut(said, 2000), at: nowIso() })
   const db = readDb()
@@ -126,15 +139,30 @@ async function talkToCapGeneral(said: string): Promise<{ turns: ChatTurn[] } | {
   const plans = (db.plans ?? []).filter(p => p.status !== 'superseded' && p.period_end >= today)
     .map(p => `- ${p.level} plan · ${p.branch_id} · ${p.period_start}→${p.period_end} · ${p.status}: ${cut(p.summary ?? '', 300)}`).slice(0, 12)
   const content = new Map((db.content ?? []).map(c => [c.id, c]))
-  const cal = (db.calendar_items ?? []).filter(c => c.date >= today && c.date <= in14).sort((a, b) => a.date.localeCompare(b.date))
-    .map(c => { const p = content.get(c.content_id); return `- ${c.date}${c.time ? ' ' + c.time : ''} · ${c.account_id ?? c.branch_id} · ${p ? cut(p.title ?? '', 90) : '(card missing)'} · ${p?.status ?? ''}` }).slice(0, 40)
+  const promoIds = new Set((db.content ?? []).filter(p => (p.tags ?? []).includes('reset-promo')).map(p => p.id))
+  const acctOf = new Map((db.brand_accounts ?? []).map(a => [a.id, a.handle || a.id]))
+  const line = (c: { date: string; time?: string | null; account_id: string | null; branch_id: string; content_id: number; slot: string }) => {
+    const p = content.get(c.content_id)
+    if (!p) return `- ${c.date} · (card missing)`
+    return `- ${c.date}${c.time ? ' ' + c.time : ''} · card #${p.id} · ${c.slot === 'reset' ? 'THE RESET ITSELF (the event, not a post) · ' : c.slot === 'podcast' ? 'PODCAST · ' : promoIds.has(c.content_id) ? 'RESET PROMO POST · ' : ''}${acctOf.get(c.account_id ?? '') ?? c.account_id ?? c.branch_id} · ${cut(p.title ?? '', 90)} · ${p.status}${cardKind(p)}`
+  }
+  const cal = (db.calendar_items ?? []).filter(c => c.date >= today && c.date <= in14).sort((a, b) => a.date.localeCompare(b.date)).map(line).slice(0, 40)
+  // The next Reset's promo posts, however far out (she preps and films them ahead).
+  const resetPromos = (db.calendar_items ?? []).filter(c => (c.slot === 'reset' || promoIds.has(c.content_id)) && c.date >= today).sort((a, b) => a.date.localeCompare(b.date)).map(line).slice(0, 12)
+  // Cards that match her words, scheduled or not (so "where's the X post" has an answer).
+  const words = said.toLowerCase().match(/[a-z0-9']{4,}/g)?.filter(w => !STOP.has(w)) ?? []
+  const scheduled = new Map((db.calendar_items ?? []).map(c => [c.content_id, c.date]))
+  const found = words.length ? (db.content ?? []).filter(p => p.status !== 'published' && p.status !== 'archived')
+    .map(p => { const hay = `${p.title} ${p.onscreen_text ?? ''} ${p.script ?? ''} ${(p.tags ?? []).join(' ')} ${p.post_job ?? ''}`.toLowerCase(); return { p, n: words.filter(w => hay.includes(w)).length } })
+    .filter(x => x.n > 0).sort((a, b) => b.n - a.n).slice(0, 8)
+    .map(({ p }) => `- card #${p.id} · ${acctOf.get(p.account_id ?? '') ?? p.account_id ?? ''} · ${cut(p.title ?? '', 90)} · ${p.status}${cardKind(p)} · ${scheduled.has(p.id) ? 'on the calendar ' + scheduled.get(p.id) : 'not on the calendar'}`) : []
   const waiting = getApprovals().items.map(i => `- ${i.title} (from ${i.from})`).slice(0, 25)
   const history = getChat(CAP_GENERAL).slice(-12).map(t => `${t.role === 'mandi' ? 'MANDI' : 'CAP'}: ${t.text}`).join('\n')
   let reply = ''
   try {
     reply = (await fableText({ maxTokens: 700,
-      instructions: `You are Cap, Mandi's campaign boss. ${ROLE_LINES.cap} You own the map (every account's plan, the calendar, campaigns). Mandi is talking to you from her Home screen. Answer plainly and briefly (1–4 sentences, no lists unless she asks), from the facts below only; never invent numbers, dates or posts. If she wants a plan or calendar change, say exactly where (the plan in Approve, or Plan › Calendar) or that she can tell you on that plan; you don't change plans from this chat. Speak to her, warm and direct.`,
-      input: `TODAY: ${today}\n\nYOUR PLANS:\n${plans.join('\n') || '(none active)'}\n\nCALENDAR, NEXT 14 DAYS:\n${cal.join('\n') || '(empty)'}\n\nWAITING ON HER YES:\n${waiting.join('\n') || '(nothing)'}\n\nTHE CONVERSATION SO FAR:\n${history}` })).trim()
+      instructions: `You are Cap, Mandi's campaign boss. ${ROLE_LINES.cap} You own the map (every account's plan, the calendar, campaigns). Mandi is talking to you from her Home screen. Answer plainly and briefly (1–4 sentences, no lists unless she asks), from the facts below only; never invent numbers, dates or posts. If she wants a plan or calendar change, say exactly where (the plan in Approve, or Plan › Calendar) or that she can tell you on that plan; you don't change plans from this chat. When she asks where a post is, NAME THE CARD: write it as "card #123" (it becomes a button that opens it in Content Day), with its account and date, and say what's still missing on it. Never just say "check the plan". If no card fits, say so plainly. Speak to her, warm and direct.`,
+      input: `TODAY: ${today}\n\nYOUR PLANS:\n${plans.join('\n') || '(none active)'}\n\nCALENDAR, NEXT 14 DAYS:\n${cal.join('\n') || '(empty)'}\n\nRESET PROMO POSTS COMING UP (next Reset ${nextResetDate() ?? 'not set'}):\n${resetPromos.join('\n') || '(none on the calendar yet)'}\n\nCARDS THAT MATCH HER WORDS:\n${found.join('\n') || '(none)'}\n\nWAITING ON HER YES:\n${waiting.join('\n') || '(nothing)'}\n\nTHE CONVERSATION SO FAR:\n${history}` })).trim()
   } catch (e) {
     reply = `I couldn’t answer just now (${e instanceof Error ? e.message : 'no answer'}). Your note is saved here.`
   }
