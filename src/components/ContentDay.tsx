@@ -426,6 +426,7 @@ export default function ContentDay() {
                 <p style={{ fontFamily: MONO, fontSize: '11.5px', color: 'var(--text-subtle)', fontVariantNumeric: 'tabular-nums' }}>
                   {Math.min(idx, deck.length - 1) + 1} of {deck.length} · {charName(character)} · {left} left to film
                 </p>
+                <p style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.3, margin: '2px 0' }}><span style={{ color: 'var(--purple)', marginRight: 6 }}>#{cur.id}</span>{cur.title || 'Untitled'}</p>
                 <p style={{ fontSize: '12px', fontWeight: 700, color: acct(cur.account_id)?.color || 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {acct(cur.account_id) ? `${acct(cur.account_id)!.emoji ?? ''} ${acct(cur.account_id)!.handle}`.trim() : ''}{dates[cur.id] ? ` · ${dates[cur.id]}` : ''}{cur.characters && cur.characters.length > 1 ? ` · with ${cur.characters.filter(c => c !== character).join(', ')}` : ''}
                 </p>

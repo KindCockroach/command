@@ -1871,7 +1871,10 @@ export default function AccountsPanel() {
         // can find any piece — it overrides the bucket/purpose filters while typing.
         const q = postSearch.trim().toLowerCase()
         const terms = q.split(/\s+/).filter(Boolean)
+        // "#123" or "123" alone finds that card by its number (Content Day shows it on every card).
+        const idOnly = terms.length === 1 && /^#?\d+$/.test(terms[0]) ? Number(terms[0].replace('#', '')) : null
         const matchSearch = (p: ContentPiece) => {
+          if (idOnly !== null) return p.id === idOnly
           const blob = `${p.title} ${p.description} ${p.script ?? ''} ${p.onscreen_text ?? ''} ${p.hashtags ?? ''} ${p.notes ?? ''} ${(p.tags ?? []).join(' ')}`.toLowerCase()
           return terms.every(t => blob.includes(t))
         }
@@ -1925,7 +1928,7 @@ export default function AccountsPanel() {
               <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: `1px solid ${postSearch.trim() ? theme.color : 'var(--border)'}`, borderRadius: '10px', padding: '7px 11px', background: 'var(--surface-raised, var(--bg))' }}>
                   <Search size={14} style={{ color: 'var(--text-subtle)', flexShrink: 0 }} />
-                  <input value={postSearch} onChange={e => setPostSearch(e.target.value)} placeholder={`Search ${acct.handle} content by keyword…`}
+                  <input value={postSearch} onChange={e => setPostSearch(e.target.value)} placeholder={`Search ${acct.handle} by keyword or card number (#123)…`}
                     style={{ flex: 1, border: 'none', background: 'transparent', color: 'var(--text)', fontSize: '13px', outline: 'none', fontFamily: 'inherit', minWidth: 0 }} />
                   {postSearch.trim() && <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-subtle)', whiteSpace: 'nowrap' }}>{shown.length} found</span>}
                   {postSearch && <button onClick={() => setPostSearch('')} title="Clear" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-subtle)', display: 'flex', flexShrink: 0, padding: 0 }}><X size={14} /></button>}

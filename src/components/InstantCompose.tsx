@@ -4,7 +4,10 @@ import { uploadBig } from '@/lib/uploadBig'
 import { Sparkles, Loader2, Copy, CheckCircle2, UploadCloud, X } from 'lucide-react'
 import { withHashtags } from '@/lib/hashtags'
 
-type Variation = { angle: string; onscreen_text: string; caption: string; hashtags: string }
+type Song = { pick: string; artist?: string; why: string; link?: string; source: 'suits-the-mood'; checked_at: string; set_by: 'cap' }
+type Variation = { angle: string; onscreen_text: string; caption: string; hashtags: string; cta?: string; song?: Song | null; visual?: string; script?: string }
+// The pieces she can pick for the card (all on by default). The caption itself always goes.
+type Part = 'hook' | 'cta' | 'song' | 'hashtags' | 'visual' | 'script'
 type ComposeResult = {
   account_id: string
   account_reason: string
@@ -79,6 +82,9 @@ export default function InstantCompose({ lockedAccount }: { lockedAccount?: Lock
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
   const [filedIdx, setFiledIdx] = useState<Record<number, boolean>>({})
+  const [skip, setSkip] = useState<Record<number, Part[]>>({})   // pieces she unticked, per variation
+  const has = (i: number, k: Part) => !(skip[i] ?? []).includes(k)
+  const toggle = (i: number, k: Part) => setSkip(x => ({ ...x, [i]: has(i, k) ? [...(x[i] ?? []), k] : (x[i] ?? []).filter(y => y !== k) }))
   const [filingIdx, setFilingIdx] = useState<number | null>(null)
   const [frames, setFrames] = useState<string[]>([])
   const [feedback, setFeedback] = useState('')
@@ -130,7 +136,7 @@ export default function InstantCompose({ lockedAccount }: { lockedAccount?: Lock
     setComposing(true)
     setError('')
     setResult(null)
-    setFiledIdx({})
+    setFiledIdx({}); setSkip({})
     try {
       const res = await fetch('/api/compose', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -162,7 +168,7 @@ export default function InstantCompose({ lockedAccount }: { lockedAccount?: Lock
       })
       const d = await res.json()
       if (d.error) setError(d.error)
-      else { setResult(d); setFiledIdx({}); setFeedback('') }
+      else { setResult(d); setFiledIdx({}); setSkip({}); setFeedback('') }
     } catch {
       setError('Refine failed — try again.')
     } finally {
@@ -178,15 +184,18 @@ export default function InstantCompose({ lockedAccount }: { lockedAccount?: Lock
       await fetch('/api/content', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: v.onscreen_text.slice(0, 60) || `Media post — ${result.account?.handle ?? ''}`,
-          description: withHashtags(v.caption, v.hashtags),
+          title: v.onscreen_text.slice(0, 60) || v.caption.split('\n')[0].slice(0, 60) || `Media post — ${result.account?.handle ?? ''}`,
+          description: withHashtags([v.caption, has(i, 'cta') && v.cta].filter(Boolean).join('\n\n'), has(i, 'hashtags') ? v.hashtags : ''),
           status: 'ready',
           type: file?.type.startsWith('video') ? 'video' : 'image',
           platforms: ['instagram'],
           tags: ['media-drop', result.account_id],
           account_id: result.account_id,
-          onscreen_text: v.onscreen_text,
-          hashtags: v.hashtags,
+          onscreen_text: has(i, 'hook') ? v.onscreen_text : '',
+          hashtags: has(i, 'hashtags') ? v.hashtags : '',
+          ...(has(i, 'song') && v.song ? { music: v.song } : {}),
+          ...(has(i, 'script') && v.script ? { script: v.script } : {}),
+          ...(has(i, 'visual') && v.visual ? { notes: `What to film: ${v.visual.replace(/\n+/g, ' ')}` } : {}),
           media_url: mediaUrl,
           river_source: 'media-drop',
         }),
@@ -274,22 +283,37 @@ export default function InstantCompose({ lockedAccount }: { lockedAccount?: Lock
             <div key={i} style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '14px', background: 'var(--bg)', borderLeft: `3px solid ${result.account?.color ?? 'var(--hot-pink)'}` }}>
               <p style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: result.account?.color ?? 'var(--hot-pink)', marginBottom: '8px' }}>Variation {i + 1} — {v.angle}</p>
 
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
-                <div>
-                  <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-subtle)', marginBottom: '2px' }}>On-screen text {v.onscreen_text.includes('\n') && <span style={{ color: 'var(--hot-pink)' }}>· {v.onscreen_text.split('\n').filter(Boolean).length} beats</span>}</p>
-                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{v.onscreen_text}</p>
-                </div>
-                <CopyBtn text={v.onscreen_text} label="Copy text" />
-              </div>
+              {(() => {
+                const color = result.account?.color ?? 'var(--purple)'
+                const Piece = ({ k, text, children, copy }: { k?: Part; text?: string; children: React.ReactNode; copy?: string }) => (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '7px 0', borderTop: '1px dashed var(--border)', opacity: k && !has(i, k) ? 0.45 : 1 }}>
+                    {k ? <input type="checkbox" checked={has(i, k)} onChange={() => toggle(i, k)} aria-label={`Put the ${text} on the card`} style={{ marginTop: '3px', accentColor: 'var(--purple)' }} /> : <span style={{ width: '13px' }} />}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-subtle)', marginBottom: '2px' }}>{text}</p>
+                      {children}
+                    </div>
+                    {copy && <CopyBtn text={copy} label="Copy" />}
+                  </div>
+                )
+                const empty = <p style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>None for this one</p>
+                return (
+                  <div style={{ marginBottom: '8px' }}>
+                    <Piece k="hook" text={`On-screen hook${v.onscreen_text.includes('\n') ? ` · ${v.onscreen_text.split('\n').filter(Boolean).length} beats` : ''}`} copy={v.onscreen_text || undefined}>
+                      {v.onscreen_text ? <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{v.onscreen_text}</p> : <p style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>None: you&rsquo;re talking to camera, so the hook is the caption&rsquo;s first line</p>}
+                    </Piece>
+                    <Piece text="Caption" copy={v.caption}><p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{v.caption}</p></Piece>
+                    <Piece k="cta" text="Call to action" copy={v.cta || undefined}>{v.cta ? <p style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text)' }}>{v.cta}</p> : empty}</Piece>
+                    <Piece k="song" text="Song">{v.song ? <p style={{ fontSize: '12.5px', color: 'var(--text)' }}>🎵 {v.song.link ? <a href={v.song.link} target="_blank" rel="noopener noreferrer" style={{ color, fontWeight: 700 }}>{v.song.pick}{v.song.artist ? ` · ${v.song.artist}` : ''}</a> : v.song.pick}<span style={{ color: 'var(--text-subtle)' }}>{v.song.why ? ` · ${v.song.why}` : ''}</span></p> : empty}</Piece>
+                    <Piece k="hashtags" text="Hashtags" copy={v.hashtags}><p style={{ fontSize: '11px', color, lineHeight: 1.5, wordBreak: 'break-word' }}>{v.hashtags}</p></Piece>
+                    <Piece k="visual" text="Visual">{v.visual ? <p style={{ fontSize: '12px', color: 'var(--text)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{v.visual}</p> : empty}</Piece>
+                    <Piece k="script" text="Script" copy={v.script || undefined}>{v.script ? <p style={{ fontSize: '12px', color: 'var(--text)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{v.script}</p> : empty}</Piece>
+                  </div>
+                )
+              })()}
 
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-subtle)', marginBottom: '2px' }}>Caption + hashtags</p>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{v.caption}</p>
-                  <p style={{ fontSize: '10px', color: result.account?.color ?? 'var(--purple)', lineHeight: 1.5, marginTop: '6px', wordBreak: 'break-word' }}>{v.hashtags}</p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flexShrink: 0 }}>
-                  <CopyBtn text={`${v.caption}\n\n${v.hashtags}`} label="Copy caption" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                  <CopyBtn text={[v.caption, has(i, 'cta') && v.cta, has(i, 'hashtags') && v.hashtags].filter(Boolean).join('\n\n')} label="Copy full caption" />
                   <button onClick={() => fileVariation(v, i)} disabled={filingIdx === i || filedIdx[i]}
                     style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 12px', borderRadius: '7px', border: 'none', background: filedIdx[i] ? '#E8F7F1' : 'var(--purple)', color: filedIdx[i] ? '#3DAA7C' : '#fff', cursor: filedIdx[i] ? 'default' : 'pointer', fontSize: '10px', fontWeight: 700 }}>
                     {filingIdx === i ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : filedIdx[i] ? '✓ On account card' : '→ Queue for approval'}

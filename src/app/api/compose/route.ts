@@ -3,6 +3,7 @@ import { getAllBrandAccounts, getWatchContext, createNote, audienceLine, getLore
 import { craftFor } from '@/lib/craft'
 import { fableText } from '@/lib/fable'
 import { capHashtags } from '@/lib/hashtags'
+import { musicLink } from '@/lib/music'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -78,7 +79,7 @@ Produce THREE meaningfully different variations (different angles — e.g. relat
   "story_summary": "2-3 sentence summary of the story/moment for the archive",
   "media_read": "1-2 sentences: what you actually see in the media (or 'no visual provided')",
   "variations": [
-    { "angle": "short label", "onscreen_text": "overlay line(s) — a STATEMENT hook, never a question; newline-separated beats for video", "caption": "full spaced caption (real line breaks; headline first line carries the golden thread; NO CTA during growth phase)", "hashtags": "EXACTLY 3-5 hashtags (never more than 5), space-separated, single #word each, most relevant first" },
+    { "angle": "short label", "onscreen_text": "overlay line(s) — a STATEMENT hook, never a question; newline-separated beats for video", "caption": "full spaced caption WITHOUT the call to action (real line breaks; headline first line carries the golden thread)", "cta": "the ONE direct call to action line that ends the caption (law 0), inside this account's branch; vary it across the three", "hashtags": "EXACTLY 3-5 hashtags (never more than 5), space-separated, single #word each, most relevant first", "song": { "pick": "a real, findable song title", "artist": "artist", "why": "one plain line: why it fits" }, "visual": "1-3 short lines: what to show or film and how to frame it, plus the cover frame", "script": "if she'd film herself talking for this, the words to say (short, her voice); else \"\"" },
     { ... }, { ... }
   ]
 }`,
@@ -102,6 +103,12 @@ Produce THREE meaningfully different variations (different angles — e.g. relat
       } catch { /* archive is best-effort */ }
     }
 
+    // The song gets a search link so she can find it (same shape as Cap's picks on cards).
+    if (Array.isArray(parsed.variations)) for (const v of parsed.variations) {
+      if (v.song?.pick) v.song = { pick: String(v.song.pick), artist: v.song.artist ? String(v.song.artist) : undefined, why: String(v.song.why ?? ''), link: musicLink(String(v.song.pick), v.song.artist ? String(v.song.artist) : undefined), source: 'suits-the-mood', checked_at: new Date().toISOString(), set_by: 'cap' }
+      else v.song = null
+      for (const k of ['cta', 'visual', 'script']) v[k] = String(v[k] ?? '').trim()
+    }
     const finalAccountId = forceAccountId || parsed.account_id
     return NextResponse.json({ ...parsed, account_id: finalAccountId, account: accounts.find(a => a.id === finalAccountId) ?? null })
   } catch {

@@ -59,6 +59,8 @@ export default function MakeView({ posts, accounts, dates, resetIds, openId, onO
 
   const list = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean)
+    const idOnly = words.length === 1 && /^#?\d+$/.test(words[0]) ? Number(words[0].replace('#', '')) : null
+    if (idOnly !== null) return pool.filter(p => p.id === idOnly)
     return pool.filter(p => {
       if (fmt !== 'all' && makeFormat(p) !== fmt) return false
       if (acctF && p.account_id !== acctF) return false
@@ -197,7 +199,7 @@ export default function MakeView({ posts, accounts, dates, resetIds, openId, onO
                   <span style={{ fontFamily: MONO, fontSize: 11, color: 'var(--text-subtle)' }}>{dates[p.id] ?? 'not on the calendar'}</span>
                   <span style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 700, color: miss.length ? '#B96A1E' : '#2E8B60' }}>{miss.length ? `needs ${miss.join(', ')}` : 'copy ready'}</span>
                 </div>
-                <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', lineHeight: 1.3 }}>{p.title || `Card #${p.id}`}</p>
+                <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', lineHeight: 1.3 }}><span style={{ color: 'var(--purple)', marginRight: 6 }}>#{p.id}</span>{p.title || 'Untitled'}</p>
                 {p.onscreen_text && !isOpen && <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{p.onscreen_text}</p>}
               </button>
               {isOpen && Detail({ p })}
