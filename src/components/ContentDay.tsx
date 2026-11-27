@@ -6,6 +6,7 @@ import { RefreshCw, Camera, Clapperboard, Loader2, ChevronLeft, ChevronRight, Ch
 import CardMedia from './CardMedia'
 import { ink } from '@/lib/ink'
 import { isFaceless, hasVideo } from '@/lib/shootList' // shared with Her's Brief
+import { OPEN_CARD_KEY, OPEN_CARD_EVENT } from '@/lib/openCard'
 
 // CONTENT DAY is EXCLUSIVELY for filming: the director's chair. The script, the emotion to hit,
 // the context that sells the acting. Not a place to plan or coordinate content (that's Cap's
@@ -59,6 +60,9 @@ export default function ContentDay() {
   const [planning, setPlanning] = useState<Record<number, boolean>>({})
   const [err, setErr] = useState('')
   const [addName, setAddName] = useState('')
+  const [want, setWant] = useState<number | null>(null)   // a card someone asked to open (calendar)
+  const [jumpTo, setJumpTo] = useState<number | null>(null)
+  const [note, setNote] = useState('')
 
   const load = useCallback(() => {
     setLoading(true)
@@ -77,6 +81,19 @@ export default function ContentDay() {
     }).finally(() => setLoading(false))
   }, [])
   useEffect(() => { load() }, [load])
+
+  // A card handed over from the calendar: on mount (sessionStorage) or while already open (event).
+  useEffect(() => {
+    const take = () => {
+      let v = ''
+      try { v = sessionStorage.getItem(OPEN_CARD_KEY) || ''; sessionStorage.removeItem(OPEN_CARD_KEY) } catch { /* ok */ }
+      const n = Number(v); if (n) setWant(n)
+    }
+    take()
+    const onOpen = (e: Event) => { const id = Number((e as CustomEvent).detail?.id); if (id) { try { sessionStorage.removeItem(OPEN_CARD_KEY) } catch { /* ok */ } setWant(id) } }
+    window.addEventListener(OPEN_CARD_EVENT, onOpen)
+    return () => window.removeEventListener(OPEN_CARD_EVENT, onOpen)
+  }, [])
 
   const rosterDb = useMemo(() => ({ characters: roster.map(r => ({ ...r })) }) as unknown as Db, [roster])
   const acct = (id?: string | null) => accounts.find(a => a.id === id)
@@ -115,6 +132,32 @@ export default function ContentDay() {
     .sort((a, b) => (a.filmed_at ? 1 : 0) - (b.filmed_at ? 1 : 0) || (dates[a.id] ?? '9999').localeCompare(dates[b.id] ?? '9999') || a.id - b.id)
   , [shoot, character, dates])
   const left = deck.filter(p => !p.filmed_at).length
+
+  // Open the asked-for card: switch to its character, then land on it. If it isn't on the shoot
+  // list, say why instead of showing some other card.
+  useEffect(() => {
+    if (want == null || loading) return
+    const p = posts.find(x => x.id === want)
+    setWant(null)
+    if (!p) { setNote(`Card #${want} wasn’t found. It may have been deleted.`); return }
+    const name = `“${(p.title || `Card #${p.id}`).slice(0, 70)}”`
+    const why = ['published', 'archived'].includes(p.status) ? `is already ${p.status}`
+      : !(p.script ?? '').trim() ? 'has no script yet, so there’s nothing to film. Ask Ed or Cap for one'
+      : hasVideo(p) ? 'already has a video on it'
+      : p.filmed_at && !filmedNow.includes(p.id) ? 'is marked Filmed ✓ (open it in Create to un-mark it)'
+      : isFaceless(p) ? 'is a no-face post (trend clip, text on screen or b-roll), so it isn’t filmed here'
+      : ''
+    if (why) { setNote(`${name} ${why}.`); return }
+    setNote('')
+    const cs = p.characters?.length ? p.characters : [UNTAGGED]
+    setCharacter(c => cs.includes(c) ? c : cs[0])
+    setJumpTo(p.id)
+  }, [want, loading, posts, filmedNow])
+  useEffect(() => {
+    if (jumpTo == null) return
+    const i = deck.findIndex(x => x.id === jumpTo)
+    if (i >= 0) { setIdx(i); setJumpTo(null) }
+  }, [jumpTo, deck])
   const cur = deck[Math.min(idx, Math.max(0, deck.length - 1))]
 
   const go = useCallback((d: number) => setIdx(i => deck.length ? (i + d + deck.length) % deck.length : 0), [deck.length])
@@ -335,6 +378,12 @@ export default function ContentDay() {
           <p style={{ fontSize: '13px', color: 'var(--text-subtle)', padding: '28px 14px', textAlign: 'center', lineHeight: 1.6 }}>Nothing left to film. 🎬<br />Cards with a script and no video show up here.</p>
         )}
         {err && <p style={{ fontSize: '12px', color: '#C0392B', marginBottom: '8px' }}>{err}</p>}
+        {note && (
+          <div role="status" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', lineHeight: 1.5, color: 'var(--text)', background: 'var(--surface-raised, var(--surface))', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 12px', marginBottom: '10px' }}>
+            <span style={{ flex: 1 }}>That card isn’t on the shoot list: {note}</span>
+            <button onClick={() => setNote('')} aria-label="Dismiss" style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}><X size={14} /></button>
+          </div>
+        )}
 
         {cur && (
           <>

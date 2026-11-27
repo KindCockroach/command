@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, X, UserPlus } from 'lucide-react'
 import { GuestKitModal, InviteModal, handleUrl, HANDLE_ICON, type Kit } from './GuestKit'
 import CardMedia from './CardMedia'
+import { openInContentDay } from '@/lib/openCard'
 import { uploadToCard } from '@/lib/cardUpload'
 
 // The calendar for Cap's plan: Month / Week / Day, Google-Calendar style.
@@ -334,7 +335,7 @@ export default function PlanCalendar({ refreshKey = 0 }: { refreshKey?: number }
               {open.time && <button className="pc-btn ghost" onClick={() => move(open.id, open.date, null)}>Any time</button>}
             </div>
             <CardMedia contentId={open.content_id} calendarItemId={open.id} onChanged={load} />
-            <button className="pc-btn primary" onClick={() => { setOpen(null); window.dispatchEvent(new CustomEvent('station:navigate', { detail: { view: 'contentday' } })) }}>Open in Content Day →</button>
+            <button className="pc-btn primary" onClick={() => { const id = open.content_id; setOpen(null); openInContentDay(id) }}>Open in Content Day →</button>
             <button className="pc-btn ghost" style={{ marginTop: 8 }} onClick={() => remove(open.id)}>Remove from calendar</button>
             <p className="pc-foot">Card #{open.content_id}. Moving it here never copies the card; removing it keeps the card in Content Day.</p>
           </div>
