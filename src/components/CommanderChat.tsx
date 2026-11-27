@@ -96,10 +96,10 @@ export default function CommanderChat() {
         )}
       </div>
 
-      <div ref={listRef} style={{ flex: 1, overflow: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={bubble('assistant')}>{GREETING}</div>
+      <div ref={listRef} className="cc-log" style={{ flex: 1, overflow: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div data-who="agent" style={bubble('assistant')}>{GREETING}</div>
         {messages.map((m, i) => (
-          <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '82%' }}>
+          <div key={i} data-who={m.role === 'user' ? 'me' : 'agent'} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '82%' }}>
             {(m.content || m.attach) && <div style={{ ...bubble(m.role), maxWidth: '100%' }}>
               {m.attach && (
                 m.attach.type?.startsWith('image')

@@ -520,3 +520,22 @@ button:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
   .rp-needs-line { display: inline-flex; }
 }
 @media (min-width: 768px) { .rp-top-approve { display: none !important; } }
+
+/* ── Phase 8 · B0: Home chat — two columns (what she said | the agents' replies), replies hideable ── */
+.hc .her-msg.mandi, .hc .ttc-t.mandi, .hc [data-who="me"] { transition: opacity .2s; }
+.hc-hide .her-msg.her, .hc-hide .her-out, .hc-hide .her-q, .hc-hide .ttc-t.cap, .hc-hide [data-who="agent"] { display: none !important; }
+@media (min-width: 900px) {
+  .hc-split .her-log, .hc-split .cc-log, .hc-split .ttc { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 18px; row-gap: 10px; align-items: start; }
+  .hc-split .her-log > *, .hc-split .cc-log > *, .hc-split .ttc > * { grid-column: 1 / -1; }
+  .hc-split .her-msg.mandi, .hc-split .ttc-t.mandi, .hc-split [data-who="me"] { grid-column: 1; justify-self: stretch; max-width: none !important; }
+  .hc-split .her-msg.her, .hc-split .her-out, .hc-split .her-q, .hc-split .ttc-t.cap, .hc-split [data-who="agent"] { grid-column: 2; justify-self: stretch; max-width: none !important; }
+}
+/* Keyboard open on a phone: the bottom tab bar steps aside so the text box keeps the space. */
+@media (max-width: 767px) {
+  .kb-open .rp-bottom, .kb-open .rp-more { display: none !important; }
+  .kb-open .rise-app main { padding-bottom: 16px !important; }
+}
+/* No zoom on focus on a phone: every text box in the station is 16px there. */
+@media (max-width: 767px) { .rise-app textarea, .rise-app input[type="text"], .rise-app input:not([type]), .rise-app select { font-size: 16px !important; } }
+/* B0: bottom bar labels keep readable ink (another nav rule was paling them). */
+@media (max-width: 767px) { .rise-app .rp-bottom button { color: var(--ink-muted) !important; } .rise-app .rp-bottom button.on { color: var(--act) !important; } }

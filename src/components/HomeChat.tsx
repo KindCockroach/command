@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import HerPanel from './HerPanel'
 import CommanderChat from './CommanderChat'
 import { TalkToCapThread } from './TalkToCap'
@@ -8,6 +8,9 @@ import { TalkToCapThread } from './TalkToCap'
 // built on their existing chats and receipts, plus a small strip of what needs Mandi.
 type Who = 'her' | 'man' | 'cap'
 const KEY = 'rise-home-who'
+const HIDE_KEY = 'rise-home-hide-replies'   // B0: per device
+// The agents' side of each chat (Her, Man, Cap) — the classes those chats already use.
+const AGENT_SEL = '.her-msg.her, .her-out, .her-q, .ttc-t.cap, [data-who="agent"]'
 const WHO: { id: Who; name: string; what: string }[] = [
   { id: 'her', name: 'Her', what: 'Thinks with you, saves your words, hands them on.' },
   { id: 'man', name: 'Man', what: 'Commander. Acts in RISE, with receipts.' },
@@ -18,6 +21,39 @@ type Item = { source: string }
 export default function HomeChat() {
   const [who, setWho] = useState<Who>('her')
   const [items, setItems] = useState<Item[]>([])
+  // B0: the replies column can be hidden ("so I don't have to see the responses in chat if I don't want").
+  const [hide, setHide] = useState(false)
+  const [unseen, setUnseen] = useState(0)
+  const boxRef = useRef<HTMLDivElement>(null)
+  const seen = useRef(0)
+  useEffect(() => { try { setHide(localStorage.getItem(HIDE_KEY) === '1') } catch { /* shown */ } }, [])
+  const toggleHide = (v: boolean) => { setHide(v); setUnseen(0); try { localStorage.setItem(HIDE_KEY, v ? '1' : '0') } catch { /* fine */ } }
+  // Count the agents' replies; while hidden, a new one shows a quiet "replied · show" pill instead.
+  useEffect(() => {
+    const el = boxRef.current
+    if (!el) return
+    seen.current = el.querySelectorAll(AGENT_SEL).length
+    const mo = new MutationObserver(() => {
+      const n = el.querySelectorAll(AGENT_SEL).length
+      if (n > seen.current && hide) setUnseen(u => u + (n - seen.current))
+      seen.current = n
+    })
+    mo.observe(el, { childList: true, subtree: true })
+    return () => mo.disconnect()
+  }, [hide, who])
+  // B0: with the phone keyboard open, keep the text box in view and tuck the bottom tab bar away.
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const onResize = () => {
+      const open = vv.height < window.innerHeight * 0.78
+      document.documentElement.classList.toggle('kb-open', open)
+      const a = document.activeElement as HTMLElement | null
+      if (open && a && boxRef.current?.contains(a)) setTimeout(() => a.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60)
+    }
+    vv.addEventListener('resize', onResize)
+    return () => { vv.removeEventListener('resize', onResize); document.documentElement.classList.remove('kb-open') }
+  }, [])
   useEffect(() => {
     try {
       const s = localStorage.getItem(KEY) as Who | null
@@ -49,6 +85,9 @@ export default function HomeChat() {
           ))}
           <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)', marginLeft: 4 }}>{me.what}</span>
         </div>
+        <button type="button" className="rp-pill rp-quiet" aria-expanded={!hide} onClick={() => toggleHide(!hide)} title="Show or hide the agents' replies (remembered on this device)">
+          {hide ? 'Show replies' : 'Hide replies'}
+        </button>
         {items.length > 0 && (
           <button type="button" className="rp-pill rp-secondary rp-needs-line" onClick={() => go('approve')}>
             {items.length} thing{items.length === 1 ? '' : 's'} need{items.length === 1 ? 's' : ''} you →
@@ -61,7 +100,10 @@ export default function HomeChat() {
           </div>
         )}
       </div>
-      <div className="rp-card rp-glow-input" style={{ padding: who === 'cap' ? '18px 20px' : 0, overflow: 'hidden' }}>
+      {hide && unseen > 0 && (
+        <button type="button" className="rp-pill rp-secondary" style={{ alignSelf: 'flex-start' }} onClick={() => toggleHide(false)}>{me.name} replied · show</button>
+      )}
+      <div ref={boxRef} className={`rp-card rp-glow-input hc${hide ? ' hc-hide' : ' hc-split'}`} style={{ padding: who === 'cap' ? '18px 20px' : 0, overflow: 'hidden' }}>
         {who === 'her' && <HerPanel />}
         {who === 'man' && <CommanderChat />}
         {who === 'cap' && <TalkToCapThread id="cap:general" intro="Cap owns the map: every account’s plan, the calendar and your campaigns. Ask him what’s coming up, what’s waiting on you, or where an idea should go." placeholder="Ask Cap: what's on the calendar this week? What's waiting on me? Where should this idea go?" />}
