@@ -13,6 +13,7 @@ import { craftFor, HOOK_RULES, PROTECT_PEOPLE } from './craft'
 import { fableText } from './fable'
 import { wellLinesFor } from './well'
 import { cut, extractJsonObject } from './jsonkit'
+import { ROLE_LINES } from './roles'
 
 // The bar for every quote, real or written (Mandi, Phase 7 step 6).
 export const QUOTE_RULES = `QUOTE CARDS (still image, carousel, or b-roll with the words over it). Gratitudes count as quotes.
@@ -111,7 +112,7 @@ export async function fillQuoteCard(id: number, format: QuoteFormat): Promise<{ 
   let out: { ref?: string; kind?: string; text?: string; slides?: string[]; title?: string; job?: string } = {}
   try {
     out = JSON.parse(extractJsonObject(await fableText({ json: true, useClaude: true, maxTokens: 1800,
-      instructions: `You are Ed, writing a quote card for Mandi Beck. Cap planned it as: ${FORMAT_LABEL[format]}.
+      instructions: `You are Ed, writing a quote card for Mandi Beck. ${ROLE_LINES.ed} Cap planned it as: ${FORMAT_LABEL[format]}.
 ${craftFor(c.account_id)}
 ${QUOTE_RULES}
 ${isCarousel ? HOOK_RULES : ''}

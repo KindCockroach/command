@@ -23,6 +23,7 @@ import { fableText } from './fable'
 import { wellLinesFor, wellStatus } from './well'
 import { capReview } from './review'
 import { openHandoff, startAttempt, completeHandoff, failHandoff, getHandoff } from './handoffs'
+import { ROLE_LINES } from './roles'
 
 type Writer = 'ed' | 'pod'
 const WRITER_NAME: Record<Writer, string> = { ed: 'Ed', pod: 'Pod' }
@@ -104,8 +105,8 @@ export async function writerDraft(writer: Writer, id: number, opts: { platforms:
   ].filter(Boolean).join('\n\n')
 
   const role = writer === 'pod'
-    ? 'You are Pod, the long-form writer (Medium, Substack, the podcast). Cap, the campaign manager, briefed you.'
-    : 'You are Ed, the short-form writer. Cap, the campaign manager, briefed you.'
+    ? `You are Pod. ${ROLE_LINES.pod} Cap, the campaign manager, briefed you.`
+    : `You are Ed. ${ROLE_LINES.ed} Cap, the campaign manager, briefed you.`
   const instructions = `${craftFor(c.account_id)}
 
 ${role} Mandi has filmed this card. Write ONE caption per platform below, each adapted to its platform:

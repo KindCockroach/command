@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { openHandoff } from '@/lib/handoffs'
+import { runHandoff } from '@/lib/agentRun'
 import { fableText } from '@/lib/fable'
 import { CRAFT_RULES } from '@/lib/craft'
 import {
@@ -143,7 +145,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ executed: true, results })
   }
 
-  // ── PLAN MODE: classify, interview, and propose ─────────────────────────────
+  // ── TO MAN (Phase 8 A4): Quick Capture goes to Man immediately, as it is ─────
+  // No sorting, no questions, no batching here: her words are saved to Notes untouched and handed
+  // to Man (Commander), who reads them three ways and sends each piece where it belongs.
+  if (body.toMan) {
+    const text = String(body.input ?? '').trim()
+    const file = body.fileUrl ? `\n\n📎 ${body.fileName || 'file'} (${body.fileType || 'file'}): ${body.fileUrl}` : ''
+    if (!text && !file) return NextResponse.json({ error: 'Nothing to send.' }, { status: 400 })
+    const words = `${text}${file}`.trim()
+    const first = (text || body.fileName || 'A drop').split('\n')[0].slice(0, 80)
+    const note = createNote({ title: `Quick Capture · ${first}`.slice(0, 120), body: words, category: 'idea', source: 'mine', tags: ['capture'], pinned: false })
+    const h = openHandoff({ kind: 'her_note', from: 'mandi', to: 'commander', what: `Quick Capture: ${first}`, ref: { type: 'note', id: note.id }, note: words })
+    after(async () => { await runHandoff(h.id) })
+    return NextResponse.json({ sent: true, note_id: note.id, handoff_id: h.id, received: 'Sent to Man as it is, and saved to Notes. He’ll read it and hand each piece on; the receipts show in Activity.' })
+  }
+
+  // ── PLAN MODE (older): classify, interview, and propose ─────────────────────
+  // Quick Capture no longer calls this (it sends to Man). Kept for any older caller.
   const { input, fileUrl, fileType, fileName } = body
   const context = [
     input && `USER INPUT: ${input}`,

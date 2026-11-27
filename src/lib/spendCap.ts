@@ -1,4 +1,5 @@
 // Phase 8 · A0: the monthly AI spending cap (Mandi, 2026-11-25: "RISE must not exceed $50/month
+// 2026-11-26: Mandi raised the cap to $100/month going forward.
 // in AI costs"). Counts what RISE logs in usage.json (Anthropic, OpenAI, ElevenLabs). Railway
 // hosting and Resend email are separate bills and are NOT counted here.
 //
@@ -18,7 +19,7 @@ export type SpendCapSettings = { monthly_cap_usd: number; per_job_cap_usd: numbe
 export type PausedJob = { ts: string; route: string; kind: string; why: string }
 export type SpendCapState = Partial<SpendCapSettings> & { paused?: PausedJob[] }
 
-export const DEFAULT_SPEND_CAP: SpendCapSettings = { monthly_cap_usd: 50, per_job_cap_usd: 1 }
+export const DEFAULT_SPEND_CAP: SpendCapSettings = { monthly_cap_usd: 100, per_job_cap_usd: 1 }
 // Every budget message starts with this, so the station's fetch wrapper can spot it and ask.
 export const BUDGET_TAG = '💸 RISE budget:'
 export const BUDGET_OK_HEADER = 'x-rise-budget-ok'

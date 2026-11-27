@@ -15,6 +15,7 @@ import { getApprovals } from './approvals'
 import { cut, extractJsonObject } from './jsonkit'
 import { AGENTS } from './agentRoster'
 import { getSkills } from './skills'
+import { ROLE_LINES } from './roles'
 
 export type ChatTurn = { role: 'mandi' | 'cap'; text: string; at: string; handoff_id?: string | null }
 const nowIso = () => new Date().toISOString()
@@ -66,7 +67,7 @@ export async function talkToCap(itemId: string, text: string): Promise<{ turns: 
   let out: { reply?: string; change?: boolean; fix?: string }
   try {
     out = JSON.parse(extractJsonObject(await fableText({ json: true, maxTokens: 600,
-      instructions: `You are Cap, Mandi's campaign boss. She is looking at one item waiting for her approval and talking to you about it. Answer plainly and briefly (1–3 sentences), from the item itself; never invent. ${PREHEADER_NOTE} ${LINK_NOTE}
+      instructions: `You are Cap, Mandi's campaign boss. ${ROLE_LINES.cap} She is looking at one item waiting for her approval and talking to you about it. Answer plainly and briefly (1–3 sentences), from the item itself; never invent. ${PREHEADER_NOTE} ${LINK_NOTE}
 ${canChange ? 'If she is asking for a change to the draft, set change=true and write "fix" as HER instruction, in her words, for the writer (Ed for emails, Pod for long-form). Say in your reply that you are handing it to the writer and it will come back to Approve. You never rewrite it yourself.' : 'This item has no draft to rewrite; just answer (change=false).'}
 Reply ONLY with JSON: {"reply":"","change":false,"fix":""}`,
       input: `THE ITEM: ${item.title}\nFrom: ${item.from}\n${item.detail ?? ''}\n\n${item.body ? `THE DRAFT:\n${cut(item.body, 6000)}` : ''}\n\nTHE CONVERSATION SO FAR:\n${history}` })))
@@ -132,7 +133,7 @@ async function talkToCapGeneral(said: string): Promise<{ turns: ChatTurn[] } | {
   let reply = ''
   try {
     reply = (await fableText({ maxTokens: 700,
-      instructions: `You are Cap, Mandi's campaign boss: you own the map (every account's plan, the calendar, campaigns). Mandi is talking to you from her Home screen. Answer plainly and briefly (1–4 sentences, no lists unless she asks), from the facts below only; never invent numbers, dates or posts. If she wants a plan or calendar change, say exactly where (the plan in Approve, or Plan › Calendar) or that she can tell you on that plan; you don't change plans from this chat. Speak to her, warm and direct.`,
+      instructions: `You are Cap, Mandi's campaign boss. ${ROLE_LINES.cap} You own the map (every account's plan, the calendar, campaigns). Mandi is talking to you from her Home screen. Answer plainly and briefly (1–4 sentences, no lists unless she asks), from the facts below only; never invent numbers, dates or posts. If she wants a plan or calendar change, say exactly where (the plan in Approve, or Plan › Calendar) or that she can tell you on that plan; you don't change plans from this chat. Speak to her, warm and direct.`,
       input: `TODAY: ${today}\n\nYOUR PLANS:\n${plans.join('\n') || '(none active)'}\n\nCALENDAR, NEXT 14 DAYS:\n${cal.join('\n') || '(empty)'}\n\nWAITING ON HER YES:\n${waiting.join('\n') || '(nothing)'}\n\nTHE CONVERSATION SO FAR:\n${history}` })).trim()
   } catch (e) {
     reply = `I couldn’t answer just now (${e instanceof Error ? e.message : 'no answer'}). Your note is saved here.`

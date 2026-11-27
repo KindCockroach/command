@@ -181,6 +181,7 @@ export type HandoffKind =
   | 'interview_shape' // Cora turns the charged points from the interview into Medium story shapes
   | 'card_fix'        // Cap → Ed: fill what cards are missing (title, on-screen hook, job, caption, what to film)
   | 'notes_mine'      // Phase 8 A7: Cap reads her Notes for quotes, lines and skits → the idea bank
+  | 'capacity_trim'   // Phase 8 A4: Her → Cap: Mandi's hours this week are short; move the overflow to next week
 export type HandoffRef = { type: 'card' | 'note' | 'thread' | 'results' | 'review' | 'build_log' | 'email' | 'story' | 'substack' | 'reuse' | 'interview'; id: string | number; label?: string }
 export type Handoff = {
   id: string
@@ -1136,6 +1137,7 @@ export type WellspringStore = { config: WellspringConfig; posts: WellspringPost[
 export type Db = {
   her_profile?: { kids_note?: string; kids_saved_at?: string } // Phase 8 A3: what Her asked Mandi once
   learning_daily?: { date: string; text: string; history: { date: string; text: string }[] } // Phase 8 A3: the Brief's learning thing
+  week_capacity?: { week_start: string; hours: number; saved_at: string; needed_minutes: number; handoff_id?: string | null } // Phase 8 A4: Mandi's hours this week (Her asks)
   brain_audit?: { status: 'proposed' | 'applied' | 'declined'; applied_at?: string; declined_at?: string; backup?: string; merged_id?: number; reason?: string } // Phase 8 A2
   spend_cap?: import('./spendCap').SpendCapState // Phase 8 A0: monthly AI cap settings + paused-job log
   content: ContentPiece[]

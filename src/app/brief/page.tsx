@@ -46,6 +46,9 @@ export default function BriefPage() {
   const [learning, setLearning] = useState<{ text?: string; ask?: boolean; question?: string } | null>(null)
   const [kidsAnswer, setKidsAnswer] = useState('')
   const [inboxLoaded, setInboxLoaded] = useState(false)
+  const [week, setWeek] = useState<{ question: string; hours: { film: number; approvals: number; admin: number; total: number }; answer: { hours: number; short_by_minutes: number } | null } | null>(null) // Phase 8 A4
+  const [hoursAnswer, setHoursAnswer] = useState('')
+  const [weekMsg, setWeekMsg] = useState<string | null>(null)
   const [spendLine, setSpendLine] = useState<string | null>(null) // Phase 8 A0: shows once RISE passes 80% of its monthly AI cap
   const [copied, setCopied] = useState(false)
   // When she last opened the brief — so "new signups" means new SINCE THEN, and the
@@ -67,7 +70,9 @@ export default function BriefPage() {
       fetch('/api/buildlog').then(r => r.json()),  // the build journal: Claude + RISE work, merged
       fetch('/api/spend').then(r => r.json()),     // Phase 8 A0: the monthly AI cap
       fetch('/api/brief/learning').then(r => r.json()), // Phase 8 A3: today's learning thing (Her asks the kids' ages once)
-    ]).then(([l, m, i, b, s, bl, sp, lr]) => {
+      fetch('/api/capacity').then(r => r.json()),       // Phase 8 A4: Her's capacity estimate for this week
+    ]).then(([l, m, i, b, s, bl, sp, lr, wk]) => {
+      if (wk.status === 'fulfilled' && wk.value?.question) setWeek(wk.value)
       if (lr.status === 'fulfilled' && lr.value) setLearning(lr.value)
       if (sp.status === 'fulfilled' && typeof sp.value?.brief_line === 'string') setSpendLine(sp.value.brief_line)
       // Mandi Joy's line for today, generated around the current priority (the Reset).
@@ -147,6 +152,32 @@ export default function BriefPage() {
                 </>
               ) : <p style={{ color: '#7A6A5B', fontSize: '14px', lineHeight: 1.5 }}>{filmWhy ?? 'Nothing waiting to film right now.'}</p>}
           </div>
+
+          {/* This week — Her's capacity estimate (Phase 8 A4) */}
+          {week && (
+            <div style={{ background: '#fff', borderRadius: '20px', padding: '20px', border: '1px solid rgba(168,147,126,0.22)', boxShadow: '0 6px 24px -14px rgba(90,60,30,0.25)' }}>
+              <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#6B4A30', marginBottom: '9px' }}>🗓️ This week</p>
+              {week.answer ? (
+                <p style={{ fontSize: '14.5px', color: '#4A3F35', lineHeight: 1.45 }}>
+                  The week needs about {week.hours.total} h (filming {week.hours.film}, approvals {week.hours.approvals}, admin {week.hours.admin}). You gave it {week.answer.hours} h.{' '}
+                  {week.answer.short_by_minutes > 0 ? 'That’s short, so Cap moves the overflow to next week. Nothing gets dropped; the moves show in Activity.' : 'It fits.'}
+                  {' '}<button onClick={() => setWeek({ ...week, answer: null })} style={{ border: 'none', background: 'none', color: '#B5784E', fontWeight: 700, fontSize: '13px', cursor: 'pointer', padding: 0 }}>Change</button>
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <p style={{ fontSize: '14.5px', color: '#4A3F35', lineHeight: 1.45 }}>{week.question}</p>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input inputMode="decimal" value={hoursAnswer} onChange={e => setHoursAnswer(e.target.value)} placeholder="hours" style={{ width: 90, fontSize: '16px', padding: '9px 12px', borderRadius: '10px', border: '1px solid rgba(168,147,126,0.4)', background: '#fff', color: '#2E241D', fontFamily: 'inherit' }} />
+                    <button disabled={!hoursAnswer.trim() || !Number.isFinite(Number(hoursAnswer))} onClick={async () => {
+                      const d = await fetch('/api/capacity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hours: Number(hoursAnswer) }) }).then(r => r.json()).catch(() => null)
+                      if (d?.question) { setWeek(d); setWeekMsg(d.handed_to_cap ? 'Saved. It’s short, so I handed it to Cap to move the overflow to next week.' : 'Saved. It fits.') } else setWeekMsg(d?.error ?? 'Couldn’t save that. Try again.')
+                    }} style={{ border: 'none', background: '#6B4A30', color: '#fff', fontWeight: 700, fontSize: '13px', padding: '8px 14px', borderRadius: '10px', cursor: 'pointer', minHeight: 36 }}>Save</button>
+                  </div>
+                </div>
+              )}
+              {weekMsg && <p style={{ fontSize: '13px', color: '#7A6A5B', marginTop: '8px' }}>{weekMsg}</p>}
+            </div>
+          )}
 
           {/* Needle-mover */}
           {move && (

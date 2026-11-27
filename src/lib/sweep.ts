@@ -16,6 +16,7 @@ import { skillPrompt } from './skills'
 import { addIdeas, ideaAsk } from './ideas'
 import { cut } from './jsonkit'
 import { RETIRED } from './health'
+import { ROLE_LINES } from './roles'
 
 const nowIso = () => new Date().toISOString()
 const words = (s: string) => new Set((s.toLowerCase().match(/[a-z]{4,}/g) ?? []).filter(w => !STOP.has(w)))
@@ -60,7 +61,8 @@ export async function runSweep(h: Handoff) {
   let out: { proposals?: { note_id: number; goal: string; who_for: string; by_when: string | null; kind: string; why: string }[]; ideas?: { text?: string; why?: string }[] }
   try {
     out = JSON.parse(await fableText({ json: true, maxTokens: 1800,
-      instructions: `You are Cap, the campaign boss. ${skillPrompt('cap-sweep-notes')}\nOnly propose a note that is ALREADY finished (or nearly) and truly serves one of the goals as it is. Say who it goes to (a person type or a channel, never invent a name) and by when (a date YYYY-MM-DD or null if the goal sets none). kind: outreach (Mandi sends it herself), post, longform, email, other. Up to 6. If nothing fits, return none. Keep the branches apart: Joyful Media (mindfulness, the Reset) and WFH (the AI Mom podcast; AI services paused).\n${ideaAsk('cap')}\nReply ONLY with JSON: {"proposals":[{"note_id":0,"goal":"","who_for":"","by_when":null,"kind":"","why":""}],"ideas":[{"text":"","why":""}]}`,
+      instructions: `You are Cap, the campaign boss. ${ROLE_LINES.cap}
+${skillPrompt('cap-sweep-notes')}\nOnly propose a note that is ALREADY finished (or nearly) and truly serves one of the goals as it is. Say who it goes to (a person type or a channel, never invent a name) and by when (a date YYYY-MM-DD or null if the goal sets none). kind: outreach (Mandi sends it herself), post, longform, email, other. Up to 6. If nothing fits, return none. Keep the branches apart: Joyful Media (mindfulness, the Reset) and WFH (the AI Mom podcast; AI services paused).\n${ideaAsk('cap')}\nReply ONLY with JSON: {"proposals":[{"note_id":0,"goal":"","who_for":"","by_when":null,"kind":"","why":""}],"ideas":[{"text":"","why":""}]}`,
       input: `TODAY: ${new Date().toISOString().slice(0, 10)}\nGOALS ON THE MAP:\n${goals.map(g => `- ${g.goal}`).join('\n')}\n\nNOTES THAT MAY ALREADY SERVE ONE:\n${scored.map(({ n }) => `[#${n.id}] ${cut(n.title, 100)} (${n.category}; ${(n.tags ?? []).join(', ')})\n${cut(n.body, 700)}`).join('\n\n')}` }))
   } catch (e) { return failHandoff(h.id, `Cap couldn’t sweep: ${e instanceof Error ? e.message : 'no answer'}`) }
   addIdeas('cap', out.ideas, 'Cap’s Notes sweep')

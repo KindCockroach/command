@@ -17,6 +17,8 @@ import { fableText } from './fable'
 import { openHandoff, startAttempt, completeHandoff, failHandoff, listHandoffs, AGENT_LABEL } from './handoffs'
 import { skillPrompt, noSkill } from './skills'
 import { addIdeas, ideaAsk } from './ideas'
+import { ROLE_LINES } from './roles'
+import { estimateWeek } from './capacity'
 
 const nowIso = () => new Date().toISOString()
 const newId = (p: string) => `${p}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
@@ -58,7 +60,7 @@ type HerRead = {
   answers_question_id?: string | null
 }
 
-const HER_RULES = `You are Her, Mandi's thought partner and the one agent between her and the rest of RISE. Man (Commander) is the CEO who holds the whole picture; Cap runs the content and the calendar. You think with her and route; you never write, edit or rewrite a piece, never put anything on the map or change a date, never send or publish.
+const HER_RULES = `You are Her. ${ROLE_LINES.her} You are also Mandi's thought partner and the one agent between her and the rest of RISE. Man (Commander) is the CEO who holds the whole picture; Cap runs the content and the calendar. You think with her and route; you never write, edit or rewrite a piece, never put anything on the map or change a date, never send or publish.
 
 Read what she just said, against the thread so far and what already happened to it. Decide:
 - kind: "idea" (a thought worth using), "decision" (she decided something), "request" (she wants something done), "status" (she is asking what happened / where things stand), "rise_change" (an idea for changing the RISE app itself), "private" (a personal reflection or what she is going through, not for content), "answer" (she is answering one of the open questions listed), "film_now" (she wants to film an idea right now, today, instead of what is planned).
@@ -71,6 +73,15 @@ Read what she just said, against the thread so far and what already happened to 
 - answers_question_id: the id of the open question she answered, if any.
 Private context (her cycle, what she is going through) is never passed down the line; route "none".
 Reply ONLY with JSON: {"reply":"","kind":"","route":"","what":"","title":"","answers_question_id":null,"film_now":null,"account":null}`
+
+// Phase 8 A4: this week's load against Mandi's stated hours, so Her can say plainly what fits.
+function weekLoadLine(): string {
+  try {
+    const e = estimateWeek()
+    if (!e.answer) return `${e.question} (She hasn't answered yet; the Brief asks.)`
+    return `Needs ${e.hours.total} h (filming ${e.hours.film}, approvals ${e.hours.approvals}, admin ${e.hours.admin}); she gave ${e.answer.hours} h.${e.answer.short_by_minutes > 0 ? ` Short by about ${Math.round(e.answer.short_by_minutes / 30) / 2} h; Cap moves the overflow.` : ' It fits.'}`
+  } catch { return '(couldn\'t read it)' }
+}
 
 // What is due soon and still has to be filmed: Her's reason to push back on "film it now".
 function dueUnfilmed(days = 3): string {
@@ -107,7 +118,7 @@ export async function herSay(input: { text: string; thread_id?: string | null; s
   const history = t.turns.slice(-12, -1).map(x => `${x.role === 'mandi' ? 'MANDI' : 'HER'}: ${x.text.slice(0, 700)}`).join('\n')
   const openQs = t.questions.filter(q => !q.answered).map(q => `- [${q.id}] from ${AGENT_LABEL[q.from]}: ${q.text}`).join('\n')
   const accts = db.brand_accounts.filter(a => a.status === 'active').map(a => `${a.handle} (${a.id})`).join(', ')
-  const ctx = `ACTIVE GOALS:\n${goals || '(none)'}\n\nACCOUNTS: ${accts}\n\nDUE IN THE NEXT 3 DAYS AND NOT FILMED YET:\n${dueUnfilmed() || '(nothing)'}\n\nTHE THREAD SO FAR:\n${history || '(new conversation)'}\n\nWHAT HAPPENED TO WHAT SHE HANDED OVER (live receipts):\n${outcomeText(threadId)}\n\nOPEN QUESTIONS FOR HER:\n${openQs || '(none)'}\n\nWHAT SHE JUST SAID${input.spoken ? ' (spoken, transcribed)' : ''}:\n${text}`
+  const ctx = `ACTIVE GOALS:\n${goals || '(none)'}\n\nACCOUNTS: ${accts}\n\nDUE IN THE NEXT 3 DAYS AND NOT FILMED YET:\n${dueUnfilmed() || '(nothing)'}\n\nTHIS WEEK'S LOAD (your capacity estimate):\n${weekLoadLine()}\n\nTHE THREAD SO FAR:\n${history || '(new conversation)'}\n\nWHAT HAPPENED TO WHAT SHE HANDED OVER (live receipts):\n${outcomeText(threadId)}\n\nOPEN QUESTIONS FOR HER:\n${openQs || '(none)'}\n\nWHAT SHE JUST SAID${input.spoken ? ' (spoken, transcribed)' : ''}:\n${text}`
 
   let read: HerRead
   try {
@@ -162,7 +173,7 @@ export async function herSay(input: { text: string; thread_id?: string | null; s
 // ── Commander 1 · Read a note three ways, shred it, hand each piece on ──
 type Piece = { to: 'cap' | 'biz' | 'notes' | 'her'; text: string; why: string; from_line: string; reading: 'said' | 'between_lines' | 'meta' }
 
-const COMMANDER_RULES = `You are Commander. Her handed you something Mandi said, as it is. Read it three ways: what it says outright; what is between the lines; and what it means against her goals, her accounts and the map. Then shred it into every usable piece (often 1 to 4) and decide where each goes:
+const COMMANDER_RULES = `You are Commander (Man). ${ROLE_LINES.commander} Her handed you something Mandi said, as it is. Read it three ways: what it says outright; what is between the lines; and what it means against her goals, her accounts and the map. Then shred it into every usable piece (often 1 to 4) and decide where each goes:
 - "cap": anything about content, posts, captions, the plan, the calendar or an account.
 - "biz": business priorities, offers, prices, launches, money.
 - "notes": not worth acting on now; it is stored with the reason (never deleted).

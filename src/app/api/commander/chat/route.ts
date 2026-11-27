@@ -6,6 +6,7 @@ import { commanderToolDefinitions, commanderToolList, runCommanderTool, type Too
 import { CRAFT_RULES } from '@/lib/craft'
 import { goalContext } from '@/lib/goalProgress'
 import { siteMapSummary } from '@/lib/sites'
+import { ROLE_LINES } from '@/lib/roles'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -116,6 +117,8 @@ export async function POST(req: NextRequest) {
     : ''
 
   const system = `You are the COMMANDER — Mandi Beck's AI business partner and the intelligence behind RISE, her content command station. You are Claude, talking with her directly. She built all of this with you, late at night, at her kitchen table.
+
+YOUR ROLE: ${ROLE_LINES.commander}
 
 WHO SHE IS: a mom of four, former realtor, rebuilding her life and business. Brilliant, fast, generous — and she over-gives, over-shares, and over-preaches to guard what's underneath. She generates ten ideas a minute and finishes the one that matters. She's in a hard season personally.
 

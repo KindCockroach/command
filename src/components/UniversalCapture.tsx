@@ -140,7 +140,9 @@ export default function UniversalCapture() {
       const res = await fetch('/api/intake/smart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // Phase 8 A4: straight to Man, as it is. No sorting here; Man shreds and routes it.
         body: JSON.stringify({
+          toMan: true,
           input: composed,
           fileUrl: fileData?.publicUrl,
           fileType: fileData?.fileType,
@@ -148,8 +150,9 @@ export default function UniversalCapture() {
         }),
       })
       const data = await res.json()
-      if (data.classification) { setResult(data.classification); setAnswers({}) }
-      else setError('Could not read that — try adding a bit more context')
+      if (data.sent) { setResult({ received: data.received, understood: false, questions: [], type: 'note', title: '' } as unknown as Classification); setAnswers({}); setInput('') }
+      else if (data.classification) { setResult(data.classification); setAnswers({}) }
+      else setError(data.error || 'Couldn’t send that to Man. Try again.')
     } catch (e) {
       // Surface the real reason (usually the upload) instead of a blank "Something went wrong".
       setError(e instanceof Error ? e.message : 'Something went wrong. Try again.')

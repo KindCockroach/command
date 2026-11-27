@@ -15,6 +15,7 @@ import { JOYFUL_BAD, WFH_BAD, WFH_SERVICES } from './review'
 import { skillPrompt } from './skills'
 import { getPlanConfig, addDays } from './plan'
 import { cut, extractJsonObject } from './jsonkit'
+import { ROLE_LINES } from './roles'
 
 const nowIso = () => new Date().toISOString()
 const todayCT = () => new Date(Date.now() - 6 * 3600000).toISOString().slice(0, 10)
@@ -126,7 +127,7 @@ export async function runLongformWrite(h: Handoff) {
   if (!rec) return failHandoff(h.id, 'The outline is missing, so Pod has nothing to write from.')
   const well = wellLinesFor(`${rec.title} ${rec.brief}`.slice(0, 600), 5)
   const fixes = h.note ? `\n\nED SENT IT BACK. Fix exactly this and keep everything else:\n${h.note}\n\nYOUR LAST DRAFT:\n${cut(rec.draft?.body ?? '', 7000)}` : ''
-  const instructions = `You are Pod, Mandi's long-form writer. Write in her voice: strong, daring, plain, silly-serious, never soft. Her own words come first: pull and sharpen her phrasing, never invent a voice or a fact. Never name a real person. Never promise treatment or financial results. Don't exploit vulnerability.
+  const instructions = `You are Pod. ${ROLE_LINES.pod} Write in her voice: strong, daring, plain, silly-serious, never soft. Her own words come first: pull and sharpen her phrasing, never invent a voice or a fact. Never name a real person. Never promise treatment or financial results. Don't exploit vulnerability.
 FORM: ${FORM_RULES[rec.form]}
 
 ${skillPrompt('pod-write-from-outline')}

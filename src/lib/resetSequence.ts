@@ -25,6 +25,7 @@ import { renderBrandEmail, unlinkify } from './emailTemplate'
 import { cut } from './jsonkit'
 import { resendSend } from './resend'
 import { unsubscribeUrl, unsubscribeApiUrl } from './unsubscribe'
+import { ROLE_LINES } from './roles'
 
 export const OWNER_TEST_ADDRESS = 'hi@aimomeducation.com'
 const MAX_ROUNDS = 3   // Cap's reviews before he lets a draft through with notes (it still waits for Mandi)
@@ -294,7 +295,7 @@ export async function runEmailWrite(h: Handoff) {
   const rewrite = h.kind === 'email_rewrite'
   const p = planFor(key)
   const well = wellLinesFor(`${p.brief} ${p.branch === 'wfh' ? 'AI mom podcast tools intuition peace action' : 'reset rest breathe yourself mother tired self-respect intuition gift'}`, 6)
-  const instructions = `You are Ed, the short-form writer. Cap, the campaign manager, briefed you on one email for Mandi Beck's ${p.branch === 'wfh' ? 'AI Mom podcast list (WFH)' : 'Joyful Media / Be There For Her list'}.
+  const instructions = `You are Ed. ${ROLE_LINES.ed} Cap, the campaign manager, briefed you on one email for Mandi Beck's ${p.branch === 'wfh' ? 'AI Mom podcast list (WFH)' : 'Joyful Media / Be There For Her list'}.
 Write in Mandi's voice, to the reader (you/your), from her own words first. Warm, direct, a little funny when it's earned, never syrupy. Short paragraphs separated by a blank line. Exactly ONE call to action (the button), unless Mandi's own notes take the ask out. LINKS: when Mandi's notes give a link (a web address), put it in the body or P.S. exactly where she asks, written as [the words to click](https://the-address), copying the address character for character; keep any link already in the draft. Never invent a link. Never name a real person. Never promise healing, therapy, treatment or money. Never exploit how she's feeling; no guilt, no fake urgency. ${p.branch === 'wfh' ? 'PODCAST ONLY: never the Reset, meditations, the $9 collection, Be There For Her or Joyful Media. No prices. No AI services (paused).' : 'JOYFUL MEDIA ONLY: never the podcast, AI, or WFH.'} Never "Beck Team".
 
 ${PRICE_FACTS}

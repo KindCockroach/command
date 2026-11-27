@@ -13,6 +13,7 @@
 
 import { readDb, writeDb, addBuildLogEntry, getBuildLog, type Skill, type SkillOwner, type HandoffKind } from './db'
 import { cut } from './jsonkit'
+import { roleLineFor } from './roles'
 
 type Seed = Omit<Skill, 'created_at' | 'updated_at' | 'runs' | 'last_run_at' | 'edited_by'>
 
@@ -279,7 +280,8 @@ export function editSkill(id: string, patch: Partial<Pick<Skill, 'name' | 'when'
 export function skillPrompt(id: string): string {
   const s = getSkill(id)
   if (!s) return ''
-  return `THE SKILL YOU ARE RUNNING: ${s.sop} · ${s.name}\nWhen: ${s.when}\nSteps:\n${s.steps.map((x, i) => `${i + 1}. ${x}`).join('\n')}\nDone when: ${s.done}\nNever: ${s.never.join(' / ')}`
+  const role = roleLineFor(s.owner)   // Phase 8 A4: the owner's role line rides on every skill
+  return `${role ? `WHO YOU ARE: ${role}\n` : ''}THE SKILL YOU ARE RUNNING: ${s.sop} · ${s.name}\nWhen: ${s.when}\nSteps:\n${s.steps.map((x, i) => `${i + 1}. ${x}`).join('\n')}\nDone when: ${s.done}\nNever: ${s.never.join(' / ')}`
 }
 
 // Which skill a handoff runs, so its receipt can name it.
