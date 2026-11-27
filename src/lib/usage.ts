@@ -29,17 +29,39 @@ export type UsageEntry = {
   outputTokens: number
   costUsd: number
   route?: string        // the page or API path that spent it (Phase 6)
-  priced?: boolean      // false = model had no price in PRICING, so cost shows 0
+  priced?: boolean      // false = model had no price in PRICING; it is charged at FALLBACK_PRICE, never $0
+  // Routing R0 (2026-11-27). All optional, so older rows read the same.
+  cacheWriteTokens?: number // input tokens written to the prompt cache (billed above normal input)
+  cacheReadTokens?: number  // input tokens served from the prompt cache (billed far below normal input)
+  searches?: number         // live web searches this call ran (billed per search)
+  job?: string              // what kind of work it was (sort, scout, write_short, decide...). Set by the router.
+  tier?: string             // which tier the router picked (T1..T4)
+  reason?: string           // why, when the router moved off the job's starting tier
 }
 
 // Price per 1M tokens (input, output). Edit here if a model's price changes.
-const PRICING: Record<string, { in: number; out: number }> = {
+// cacheRead = price of input served from the prompt cache; left out, it is a tenth of input.
+// Cache writes are billed at CACHE_WRITE_X times input. big = the rate once a prompt passes
+// bigOver input tokens (Haiku 5.5 only).
+type Price = { in: number; out: number; cacheRead?: number; big?: { in: number; out: number }; bigOver?: number }
+const PRICING: Record<string, Price> = {
   'gpt-4o': { in: 2.5, out: 10 },
   'gpt-4o-mini': { in: 0.15, out: 0.6 },
   'claude-fable-5': { in: 10, out: 50 },
   'claude-opus-4-8': { in: 5, out: 25 },
   'claude-sonnet-5': { in: 2, out: 10 },
+  // Routing R0 (2026-11-27): the current models, so the spending cap counts them.
+  'claude-haiku-5-5': { in: 0.1, out: 0.5, big: { in: 0.5, out: 2.5 }, bigOver: 100_000 },
+  'claude-sonnet-5-5': { in: 2, out: 10, cacheRead: 0.1 },
+  'claude-opus-5-5': { in: 4, out: 20, cacheRead: 0.2 },
+  'claude-fable-5-2': { in: 8, out: 40, cacheRead: 0.2 },
 }
+const CACHE_WRITE_X = 1.25
+/** One live web search (Anthropic bills $10 per 1,000), on top of the tokens it reads. */
+export const SEARCH_COST_USD = 0.01
+// A model with no row above is charged at the dearest rate in the table and flagged
+// (priced:false → Health + /admin). It must never count as $0, or the cap goes blind.
+const FALLBACK_PRICE: Price = { in: 10, out: 50 }
 
 // Per-minute audio pricing (transcription). Whisper bills by duration, not tokens.
 const AUDIO_PER_MIN: Record<string, number> = { 'whisper-1': 0.006 }
@@ -54,10 +76,34 @@ export function isPriced(model: string): boolean {
   return !!PRICING[m] || !!AUDIO_PER_MIN[m]
 }
 
-export function costFor(model: string, inTok: number, outTok: number): number {
-  const p = PRICING[baseModel(model)]
-  if (!p) return 0
-  return (inTok / 1e6) * p.in + (outTok / 1e6) * p.out
+export type CostExtra = { cacheWriteTokens?: number; cacheReadTokens?: number; searches?: number }
+
+// inTok is the plain (uncached) input, as the APIs report it. Cached input and web
+// searches ride in `extra`.
+export function costFor(model: string, inTok: number, outTok: number, extra: CostExtra = {}): number {
+  const m = baseModel(model)
+  if (AUDIO_PER_MIN[m] != null) return 0 // billed by the minute; the caller passes costUsd
+  const p = PRICING[m] ?? FALLBACK_PRICE
+  const cw = extra.cacheWriteTokens || 0
+  const cr = extra.cacheReadTokens || 0
+  const rate = p.big && p.bigOver && inTok + cw + cr > p.bigOver ? p.big : p
+  const scale = rate.in / p.in // the cache prices move with the input price
+  return (inTok / 1e6) * rate.in
+    + (outTok / 1e6) * rate.out
+    + (cw / 1e6) * rate.in * CACHE_WRITE_X
+    + (cr / 1e6) * (p.cacheRead ?? p.in * 0.1) * scale
+    + (extra.searches || 0) * SEARCH_COST_USD
+}
+
+/** Models in the log that have no price row (charged at the fallback rate). Newest 30 days. */
+export function unpricedModels(days = 30): string[] {
+  const since = Date.now() - days * 864e5
+  const out = new Set<string>()
+  for (const r of read()) {
+    if (new Date(r.ts).getTime() < since) continue
+    if (r.priced === false && !/elevenlabs/.test(r.model)) out.add(r.model)
+  }
+  return [...out]
 }
 
 // Which route is spending? Middleware puts the path on every request as
@@ -104,6 +150,12 @@ export function logUsage(e: {
   outputTokens: number
   route?: string
   costUsd?: number // set for non-token pricing (audio minutes)
+  cacheWriteTokens?: number
+  cacheReadTokens?: number
+  searches?: number
+  job?: string
+  tier?: string
+  reason?: string
 }) {
   const ts = new Date().toISOString()
   ;(async () => {
@@ -115,9 +167,15 @@ export function logUsage(e: {
       kind: e.kind,
       inputTokens: e.inputTokens || 0,
       outputTokens: e.outputTokens || 0,
-      costUsd: e.costUsd ?? costFor(e.model, e.inputTokens || 0, e.outputTokens || 0),
+      costUsd: e.costUsd ?? costFor(e.model, e.inputTokens || 0, e.outputTokens || 0, e),
       route,
-      priced: isPriced(e.model),
+      priced: e.costUsd != null || isPriced(e.model),
+      ...(e.cacheWriteTokens ? { cacheWriteTokens: e.cacheWriteTokens } : {}),
+      ...(e.cacheReadTokens ? { cacheReadTokens: e.cacheReadTokens } : {}),
+      ...(e.searches ? { searches: e.searches } : {}),
+      ...(e.job ? { job: e.job } : {}),
+      ...(e.tier ? { tier: e.tier } : {}),
+      ...(e.reason ? { reason: e.reason.slice(0, 200) } : {}),
     })
   })().catch(() => { /* never throw from logging */ })
 }
@@ -184,6 +242,7 @@ export type ModelRow = { model: string; calls: number; inputTokens: number; outp
 export type KindRow = { kind: string; calls: number; costUsd: number }
 export type RouteRow = { route: string; calls: number; costUsd: number; models: string[] }
 export type DayRow = { day: string; calls: number; costUsd: number }
+export type JobRow = { job: string; calls: number; costUsd: number; models: string[] }
 
 export type UsageSummary = {
   totals: { calls: number; inputTokens: number; outputTokens: number; costUsd: number }
@@ -194,6 +253,7 @@ export type UsageSummary = {
   byKind: KindRow[]
   byRoute: RouteRow[]
   byDay: DayRow[]        // last 30 days, newest first
+  byJob: JobRow[]        // by kind of work (rows logged before routing show as "(no job yet)")
   unpriced: string[]     // models seen with no price (their cost shows as $0)
   untrackedRows: number  // rows from before route tracking began
   recent: UsageEntry[]
@@ -211,6 +271,7 @@ export function getUsageSummary(): UsageSummary {
   const kinds = new Map<string, KindRow>()
   const routes = new Map<string, RouteRow & { _m: Set<string> }>()
   const days = new Map<string, DayRow>()
+  const jobs = new Map<string, JobRow & { _m: Set<string> }>()
   const unpriced = new Set<string>()
   let untrackedRows = 0
   let todayCostUsd = 0
@@ -248,6 +309,13 @@ export function getUsageSummary(): UsageSummary {
     r._m.add(e.model)
     routes.set(rk, r)
 
+    const jk = e.job || '(no job yet)'
+    const j = jobs.get(jk) ?? { job: jk, calls: 0, costUsd: 0, models: [], _m: new Set<string>() }
+    j.calls++
+    j.costUsd += e.costUsd
+    j._m.add(e.tier ? `${e.model} (${e.tier})` : e.model)
+    jobs.set(jk, j)
+
     if (age <= 30 * day) {
       const dk = e.ts.slice(0, 10)
       const d = days.get(dk) ?? { day: dk, calls: 0, costUsd: 0 }
@@ -268,6 +336,7 @@ export function getUsageSummary(): UsageSummary {
     byKind: [...kinds.values()].sort((a, b) => b.costUsd - a.costUsd),
     byRoute: [...routes.values()].map(({ _m, ...r }) => ({ ...r, models: [..._m] })).sort((a, b) => b.costUsd - a.costUsd),
     byDay: [...days.values()].sort((a, b) => (a.day < b.day ? 1 : -1)),
+    byJob: [...jobs.values()].map(({ _m, ...r }) => ({ ...r, models: [..._m] })).sort((a, b) => b.costUsd - a.costUsd),
     unpriced: [...unpriced].filter(m => !/elevenlabs/.test(m)),
     untrackedRows,
     recent: list.slice(-25).reverse(),

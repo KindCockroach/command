@@ -38,8 +38,12 @@ type AnthropicResponse = {
   content?: TextBlock[]
   stop_reason?: string | null
   error?: { message?: string }
-  usage?: { input_tokens?: number; output_tokens?: number }
+  usage?: { input_tokens?: number; output_tokens?: number } & CacheUsage
 }
+
+// Prompt-cache counts ride on the same usage object as input_tokens (which excludes them).
+type CacheUsage = { cache_creation_input_tokens?: number; cache_read_input_tokens?: number; server_tool_use?: { web_search_requests?: number } }
+const cacheOf = (u: CacheUsage | undefined | null) => ({ w: u?.cache_creation_input_tokens ?? 0, r: u?.cache_read_input_tokens ?? 0 })
 
 let _client: OpenAI | null = null
 function openai(): OpenAI {
@@ -130,6 +134,7 @@ export async function commanderChat(system: string, messages: { role: 'user' | '
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
   let buf = '', text = '', inTok = 0, outTok = 0
+  let cache = { w: 0, r: 0 }
   for (;;) {
     const { done, value } = await reader.read()
     if (done) break
@@ -144,13 +149,13 @@ export async function commanderChat(system: string, messages: { role: 'user' | '
       try {
         const evt = JSON.parse(payload)
         if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') text += evt.delta.text
-        else if (evt.type === 'message_start') inTok = evt.message?.usage?.input_tokens ?? 0
+        else if (evt.type === 'message_start') { inTok = evt.message?.usage?.input_tokens ?? 0; cache = cacheOf(evt.message?.usage) }
         else if (evt.type === 'message_delta' && evt.usage?.output_tokens != null) outTok = evt.usage.output_tokens
         else if (evt.type === 'error') throw new Error(evt.error?.message ?? 'stream error')
       } catch (e) { if (e instanceof Error && e.message !== 'Unexpected end of JSON input') { /* skip partial */ } }
     }
   }
-  logUsage({ provider: 'anthropic', model: COMMANDER_MODEL, kind: 'commander', inputTokens: inTok, outputTokens: outTok })
+  logUsage({ provider: 'anthropic', model: COMMANDER_MODEL, kind: 'commander', inputTokens: inTok, outputTokens: outTok, cacheWriteTokens: cache.w, cacheReadTokens: cache.r })
   return text.trim()
 }
 
@@ -191,11 +196,12 @@ const callCommanderModel: AgentModelCall = async ({ system, messages, tools, max
   const blocks: AgentBlock[] = []
   const partialJson: Record<number, string> = {}
   let buf = '', stop: string | null = null, inTok = 0, outTok = 0, sawStop = false
+  let cache = { w: 0, r: 0 }
   const handle = (payload: string) => {
     let evt: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
     try { evt = JSON.parse(payload) } catch { throw new Error('Commander stream sent a line that was not valid JSON — the reply is incomplete.') }
     if (evt.type === 'error') throw new Error(`Commander stream error: ${evt.error?.message ?? 'unknown'}`)
-    if (evt.type === 'message_start') inTok = evt.message?.usage?.input_tokens ?? 0
+    if (evt.type === 'message_start') { inTok = evt.message?.usage?.input_tokens ?? 0; cache = cacheOf(evt.message?.usage) }
     else if (evt.type === 'content_block_start') { blocks[evt.index] = { ...evt.content_block }; if (evt.content_block?.type === 'tool_use') partialJson[evt.index] = '' }
     else if (evt.type === 'content_block_delta') {
       const b = blocks[evt.index]; const d = evt.delta
@@ -222,7 +228,7 @@ const callCommanderModel: AgentModelCall = async ({ system, messages, tools, max
       if (payload && payload !== '[DONE]') handle(payload)
     }
   }
-  logUsage({ provider: 'anthropic', model: COMMANDER_MODEL, kind: 'commander', inputTokens: inTok, outputTokens: outTok })
+  logUsage({ provider: 'anthropic', model: COMMANDER_MODEL, kind: 'commander', inputTokens: inTok, outputTokens: outTok, cacheWriteTokens: cache.w, cacheReadTokens: cache.r })
   if (!sawStop) throw new Error('Commander stream ended early — the connection dropped before the reply finished.')
   // Tool inputs arrive as JSON fragments; parse each whole. A broken one is kept
   // as an empty input and flagged so the loop reports it as a failed call.
@@ -329,6 +335,7 @@ export async function fableHooks(system: string, input: string, maxTokens = 3000
   let text = ''
   let inTok = 0
   let outTok = 0
+  let cache = { w: 0, r: 0 }
   for (;;) {
     const { done, value } = await reader.read()
     if (done) break
@@ -343,13 +350,13 @@ export async function fableHooks(system: string, input: string, maxTokens = 3000
       try {
         const evt = JSON.parse(payload)
         if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') text += evt.delta.text
-        else if (evt.type === 'message_start') inTok = evt.message?.usage?.input_tokens ?? 0
+        else if (evt.type === 'message_start') { inTok = evt.message?.usage?.input_tokens ?? 0; cache = cacheOf(evt.message?.usage) }
         else if (evt.type === 'message_delta' && evt.usage?.output_tokens != null) outTok = evt.usage.output_tokens
         else if (evt.type === 'error') throw new Error(evt.error?.message ?? 'stream error')
       } catch (e) { if (e instanceof Error && e.message !== 'Unexpected end of JSON input') { /* skip partial */ } }
     }
   }
-  logUsage({ provider: 'anthropic', model: WRITER_CLAUDE, kind, inputTokens: inTok, outputTokens: outTok })
+  logUsage({ provider: 'anthropic', model: WRITER_CLAUDE, kind, inputTokens: inTok, outputTokens: outTok, cacheWriteTokens: cache.w, cacheReadTokens: cache.r })
   return text.trim()
 }
 
@@ -380,6 +387,8 @@ export async function researchWithWeb(opts: {
   let final: AnthropicResponse | null = null
   let inTok = 0
   let outTok = 0
+  let searches = 0
+  const cache = { w: 0, r: 0 }
 
   // Resume across pause_turn up to 5 times (server-side search loop limit)
   for (let i = 0; i < 5; i++) {
@@ -402,12 +411,14 @@ export async function researchWithWeb(opts: {
     final = data as AnthropicResponse
     inTok += final.usage?.input_tokens ?? 0
     outTok += final.usage?.output_tokens ?? 0
+    searches += final.usage?.server_tool_use?.web_search_requests ?? 0
+    { const c = cacheOf(final.usage); cache.w += c.w; cache.r += c.r }
     if (data.stop_reason !== 'pause_turn') break
     // Paused mid-search — echo the assistant turn back and let it resume
     messages = [...messages, { role: 'assistant', content: data.content }]
   }
 
-  logUsage({ provider: 'anthropic', model: RESEARCH_MODEL, kind: 'research', inputTokens: inTok, outputTokens: outTok })
+  logUsage({ provider: 'anthropic', model: RESEARCH_MODEL, kind: 'research', inputTokens: inTok, outputTokens: outTok, searches, cacheWriteTokens: cache.w, cacheReadTokens: cache.r })
 
   return ((final?.content ?? []) as TextBlock[])
     .filter(b => b.type === 'text' && typeof b.text === 'string')

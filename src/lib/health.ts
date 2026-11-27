@@ -21,6 +21,7 @@ import { cut } from './jsonkit'
 import { commanderCarriesIdeas, ideasForHer } from './ideas'
 import { getSkills, noSkill } from './skills'
 import { spendStatus } from './spendCap'
+import { unpricedModels } from './usage'
 
 const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'data', 'db.json')
 const DAY = 86400000
@@ -206,6 +207,14 @@ const direction: Check = async ({ db, today, full }, f, ok) => {
       else ok.push('No conflicting Brain rules found')
     } catch { /* the conflict read is a bonus; the plain checks above still stand */ }
   }
+
+  // Routing R0: a model with no price row is charged at the dearest rate so the cap still
+  // counts it, but the number is a guess until the real price is added.
+  try {
+    const un = unpricedModels()
+    if (un.length) f.push({ key: 'store:unpriced-models', area: 'store', level: 'build', count: un.length, title: `${un.length} AI model${un.length > 1 ? 's have' : ' has'} no price in RISE`, detail: `${un.join(', ')}: counted at the highest rate until the real price is added, so the spend shown may be too high.`, fix: 'Needs a build session: add the price to the table in lib/usage.ts.' })
+    else ok.push('Every AI model in the last 30 days has a price')
+  } catch { /* the usage log is separate; never fail the health check over it */ }
 
   // The database file and the newest backup.
   try {

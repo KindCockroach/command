@@ -27,7 +27,7 @@ type Block = { type: string; text?: string; id?: string; name?: string; input?: 
 type AnthropicMsg = {
   content?: Block[]
   stop_reason?: string | null
-  usage?: { input_tokens?: number; output_tokens?: number }
+  usage?: { input_tokens?: number; output_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number }
   error?: { message?: string }
 }
 
@@ -216,6 +216,8 @@ Hard rules:
       kind: 'sorting-hat',
       inputTokens: data.usage?.input_tokens ?? 0,
       outputTokens: data.usage?.output_tokens ?? 0,
+      cacheWriteTokens: data.usage?.cache_creation_input_tokens ?? 0,
+      cacheReadTokens: data.usage?.cache_read_input_tokens ?? 0,
     })
 
     const blocks = data.content ?? []
