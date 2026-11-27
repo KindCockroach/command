@@ -742,6 +742,7 @@ export type WeeklyPlanBody = {
   campaign_balance: string
   arc: string
   experiments?: { review_id: string; text: string }[]   // Cap's proposed tests from the latest winners
+  basis?: string                                 // A5: how Cap sized it (her hours + footage on hand, or the old counts)
 }
 export type Plan = {
   id: string
@@ -769,6 +770,7 @@ export type CalendarItem = {
   plan_id: string
   slot: 'reset' | 'podcast' | 'post'
   time?: string | null                           // 'HH:MM' when Mandi drops it on an hour; null = any time that day
+  bumped_from?: string | null                    // A5: the date Cap moved it from (it still counts for that week, so a refill never re-adds it)
   created_at: string
 }
 export type PlanConfig = {

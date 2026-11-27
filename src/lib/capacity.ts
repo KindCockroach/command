@@ -6,10 +6,11 @@
 // auto-apply and show as receipts; a bumped post is rescheduled, never dropped).
 import { readDb, writeDb, backupDb, type ContentPiece } from './db'
 import { needsFilming } from './shootList'
-import { getPlanConfig, moveCalendarItem } from './plan'
+import { getPlanConfig, bumpCalendarItem } from './plan'
 import { getApprovals } from './approvals'
 import { openHandoff, startAttempt, completeHandoff, failHandoff } from './handoffs'
 import type { Handoff } from './db'
+import { isProtectedFormat } from './protectedFormats'
 
 // Filming minutes per card, by what it is. Simple and editable here; no AI.
 export const FILM_MINUTES = {
@@ -121,17 +122,44 @@ export async function runCapacityTrim(h: Handoff): Promise<void> {
   if (!cap || cap.week_start !== est.week_start) { completeHandoff(h.id, 'cap', 'Nothing to move: this was for a week that is over.'); return }
   let over = est.total_minutes - Math.round(cap.hours * 60)
   if (over <= 0) { completeHandoff(h.id, 'cap', 'Nothing to move: the week fits your hours now.'); return }
-  const movable = est.film.items.filter(i => i.slot === 'post')
+  const db0 = readDb()
+  const fmtOf = (id: number) => (db0.content.find(c => c.id === id)?.notes ?? '').match(/Format: ([^.]+)\./)?.[1]
+  const movable = est.film.items.filter(i => i.slot === 'post' && !isProtectedFormat(i.account_id, fmtOf(i.content_id)))
     .sort((a, b) => (a.branch === 'joyful_media' ? 1 : 0) - (b.branch === 'joyful_media' ? 1 : 0) || b.date.localeCompare(a.date))
-  if (!movable.length) { failHandoff(h.id, 'Only Reset and podcast slots are left this week, and those don’t move. Mandi decides what gives.'); return }
+  if (!movable.length) { failHandoff(h.id, 'Only Reset, podcast and protected-format slots are left this week, and those don’t move. Mandi decides what gives.'); return }
   backupDb('capacity-trim')
   const moved: string[] = []
   for (const i of movable) {
     if (over <= 0) break
     const to = addDays(i.date, 7)
-    if (moveCalendarItem(i.calendar_id, to)) { moved.push(`“${i.title}” ${i.date} → ${to}`); over -= i.minutes }
+    if (bumpCalendarItem(i.calendar_id, to)) { moved.push(`“${i.title}” ${i.date} → ${to}`); over -= i.minutes }
   }
   const left = over >= 15 ? ` Still ${fmtM(over)} over; what’s left is Reset/podcast work, approvals and admin, which I don’t move. Mandi decides what gives.` : ''
   completeHandoff(h.id, 'cap', `Moved ${moved.length} card${moved.length === 1 ? '' : 's'} to next week so filming fits your ${cap.hours} h: ${moved.join('; ')}.${left}`,
     moved.length ? [{ type: 'card', id: movable[0].content_id, label: 'calendar' }] : [])
 }
+
+// ── Phase 8 · A5: what the plan uses ─────────────────────────────────────────────
+/** Filming minutes for one post of a plan format ("talking head", "carousel (quotes…)"). 0 = no filming. */
+export function formatMinutes(format: string): number {
+  const f = format.toLowerCase()
+  if (/carousel|quote|still|image|article|newsletter|post\b|episode clip|audiogram/.test(f)) return 0
+  if (/role[- ]?play|character|inner[- ]child|skit/.test(f)) return FILM_MINUTES.role_play
+  if (/long[- ]form video|youtube/.test(f)) return FILM_MINUTES.multi_scene
+  if (/meditation/.test(f)) return FILM_MINUTES.video          // recorded, not on camera, still her time
+  if (/b[- ]?roll/.test(f)) return FILM_MINUTES.image           // a quick clip of footage
+  if (/talking head|reel|short|video/.test(f)) return FILM_MINUTES.talking_head
+  return 0
+}
+
+/** Minutes Mandi has for FILMING in the week starting `ws`, from the hours she saved for it
+ *  (her hours minus this week's approvals and admin). null = she hasn't said, so the plan uses its old counts. */
+export function filmBudget(ws: string): number | null {
+  const cap = readDb().week_capacity
+  if (!cap || cap.week_start !== ws) return null
+  const est = estimateWeek(ws)
+  return Math.max(0, Math.round(cap.hours * 60) - est.approvals.minutes - est.admin.minutes)
+}
+
+/** The latest hours she gave (any week), for sizing a new month's drafts. */
+export function latestHours(): number | null { return readDb().week_capacity?.hours ?? null }

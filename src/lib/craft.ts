@@ -3,6 +3,7 @@
 // EVERY generation call, so every word here is a recurring cost. Same rules,
 // fewer tokens. Add a rule only if it earns its tokens.
 
+import { protectedFormatsRule } from './protectedFormats'
 import { getVoiceLessonsContext, readDb, branchOfAccount } from './db'
 import { rosterForWriters } from './characters'
 
@@ -224,5 +225,5 @@ export function craftFor(accountId?: string | null): string {
   const noCross = `${NO_CROSS_PROMOTION}${branch === 'wfh' ? PODCAST_ONLY : branch === 'joyful_media' ? JOYFUL_ONLY : ''}`
   let roster = ''
   try { roster = rosterForWriters(readDb()) } catch { /* db unreadable */ }
-  return `${base}${noCross}${tagLine}${anchorLine}${roster}${getVoiceLessonsContext()}`
+  return `${base}${noCross}${protectedFormatsRule(accountId)}${tagLine}${anchorLine}${roster}${getVoiceLessonsContext()}`
 }

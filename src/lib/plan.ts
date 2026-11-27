@@ -1,13 +1,21 @@
 // Cap's plans and the calendar (Phase 2). Monthly plan per branch → weekly cadence per
-// account → daily calendar items. Proposals are RULE-BASED drafts (no AI calls, no cost);
-// Mandi approves or edits each level before the next one exists. A calendar item holds no
+// account → daily calendar items. Proposals are RULE-BASED drafts (no AI calls, no cost).
+// Calendar authority (Phase 8 A5, Mandi's call Nov 25): Mandi approves the MONTHLY direction per
+// branch. Cap's weekly plans, placement and moves then go live on their own and show as receipts
+// in Activity; she can still edit or decline any of them. A bumped post is rescheduled, never dropped.
+// Weekly counts are sized to her hours (A4 capacity) and the footage on hand; the old counts are
+// the fallback. Protected formats (lib/protectedFormats.ts) always keep their slots. A calendar item holds no
 // copy or status of its own: it points at ONE existing ContentPiece.
 
 import {
   readDb, writeDb, createContent, backupDb, getBranches, branchOfAccount, branchOfProduct, seedBranches,
   PHASE2_PRODUCT_PATCHES, DEFAULT_PLAN_CONFIG, BRANCH_IDS,
   type BranchId, type Plan, type PlanNote, type CalendarItem, type PlanConfig, type MonthlyPlanBody, type WeeklyPlanBody, type ContentPiece,
+  logActivity,
 } from './db'
+import { protectedFor, isProtectedFormat } from './protectedFormats'
+import { formatMinutes, filmBudget, filmMinutes, latestHours, ADMIN_BASE_MINUTES } from './capacity'
+import { hasVideo, needsFilming } from './shootList'
 import { effectiveUpload } from './cardMedia'
 import { quoteFormatFor } from './quotes'
 
@@ -113,7 +121,8 @@ export function proposeMonthly(from = todayStr(), branches: BranchId[] = BRANCH_
 // ── weekly cadence (per account; needs an approved monthly for its branch) ───────
 const cadenceWords = (n: number) => n >= 7 ? '1–2 a day' : n >= 3 ? 'every 2–3 days' : n === 2 ? 'twice a week' : n === 1 ? 'once a week' : 'paused this week'
 
-function weeklyBody(a: { id: string; handle: string }, branch: BranchId): WeeklyPlanBody {
+// The old fixed counts. Still the fallback when Mandi hasn't given her hours.
+function baseChannels(a: { id: string; handle: string }): { format: string; per_week: number }[] {
   const k = `${a.id} ${a.handle}`.toLowerCase().replace(/[^a-z0-9 ]/g, '')
   let channels: { format: string; per_week: number }[]
   if (k.includes('medium')) channels = [{ format: 'long-form article', per_week: 1 }]
@@ -124,10 +133,34 @@ function weeklyBody(a: { id: string; handle: string }, branch: BranchId): Weekly
   else if (k.includes('aimompodcast')) channels = [{ format: 'episode clip / quote card', per_week: 3 }]
   else if (k.includes('mandijoybeck')) channels = [{ format: 'talking head', per_week: 3 }, { format: 'b-roll reel with on-screen line', per_week: 4 }, { format: 'carousel (quotes / gratitudes)', per_week: 3 }]
   else channels = [{ format: 'post', per_week: 3 }]
+  return channels
+}
+
+// Unscheduled footage already on hand for an account: cards with a video, not published, not on the calendar.
+function footageOnHand(accountId: string): number {
+  const db = readDb()
+  const placed = new Set((db.calendar_items ?? []).map(i => i.content_id))
+  return db.content.filter(c => c.account_id === accountId && !['published', 'archived'].includes(c.status) && hasVideo(c) && !placed.has(c.id)).length
+}
+
+/** Scale filmed (non-protected) counts by `factor`; protected formats are added and never scaled.
+ *  Footage on hand covers filmed slots first, so it doesn't cost filming time. */
+export function sizeChannels(accountId: string, base: { format: string; per_week: number }[], factor: number | null): { format: string; per_week: number }[] {
+  const out = base.filter(c => !isProtectedFormat(accountId, c.format)).map(c => {
+    if (factor === null || formatMinutes(c.format) === 0) return { ...c }
+    return { format: c.format, per_week: Math.max(1, Math.round(c.per_week * factor)) }
+  })
+  for (const p of protectedFor(accountId)) out.push({ format: p.format, per_week: p.per_week })
+  return out
+}
+
+function weeklyBody(a: { id: string; handle: string }, branch: BranchId, factor: number | null = null, basis = ''): WeeklyPlanBody {
+  const channels = sizeChannels(a.id, baseChannels(a), factor)
   const total = channels.reduce((n, c) => n + c.per_week, 0)
   const wfh = branch === 'wfh'
   return {
     account_id: a.id, handle: a.handle || a.id, channels, posts_per_week: total,
+    basis: basis || 'Old starting counts (no hours given yet).',
     per_day: cadenceWords(total),
     batch: 'Batch about 20 posts at a time; post 1–2 a day. Counts are starting points.',
     campaign_balance: wfh ? 'Podcast only. No Reset invites, no Joyful Media offers, no WFH services.' : 'Roughly 1 in 3 posts points to the next Reset; the rest is value and story. Never the podcast.',
@@ -135,11 +168,34 @@ function weeklyBody(a: { id: string; handle: string }, branch: BranchId): Weekly
   }
 }
 
+// How much to scale filmed counts across ALL accounts this round, from her hours (A4) and footage on hand.
+// Protected slots are paid for first. null = no hours given, so the old counts stand.
+function capacityFactor(accounts: { id: string; handle: string }[]): { factor: number | null; basis: string } {
+  const hours = latestHours()
+  if (hours === null) return { factor: null, basis: '' }
+  let protectedMin = 0, flexMin = 0
+  for (const a of accounts) {
+    for (const p of protectedFor(a.id)) protectedMin += formatMinutes(p.format) * p.per_week
+    let onHand = footageOnHand(a.id)
+    for (const c of baseChannels(a)) {
+      if (isProtectedFormat(a.id, c.format)) continue
+      const m = formatMinutes(c.format); if (!m) continue
+      const use = Math.min(onHand, c.per_week); onHand -= use
+      flexMin += (c.per_week - use) * m
+    }
+  }
+  const budget = Math.max(0, Math.round(hours * 60) - ADMIN_BASE_MINUTES - protectedMin)
+  const factor = flexMin ? Math.max(0.25, Math.min(1, budget / flexMin)) : 1   // never more than the old counts
+  const r = Math.round(factor * 100) / 100
+  return { factor: r, basis: `Sized to your ${hours} h a week: about ${Math.round(budget / 60 * 2) / 2} h left for filming after admin and the protected formats, so filmed posts run at ${Math.round(r * 100)}% of the old counts. Footage you already have counts first.` }
+}
+
 export function proposeWeekly(): { plans: Plan[]; skipped: string[] } {
   const db = readDb()
   const now = new Date().toISOString()
   db.plans ??= []; db.next_plan_id ??= 1
   const made: Plan[] = [], skipped: string[] = []
+  const { factor, basis } = capacityFactor((db.brand_accounts ?? []).filter(a => a.status === 'active' && !a.mirrors_account_id).map(a => ({ id: a.id, handle: a.handle })))
   for (const a of db.brand_accounts ?? []) {
     if (a.status !== 'active') continue
     const b = branchOfAccount(a)
@@ -158,7 +214,8 @@ export function proposeWeekly(): { plans: Plan[]; skipped: string[] } {
     for (const old of db.plans) if (old.level === 'weekly' && old.weekly?.account_id === a.id && (old.status === 'proposed' || old.status === 'declined')) {
       carried.push(...(old.feedback ?? [])); old.status = 'superseded'; old.updated_at = now
     }
-    const body = weeklyBody({ id: a.id, handle: a.handle }, b)
+    const declinedBefore = carried.some(n => n.kind === 'decline')
+    const body = weeklyBody({ id: a.id, handle: a.handle }, b, factor, basis)
     // Cap 4: his proposed experiment from the latest winners rides onto this draft. Her approval of the plan is the yes.
     const planId = `plan_${db.next_plan_id}`
     const exps = (db.winner_reviews ?? []).filter(w => w.account_id === a.id && (w.status === 'proposed' || (w.status === 'in_plan' && db.plans!.some(x => x.id === w.plan_id && x.status !== 'approved'))))
@@ -167,15 +224,19 @@ export function proposeWeekly(): { plans: Plan[]; skipped: string[] } {
       for (const w of exps) { w.status = 'in_plan'; w.plan_id = planId }
     }
     const plan: Plan = {
-      id: planId, level: 'weekly', branch_id: b, period_start: parent.period_start, period_end: parent.period_end, status: 'proposed',
+      // A5 calendar authority: the monthly direction is approved, so Cap's weekly plan goes live on its own.
+      // Except after Mandi said no to this account's plan: then the redraft waits for her again.
+      id: planId, level: 'weekly', branch_id: b, period_start: parent.period_start, period_end: parent.period_end, status: declinedBefore ? 'proposed' : 'approved',
       summary: `${body.handle}: ${body.posts_per_week} post${body.posts_per_week === 1 ? '' : 's'} a week (${body.per_day}).`, weekly: body, proposed_by: 'cap',
-      approved_at: null, parent_plan_id: parent.id, created_at: now, updated_at: now,
+      approved_at: declinedBefore ? null : now, parent_plan_id: parent.id, created_at: now, updated_at: now,
       ...(carried.length ? { feedback: carried } : {}),
     }
     db.next_plan_id++
     db.plans.push(plan); made.push(plan)
   }
   writeDb(db)
+  // The receipt: what went live, and why it's that size. She can edit or decline any of them in Plan.
+  for (const p of made.filter(x => x.status === 'approved')) logActivity({ type: 'plan', title: `Cap set ${p.weekly!.handle}'s week: ${p.weekly!.posts_per_week} posts`, detail: `${p.weekly!.channels.map(c => `${c.per_week} ${c.format}`).join(', ')}. ${p.weekly!.basis ?? ''}${p.weekly!.experiments?.length ? ` Experiment: ${p.weekly!.experiments[0].text}` : ''} Live now; edit or decline it in Plan.`, icon: '🗓️', source: 'cap', account_id: p.weekly!.account_id })
   return { plans: made, skipped }
 }
 
@@ -309,7 +370,17 @@ export function moveCalendarItem(id: string, date: string, time: string | null =
   writeDb(db); return it
 }
 
-export function generateCalendar(from = todayStr(), days = 14): { created: number; reused: number; moved: number; dropped: string[]; window: [string, string] } {
+/** Cap moves a post (capacity trim). It keeps counting for the week it came from, so a refill never re-adds it. */
+export function bumpCalendarItem(id: string, date: string): CalendarItem | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
+  const db = readDb()
+  const it = (db.calendar_items ?? []).find(i => i.id === id); if (!it) return null
+  it.bumped_from ??= it.date
+  it.date = date; it.time = null
+  writeDb(db); return it
+}
+
+export function generateCalendar(from = todayStr(), days = 14): { created: number; reused: number; moved: number; dropped: string[]; held: string[]; window: [string, string] } {
   const to = addDays(from, days - 1)
   const cfg = getPlanConfig()
   const db0 = readDb()
@@ -356,7 +427,21 @@ export function generateCalendar(from = todayStr(), days = 14): { created: numbe
   const weekOf = (d: string) => { const ms = toMs(d); const dow = (new Date(ms).getUTCDay() + 6) % 7; return addDays(d, -dow) }
   const keyOf = (x: { plan_id: string; account_id: string | null; slot: string; date: string }) => `${x.plan_id}|${x.account_id ?? ''}|${x.slot}|${weekOf(x.date)}`
   const have: Record<string, number> = {}
-  for (const i of existing) if (i.date >= from && i.date <= to) have[keyOf(i)] = (have[keyOf(i)] ?? 0) + 1
+  // A5: a post Cap bumped still counts for the week it came from, so the refill never re-adds it there.
+  const countAs = (i: CalendarItem) => ({ ...i, date: i.bumped_from ?? i.date })
+  for (const i of existing) { const c = countAs(i); if (c.date >= from && c.date <= to) have[keyOf(c)] = (have[keyOf(c)] ?? 0) + 1 }
+  // A5: in a week Mandi gave her hours for, new FILMED slots only go on while filming still fits.
+  // Protected formats always go on. What doesn't fit is held (nothing is made, so nothing is lost).
+  const contentById = new Map(db0.content.map(c => [c.id, c]))
+  const filmLeft: Record<string, number | null> = {}
+  const budgetFor = (ws: string) => {
+    if (!(ws in filmLeft)) {
+      const b = filmBudget(ws)
+      filmLeft[ws] = b === null ? null : b - existing.filter(i => weekOf(i.date) === ws).reduce((m, i) => { const c = contentById.get(i.content_id); return m + (c && needsFilming(c) ? filmMinutes(c) : 0) }, 0)
+    }
+    return filmLeft[ws]
+  }
+  const held: string[] = []
   const wantedBy: Record<string, number> = {}
   for (const n of placed) wantedBy[keyOf(n)] = (wantedBy[keyOf(n)] ?? 0) + 1
   const out: CalendarItem[] = []
@@ -364,6 +449,12 @@ export function generateCalendar(from = todayStr(), days = 14): { created: numbe
   for (const n of placed) {
     const k = keyOf(n)
     if ((have[k] ?? 0) >= wantedBy[k]) continue
+    const fm = n.slot === 'post' && n.format && !isProtectedFormat(n.account_id, n.format) ? formatMinutes(n.format) : 0
+    if (fm) {
+      const ws = weekOf(n.date), left = budgetFor(ws)
+      if (left !== null && left < fm) { held.push(`${n.label} (${n.date}): filming doesn't fit your hours that week`); continue }
+      if (left !== null) filmLeft[ws] = left - fm
+    }
     have[k] = (have[k] ?? 0) + 1
     let card: ContentPiece | undefined
     const qf = n.slot === 'post' ? quoteFormatFor(n.format) : null
@@ -401,7 +492,8 @@ export function generateCalendar(from = todayStr(), days = 14): { created: numbe
       await m.fillCardBasics(id).catch(() => null)
     }
   }).catch(() => null)
-  return { created, reused, moved, dropped, window: [from, to] }
+  if (held.length) logActivity({ type: 'plan', title: `Cap held ${held.length} filmed slot${held.length === 1 ? '' : 's'} to fit your hours`, detail: held.join('; '), icon: '🗓️', source: 'cap' })
+  return { created, reused, moved, dropped, held, window: [from, to] }
 }
 
 // ── retire the Nov 11 quotas into the first approved weekly plan ─────────────────

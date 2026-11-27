@@ -1,4 +1,5 @@
 'use client'
+import { isProtectedFormat } from '@/lib/protectedFormats'
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import PlanCalendar from './PlanCalendar'
@@ -13,7 +14,7 @@ type Plan = {
   status: 'proposed' | 'approved' | 'declined'; summary: string
   feedback?: { kind: 'question' | 'decline' | 'reopen'; text: string; at: string; answer?: string | null }[]
   monthly?: { goals: string[]; initiatives: string[]; campaigns: { product_id: string; note: string }[]; dates: { date: string; label: string }[]; priorities: string[]; paused: string[] }
-  weekly?: { account_id: string; handle: string; channels: Channel[]; posts_per_week: number; per_day: string; batch: string; campaign_balance: string; arc: string; experiments?: { review_id: string; text: string }[] }
+  weekly?: { account_id: string; handle: string; channels: Channel[]; posts_per_week: number; per_day: string; batch: string; campaign_balance: string; arc: string; experiments?: { review_id: string; text: string }[]; basis?: string }
 }
 type Acct = { id: string; handle: string; platform: string; status: string; mirrors_account_id: string | null }
 type Data = { plans: Plan[]; accounts?: Acct[] }
@@ -159,7 +160,7 @@ export default function PlanPanel() {
       ))}
 
       <p style={lbl}>2 · Weekly cadence, per account</p>
-      {!weekly.length && <button style={btn} disabled={!!busy || !monthlyApproved} title={monthlyApproved ? '' : 'Approve a monthly plan first'} onClick={() => run('w', { action: 'propose_weekly' }, d => { const s = (d.skipped as string[]) || []; return `Cap drafted ${(d.plans as unknown[]).length} account plans.${s.length ? ` Not drafted: ${s.length} (accounts not placed in a branch yet, or branch not approved).` : ''}` })}>{busy === 'w' ? 'Drafting…' : monthlyApproved ? 'Ask Cap for each account’s week' : 'Approve a monthly plan first'}</button>}
+      {!weekly.length && <button style={btn} disabled={!!busy || !monthlyApproved} title={monthlyApproved ? '' : 'Approve a monthly plan first'} onClick={() => run('w', { action: 'propose_weekly' }, d => { const s = (d.skipped as string[]) || []; return `Cap set ${(d.plans as unknown[]).length} account weeks. They’re live now (receipts in Activity); edit or decline any of them here.${s.length ? ` Not drafted: ${s.length} (accounts not placed in a branch yet, or branch not approved).` : ''}` })}>{busy === 'w' ? 'Drafting…' : monthlyApproved ? 'Ask Cap for each account’s week' : 'Approve a monthly plan first'}</button>}
       {weekly.map(p => (
         <div key={p.id} style={card}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
@@ -179,9 +180,10 @@ export default function PlanPanel() {
           {p.weekly!.channels.map((c, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, margin: '5px 0', color: 'var(--text)' }}>
               <input type="number" min={0} value={drafts[p.id]?.[i] ?? c.per_week} style={{ width: 52, padding: '3px 6px', border: `1px solid ${drafts[p.id] && drafts[p.id][i] !== c.per_week ? '#5A4FCF' : 'var(--border)'}`, borderRadius: 7, background: 'var(--bg)', color: 'var(--text)' }}
-                onChange={e => setDraft(p, i, Math.max(0, Math.round(Number(e.target.value) || 0)))} /> a week · {c.format}
+                onChange={e => setDraft(p, i, Math.max(0, Math.round(Number(e.target.value) || 0)))} /> a week · {c.format}{isProtectedFormat(p.weekly!.account_id, c.format) && <span title="Protected format: always gets its slot, never trimmed for hours" style={{ fontSize: 11, color: 'var(--text-subtle)' }}> 🔒 protected</span>}
             </div>
           ))}
+          {p.weekly!.basis && <p style={{ margin: '6px 0', fontSize: 12, color: 'var(--text-subtle)' }}>⏱️ {p.weekly!.basis}</p>}
           <p style={{ margin: '6px 0', fontSize: 12, color: 'var(--text-subtle)' }}>{p.weekly!.campaign_balance} {p.weekly!.batch}</p>
           {(p.weekly!.experiments?.length ?? 0) > 0 && (
             <div style={{ margin: '6px 0', padding: '8px 10px', borderRadius: 10, background: 'rgba(124,77,219,.08)', fontSize: 12.5, color: 'var(--text)' }}>
@@ -192,12 +194,12 @@ export default function PlanPanel() {
         </div>
       ))}
       {mirrors.length > 0 && <p style={{ fontSize: 12.5, color: 'var(--text-subtle)', margin: '4px 0 8px' }}>No plan needed (they repost automatically): {mirrors.map(a => `${a.handle} ← ${(data.accounts ?? []).find(x => x.id === a.mirrors_account_id)?.handle || a.mirrors_account_id}`).join(' · ')}</p>}
-      {weekly.length > 0 && monthlyApproved && <button style={btn} disabled={!!busy} onClick={() => run('w', { action: 'propose_weekly' }, d => `Cap redrafted ${(d.plans as unknown[]).length} account plans (approved ones stay; your notes carry over).`)}>{busy === 'w' ? 'Redrafting…' : 'Ask Cap to redraft the ones not approved'}</button>}
+      {weekly.length > 0 && monthlyApproved && <button style={btn} disabled={!!busy} onClick={() => run('w', { action: 'propose_weekly' }, d => `Cap set ${(d.plans as unknown[]).length} account weeks. Live ones stay as they are; any you declined come back for your yes, with your notes.`)}>{busy === 'w' ? 'Planning…' : 'Ask Cap to plan the accounts without a week'}</button>}
       {weeklyApproved && <button style={btn} disabled={!!busy} onClick={() => run('r', { action: 'retire_cadence' }, d => d.error ? String(d.error) : `Preview: this would retire ${(d.goals_retired as string[]).length} old November 11 quota goals (kept, not deleted) and add ${(d.goals_created as string[]).length} goals from the plan. Press again to confirm.`)}>Retire the old daily quotas…</button>}
       {msg.startsWith('Preview:') && <button style={{ ...primary, marginLeft: 8 }} disabled={!!busy} onClick={() => run('r2', { action: 'retire_cadence', confirm: true }, d => `Done. Retired ${(d.goals_retired as string[]).length} old goals and added ${(d.goals_created as string[]).length} from Cap’s plan. Backup saved first.`)}>Confirm</button>}
 
       <p style={lbl}>3 · The calendar</p>
-      <button style={btn} disabled={!!busy || !weeklyApproved && !monthlyApproved} onClick={() => run('c', { action: 'generate_calendar' }, d => `Added ${d.created} new items and reused ${d.reused} existing cards.${(d.dropped as string[]).length ? ` ${(d.dropped as string[]).length} didn’t fit.` : ''}`)}>{busy === 'c' ? 'Building…' : 'Fill the calendar from approved plans'}</button>
+      <button style={btn} disabled={!!busy || !weeklyApproved && !monthlyApproved} onClick={() => run('c', { action: 'generate_calendar' }, d => `Added ${d.created} new items and reused ${d.reused} existing cards.${(d.dropped as string[]).length ? ` ${(d.dropped as string[]).length} didn’t fit.` : ''}${((d.held as string[]) ?? []).length ? ` Held ${(d.held as string[]).length} filmed slot${(d.held as string[]).length === 1 ? '' : 's'} to fit your hours.` : ''}`)}>{busy === 'c' ? 'Building…' : 'Fill the calendar from approved plans'}</button>
 
     </div>
   )
