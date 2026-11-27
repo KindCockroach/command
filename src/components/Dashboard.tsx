@@ -238,7 +238,7 @@ export default function Dashboard(_props: Props) {
           {/* RISE AI → Home, always */}
           <button type="button" className="rp-brand" onClick={goHome} title="Home: talk to Her, Man or Cap">
             <img src="/balloon-512.png" alt="" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
-            <span>RISE AI</span>
+            <span className="rp-wordmark">RISE AI</span>
           </button>
 
           <nav style={{ display: 'flex', alignItems: 'center', gap: '4px', overflowX: 'auto', flex: 1, scrollbarWidth: 'none', msOverflowStyle: 'none' }} className="hide-scrollbar">
